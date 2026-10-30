@@ -97,9 +97,10 @@ export async function planTrip() {
     const wxPts = pts.filter((_, i) => i % (WX_STEP_KM / 2) === 0);
     if (wxPts.at(-1) !== pts.at(-1)) wxPts.push(pts.at(-1));
     const t0 = Date.now();
+    let wxError = null;
     const [elev, wxRes] = await Promise.all([
       fetchElevations(pts),
-      fetchWeather(wxPts.map((p) => ({ lat: p.lat, lon: p.lon, t: t0 + (p.km / cruise) * 3600e3 }))).catch((err) => { console.warn(err); return null; }),
+      fetchWeather(wxPts.map((p) => ({ lat: p.lat, lon: p.lon, t: t0 + (p.km / cruise) * 3600e3 }))).catch((err) => { console.warn(err); wxError = err.message; return null; }),
     ]);
     if (!elev) toast('Rakım alınamadı: rota düz kabul edildi');
     if (!wxRes) toast('Hava durumu alınamadı: rüzgar/yağış yok sayıldı');
@@ -112,7 +113,7 @@ export async function planTrip() {
     };
     sig = routeSig();
     const profile = buildFromRaw();
-    patch('plan', { route: rt, profile, stations: [], stationInfo: null, text: 'Şarj istasyonları aranıyor…' });
+    patch('plan', { route: rt, profile, wxInfo: { source: wxRes?.source ?? null, fallbackReason: wxRes?.fallbackReason ?? null, error: wxError }, stations: [], stationInfo: null, text: 'Şarj istasyonları aranıyor…' });
 
     cacheKey = [start, end].map((p) => `${p.lat.toFixed(2)},${p.lon.toFixed(2)}`).join('>');
     await loadStations(pts, profile);

@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.15.0';
+self.APP_VERSION = '0.16.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.16.0', date: '2026-10-30',
+    notes: [
+      'Yerleşik istasyon listesi (data/stations.json, 6688 herkese açık istasyon: Türkiye, Yunanistan, Balkanlar; OSM 30.10.2026). Overpass sunucuları yanıt vermediğinde rotadaki istasyonlar buradan gelir; çevrimdışı da çalışır.',
+      'Hava durumu yedeği: Open-Meteo yanıt vermezse (429/zaman aşımı) MET Norway kullanılır; kart kaynağı ve nedeni gösterir, hata olursa sebebi yazar.',
+      'OpenChargeMap anahtarı reddedilirse (HTTP 403) bunu açıkça söyler; İstasyon sekmesine "Anahtarı sına" düğmesi eklendi.',
+    ],
+  },
   {
     v: '0.15.0', date: '2026-10-30',
     notes: [

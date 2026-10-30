@@ -1,11 +1,56 @@
 const BASE = 'https://api.open-meteo.com/v1/forecast';
 
+const METNO = 'https://api.met.no/weatherapi/locationforecast/2.0/compact';
+
 /**
- * Open-Meteo'dan nokta başına saatlik tahmin (varış saatine en yakın saat).
+ * Nokta başına saatlik tahmin (varış saatine en yakın saat). Önce Open-Meteo (tek istek); yanıt vermezse
+ * MET Norway (anahtarsız, CORS açık; nokta başına bir istek). Dönüş dizisinde `source` ve (Open-Meteo başarısızsa) `fallbackReason` var.
  * points: [{ lat, lon, t }]  (t: ms, o noktaya tahmini varış zamanı)
  * Dönüş: [{ temp (°C), rain (mm/sa), windSpeed (km/h), windDir (geldiği yön, °) }]
  */
 export async function fetchWeather(points) {
+  try {
+    const out = await openMeteo(points);
+    out.source = 'Open-Meteo';
+    return out;
+  } catch (err) {
+    const reason = err.name === 'TimeoutError' ? 'yanıt yok' : err.message.replace(/^Open-Meteo\s*/, '');
+    try {
+      const out = await metNo(points);
+      out.source = 'MET Norway';
+      out.fallbackReason = 'Open-Meteo ' + reason;
+      return out;
+    } catch (err2) {
+      throw new Error(`Open-Meteo ${reason}; MET Norway ${err2.name === 'TimeoutError' ? 'yanıt yok' : err2.message}`);
+    }
+  }
+}
+
+/** MET Norway locationforecast: nokta başına istek, 4'erli paralel. Rüzgâr m/s → km/h; yağış sonraki 1 saat (yoksa 6 saatin ortalaması). */
+async function metNo(points) {
+  const out = new Array(points.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < points.length) {
+      const i = next++;
+      const p = points[i];
+      const res = await fetch(`${METNO}?lat=${p.lat.toFixed(3)}&lon=${p.lon.toFixed(3)}`, { signal: AbortSignal.timeout(12000) });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const series = (await res.json()).properties.timeseries;
+      const target = p.t;
+      let best = series[0];
+      for (const e of series) if (Math.abs(Date.parse(e.time) - target) < Math.abs(Date.parse(best.time) - target)) best = e;
+      const d = best.data.instant.details;
+      const rain = best.data.next_1_hours?.details?.precipitation_amount
+        ?? (best.data.next_6_hours?.details?.precipitation_amount ?? 0) / 6;
+      out[i] = { temp: d.air_temperature, rain, windSpeed: d.wind_speed * 3.6, windDir: d.wind_from_direction };
+    }
+  };
+  await Promise.all([worker(), worker(), worker(), worker()]);
+  return out;
+}
+
+async function openMeteo(points) {
   const lat = points.map((p) => p.lat.toFixed(3)).join(',');
   const lon = points.map((p) => p.lon.toFixed(3)).join(',');
   const url = `${BASE}?latitude=${lat}&longitude=${lon}`

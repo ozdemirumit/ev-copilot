@@ -304,7 +304,11 @@
       <label class="field" style="margin-top:10px">OpenChargeMap API anahtarı (opsiyonel, ek istasyon verisi)
         <input type="password" id="ocm-key" autocomplete="off" spellcheck="false" placeholder="Boşsa yalnızca OpenStreetMap/Overpass">
       </label>
-      <button class="btn ghost" id="btn-ocm-scan" type="button" style="margin-top:8px">📷 Anahtarı kamerayla oku</button>
+      <div class="row wrap" style="margin-top:8px">
+        <button class="btn ghost" id="btn-ocm-scan" type="button">📷 Anahtarı kamerayla oku</button>
+        <button class="btn ghost" id="btn-ocm-test" type="button">✔️ Anahtarı sına</button>
+      </div>
+      <p class="small muted" id="ocm-test-out" style="margin:6px 0 0"></p>
     </div>
   </section>
 

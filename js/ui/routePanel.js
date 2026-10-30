@@ -100,7 +100,8 @@ export function initRoutePanel() {
     const list = $('wx-list');
     list.replaceChildren();
     if (!wx.length) {
-      $('wx-sum').textContent = 'Hava durumu alınamadı: rüzgâr ve yağış hesaba katılmadı (Open-Meteo yanıt vermedi). Rotayı Planla ile tekrar dene.';
+      $('wx-sum').textContent = 'Hava durumu alınamadı: rüzgâr ve yağış hesaba katılmadı'
+        + (p.wxInfo?.error ? ` (${p.wxInfo.error})` : '') + '. Rotayı Planla ile tekrar dene.';
       return;
     }
     const rows = wx.map((w) => {
@@ -111,7 +112,8 @@ export function initRoutePanel() {
     const rainy = rows.filter((r) => r.rain >= 0.1);
     $('wx-sum').textContent = `Ortalama ${avg((r) => r.temp).toFixed(0)} °C · en düşük ${Math.min(...rows.map((r) => r.temp)).toFixed(0)} °C`
       + (rainy.length ? ` · yağış: ${rainy.map((r) => r.km.toFixed(0) + '. km').join(', ')}` : ' · yağış yok')
-      + ` · ortalama net rüzgâr ${avg((r) => r.head) >= 0 ? 'kafa' : 'arka'} ${Math.abs(avg((r) => r.head)).toFixed(0)} km/h`;
+      + ` · ortalama net rüzgâr ${avg((r) => r.head) >= 0 ? 'kafa' : 'arka'} ${Math.abs(avg((r) => r.head)).toFixed(0)} km/h`
+      + (p.wxInfo?.source ? ` · kaynak: ${p.wxInfo.source}${p.wxInfo.fallbackReason ? ` (${p.wxInfo.fallbackReason} olduğu için yedek)` : ''}` : '');
     rows.forEach((r) => {
       const row = document.createElement('div');
       row.className = 'stop wx';

@@ -2,7 +2,7 @@ import { getState, patch, subscribe } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { getOperators, persistOperators, resetOperators } from '../routing/operators.js';
 import { repriceAndReplan, refetchStations } from '../routing/controller.js';
-import { setStationOperator } from '../routing/chargerSource.js';
+import { setStationOperator, testOcmKey } from '../routing/chargerSource.js';
 
 const $ = (id) => document.getElementById(id);
 const MODE_TITLE = { fast: 'En hızlı', cheap: 'En ekonomik', opt: 'Optimum (süre + maliyet)' };
@@ -127,6 +127,15 @@ export function initStationsView() {
   const ocm = $('ocm-key');
   ocm.value = load('ocmKey', '');
   ocm.addEventListener('change', () => save('ocmKey', ocm.value.trim()));
+
+  $('btn-ocm-test').addEventListener('click', async () => {
+    const out = $('ocm-test-out');
+    out.textContent = 'Sınanıyor…';
+    const key = ocm.value.trim();
+    save('ocmKey', key);
+    const r = await testOcmKey(key);
+    out.textContent = (r.ok ? '✅ ' : '⚠️ ') + r.text;
+  });
 
   $('station-retry').addEventListener('click', refetchStations);
   subscribe('plan', () => { paintChips(); renderList(); });

@@ -63,6 +63,50 @@ function fromOsm(el) {
  * Bir parça için sunucuları sırayla dener ama sıradakini yanıtı beklemeden HEDGE_MS sonra başlatır (ilk gelen kazanır):
  * yanıtsız sunucu tüm süreyi tüketmesin. Yanıt vermeyen sunucu bu planlamada `down` kümesine alınıp bir daha denenmez.
  */
+// Yerleşik istasyon listesi (data/stations.json): OSM'den alınmış herkese açık istasyonların anlık görüntüsü
+// (Türkiye + Yunanistan + Balkanlar). Overpass yanıtsız kaldığında rotadaki istasyonlar buradan gelir; çevrimdışı da çalışır.
+// Satır: [lat, lon, ad, operatör metni, kW (0 = yok), DC soket (1/0), herhangi soket etiketi (1/0)]
+const SNAPSHOT_URL = 'data/stations.json';
+let snapshotPromise = null;
+
+function loadSnapshot() {
+  snapshotPromise ??= fetch(SNAPSHOT_URL, { signal: AbortSignal.timeout(20000) })
+    .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null);
+  return snapshotPromise;
+}
+
+function fromSnapshot([lat, lon, name, opText, kw, dc, anySocket]) {
+  const opId = classify(name, opText);
+  const slow = !dc && !(kw >= PLANNER.minKw) && (anySocket || opId === 'other');
+  return {
+    id: `sn${lat}_${lon}_${opId}`, // koordinat tabanlı: liste yenilense de operatör düzeltmeleri geçerli kalır
+    name: name || opText || 'Şarj istasyonu',
+    lat, lon, opId,
+    osmKw: slow ? Math.min(kw || AC_FALLBACK_KW, AC_FALLBACK_KW) : (kw || null),
+    uncertain: !kw,
+    slow,
+    src: 'Liste',
+  };
+}
+
+/** Rota koridorundaki yerleşik liste istasyonları. Liste yoksa/okunamazsa { date: null, list: [] }. */
+async function snapshotStations(pts, profile) {
+  const snap = await loadSnapshot();
+  if (!snap?.rows) return { date: null, list: [] };
+  const pad = 0.05;
+  const lats = pts.map((p) => p.lat);
+  const lons = pts.map((p) => p.lon);
+  const [s, n, w, e] = [Math.min(...lats) - pad, Math.max(...lats) + pad, Math.min(...lons) - pad, Math.max(...lons) + pad];
+  const list = [];
+  for (const row of snap.rows) {
+    if (row[0] < s || row[0] > n || row[1] < w || row[1] > e) continue;
+    if (profile.project(row[0], row[1]).offKm > PLANNER.corridorM / 1000 + 0.5) continue;
+    list.push(fromSnapshot(row));
+  }
+  return { date: snap.date, list };
+}
+
 async function queryChunk(bbox, down) {
   const q = `[out:json][timeout:15];(node["amenity"="charging_station"](${bbox});way["amenity"="charging_station"](${bbox}););out center tags;`;
   const urls = OVERPASS.filter((u) => !down.has(u));
@@ -154,6 +198,7 @@ async function openChargeMap(pts, key) {
     const url = 'https://api.openchargemap.io/v3/poi?output=json&verbose=false&maxresults=200&minpowerkw=40'
       + `&latitude=${p.lat.toFixed(4)}&longitude=${p.lon.toFixed(4)}&distance=60&distanceunit=KM&key=${encodeURIComponent(key)}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
+    if (res.status === 401 || res.status === 403) throw new Error(`OpenChargeMap anahtarı reddedildi (HTTP ${res.status}): anahtarı kontrol et (kamerayla okurken bir karakter yanlış olabilir)`);
     if (!res.ok) throw new Error('OpenChargeMap HTTP ' + res.status);
     for (const poi of await res.json()) {
       const a = poi.AddressInfo;
@@ -205,6 +250,19 @@ async function photonFallback(pts) {
   };
   await Promise.all([worker(), worker(), worker()]);
   return [...out.values()];
+}
+
+/** OpenChargeMap anahtarını tek bir küçük istekle sına. Dönüş: { ok, text }. */
+export async function testOcmKey(key) {
+  if (!key) return { ok: false, text: 'Anahtar boş' };
+  try {
+    const res = await fetch(`https://api.openchargemap.io/v3/poi?output=json&verbose=false&maxresults=1&latitude=41&longitude=29&distance=5&key=${encodeURIComponent(key)}`, { signal: AbortSignal.timeout(15000) });
+    if (res.ok) return { ok: true, text: 'Anahtar geçerli' };
+    if (res.status === 401 || res.status === 403) return { ok: false, text: `Anahtar reddedildi (HTTP ${res.status}): yanlış karakter olabilir, tekrar gir` };
+    return { ok: false, text: 'OpenChargeMap HTTP ' + res.status };
+  } catch (err) {
+    return { ok: false, text: 'Ulaşılamadı: ' + (err.name === 'TimeoutError' ? 'yanıt yok' : err.message) };
+  }
 }
 
 /** Rotaya izdüşür, koridor dışını ele, yinelenenleri birleştir, operatör tablosuyla fiyat/kW ata. */
@@ -287,6 +345,14 @@ export async function fetchChargers(pts, profile, ocmKey, cacheKey = null) {
   }).catch((e) => errors.push('Overpass: ' + e.message))];
   if (ocmKey) jobs.push(openChargeMap(pts, ocmKey).then((r) => raw.push(...r)).catch((e) => errors.push('OCM: ' + e.message)));
   await Promise.all(jobs);
+  // Canlı sorgu eksik/başarısızsa yerleşik listeyle tamamla (canlı sonuçlar önce gelir; yinelenenler finalize'da elenir).
+  if (errors.length || !raw.length) {
+    const snap = await snapshotStations(pts, profile);
+    if (snap.list.length) {
+      raw.push(...snap.list);
+      errors.push(`Canlı sorgu eksik: ${snap.list.length} istasyon yerleşik listeden eklendi (${snap.date} tarihli)`);
+    }
+  }
   if (!raw.length && errors.length) {
     const approx = await photonFallback(pts);
     if (approx.length) {
