@@ -47,7 +47,7 @@ MBRP/
    ├─ sim/simulator.js        Test Modu "oynat": rota boyunca ilerler, pili fizikle düşürür
    └─ ui/                     tabs, mapView, roiBox, cameraPanel, routePanel, stationsView, abrpPanel, testPanel, cards, statusBadges, gpsControl, toast
       ├─ placeSearch.js       Yer/adres arama (Photon, yedek Nominatim) + haritadan seçince ad (reverse)
-      └─ tokenScanner.js      ABRP token/API Key'i kamerayla ekrandaki METİNDEN okur (OCR); boş alana dokununca açılır
+      └─ tokenScanner.js      ABRP token/API Key ve OpenChargeMap anahtarını kamerayla ekrandaki METİNDEN okur (OCR); boş alana dokununca açılır
 ```
 
 ### Veri akışı
