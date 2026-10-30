@@ -44,6 +44,8 @@ MBRP/
    ├─ abrp/telemetry.js       5 sn'de bir api.iternio.com/1/tlm/send + opsiyonel webhook
    ├─ sim/simulator.js        Test Modu "oynat": rota boyunca ilerler, pili fizikle düşürür
    └─ ui/                     tabs, mapView, roiBox, cameraPanel, routePanel, stationsView, abrpPanel, testPanel, cards, statusBadges, gpsControl, toast
+      ├─ placeSearch.js       Yer/adres arama (Photon, yedek Nominatim) + haritadan seçince ad (reverse)
+      └─ qrTransfer.js        ABRP token/API Key'i QR ile cihazlar arası aktarma (üret: qrcode-generator, oku: BarcodeDetector veya jsQR)
 ```
 
 ### Veri akışı
@@ -90,6 +92,8 @@ Tarayıcıda gerçek servislerle denendi: rota/rakım/hava planı, istasyon önb
 
 - **Canlı trafik yok:** anahtarsız ücretsiz bir trafik kaynağı yok. Trafik, Rota sekmesindeki yoğunluk tahmini (ve Test Modu sürgüsü) ile modellenir. Google Routes API gibi bir kaynak sonradan `traffic.js`'e bağlanabilir.
 - **Overpass** herkese açık ve sık yavaşlıyor/hız sınırlıyor (429/502). Parçalı sorgu + 3 ayna + 7 günlük önbellek var; yine de başarısız olabilir, o zaman "OpenChargeMap anahtarı" alanı ek kaynaktır. OSM'de güç/soket etiketi yoksa istasyon kW'ı operatör tablosundan gelir (listede `*`).
+- **Yer arama** herkese açık Photon/Nominatim servislerini kullanır (yazarken 350 ms gecikmeli, adil kullanım); yoğun kullanım için kendi geocoder'ını bağlamak gerekir.
+- **QR aktarımı:** QR gizli bilgi içerir; yalnızca kendi cihazına göster. Okunan QR'dan yalnızca token ve API Key kabul edilir (webhook gibi alanlar yok sayılır) ve kaydetmeden önce onay istenir.
 - **OSRM demo sunucusu** yoğun kullanıma uygun değildir; kendi OSRM'ni kurmak için `routing/osrm.js` tek yerdir.
 - **Operatör fiyatları** `config.js`'te yer tutucudur; İstasyon sekmesinden güncelle.
 - **Rakım/eğim:** SRTM ~90 m çözünürlük; 2 km dilimlerde yaklaşık eğim verir.

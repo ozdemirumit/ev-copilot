@@ -1,12 +1,12 @@
 // Uygulama kabuğu önbelleği. Sürüm değişince eski önbellek silinir.
-const CACHE = 'ev-copilot-shell-v2';
+const CACHE = 'ev-copilot-shell-v3';
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './icons/icon.svg', './css/styles.css',
   './js/app.js', './js/config.js', './js/state.js',
   './js/utils/storage.js', './js/utils/geo.js',
   './js/ui/toast.js', './js/ui/tabs.js', './js/ui/mapView.js', './js/ui/roiBox.js', './js/ui/cameraPanel.js',
   './js/ui/testPanel.js', './js/ui/abrpPanel.js', './js/ui/stationsView.js', './js/ui/cards.js',
-  './js/ui/gpsControl.js', './js/ui/statusBadges.js', './js/ui/routePanel.js',
+  './js/ui/gpsControl.js', './js/ui/statusBadges.js', './js/ui/routePanel.js', './js/ui/placeSearch.js', './js/ui/qrTransfer.js',
   './js/physics/model.js', './js/physics/traffic.js', './js/physics/weather.js', './js/physics/elevation.js',
   './js/physics/routeProfile.js', './js/physics/consumption.js', './js/physics/rangeEngine.js',
   './js/routing/operators.js', './js/routing/osrm.js', './js/routing/chargeCurve.js', './js/routing/chargerSource.js',
@@ -35,6 +35,13 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(request.url);
   // API çağrıları (OSRM, Open-Meteo, ABRP...) ve harita karoları hiç önbelleğe alınmaz.
   if (url.origin !== location.origin) return;
-  // Önce ağ, olmazsa önbellek: geliştirme sırasında bayat dosya görmemek için.
-  e.respondWith(fetch(request).catch(() => caches.match(request)));
+  // Önce ağ (HTTP önbelleğini atlayıp sunucuyla doğrulayarak), olmazsa önbellek: güncellemeler hemen görünsün.
+  e.respondWith(
+    fetch(request, { cache: 'no-cache' })
+      .then((res) => {
+        if (res.ok) caches.open(CACHE).then((c) => c.put(request, res.clone()));
+        return res;
+      })
+      .catch(() => caches.match(request))
+  );
 });

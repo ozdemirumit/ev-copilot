@@ -1,6 +1,7 @@
 import { getState, patch, subscribe, effective } from '../state.js';
 import { save } from '../utils/storage.js';
 import { toast } from './toast.js';
+import { attachSearch, reverseLabel } from './placeSearch.js';
 
 /** Harita çizim API'si; initMap() çağrılınca dolar (routing/controller.js kullanır). */
 export const mapApi = { drawRoute() {}, drawStations() {} };
@@ -40,21 +41,37 @@ export function initMap() {
     if (mode) toast(mode === 'start' ? 'Başlangıç için haritaya dokun' : 'Varış için haritaya dokun');
   }
 
-  function setPoint(kind, point) {
+  const inputFor = (kind) => (kind === 'start' ? startInput : endInput);
+
+  function setPoint(kind, point, { zoom = false } = {}) {
     patch('route', { [kind]: point });
     if (markers[kind]) { markers[kind].remove(); markers[kind] = null; }
-    (kind === 'start' ? startInput : endInput).value = fmt(point);
+    inputFor(kind).value = point ? point.label || fmt(point) : '';
     if (point) {
       markers[kind] = L.marker([point.lat, point.lon], { icon: pinIcon(kind, kind === 'start' ? 'A' : 'B') }).addTo(map);
     }
     const { start, end } = getState('route');
     if (start && end) map.fitBounds(L.latLngBounds([start.lat, start.lon], [end.lat, end.lon]), { padding: [40, 40] });
+    else if (point && zoom) map.setView([point.lat, point.lon], 12);
   }
+
+  // Yer/adres arama: yazarken öneri, seçince işaret koy ve oraya git
+  ['start', 'end'].forEach((kind) => {
+    attachSearch(inputFor(kind), document.getElementById('suggest-' + kind), (r) => {
+      setPoint(kind, { lat: r.lat, lon: r.lon, label: r.sub ? `${r.label}, ${r.sub.split(', ').slice(-2)[0]}` : r.label }, { zoom: true });
+      if (kind === 'start' && !getState('route').end) inputFor('end').focus();
+    });
+  });
 
   map.on('click', (e) => {
     if (!pickMode) return;
-    setPoint(pickMode, { lat: e.latlng.lat, lon: e.latlng.lng });
-    setPickMode(pickMode === 'start' ? 'end' : null); // başlangıçtan sonra otomatik varışa geç
+    const kind = pickMode;
+    const pt = { lat: e.latlng.lat, lon: e.latlng.lng };
+    setPoint(kind, pt);
+    reverseLabel(pt.lat, pt.lon).then((label) => { // okunur ad gelince kutuyu güncelle
+      if (label && getState('route')[kind] === pt) { pt.label = label; inputFor(kind).value = label; }
+    });
+    setPickMode(kind === 'start' ? 'end' : null); // başlangıçtan sonra otomatik varışa geç
   });
 
   pickBtns.start.addEventListener('click', () => setPickMode(pickMode === 'start' ? null : 'start'));
@@ -70,9 +87,8 @@ export function initMap() {
     if (!navigator.geolocation) return toast('Bu tarayıcıda Geolocation yok');
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const p = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-        setPoint('start', p);
-        map.setView([p.lat, p.lon], 12);
+        const p = { lat: pos.coords.latitude, lon: pos.coords.longitude, label: 'Konumum' };
+        setPoint('start', p, { zoom: true });
       },
       (err) => toast('Konum alınamadı: ' + err.message),
       { enableHighAccuracy: true, timeout: 10000 }
