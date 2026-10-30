@@ -19,12 +19,20 @@ function pinIcon(kind, label) {
 
 export function initMap() {
   const map = L.map('map', { zoomControl: true }).setView([39.0, 35.0], 6); // Türkiye
-  // Koyu görünüm CSS filtresiyle (.dark-tiles); anahtar gerektiren karo servisi kullanılmıyor.
-  const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  // Varsayılan: OpenStreetMap karoları, koyu görünüm CSS filtresiyle (.dark-tiles). Kullanıcı CARTO anahtarı girerse
+  // yerel koyu CARTO karoları kullanılır. Anahtar kod/depoda tutulmaz; yalnızca bu cihazın LocalStorage'ında durur.
+  const osmTiles = () => L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     className: 'dark-tiles',
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   });
+  const cartoTiles = (key) => L.tileLayer(`https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png?key=${encodeURIComponent(key)}`, {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  });
+  const keyInput = document.getElementById('carto-key');
+  keyInput.value = load('cartoKey', '');
+  let tiles = keyInput.value ? cartoTiles(keyInput.value) : osmTiles();
 
   // Veri tasarrufu: harita karoları kapalıyken rota çizgisi, istasyonlar ve araç koyu zeminde görünür (karo başı ≈ 15–20 KB).
   // Tarayıcının "Veri Tasarrufu" modu açıksa varsayılan kapalıdır.
@@ -32,6 +40,13 @@ export function initMap() {
   saver.checked = load('noTiles', navigator.connection?.saveData === true);
   const applyTiles = () => (saver.checked ? map.removeLayer(tiles) : tiles.addTo(map));
   saver.addEventListener('change', () => { save('noTiles', saver.checked); applyTiles(); });
+  keyInput.addEventListener('change', () => {
+    const key = keyInput.value.trim();
+    save('cartoKey', key);
+    map.removeLayer(tiles);
+    tiles = key ? cartoTiles(key) : osmTiles();
+    applyTiles();
+  });
   applyTiles();
 
   const markers = { start: null, end: null };
