@@ -96,4 +96,4 @@ Tarayıcıda gerçek servislerle denendi: rota/rakım/hava planı, istasyon önb
 - **Şarj eğrisi** üretici verisi değil, "%10→%80 ≈ 28 dk"ya ayarlı bir yaklaşım.
 - **Ekran OCR'ı:** ROI yalnızca iri rakamlara oturmalı (küçük % işareti ve pil simgesi dışarıda). Koyu zeminli ekranlar otomatik ters çevrilir.
 - **Arka plan:** Chrome sekmesi arka plana alınınca GPS/zamanlayıcılar kısıtlanır; Wake Lock + ekran açık kullanım varsayılır.
-- **ABRP:** token ve API key LocalStorage'da düz metin saklanır, POST gövdesiyle gönderilir. Test Modu açıkken ABRP gönderimi açıksa simülasyon verisi hesabına gider.
+- **ABRP:** iki kimlik gerekir: kullanıcı token'ı (ABRP uygulaması → araç ayarları → Bağlantıları değiştir → Generic → Bağla) ve Iternio'dan alınan API Key. Token ve key LocalStorage'da düz metin saklanır. İstek biçimi (sorgu parametreli GET / form gövdeli POST) gerçek anahtarla doğrulanmadı; biri başarısız olursa diğeri otomatik denenir. Test Modu açıkken ABRP gönderimi açıksa simülasyon verisi hesabına gider.

@@ -19,34 +19,60 @@ export function buildPacket() {
     elevation: rnd(e.alt, 0),
     ext_temp: rnd(e.extTemp, 1),
     is_charging: 0,
+    is_dcfc: 0,
   };
 }
 
 const setStatus = (status, text, http = null, sent = false) =>
   patch('abrp', { status, text, http, ...(sent ? { lastSentAt: Date.now() } : {}) });
 
-async function sendAbrp(cfg, pkt) {
-  // Token/anahtar URL'e değil, POST gövdesine konur (geçmişte/günlüklerde görünmesin).
-  const body = new URLSearchParams({ api_key: cfg.apikey, token: cfg.token, tlm: JSON.stringify(pkt) });
+// Dokümantasyon kaynakları iki biçim gösteriyor: sorgu parametreli GET (api_key, token, tlm) ve form gövdeli POST.
+// Hangisinin geçerli olduğunu gerçek anahtar olmadan doğrulayamadım; ilki başarısız olursa diğeri 6 gönderimde bir denenir.
+let mode = 'query'; // 'query' | 'body'
+let probe = 0;
 
+function attempt(m, cfg, pkt, noCors = false) {
+  const params = new URLSearchParams({ api_key: cfg.apikey, token: cfg.token, tlm: JSON.stringify(pkt) });
+  const opts = { signal: AbortSignal.timeout(8000) };
+  if (noCors) opts.mode = 'no-cors';
+  let url = ABRP.endpoint;
+  if (m === 'query') url += '?' + params;
+  else { opts.method = 'POST'; opts.body = params; }
+  return fetch(url, opts);
+}
+
+async function readResult(res) {
+  let ok = res.ok;
+  let msg = '';
+  try {
+    const j = await res.json();
+    ok = ok && (j.status === undefined || j.status === 'ok');
+    if (!ok) msg = j.error || j.status || '';
+  } catch { /* JSON değil */ }
+  return { ok, status: res.status, msg };
+}
+
+async function sendAbrp(cfg, pkt) {
   if (!corsBlocked) {
     try {
-      const res = await fetch(ABRP.endpoint, { method: 'POST', body, signal: AbortSignal.timeout(8000) });
-      let ok = res.ok;
-      let msg = '';
-      try {
-        const j = await res.json();
-        ok = ok && (j.status === 'ok' || j.status === undefined);
-        if (!ok) msg = j.error || j.status || '';
-      } catch { /* JSON değil */ }
-      return ok ? setStatus('ok', `${res.status} OK`, res.status, true) : setStatus('err', `Hata ${res.status} ${msg}`.trim(), res.status, true);
+      let r = await readResult(await attempt(mode, cfg, pkt));
+      if (!r.ok && probe++ % 6 === 0) {
+        const other = mode === 'query' ? 'body' : 'query';
+        try {
+          const r2 = await readResult(await attempt(other, cfg, pkt));
+          if (r2.ok) { mode = other; r = r2; }
+        } catch { /* diğer biçim de başarısız: ilk sonucu göster */ }
+      }
+      return r.ok
+        ? setStatus('ok', `${r.status} OK`, r.status, true)
+        : setStatus('err', `Hata ${r.status} ${r.msg}`.trim(), r.status, true);
     } catch (err) {
       if (err.name !== 'TypeError') return setStatus('err', 'Hata: ' + err.message);
       corsBlocked = true; // büyük olasılıkla CORS; aşağıda no-cors ile devam
     }
   }
   try {
-    await fetch(ABRP.endpoint, { method: 'POST', body, mode: 'no-cors', signal: AbortSignal.timeout(8000) });
+    await attempt(mode, cfg, pkt, true);
     setStatus('wait', 'Gönderildi (yanıt okunamıyor)', 'opaque', true);
   } catch (err) {
     setStatus('err', 'Hata: ' + (err.message || 'ağ'));
