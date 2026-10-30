@@ -1,7 +1,7 @@
 import { getState, patch, subscribe } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { getOperators, persistOperators, resetOperators } from '../routing/operators.js';
-import { repriceAndReplan } from '../routing/controller.js';
+import { repriceAndReplan, refetchStations } from '../routing/controller.js';
 
 const $ = (id) => document.getElementById(id);
 const MODE_TITLE = { fast: 'En hızlı', cheap: 'En ekonomik', opt: 'Optimum (süre + maliyet)' };
@@ -20,6 +20,19 @@ function renderList() {
   const hint = $('station-hint');
   list.replaceChildren();
   $('station-title').textContent = `İstasyonlar · ${MODE_TITLE[p.mode]}`;
+
+  // Veri kaynağı sorunları kalıcı gösterilir (toast kaybolur): hata varsa neden + "yeniden ara".
+  const warn = $('station-warn');
+  const retry = $('station-retry');
+  const errs = p.stationInfo?.errors || [];
+  const none = !!p.profile && p.status !== 'loading' && !p.stations.length;
+  warn.textContent = errs.length
+    ? (none ? 'Hiç istasyon alınamadı. ' : 'Liste eksik olabilir. ') + errs.join(' · ')
+      + ' — Herkese açık Overpass sunucuları sık yoğun/yanıtsız kalır; biraz sonra yeniden dene veya aşağıdaki OpenChargeMap anahtarını gir (ücretsiz, daha güvenilir).'
+    : none ? 'Rota boyunca uygun (DC, ≥40 kW) istasyon bulunamadı.' : '';
+  warn.classList.toggle('hidden', !warn.textContent);
+  retry.classList.toggle('hidden', !(errs.length || none));
+  retry.disabled = p.status === 'loading';
 
   if (!p.profile || !p.ranking) {
     hint.textContent = 'Rota planlayınca rotadaki istasyonlar burada listelenir.';
@@ -102,6 +115,7 @@ export function initStationsView() {
   ocm.value = load('ocmKey', '');
   ocm.addEventListener('change', () => save('ocmKey', ocm.value.trim()));
 
+  $('station-retry').addEventListener('click', refetchStations);
   subscribe('plan', () => { paintChips(); renderList(); });
   paintChips();
   renderOperators();

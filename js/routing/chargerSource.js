@@ -3,11 +3,16 @@ import { classify, operatorById } from './operators.js';
 import { haversineKm } from '../utils/geo.js';
 import { load, save } from '../utils/storage.js';
 
+// Herkese açık sunucular sık "at capacity" (502/504) verir veya hiç yanıt vermez: biri takılırsa sıradakine geçilir.
 const OVERPASS = [
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
   'https://overpass.private.coffee/api/interpreter',
+  'https://z.overpass-api.de/api/interpreter',
+  'https://lz4.overpass-api.de/api/interpreter',
 ];
+const MIRROR_TIMEOUT_MS = 15000;
+const HEDGE_MS = 4000; // sıradaki sunucu, öncekinden yanıt gelmezse bu kadar sonra paralel denenir
 const DC_SOCKETS = ['socket:type2_combo', 'socket:ccs', 'socket:chademo'];
 const KW_TAGS = ['socket:type2_combo:output', 'socket:ccs:output', 'socket:chademo:output', 'charging_station:output'];
 
@@ -45,25 +50,46 @@ function fromOsm(el) {
   };
 }
 
-async function queryChunk(poly) {
-  const q = `[out:json][timeout:25];(node["amenity"="charging_station"](around:${PLANNER.corridorM},${poly});`
+/**
+ * Bir parça için sunucuları sırayla dener ama sıradakini yanıtı beklemeden HEDGE_MS sonra başlatır (ilk gelen kazanır):
+ * yanıtsız sunucu tüm süreyi tüketmesin. Yanıt vermeyen sunucu bu planlamada `down` kümesine alınıp bir daha denenmez.
+ */
+async function queryChunk(poly, down) {
+  const q = `[out:json][timeout:15];(node["amenity"="charging_station"](around:${PLANNER.corridorM},${poly});`
     + `way["amenity"="charging_station"](around:${PLANNER.corridorM},${poly}););out center tags;`;
-  let lastErr;
-  for (const url of OVERPASS) {
+  const urls = OVERPASS.filter((u) => !down.has(u));
+  if (!urls.length) throw new Error('tüm Overpass sunucuları yanıtsız');
+  const ctrl = new AbortController();
+  const reasons = [];
+
+  const attempt = async (url, i) => {
+    await new Promise((r) => setTimeout(r, i * HEDGE_MS));
+    if (ctrl.signal.aborted) throw new Error('iptal');
     try {
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: 'data=' + encodeURIComponent(q),
-        signal: AbortSignal.timeout(25000),
+        signal: AbortSignal.any([ctrl.signal, AbortSignal.timeout(MIRROR_TIMEOUT_MS)]),
       });
-      if (!res.ok) throw new Error('Overpass HTTP ' + res.status);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
       return (await res.json()).elements;
     } catch (err) {
-      lastErr = err;
+      if (!ctrl.signal.aborted) {
+        down.add(url);
+        reasons.push(`${new URL(url).hostname}: ${err.name === 'TimeoutError' ? 'yanıt yok' : err.message}`);
+      }
+      throw err;
     }
+  };
+
+  try {
+    return await Promise.any(urls.map(attempt));
+  } catch {
+    throw new Error(reasons.join('; '));
+  } finally {
+    ctrl.abort();
   }
-  throw lastErr;
 }
 
 /**
@@ -79,21 +105,24 @@ async function overpass(pts) {
 
   const byId = new Map();
   let failed = 0;
+  let lastError = '';
   let next = 0;
+  const down = new Set();
   const worker = async () => {
     while (next < chunks.length) {
       const c = chunks[next++];
       try {
-        const els = await queryChunk(c.map((p) => `${p.lat.toFixed(4)},${p.lon.toFixed(4)}`).join(','));
+        const els = await queryChunk(c.map((p) => `${p.lat.toFixed(4)},${p.lon.toFixed(4)}`).join(','), down);
         els.forEach((el) => { const s = fromOsm(el); if (s) byId.set(s.id, s); });
       } catch (err) {
         console.warn('Overpass parçası başarısız:', err.message);
         failed++;
+        lastError = err.message;
       }
     }
   };
   await Promise.all([worker(), worker()]);
-  return { list: [...byId.values()], failed, total: chunks.length };
+  return { list: [...byId.values()], failed, total: chunks.length, lastError };
 }
 
 // OpenChargeMap (isteğe bağlı, ücretsiz API anahtarı gerekir): rota boyunca ~100 km aralıkla yarıçap sorgusu.
@@ -116,6 +145,43 @@ async function openChargeMap(pts, key) {
     }
   }
   return out;
+}
+
+// Yedek (Overpass tamamen yanıtsızken): Photon'da bilinen operatör adlarıyla, rota boyunca ~80 km aralıklı konum
+// yanlılığıyla arama. Eksik ve yaklaşık bir listedir (DC/kW doğrulanamaz): yalnızca tanınan operatörler alınır.
+const PHOTON = 'https://photon.komoot.io/api/';
+const PHOTON_QUERIES = ['şarj', 'ZES', 'Trugo', 'Eşarj', 'Voltrun', 'Astor'];
+
+async function photonFallback(pts) {
+  const samples = pts.filter((_, i) => i % 40 === 0 || i === pts.length - 1);
+  const jobs = samples.flatMap((p) => PHOTON_QUERIES.map((q) => ({ p, q })));
+  const out = new Map();
+  let next = 0;
+  let misses = 0; // art arda başarısızlık: Photon yoğun/sınırlıyor, vazgeç
+  const worker = async () => {
+    while (next < jobs.length && misses < 4) {
+      const { p, q } = jobs[next++];
+      try {
+        const url = `${PHOTON}?q=${encodeURIComponent(q)}&lat=${p.lat.toFixed(3)}&lon=${p.lon.toFixed(3)}`
+          + '&location_bias_scale=1&zoom=9&osm_tag=amenity:charging_station&limit=25';
+        const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
+        if (!res.ok) { misses++; continue; }
+        misses = 0;
+        for (const f of (await res.json()).features) {
+          const pr = f.properties;
+          const name = pr.name || '';
+          const opId = classify(name, pr.operator, pr.brand);
+          if (opId === 'other' || /tesla/i.test(name)) continue;
+          out.set(pr.osm_type + pr.osm_id, {
+            id: 'ph' + pr.osm_type + pr.osm_id, name, lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0],
+            opId, osmKw: null, uncertain: true, src: 'Photon',
+          });
+        }
+      } catch { misses++; /* bu sorgu atlanır */ }
+    }
+  };
+  await Promise.all([worker(), worker(), worker()]);
+  return [...out.values()];
 }
 
 /** Rotaya izdüşür, koridor dışını ele, yinelenenleri birleştir, operatör tablosuyla fiyat/kW ata. */
@@ -154,10 +220,17 @@ export async function fetchChargers(pts, profile, ocmKey, cacheKey = null) {
   const errors = [];
   const jobs = [overpass(pts).then((r) => {
     raw.push(...r.list);
-    if (r.failed) errors.push(`Overpass: ${r.failed}/${r.total} rota bölümü alınamadı (istasyon listesi eksik olabilir)`);
+    if (r.failed) errors.push(`Overpass: ${r.failed}/${r.total} rota bölümü alınamadı${r.lastError ? ' — ' + r.lastError : ''}`);
   }).catch((e) => errors.push('Overpass: ' + e.message))];
   if (ocmKey) jobs.push(openChargeMap(pts, ocmKey).then((r) => raw.push(...r)).catch((e) => errors.push('OCM: ' + e.message)));
   await Promise.all(jobs);
+  if (!raw.length && errors.length) {
+    const approx = await photonFallback(pts);
+    if (approx.length) {
+      raw.push(...approx);
+      errors.push(`Overpass yanıtsız: ${approx.length} istasyon operatör adıyla Photon'dan alındı (yaklaşık, eksik olabilir)`);
+    }
+  }
   if (key && raw.length && !errors.length) save(key, { t: Date.now(), raw });
   return { stations: finalize(raw, profile), errors, cached: false };
 }

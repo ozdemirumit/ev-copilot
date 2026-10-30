@@ -28,7 +28,7 @@ const store = {
     kwh100Est: null, rangeKm: null, netWind: null, aeroPct: null, traffic: null,
   },
   // Planlanan rota ve şarj planı.
-  plan: { status: 'none', text: '', route: null, profile: null, stations: [], stops: [], mode: load('planMode', 'opt'), totals: null },
+  plan: { status: 'none', text: '', route: null, profile: null, stations: [], stationInfo: null, stops: [], mode: load('planMode', 'opt'), totals: null },
   // Dinamik uyarılar (fallback / eco-hız).
   advisor: { level: 'ok', text: '', at: 0 },
   // ABRP köprüsü: status = idle | wait | ok | err

@@ -13,6 +13,7 @@ const WX_STEP_KM = 50;
 let raw = null; // { pts, elevations, elevSource, wx } — profil ayarları değişince yeniden kurmak için
 let startSoc = 80;
 let sig = '';
+let cacheKey = null;
 let timer = null;
 
 const routeSig = () => {
@@ -54,6 +55,29 @@ function applyPlan(out, extra = {}) {
   mapApi.drawStations(getState('plan').stations, result.stops);
 }
 
+/** İstasyonları getir ve plan durumuna yaz; hata/önbellek bilgisi İstasyon sekmesinde kalıcı gösterilir. */
+async function loadStations(pts, profile) {
+  const { stations, errors, cached } = await fetchChargers(pts, profile, load('ocmKey', ''), cacheKey);
+  if (errors.length) toast(errors.join(' · '), 7000);
+  if (cached) toast('İstasyonlar önbellekten alındı');
+  patch('plan', { stations, stationInfo: { errors, cached } });
+}
+
+/** İstasyon sekmesindeki "Yeniden ara": rota/profil aynı kalır, yalnızca istasyon sorgusu tekrarlanır. */
+export async function refetchStations() {
+  const plan = getState('plan');
+  if (!raw || !plan.profile || plan.status === 'loading') return;
+  patch('plan', { status: 'loading', text: 'Şarj istasyonları aranıyor…' });
+  try {
+    await loadStations(raw.pts, plan.profile);
+    const p = getState('plan');
+    applyPlan(computePlan({ fromKm: p.fromKm ?? 0, soc: p.fromSoc ?? startSoc }));
+  } catch (err) {
+    console.error(err);
+    patch('plan', { status: 'error', text: err.message });
+  }
+}
+
 export async function planTrip() {
   const { start, end } = getState('route');
   if (!start || !end) return toast('Önce başlangıç ve varış seç');
@@ -88,13 +112,10 @@ export async function planTrip() {
     };
     sig = routeSig();
     const profile = buildFromRaw();
-    patch('plan', { route: rt, profile, stations: [], text: 'Şarj istasyonları aranıyor…' });
+    patch('plan', { route: rt, profile, stations: [], stationInfo: null, text: 'Şarj istasyonları aranıyor…' });
 
-    const cacheKey = [start, end].map((p) => `${p.lat.toFixed(2)},${p.lon.toFixed(2)}`).join('>');
-    const { stations, errors, cached } = await fetchChargers(pts, profile, load('ocmKey', ''), cacheKey);
-    if (errors.length) toast(errors.join(' · '), 5000);
-    if (cached) toast('İstasyonlar önbellekten alındı');
-    patch('plan', { stations });
+    cacheKey = [start, end].map((p) => `${p.lat.toFixed(2)},${p.lon.toFixed(2)}`).join('>');
+    await loadStations(pts, profile);
     applyPlan(computePlan(), { startSoc });
   } catch (err) {
     console.error(err);
