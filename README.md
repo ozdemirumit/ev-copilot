@@ -68,7 +68,7 @@ Test Modu açıkken `effective()` sensör yerine sürgü değerlerini verir; GPS
 
 ## Sürümleme
 
-Tek kaynak: [version.js](version.js) (`APP_VERSION` + `APP_CHANGELOG`). Sayfa üst çubuğunda `vX.Y.Z` görünür; dokununca sürüm notları açılır. Service worker önbellek adı sürümden türer, bu yüzden sürüm değişince telefon yeni dosyaları indirir.
+Tek kaynak: [version.js](version.js) (`APP_VERSION` + `APP_CHANGELOG`). Sayfa üst çubuğunda `vX.Y.Z` görünür; **başlığa veya sürüme dokununca uygulama yenilenir** (yeni sürüm varsa service worker güncellenir; aktif plan/OCR varken ikinci dokunuş ister), **ⓘ** düğmesi sürüm notlarını açar. Service worker önbellek adı sürümden türer, bu yüzden sürüm değişince telefon yeni dosyaları indirir.
 
 **Her değişiklikte:**
 1. `APP_VERSION`'ı artır (`z` düzeltme, `y` yeni özellik, `x` büyük/uyumsuz değişiklik).
