@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0f14">
+  <title>Smart EV Co-Pilot</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ===== Üst çubuk: canlı HUD ===== -->
+<header class="topbar">
+  <div class="brand">EV Co-Pilot<small>Togg T10X V2 LR</small></div>
+  <div class="hud" aria-live="off">
+    <div class="hud-item soc"><b id="hud-soc">--</b><span>%</span></div>
+    <div class="hud-item"><b id="hud-speed">--</b><span>km/h</span></div>
+  </div>
+  <button class="icon-btn" id="btn-gps" type="button" aria-pressed="false" title="GPS aç/kapat">📍</button>
+  <button class="icon-btn" id="btn-wake" type="button" aria-pressed="false" title="Ekranı açık tut (Wake Lock)">🔆</button>
+</header>
+<div class="badges" aria-label="Durum">
+  <span class="badge" id="bd-gps">GPS: kapalı</span>
+  <span class="badge" id="bd-ocr">OCR: kapalı</span>
+  <span class="badge" id="bd-abrp">ABRP: pasif</span>
+  <span class="badge test hidden" id="bd-sim">TEST MODU</span>
+</div>
+<div class="advisor hidden" id="advisor-banner" role="status" aria-live="polite"></div>
+
+<main>
+
+  <!-- ===== 1) ROTA ===== -->
+  <section class="tab active" id="tab-route" data-title="Rota">
+    <div id="map" role="application" aria-label="Rota haritası"></div>
+
+    <div class="card stack">
+      <h2>Rota</h2>
+      <div class="row">
+        <label class="field" style="flex:1">Başlangıç
+          <input type="text" id="route-start" readonly placeholder="Haritaya dokun veya Konumum">
+        </label>
+        <button class="btn" id="pick-start" type="button">📍 Seç</button>
+      </div>
+      <div class="row">
+        <label class="field" style="flex:1">Varış
+          <input type="text" id="route-end" readonly placeholder="Haritaya dokun">
+        </label>
+        <button class="btn" id="pick-end" type="button">🏁 Seç</button>
+      </div>
+      <div class="row wrap">
+        <button class="btn ghost" id="btn-mylocation" type="button">🎯 Konumumu başlangıç yap</button>
+        <button class="btn ghost" id="btn-clear-route" type="button">Temizle</button>
+      </div>
+
+      <div class="slider-row">
+        <label for="min-arrival">Minimum varış pili eşiği</label>
+        <output id="min-arrival-out">%15</output>
+        <input type="range" id="min-arrival" min="5" max="40" step="1" value="15">
+      </div>
+
+      <div class="slider-row">
+        <label for="cruise">Seyir hızı (rota tahmini)</label>
+        <output id="cruise-out">100 km/h</output>
+        <input type="range" id="cruise" min="60" max="130" step="5" value="100">
+      </div>
+      <div class="slider-row">
+        <label for="traffic-est">Trafik yoğunluğu tahmini</label>
+        <output id="traffic-est-out">%0</output>
+        <input type="range" id="traffic-est" min="0" max="100" step="5" value="0">
+      </div>
+
+      <button class="btn primary" id="btn-plan" type="button">⚡ Rotayı Planla</button>
+
+      <div class="summary">
+        <div><b id="sum-dist">—</b><span>Mesafe (km)</span></div>
+        <div><b id="sum-time">—</b><span>Süre (şarj dahil)</span></div>
+        <div><b id="sum-stops">—</b><span>Şarj durağı</span></div>
+      </div>
+    </div>
+
+    <div class="card stack" id="plan-card">
+      <div class="row between">
+        <h2 style="margin:0">Şarj planı</h2>
+        <span class="small muted" id="plan-mode-label"></span>
+      </div>
+      <p class="small muted" id="plan-status" style="margin:0">Başlangıç ve varış seçip Rotayı Planla'ya dokun.</p>
+      <div id="plan-list"></div>
+      <button class="btn ghost hidden" id="btn-gmaps" type="button">🧭 Google Haritalar'da aç (duraklarla)</button>
+    </div>
+  </section>
+
+  <!-- ===== 2) MENZİL: hava / trafik / rakım / tüketim kartları ===== -->
+  <section class="tab" id="tab-range" data-title="Menzil">
+    <div class="grid2">
+      <div class="card metric accent"><span class="k">Tahmini menzil (eşiğe kadar)</span><span class="v" id="c-range"><span class="pending">—</span><small>km</small></span></div>
+      <div class="card metric"><span class="k">Pil</span><span class="v" id="c-soc">—<small>%</small></span></div>
+      <div class="card metric"><span class="k">Son mesafe tüketimi</span><span class="v" id="c-kwh100"><span class="pending">—</span><small>kWh/100km</small></span></div>
+      <div class="card metric"><span class="k">%1 pil başına</span><span class="v" id="c-kmpct"><span class="pending">—</span><small>km</small></span></div>
+    </div>
+
+    <div class="card">
+      <h3>📊 Tüketim ölçümü</h3>
+      <dl class="kv">
+        <dt>Ölçüm penceresi</dt><dd id="c-window">—</dd>
+        <dt>Model tahmini (şimdiki koşul)</dt><dd id="c-model">—</dd>
+        <dt>Düzeltme çarpanı k (ölçülen / model)</dt><dd id="c-k">—</dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h3>🌦️ Hava durumu (Open-Meteo)</h3>
+      <dl class="kv">
+        <dt>Dış sıcaklık</dt><dd id="w-temp">—</dd>
+        <dt>Yağış</dt><dd id="w-rain">—</dd>
+        <dt>Rüzgar (hız / geldiği yön)</dt><dd id="w-wind">—</dd>
+        <dt>Gidiş açısı</dt><dd id="w-heading">—</dd>
+        <dt>Net rüzgar (+ kafa / − arka)</dt><dd id="w-net">—</dd>
+        <dt>Aerodinamik tüketim etkisi</dt><dd id="w-aero"><span class="pending">Adım 3</span></dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h3>⛰️ Rakım (Open-Elevation)</h3>
+      <dl class="kv">
+        <dt>Anlık irtifa</dt><dd id="e-alt">—</dd>
+        <dt>Eğim</dt><dd id="e-grade">—</dd>
+        <dt>Rota net tırmanış / iniş</dt><dd id="e-net"><span class="pending">Adım 3</span></dd>
+        <dt>Rejenerasyon kazancı</dt><dd id="e-regen"><span class="pending">Adım 3</span></dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h3>🚦 Trafik</h3>
+      <dl class="kv">
+        <dt>Yoğunluk</dt><dd id="t-level">—</dd>
+        <dt>Ekstra süre</dt><dd id="t-delay"><span class="pending">Adım 3</span></dd>
+        <dt>HVAC ek tüketim</dt><dd id="t-hvac"><span class="pending">Adım 3</span></dd>
+        <dt>Düşük hız aero tasarrufu</dt><dd id="t-aero"><span class="pending">Adım 3</span></dd>
+        <dt>Net trafik etkisi</dt><dd id="t-net"><span class="pending">Adım 3</span></dd>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ===== 3) KAMERA / OCR ===== -->
+  <section class="tab" id="tab-camera" data-title="Kamera">
+    <div class="cam-stage" id="cam-stage">
+      <video id="cam-video" playsinline muted autoplay></video>
+      <div class="cam-empty" id="cam-empty">Kamera kapalı.<br>Başlat'a bas, sonra yeşil kutuyu Togg ekranındaki iri pil rakamlarının (ör. "75") üzerine sürükle. Küçük % işareti, pil simgesi ve mavi halka kutunun dışında kalsın.</div>
+      <div class="roi" id="roi" role="group" aria-label="OCR okuma alanı">
+        <span class="roi-label">% SoC</span>
+        <div class="roi-handle" id="roi-handle" aria-label="Boyutlandır"></div>
+      </div>
+      <div class="roi speed hidden" id="roi-speed" role="group" aria-label="Ekran hızı okuma alanı">
+        <span class="roi-label">km/h</span>
+        <div class="roi-handle" id="roi-speed-handle" aria-label="Boyutlandır"></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <button class="btn primary" id="btn-cam" type="button" style="flex:1">📷 Kamerayı Başlat</button>
+      <button class="btn" id="btn-ocr" type="button" style="flex:1" disabled>🔍 OCR Başlat</button>
+    </div>
+
+    <div class="card stack">
+      <h2>Okuma</h2>
+      <div class="ocr-read">
+        <div><b id="ocr-raw">--</b><span>Ham okuma</span></div>
+        <div><b id="ocr-ok">--</b><span>Geçerli</span></div>
+        <div><b id="ocr-state">—</b><span>Durum</span></div>
+      </div>
+      <div class="row between">
+        <label for="ocr-speed-on">Ekrandaki hızı da oku (GPS yoksa yedek)</label>
+        <label class="switch"><input type="checkbox" id="ocr-speed-on"><i></i></label>
+      </div>
+      <dl class="kv"><dt>Ekran hızı</dt><dd id="ocr-speed-read">kapalı</dd></dl>
+      <p class="small muted" style="margin:0">Outlier filtresi: 5 sn içinde ±%2'den büyük pil değişimi reddedilir, son geçerli değer korunur. Hız açıksa mavi kutuyu ekrandaki hız rakamlarına oturt.</p>
+    </div>
+
+    <div class="card stack">
+      <h2>Manuel pil kalibrasyonu</h2>
+      <div class="cal">
+        <button id="soc-minus" type="button" aria-label="Pili 1 azalt">−</button>
+        <div class="readout"><div style="text-align:center"><b id="cal-soc">--</b><br><span>% SoC</span></div></div>
+        <button id="soc-plus" type="button" aria-label="Pili 1 artır">+</button>
+      </div>
+    </div>
+
+    <div class="card stack">
+      <h2>Görüntü filtresi</h2>
+      <div class="row between">
+        <label for="ocr-thr-on">Eşikleme (threshold) uygula</label>
+        <label class="switch"><input type="checkbox" id="ocr-thr-on" checked><i></i></label>
+      </div>
+      <div class="slider-row"><label for="ocr-contrast">Kontrast</label><output id="ocr-contrast-out">1.5×</output>
+        <input type="range" id="ocr-contrast" min="0.5" max="4" step="0.1" value="1.5"></div>
+      <div class="slider-row"><label for="ocr-threshold">Eşik değeri</label><output id="ocr-threshold-out">128</output>
+        <input type="range" id="ocr-threshold" min="0" max="255" step="1" value="128"></div>
+      <canvas class="preview-canvas" id="ocr-preview" width="320" height="90" aria-label="Filtre önizleme"></canvas>
+      <p class="small muted" style="margin:0">Önizleme, OCR'ın gördüğü işlenmiş görüntüdür. Rakamlar siyah-beyaz ve net olana kadar eşiği ayarla; koyu zeminli ekranlar otomatik ters çevrilir.</p>
+    </div>
+  </section>
+
+  <!-- ===== 4) İSTASYONLAR ===== -->
+  <section class="tab" id="tab-stations" data-title="İstasyon">
+    <div class="chips" role="group" aria-label="Sıralama">
+      <button class="btn" data-sort="fast" type="button">⏱️ En Hızlı</button>
+      <button class="btn" data-sort="cheap" type="button">💰 En Ekonomik</button>
+      <button class="btn sel" data-sort="opt" type="button">⚖️ Optimum</button>
+    </div>
+    <div class="card">
+      <h2 id="station-title">İstasyonlar</h2>
+      <p class="small muted" id="station-hint" style="margin:0 0 8px">Rota planlayınca rotadaki istasyonlar burada listelenir.</p>
+      <div id="station-list"></div>
+    </div>
+    <div class="card">
+      <h2>Operatör birim fiyat ve güç tablosu</h2>
+      <table class="optable">
+        <thead><tr><th>Operatör</th><th>TL/kWh</th><th>kW</th></tr></thead>
+        <tbody id="op-body"></tbody>
+      </table>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost" id="op-reset" type="button">Varsayılana dön</button>
+        <span class="small muted">Fiyatlar yer tutucudur — güncel tarifeyle düzenle. kW: haritadaki etikette güç yazmıyorsa bu tablo kullanılır.</span>
+      </div>
+      <label class="field" style="margin-top:10px">OpenChargeMap API anahtarı (opsiyonel, ek istasyon verisi)
+        <input type="password" id="ocm-key" autocomplete="off" spellcheck="false" placeholder="Boşsa yalnızca OpenStreetMap/Overpass">
+      </label>
+    </div>
+  </section>
+
+  <!-- ===== 5) ABRP ===== -->
+  <section class="tab" id="tab-abrp" data-title="ABRP">
+    <div class="card stack">
+      <div class="status-line">
+        <h2 style="margin:0">Canlı telemetri köprüsü</h2>
+        <span class="badge" id="abrp-badge">Pasif</span>
+      </div>
+      <div class="row between">
+        <label for="abrp-enabled">Canlı Gönderim Aktif</label>
+        <label class="switch"><input type="checkbox" id="abrp-enabled"><i></i></label>
+      </div>
+      <p class="small muted" style="margin:0">Her 5 sn'de <code>api.iternio.com/1/tlm/send</code> uç noktasına gönderilir (gönderici Adım 6'da).</p>
+    </div>
+
+    <div class="card stack">
+      <h2>Ayarlar</h2>
+      <label class="field">User Token
+        <input type="password" id="abrp-token" autocomplete="off" spellcheck="false" placeholder="ABRP kullanıcı token'ı">
+      </label>
+      <label class="field">API Key
+        <input type="password" id="abrp-apikey" autocomplete="off" spellcheck="false" placeholder="Iternio API anahtarı">
+      </label>
+      <label class="field">Custom Webhook URL (opsiyonel)
+        <input type="url" id="abrp-webhook" autocomplete="off" spellcheck="false" placeholder="https://...">
+      </label>
+      <div class="row">
+        <button class="btn ghost" id="abrp-reveal" type="button">👁️ Göster</button>
+        <button class="btn ghost" id="abrp-clear" type="button">Temizle</button>
+      </div>
+      <p class="small muted" style="margin:0">Bilgiler yalnızca bu cihazın LocalStorage'ında düz metin saklanır.</p>
+    </div>
+
+    <div class="card stack">
+      <h2>Gönderilecek paket (önizleme)</h2>
+      <pre class="packet" id="abrp-packet">—</pre>
+      <dl class="kv">
+        <dt>Son gönderim</dt><dd id="abrp-last">—</dd>
+        <dt>HTTP durumu</dt><dd id="abrp-http">—</dd>
+        <dt>Webhook</dt><dd id="abrp-webhook-status">—</dd>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ===== 6) TEST MODU ===== -->
+  <section class="tab" id="tab-test" data-title="Test">
+    <div class="card stack">
+      <div class="row between">
+        <div><h2 style="margin:0">Test Modu</h2><span class="small muted">GPS/OCR yerine aşağıdaki değerler kullanılır</span></div>
+        <label class="switch"><input type="checkbox" id="sim-enabled" aria-label="Test Modu"><i></i></label>
+      </div>
+    </div>
+    <div class="test-banner hidden" id="sim-banner">Test Modu aktif: tüm kartlar ve ABRP paketi sürgü değerlerini kullanıyor.</div>
+
+    <div class="card stack" id="sim-sliders">
+      <div class="slider-row"><label for="sim-speed">Hız</label><output data-out="speed"></output>
+        <input type="range" id="sim-speed" data-sim="speed" data-unit=" km/h" min="0" max="180" step="1"></div>
+      <div class="slider-row"><label for="sim-soc">Pil (SoC)</label><output data-out="soc"></output>
+        <input type="range" id="sim-soc" data-sim="soc" data-unit="%" min="0" max="100" step="1"></div>
+      <div class="slider-row"><label for="sim-grade">Eğim (+ yokuş / − iniş)</label><output data-out="grade"></output>
+        <input type="range" id="sim-grade" data-sim="grade" data-unit="%" min="-12" max="12" step="0.5"></div>
+      <div class="slider-row"><label for="sim-heading">Gidiş açısı</label><output data-out="heading"></output>
+        <input type="range" id="sim-heading" data-sim="heading" data-unit="°" min="0" max="359" step="1"></div>
+      <div class="slider-row"><label for="sim-windSpeed">Rüzgar hızı</label><output data-out="windSpeed"></output>
+        <input type="range" id="sim-windSpeed" data-sim="windSpeed" data-unit=" km/h" min="0" max="90" step="1"></div>
+      <div class="slider-row"><label for="sim-windDir">Rüzgarın geldiği yön</label><output data-out="windDir"></output>
+        <input type="range" id="sim-windDir" data-sim="windDir" data-unit="°" min="0" max="359" step="1"></div>
+      <div class="slider-row"><label for="sim-rain">Yağış</label><output data-out="rain"></output>
+        <input type="range" id="sim-rain" data-sim="rain" data-unit=" mm/sa" min="0" max="25" step="0.5"></div>
+      <div class="slider-row"><label for="sim-traffic">Trafik yoğunluğu</label><output data-out="traffic"></output>
+        <input type="range" id="sim-traffic" data-sim="traffic" data-unit="%" min="0" max="100" step="1"></div>
+      <div class="slider-row"><label for="sim-temp">Dış sıcaklık</label><output data-out="temp"></output>
+        <input type="range" id="sim-temp" data-sim="temp" data-unit="°C" min="-20" max="45" step="1"></div>
+      <button class="btn ghost" id="sim-reset" type="button">Sürgüleri sıfırla</button>
+    </div>
+
+    <div class="card stack">
+      <h2>Sürüş simülasyonu</h2>
+      <p class="small muted" style="margin:0">Araç planlı rotada (rota yoksa gidiş açısı yönünde) sürgü hızıyla ilerler; pil sürgülerdeki koşullarla fizik modeline göre azalır. Rota tahmini farklıysa tüketim sapar ve fallback / eco-hız uyarıları devreye girer.</p>
+      <div class="row">
+        <button class="btn primary" id="sim-play" type="button" style="flex:1">▶ Oynat</button>
+        <label class="field" style="flex:1">Zaman hızı
+          <select id="sim-timescale" class="btn" style="padding:9px 8px">
+            <option value="1">1×</option><option value="10" selected>10×</option>
+            <option value="30">30×</option><option value="100">100×</option><option value="300">300×</option>
+          </select>
+        </label>
+        <button class="btn ghost" id="sim-reset-pos" type="button">⏮ Başa</button>
+      </div>
+      <dl class="kv"><dt>Rotadaki konum</dt><dd id="sim-pos">—</dd></dl>
+    </div>
+  </section>
+
+</main>
+
+<nav class="bottomnav" aria-label="Ana gezinme">
+  <button type="button" data-tab="route" class="active"><span>🗺️</span>Rota</button>
+  <button type="button" data-tab="range"><span>⚡</span>Menzil</button>
+  <button type="button" data-tab="camera"><span>📷</span>Kamera</button>
+  <button type="button" data-tab="stations"><span>🔌</span>İstasyon</button>
+  <button type="button" data-tab="abrp"><span>📡</span>ABRP</button>
+  <button type="button" data-tab="test"><span>🧪</span>Test</button>
+</nav>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
