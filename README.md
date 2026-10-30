@@ -9,6 +9,7 @@ Build adımı yok: saf ES modülleri + CDN kütüphaneleri (Leaflet, Tesseract.j
 MBRP/
 ├─ index.html                 Ana kabuk (6 sekme: Rota · Menzil · Kamera · İstasyon · ABRP · Test)
 ├─ version.js                 Sürüm numarası + sürüm notları (tek kaynak)
+├─ vendor/                    Leaflet + Tesseract (çekirdek, işçi, dil verisi); sürümden bağımsız SW önbelleği
 ├─ manifest.webmanifest, sw.js, icons/
 ├─ css/styles.css             Dark UI
 └─ js/
@@ -79,6 +80,21 @@ Tek kaynak: [version.js](version.js) (`APP_VERSION` + `APP_CHANGELOG`). Sayfa ü
 Üst çubuktaki `📶 ↑… ↓…` rozeti, uygulamanın gönderdiği ve aldığı toplam veriyi gösterir; dokununca kategori dökümü (ABRP, rota/hava/arama servisleri, harita karoları, kütüphaneler/OCR, uygulama dosyaları, diğer), bu oturum ve sıfırlama düğmesi açılır (yanlışlıkla silinmesin diye iki dokunuş). Sayaç LocalStorage'da saklanır. Kaynak: [js/net/meter.js](js/net/meter.js).
 
 Sayaç **uygulama düzeyinde tahmindir** (operatör faturasından %5–15 farklı olabilir): `fetch` çağrıları Content-Length ve başlık tahminiyle, betik/CSS/harita karoları Resource Timing ile sayılır; ölçüm izni vermeyen CDN dosyaları ve harita karoları ölçülmüş/ortalama boyutla tahmin edilir (`≈`), OCR motoru (Web Worker içinde indiği için görünmez) ilk kurulumda bir kez ~4,4 MB eklenir. Önbellekten gelen `fetch` yanıtları da sayılabilir (üst sınır). Ölçülen ABRP yükü: istek başına yaklaşık 780 B giden + 350 B gelen (5 sn aralıkla ≈ 0,8 MB/saat).
+
+## Sürüşte sürekli güncelleme (OCR → ABRP)
+
+- OCR başlayınca her 5 sn'de pil (ve açıksa ekran hızı) okunur; geçerli değer `live.soc` / `live.speedScr`'a yazılır. Okuma **kamera sekmesi gizliyken de** sürer (v0.8.0 ile düzeltildi).
+- Hız: GPS hızı varsa o, yoksa (veya 15 sn'den eskiyse) ekrandan okunan hız kullanılır.
+- ABRP her 5 sn'de pil, hız, konum, irtifa ve dış sıcaklığı gönderir. Pil/konum yoksa "Veri bekleniyor" der. Pil okuması (OCR veya manuel +/−) **5 dk'dan eskiyse eski değer gönderilmez** ("Pil okuması eski"). OCR rozeti son okumanın yaşını gösterir (30 sn'den eskiyse).
+- Kamera sekmesindeki "Açılışta kamerayı ve OCR'ı otomatik başlat" (kamera izni zaten verilmişse) ve Wake Lock'un önceki oturumdan hatırlanması, telefon yeniden açıldığında zinciri kendiliğinden kurar.
+- Kısıt: tarayıcı ekran kapanınca veya Chrome arka plana alınınca kamerayı, GPS'i ve zamanlayıcıları durdurur; uygulama ön planda ve ekran açık olmalı (Wake Lock). Telefon bir tutucuyla Togg ekranına sabit bakmalı.
+- `is_charging` şu an her zaman 0 gönderilir (şarj sırasında ABRP'ye şarj bilgisi iletilmez).
+
+## Veri tasarrufu
+
+- **ABRP aralığı** ABRP sekmesinde ayarlanır (5–60 sn, varsayılan 10 sn ≈ 0,4 MB/saat; 5 sn ≈ 0,8 MB/saat). Araç duruyorken (hız < 1 km/h) en az 30 sn'de bir gönderilir.
+- **Harita karolarını yükleme** anahtarı (Rota sekmesi): kapalıyken rota çizgisi, istasyonlar ve araç koyu zeminde görünür, karo indirilmez (karo ≈ 15–20 KB). Tarayıcının Veri Tasarrufu modu açıksa varsayılan kapalıdır.
+- **Kütüphaneler uygulamayla birlikte** (`vendor/`, bkz. [vendor/README.md](vendor/README.md)): Leaflet ve Tesseract (çekirdek + dil verisi, ~11 MB depoda, istemciye gzip'li). Service worker bunları **sürümden bağımsız** `ev-copilot-vendor-v1` önbelleğine alır (Tesseract ilk OCR kullanımında, Leaflet kurulumda); uygulama sürümü artınca yeniden indirilmez ve CDN'e gidilmez. Kütüphane dosyaları değişirse `sw.js` içindeki `VENDOR_CACHE` adını artır.
 
 ## Çalıştırma
 

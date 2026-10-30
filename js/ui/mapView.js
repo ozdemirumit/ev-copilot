@@ -1,5 +1,5 @@
 import { getState, patch, subscribe, effective } from '../state.js';
-import { save } from '../utils/storage.js';
+import { load, save } from '../utils/storage.js';
 import { toast } from './toast.js';
 import { attachSearch, reverseLabel } from './placeSearch.js';
 
@@ -20,11 +20,19 @@ function pinIcon(kind, label) {
 export function initMap() {
   const map = L.map('map', { zoomControl: true }).setView([39.0, 35.0], 6); // Türkiye
   // Koyu görünüm CSS filtresiyle (.dark-tiles); anahtar gerektiren karo servisi kullanılmıyor.
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     className: 'dark-tiles',
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-  }).addTo(map);
+  });
+
+  // Veri tasarrufu: harita karoları kapalıyken rota çizgisi, istasyonlar ve araç koyu zeminde görünür (karo başı ≈ 15–20 KB).
+  // Tarayıcının "Veri Tasarrufu" modu açıksa varsayılan kapalıdır.
+  const saver = document.getElementById('map-saver');
+  saver.checked = load('noTiles', navigator.connection?.saveData === true);
+  const applyTiles = () => (saver.checked ? map.removeLayer(tiles) : tiles.addTo(map));
+  saver.addEventListener('change', () => { save('noTiles', saver.checked); applyTiles(); });
+  applyTiles();
 
   const markers = { start: null, end: null };
   let pickMode = null; // 'start' | 'end' | null

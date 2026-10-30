@@ -30,9 +30,17 @@ export function initStatusBadges() {
     set(gps, g === 'ok' ? [`GPS: ±${Math.round(acc)} m`, 'ok'] : GPS[g]);
   };
   const paintOcr = () => {
-    const { status } = getState('ocr');
+    const { status, lastOkAt } = getState('ocr');
+    const running = getState('system').ocr;
     // Okuma açık değilken "manuel" durumu OCR rozetini yeşertmesin.
-    set(ocr, !getState('system').ocr && status === 'manual' ? OCR.idle : OCR[status] || OCR.idle);
+    if (!running && status === 'manual') return set(ocr, OCR.idle);
+    // OCR açıkken son geçerli okuma 30 sn'den eskiyse yaşını göster (sürüş sırasında takılma fark edilsin).
+    const age = lastOkAt ? Date.now() - lastOkAt : 0;
+    if (running && lastOkAt && age > 30000) {
+      const s = Math.round(age / 1000);
+      return set(ocr, [`OCR: son okuma ${s >= 120 ? Math.round(s / 60) + ' dk' : s + ' sn'} önce`, 'wait']);
+    }
+    set(ocr, OCR[status] || OCR.idle);
   };
 
   // Dinamik uyarı bandı (fallback / eco-hız / hedef bilgisi)
@@ -44,6 +52,7 @@ export function initStatusBadges() {
 
   subscribe('live', paintGps);
   subscribe(['ocr', 'system'], paintOcr);
+  setInterval(paintOcr, 5000); // okuma yaşı zamanla değişir
   paintGps();
   paintOcr();
 }

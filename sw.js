@@ -18,14 +18,25 @@ const SHELL = [
   './js/sensors/preprocess.js', './js/sensors/tokenOcr.js', './js/sensors/outlierFilter.js',
 ];
 
+// Kütüphaneler (vendor/): uygulama sürümünden BAĞIMSIZ önbellek ve önce-önbellek stratejisi. Uygulama sürümü artınca
+// yeniden indirilmez (Tesseract ~4 MB). Kütüphane dosyaları değişirse bu adı artır.
+const VENDOR_CACHE = 'ev-copilot-vendor-v1';
+const VENDOR_PRECACHE = ['./vendor/leaflet/leaflet.js', './vendor/leaflet/leaflet.css']; // Tesseract ilk kullanımda önbelleğe girer
+const VENDOR_PATH = new URL('./vendor/', self.registration.scope).pathname;
+
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    Promise.all([
+      caches.open(CACHE).then((c) => c.addAll(SHELL)),
+      caches.open(VENDOR_CACHE).then((c) => c.addAll(VENDOR_PRECACHE)),
+    ]).then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE && k !== VENDOR_CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -36,6 +47,18 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(request.url);
   // API çağrıları (OSRM, Open-Meteo, ABRP...) ve harita karoları hiç önbelleğe alınmaz.
   if (url.origin !== location.origin) return;
+  if (url.pathname.startsWith(VENDOR_PATH)) {
+    e.respondWith(
+      caches.open(VENDOR_CACHE).then(async (cache) => {
+        const hit = await cache.match(request);
+        if (hit) return hit;
+        const res = await fetch(request);
+        if (res.ok && res.status === 200) cache.put(request, res.clone());
+        return res;
+      })
+    );
+    return;
+  }
   // Önce ağ (HTTP önbelleğini atlayıp sunucuyla doğrulayarak), olmazsa önbellek: güncellemeler hemen görünsün.
   e.respondWith(
     fetch(request, { cache: 'no-cache' })

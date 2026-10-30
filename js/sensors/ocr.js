@@ -4,8 +4,15 @@ import { preprocess } from './preprocess.js';
 import { createFilter } from './outlierFilter.js';
 import { countOcrEngineOnce } from '../net/meter.js';
 
-const TESS_SRC = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
-const TESS_SRI = 'sha256-qOKZGNCYsrBuEBK9rv+0rsBEXF1WVHCQI+C9H0QqgOg=';
+// Tesseract dosyaları uygulamayla birlikte sunulur (vendor/tesseract): service worker ilk kullanımdan sonra bunları
+// önbellekten verir, CDN'den tekrar tekrar indirilmez (veri tasarrufu) ve çevrimdışı açılış mümkün olur.
+const VENDOR = new URL('../../vendor/tesseract/', import.meta.url);
+const TESS_SRC = new URL('tesseract.min.js', VENDOR).href;
+const WORKER_OPTIONS = {
+  workerPath: new URL('worker.min.js', VENDOR).href,
+  corePath: new URL('core', VENDOR).href, // dizin: SIMD desteğine göre tesseract-core[-simd]-lstm.wasm.js seçilir
+  langPath: new URL('lang', VENDOR).href, // eng.traineddata.gz
+};
 const MIN_CONFIDENCE = 40;
 
 const socFilter = createFilter({ maxJump: OCR.maxJumpPct });
@@ -22,18 +29,21 @@ export function loadTesseract() {
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');
     s.src = TESS_SRC;
-    s.integrity = TESS_SRI;
-    s.crossOrigin = 'anonymous';
     s.onload = resolve;
-    s.onerror = () => reject(new Error('Tesseract.js yüklenemedi (internet?)'));
+    s.onerror = () => reject(new Error('Tesseract.js yüklenemedi'));
     document.head.append(s);
   });
 }
 
+/** Yerel dosyalarla yeni bir Tesseract işçisi (pil OCR'ı ve token okuyucu ortak kullanır). */
+export async function createTesseractWorker() {
+  await loadTesseract();
+  return window.Tesseract.createWorker('eng', window.Tesseract.OEM.LSTM_ONLY, WORKER_OPTIONS);
+}
+
 function getWorker() {
   workerPromise ||= (async () => {
-    await loadTesseract();
-    const worker = await window.Tesseract.createWorker('eng');
+    const worker = await createTesseractWorker();
     await worker.setParameters({
       tessedit_char_whitelist: '0123456789%',
       tessedit_pageseg_mode: window.Tesseract.PSM.SINGLE_LINE,
@@ -92,7 +102,7 @@ async function tick(video, stage) {
         } else {
           const res = socFilter.accept(value, Date.now());
           if (res.ok) {
-            patch('ocr', { raw: value, accepted: res.value, status: 'ok' });
+            patch('ocr', { raw: value, accepted: res.value, status: 'ok', lastOkAt: Date.now() });
             patch('live', { soc: res.value });
           } else {
             patch('ocr', { raw: value, status: 'rejected' }); // son geçerli değer korunur

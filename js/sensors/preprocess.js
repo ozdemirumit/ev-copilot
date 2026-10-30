@@ -8,8 +8,11 @@ const PAD = 12; // Tesseract kenara yapışık karakterleri sevmez
 export function roiToVideoRect(video, stage, roi) {
   const vw = video.videoWidth;
   const vh = video.videoHeight;
-  const sw = stage.clientWidth;
-  const sh = stage.clientHeight;
+  // Sekme gizliyken (display:none) kutunun ölçüsü 0 olur. Eşleme yalnızca en-boy oranına bağlıdır; kamera kutusu CSS'te
+  // sabit 16:10 olduğu için gizliyken bu orana düş, böylece OCR başka sekmedeyken de çalışır.
+  const hidden = !stage.clientWidth || !stage.clientHeight;
+  const sw = hidden ? 160 : stage.clientWidth;
+  const sh = hidden ? 100 : stage.clientHeight;
   const scale = Math.max(sw / vw, sh / vh);
   const visW = sw / scale;
   const visH = sh / scale;

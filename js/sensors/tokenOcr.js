@@ -1,4 +1,4 @@
-import { loadTesseract } from './ocr.js';
+import { createTesseractWorker } from './ocr.js';
 import { preprocess } from './preprocess.js';
 import { countOcrEngineOnce } from '../net/meter.js';
 
@@ -49,8 +49,7 @@ function thicken(canvas) {
 
 /** Ayrı bir Tesseract işçisi (pil OCR'ından bağımsız): yalnızca onaltılı haneler ve tire. Bitince terminate() çağır. */
 export async function createTokenReader() {
-  await loadTesseract();
-  const worker = await window.Tesseract.createWorker('eng');
+  const worker = await createTesseractWorker();
   countOcrEngineOnce();
   await worker.setParameters({
     tessedit_char_whitelist: '0123456789abcdef-', // UUID'ler küçük harfli onaltılı

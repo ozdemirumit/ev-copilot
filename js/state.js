@@ -20,7 +20,7 @@ const store = {
     traffic: load('trafficEst', 0),
   },
   // OCR ayarları ve okuma durumu.
-  ocr: { ...DEFAULT_CAMERA, ...load('camera', {}), raw: null, accepted: null, status: 'idle', rawSpeed: null, speedStatus: 'idle' },
+  ocr: { ...DEFAULT_CAMERA, ...load('camera', {}), raw: null, accepted: null, status: 'idle', rawSpeed: null, speedStatus: 'idle', lastOkAt: 0 },
   // Menzil motoru çıktıları (rangeEngine yazar, kartlar okur).
   engine: {
     k: load('kCal', 1), grade: null, routeKm: null, offRouteKm: null,

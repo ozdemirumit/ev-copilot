@@ -95,8 +95,15 @@ async function sendWebhook(url, pkt) {
   }
 }
 
+// Pil okuması (OCR veya manuel) bu süreden eskiyse ABRP'ye eski pil değeri göndermek yerine beklenir.
+const STALE_SOC_MS = 5 * 60 * 1000;
+
 async function send() {
   if (!getState('abrp').enabled) return;
+  const { lastOkAt } = getState('ocr');
+  if (effective().source === 'live' && lastOkAt && Date.now() - lastOkAt > STALE_SOC_MS) {
+    return setStatus('wait', 'Pil okuması eski — OCR / kamera kontrol et');
+  }
   const cfg = load('abrp', {});
   const pkt = buildPacket();
   if (pkt.soc == null || pkt.lat == null || pkt.lon == null) return setStatus('wait', 'Veri bekleniyor (pil/konum)');
@@ -107,9 +114,23 @@ async function send() {
   await Promise.all(jobs);
 }
 
+/** Kullanıcının seçtiği aralık (sn → ms). */
+export const getIntervalMs = () => (load('abrpInterval', ABRP.intervalMs / 1000) || ABRP.intervalMs / 1000) * 1000;
+
+/** Bir sonraki gönderime kadar bekleme: araç duruyorsa (hız < 1 km/h) en az parkedIntervalMs, veri tasarrufu için. */
+function nextDelay() {
+  const base = getIntervalMs();
+  const speed = effective().speed ?? 0;
+  return speed < 1 ? Math.max(base, ABRP.parkedIntervalMs) : base;
+}
+
 export function initTelemetry() {
-  clearInterval(timer);
-  timer = setInterval(send, ABRP.intervalMs);
+  clearTimeout(timer);
+  const loop = async () => {
+    await send();
+    timer = setTimeout(loop, nextDelay());
+  };
+  timer = setTimeout(loop, nextDelay());
 }
 
 /** Anahtar açılınca ilk paketi beklemeden gönder. */

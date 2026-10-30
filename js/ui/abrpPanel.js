@@ -1,6 +1,7 @@
 import { getState, patch, subscribe, effective } from '../state.js';
 import { load, save, remove } from '../utils/storage.js';
-import { buildPacket, sendNow } from '../abrp/telemetry.js';
+import { buildPacket, sendNow, getIntervalMs } from '../abrp/telemetry.js';
+import { ABRP } from '../config.js';
 
 const STATUS_CLASS = { idle: '', wait: 'wait', ok: 'ok', err: 'err' };
 
@@ -34,6 +35,23 @@ export function initAbrpPanel() {
   }
 
   fields.forEach((f) => els[f].addEventListener('change', persist));
+
+  // Gönderim aralığı: büyük aralık = daha az veri. Tahmini veri kullanımı seçimle birlikte gösterilir.
+  const sel = document.getElementById('abrp-interval');
+  ABRP.intervalOptionsS.forEach((s) => {
+    const o = document.createElement('option');
+    o.value = String(s);
+    o.textContent = `${s} sn${s === ABRP.intervalMs / 1000 ? ' (önerilen)' : ''}`;
+    sel.append(o);
+  });
+  sel.value = String(getIntervalMs() / 1000);
+  const paintRate = () => {
+    const s = Number(sel.value);
+    const mbPerHour = (ABRP.bytesPerPacket * 3600) / s / 1048576;
+    document.getElementById('abrp-rate').textContent = `≈ ${mbPerHour.toFixed(2)} MB/saat sürüşte; araç duruyorken en az ${ABRP.parkedIntervalMs / 1000} sn'de bir gönderilir.`;
+  };
+  sel.addEventListener('change', () => { save('abrpInterval', Number(sel.value)); paintRate(); });
+  paintRate();
 
   els.enabled.addEventListener('change', () => {
     const on = els.enabled.checked;

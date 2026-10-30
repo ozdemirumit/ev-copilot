@@ -1,4 +1,5 @@
 import { getState, patch, subscribe } from '../state.js';
+import { load, save } from '../utils/storage.js';
 import { persistCamera } from './roiBox.js';
 import { startCamera, stopCamera } from '../sensors/camera.js';
 import { startOcr, stopOcr, calibrateSoc, startPreview, stopPreview } from '../sensors/ocr.js';
@@ -86,7 +87,7 @@ export function initCameraPanel() {
     const next = Math.min(100, Math.max(0, (cur ?? 50) + d));
     calibrateSoc(next);
     patch('live', { soc: next });
-    patch('ocr', { accepted: next, status: 'manual' });
+    patch('ocr', { accepted: next, status: 'manual', lastOkAt: Date.now() });
   };
   $('soc-plus').addEventListener('click', () => bump(1));
   $('soc-minus').addEventListener('click', () => bump(-1));
@@ -101,4 +102,23 @@ export function initCameraPanel() {
   };
   subscribe('ocr', paintOcr);
   paintOcr(getState('ocr'));
+
+  // ---------- Açılışta kamerayı ve OCR'ı otomatik başlat ----------
+  // Sürüşte telefon yeniden açıldığında okumanın kendiliğinden sürmesi için. Kamera izni zaten verilmişse çalışır
+  // (izin sorusu çıkarmaz); izin yoksa veya Test Modu açıksa hiçbir şey yapmaz.
+  const auto = $('ocr-auto');
+  auto.checked = load('autoOcr', false);
+  auto.addEventListener('change', () => { save('autoOcr', auto.checked); if (auto.checked) autoStart(); }); // açınca hemen de başlat
+
+  async function autoStart() {
+    if (!auto.checked || getState('sim').enabled) return;
+    try {
+      const perm = await navigator.permissions.query({ name: 'camera' });
+      if (perm.state !== 'granted') return;
+    } catch { return; } // izin API'si yok: sormadan başlatma
+    camBtn.click();
+    for (let i = 0; i < 40 && !getState('system').camera; i++) await new Promise((r) => setTimeout(r, 150));
+    if (getState('system').camera && !getState('system').ocr) ocrBtn.click();
+  }
+  autoStart();
 }

@@ -1,5 +1,6 @@
 import { getState, patch } from '../state.js';
 import { toast } from '../ui/toast.js';
+import { load, save } from '../utils/storage.js';
 
 let sentinel = null;
 
@@ -26,10 +27,12 @@ export function initWakeLock() {
     try {
       if (getState('system').wakeLock) {
         patch('system', { wakeLock: false });
+        save('wakeOn', false);
         await sentinel?.release();
       } else {
         await acquire();
         patch('system', { wakeLock: true });
+        save('wakeOn', true);
         toast('Ekran açık kalacak');
       }
     } catch (err) {
@@ -37,6 +40,11 @@ export function initWakeLock() {
     }
     paint();
   });
+
+  // Önceki oturumda açıksa uygulama açılınca yeniden almayı dene (kullanıcı dokunuşu gerekmez; olmazsa sessizce vazgeç).
+  if (load('wakeOn', false)) {
+    acquire().then(() => { patch('system', { wakeLock: true }); paint(); }).catch(() => {});
+  }
 
   // Sekme gizlenince kilit sistem tarafından bırakılır; geri gelince yeniden al.
   document.addEventListener('visibilitychange', async () => {
