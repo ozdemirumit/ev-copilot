@@ -84,6 +84,13 @@ export function initVehiclePanel() {
   };
   margin('charger-min', 'charger-min-out', 'chargerMin', 'chargerMin', (v) => { PLANNER.chargerMinArrival = v; });
   margin('max-charge', 'max-charge-out', 'maxChargeTo', 'maxChargeTo', (v) => { PLANNER.maxChargeTo = v; });
+  const slow = $('allow-slow');
+  slow.checked = PLANNER.allowSlow;
+  slow.addEventListener('change', () => {
+    PLANNER.allowSlow = slow.checked;
+    save('allowSlow', slow.checked);
+    patch('route', { allowSlow: slow.checked }); // planı yeniden hesaplat
+  });
   margin('min-add', 'min-add-out', 'minStopAdd', 'minStopAdd', (v) => { PLANNER.minStopAdd = v; });
   margin('tolerance', 'tolerance-out', 'tolerance', 'tolerance', (v) => { PLANNER.tolerance = v; });
 }

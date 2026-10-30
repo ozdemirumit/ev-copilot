@@ -2,6 +2,7 @@ import { getState, patch, effective } from '../state.js';
 import { VEHICLE, PLANNER } from '../config.js';
 import { replanFrom } from '../routing/controller.js';
 import { safeSpeed } from './ecoSpeed.js';
+import { usable } from '../routing/planner.js';
 import { speak } from './voice.js';
 
 const BAT = VEHICLE.batteryNetKwh;
@@ -47,7 +48,7 @@ function check() {
 
   // 1) Bir önceki uygun istasyon
   const prev = plan.stations
-    .filter((s) => s.km > km + 1 && s.km < target.km - 0.5 && s.id !== next?.station.id)
+    .filter((s) => usable(s) && s.km > km + 1 && s.km < target.km - 0.5 && s.id !== next?.station.id)
     .sort((a, b) => b.km - a.km)
     .find((s) => e.soc - ((profile.energyBetween(km, s.km, k) + detour(s) * k) / BAT) * 100 >= PLANNER.hardMinArrival);
 

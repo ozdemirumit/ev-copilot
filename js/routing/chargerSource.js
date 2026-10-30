@@ -25,6 +25,10 @@ function parseKw(v) {
   return m;
 }
 
+// Herkese açık olmayan erişim etiketleri (OSM access=*): bunlar aday olmaz.
+const NON_PUBLIC = new Set(['private', 'no', 'customers', 'permit', 'delivery', 'agricultural', 'forestry', 'staff', 'residents']);
+const AC_FALLBACK_KW = 11; // yalnızca AC/tipi bilinmeyen istasyonda varsayılan güç (aracın AC şarj sınırına yakın)
+
 function fromOsm(el) {
   const t = el.tags || {};
   const lat = el.lat ?? el.center?.lat;
@@ -38,15 +42,19 @@ function fromOsm(el) {
   // Tesla Supercharger'lar Togg için varsayılan olarak aday değil (ağ erişimi garanti değil).
   if (/tesla/i.test([t.name, t.operator, t.brand, t.network].join(' '))) return null;
 
-  // AC-only istasyonları ele: DC soket yok, DC güç yok, ve hiç soket etiketi olmayan "Diğer" operatör.
-  if (!hasDc && !(kwTagMax >= PLANNER.minKw) && (hasAnySocket || opId === 'other')) return null;
+  // Yalnızca herkese açık istasyonlar (özel/müşteri/izinli erişim elenir).
+  if (NON_PUBLIC.has(String(t.access || '').toLowerCase())) return null;
+
+  // DC değilse (AC veya tipi bilinmeyen "Diğer" operatör) yavaş yedek aday olur: planlayıcı yalnızca DC yetmediğinde seçer.
+  const slow = !hasDc && !(kwTagMax >= PLANNER.minKw) && (hasAnySocket || opId === 'other');
 
   return {
     id: 'osm' + el.id,
     name: t.name || t.operator || t.brand || 'Şarj istasyonu',
     lat, lon, opId,
-    osmKw: kwTagMax, // yoksa operatör tablosundaki kW kullanılır
+    osmKw: slow ? Math.min(kwTagMax ?? AC_FALLBACK_KW, AC_FALLBACK_KW) : kwTagMax, // yoksa operatör tablosundaki kW kullanılır
     uncertain: kwTagMax == null,
+    slow,
     src: 'OSM',
   };
 }
@@ -151,6 +159,8 @@ async function openChargeMap(pts, key) {
       const a = poi.AddressInfo;
       const kw = Math.max(0, ...(poi.Connections || []).map((c) => c.PowerKW || 0));
       if (!a || kw < PLANNER.minKw) continue;
+      // OCM UsageType: 2 = kısıtlı erişim, 3 = özel mülk (bildirimle), 6 = müşteri/personel → herkese açık değil
+      if ([2, 3, 6].includes(poi.UsageType?.ID) || poi.StatusType?.IsOperational === false) continue;
       out.push({
         id: 'ocm' + poi.ID, name: a.Title, lat: a.Latitude, lon: a.Longitude,
         opId: classify(a.Title, poi.OperatorInfo?.Title), osmKw: kw, uncertain: false, src: 'OCM',
@@ -198,22 +208,62 @@ async function photonFallback(pts) {
 }
 
 /** Rotaya izdüşür, koridor dışını ele, yinelenenleri birleştir, operatör tablosuyla fiyat/kW ata. */
-function finalize(raw, profile) {
-  const seen = [];
-  const list = [];
+// Kullanıcının istasyon başına operatör düzeltmeleri { istasyonId: operatörId } (OSM adı/etiketi yanlış veya eski olabilir).
+const OVERRIDE_KEY = 'stationOps';
+const overrides = () => load(OVERRIDE_KEY, {});
+
+export function setStationOperator(stationId, opId) {
+  const o = overrides();
+  if (opId) o[stationId] = opId; else delete o[stationId];
+  save(OVERRIDE_KEY, o);
+}
+
+/** Operatörü (varsa kullanıcı düzeltmesiyle) uygulayıp fiyat/kW'yi ata. */
+function priced(s) {
+  const ov = overrides()[s.id];
+  const op = operatorById(ov || s.opId);
+  return { ...s, opId: ov || s.opId, opRaw: s.opRaw ?? s.opId, corrected: !!ov, opName: op.name, price: op.price, kw: ov ? op.kw : (s.osmKw ?? op.kw) };
+}
+
+/**
+ * Yinelenenleri ele: ~80 m içinde AYNI operatörün ikinci kaydı (ör. aynı istasyonun node + way hali) atılır.
+ * Farklı operatörler aynı noktada olabilir (ör. Astor + Trugo yan yana): ikisi de aday kalır. Operatörü bilinmeyen
+ * ("Diğer") kayıt, aynı noktadaki bilinen operatör kaydının kopyası sayılır.
+ */
+function dedupe(raw) {
+  const out = [];
   for (const s of raw) {
-    if (seen.some((o) => haversineKm(o, s) < 0.08)) continue; // ~80 m içindeki yineleme
-    seen.push(s);
+    const near = out.filter((o) => haversineKm(o, s) < 0.08);
+    if (near.some((o) => o.opId === s.opId)) continue;
+    if (s.opId === 'other' && near.length) continue;
+    for (const o of near) if (o.opId === 'other') out.splice(out.indexOf(o), 1);
+    out.push(s);
+  }
+  return out;
+}
+
+function finalize(raw, profile) {
+  const list = [];
+  for (const s of dedupe(raw)) {
     const { km, offKm } = profile.project(s.lat, s.lon);
     if (offKm > PLANNER.corridorM / 1000 + 0.5) continue;
-    const op = operatorById(s.opId);
-    list.push({ ...s, km, offKm, opName: op.name, price: op.price, kw: s.osmKw ?? op.kw });
+    list.push(priced({ ...s, km, offKm }));
   }
   list.sort((a, b) => a.km - b.km);
-  if (list.length > PLANNER.maxStations) {
-    return list.sort((a, b) => b.kw - a.kw).slice(0, PLANNER.maxStations).sort((a, b) => a.km - b.km);
-  }
-  return list;
+  if (list.length <= PLANNER.maxStations) return list;
+  // Çok istasyonlu rotada en güçlüleri global seçmek seyrek bölgeleri (az ama gerekli istasyon) silerdi:
+  // her 15 km'lik dilimde en güçlü 2 istasyon korunur, sonra kalan kota güce göre doldurulur.
+  const keep = new Set();
+  const bins = new Map();
+  [...list].sort((a, b) => b.kw - a.kw).forEach((s) => {
+    const b = Math.floor(s.km / 15);
+    const n = bins.get(b) || 0;
+    if (n < 2) { bins.set(b, n + 1); keep.add(s); }
+  });
+  const rest = list.filter((s) => !keep.has(s)).sort((a, b) => b.kw - a.kw);
+  const out = [...keep];
+  for (const s of rest) if (out.length < PLANNER.maxStations) out.push(s);
+  return out.sort((a, b) => a.km - b.km);
 }
 
 const CACHE_TTL_MS = 7 * 24 * 3600e3;
@@ -223,7 +273,7 @@ const CACHE_TTL_MS = 7 * 24 * 3600e3;
  * ile 7 gün saklanır, böylece aynı rotayı yeniden planlamak ağ gerektirmez.
  */
 export async function fetchChargers(pts, profile, ocmKey, cacheKey = null) {
-  const key = cacheKey && 'chargers:' + cacheKey + (ocmKey ? ':ocm' : '');
+  const key = cacheKey && 'chargers2:' + cacheKey + (ocmKey ? ':ocm' : '');
   const cached = key && load(key, null);
   if (cached && Date.now() - cached.t < CACHE_TTL_MS) {
     return { stations: finalize(cached.raw, profile), errors: [], cached: true };
@@ -250,8 +300,5 @@ export async function fetchChargers(pts, profile, ocmKey, cacheKey = null) {
 
 /** Operatör tablosu değişince fiyat/kW'yi yeniden uygula (ağ çağrısı yok). */
 export function reprice(stations) {
-  return stations.map((s) => {
-    const op = operatorById(s.opId);
-    return { ...s, opName: op.name, price: op.price, kw: s.osmKw ?? op.kw };
-  });
+  return stations.map((s) => priced({ ...s, opId: s.opRaw ?? s.opId }));
 }

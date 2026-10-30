@@ -2,8 +2,17 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.13.2';
+self.APP_VERSION = '0.14.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.14.0', date: '2026-10-30',
+    notes: [
+      'Yalnızca herkese açık istasyonlar: OSM erişim etiketi özel/müşteri/izinli olanlar ve OpenChargeMap kısıtlı/özel olanlar elenir.',
+      'DÜZELTME: Aynı noktadaki iki operatörden (ör. Astor + Trugo) biri yanlışlıkla eleniyordu; artık yalnızca aynı operatörün kopyası atılır. İstasyon listesinde her satırda operatör düzeltme menüsü (kalıcı): fiyat ve kW seçilen operatöre göre alınır.',
+      'DÜZELTME: 80 istasyon sınırı en güçlüleri seçerken seyrek bölgelerdeki (ör. Kayseri–Malatya) istasyonları silebiliyordu; artık her 15 km diliminde en güçlü 2 istasyon korunur.',
+      'Bilinen hızlı (DC) istasyonun olmadığı 150 km üzeri aralıklar plan durumunda uyarı olarak gösterilir (harita verisi eksik olabilir). Yavaş AC / türü belirsiz herkese açık istasyonlar yalnızca DC yetmediğinde yedek olur (kapatılabilir).',
+    ],
+  },
   {
     v: '0.13.2', date: '2026-10-30',
     notes: [

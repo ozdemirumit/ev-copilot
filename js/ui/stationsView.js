@@ -2,6 +2,7 @@ import { getState, patch, subscribe } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { getOperators, persistOperators, resetOperators } from '../routing/operators.js';
 import { repriceAndReplan, refetchStations } from '../routing/controller.js';
+import { setStationOperator } from '../routing/chargerSource.js';
 
 const $ = (id) => document.getElementById(id);
 const MODE_TITLE = { fast: 'En hızlı', cheap: 'En ekonomik', opt: 'Optimum (süre + maliyet)' };
@@ -55,9 +56,21 @@ function renderList() {
     meta.className = 'meta';
     meta.append(
       text('span', 'tag ' + (n ? 'best' : ''), n ? `Planda #${n}` : 'Aday'),
-      text('span', '', `${r.station.opName} · ${r.station.kw} kW${r.station.uncertain ? '*' : ''} · ${r.station.price.toFixed(2)} TL/kWh · ${r.station.km.toFixed(0)}. km · varış %${r.arrive.toFixed(0)} → %${Math.round(r.to)}`),
+      text('span', '', `${r.station.opName} · ${r.station.slow ? 'AC/yavaş ' : ''}${r.station.kw} kW${r.station.uncertain ? '*' : ''} · ${r.station.price.toFixed(2)} TL/kWh · ${r.station.km.toFixed(0)}. km · varış %${r.arrive.toFixed(0)} → %${Math.round(r.to)}`),
     );
     left.append(meta);
+
+    // Operatör yanlışsa (OSM etiketi eksik/eski) düzelt: fiyat ve kW tablodan buna göre alınır, kalıcıdır.
+    const fix = document.createElement('select');
+    fix.className = 'op-fix';
+    fix.setAttribute('aria-label', 'Operatörü düzelt');
+    getOperators().forEach((o) => fix.append(new Option(o.name + (o.id === r.station.opRaw && r.station.corrected ? ' (OSM)' : ''), o.id)));
+    fix.value = r.station.opId;
+    fix.addEventListener('change', () => {
+      setStationOperator(r.station.id, fix.value === r.station.opRaw ? null : fix.value);
+      repriceAndReplan();
+    });
+    left.append(fix);
     const nums = document.createElement('div');
     nums.className = 'nums';
     const b = text('b', '', `${Math.round(r.minutes)} dk`);

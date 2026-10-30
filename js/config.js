@@ -43,6 +43,7 @@ export const PLANNER = {
   maxStations: 80,
   corridorM: 2500,
   minKw: 40,
+  allowSlow: load('allowSlow', true), // DC yetmediğinde yavaş AC/tipi belirsiz (herkese açık) istasyonlar yedek aday olsun
   detourKwhPerKm: 0.2,
   detourKmh: 50,
 };

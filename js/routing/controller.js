@@ -18,7 +18,7 @@ let timer = null;
 
 const routeSig = () => {
   const r = getState('route');
-  return [r.cruise, r.traffic, r.minArrivalSoc, r.consAdj, r.chargerMin, r.maxChargeTo, r.minStopAdd, r.tolerance].join('|');
+  return [r.cruise, r.traffic, r.minArrivalSoc, r.consAdj, r.chargerMin, r.maxChargeTo, r.minStopAdd, r.tolerance, r.allowSlow].join('|');
 };
 
 function buildFromRaw() {

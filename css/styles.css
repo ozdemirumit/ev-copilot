@@ -263,3 +263,5 @@ label.field { position: relative; }
   .grid2.wide { grid-template-columns: repeat(4, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+.op-fix { margin-top: 4px; padding: 3px 6px; font-size: 12px; color: var(--muted); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; max-width: 100%; }

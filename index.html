@@ -137,6 +137,10 @@
         <output id="tolerance-out">±3</output>
         <input type="range" id="tolerance" min="0" max="8" step="1" value="3">
       </div>
+      <div class="row between">
+        <label for="allow-slow">Yavaş AC / türü belirsiz istasyonlar da yedek olsun</label>
+        <label class="switch"><input type="checkbox" id="allow-slow" checked><i></i></label>
+      </div>
       <p class="small muted" style="margin:0">Tüketimi fizik modeli tahmin eder; gerçek değeri yazarsan ya da düzeltme verirsen plan ve menzil buna göre değişir. Giriş pili: istasyona en az bu pille varılır (yükselirse daha erken ve daha çok durak). Şarj hedefi: durakta bu seviyeyi geçmez; plan daha az gerekiyorsa daha az şarj eder. En az eklenecek pil: 6 puanlık anlamsız molaları engeller. Tolerans: giriş/varış eşiğinin ± bu kadar altına inmek yasak değil ama cezalıdır (eşikte ani sıçrama olmaz).</p>
     </div>
 

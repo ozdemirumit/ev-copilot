@@ -1,5 +1,6 @@
 import { getState, patch, subscribe } from '../state.js';
 import { save } from '../utils/storage.js';
+import { stationGaps } from '../routing/planner.js';
 
 const $ = (id) => document.getElementById(id);
 const MODE_LABEL = { fast: 'En Hızlı', cheap: 'En Ekonomik', opt: 'Optimum' };
@@ -59,11 +60,15 @@ export function initRoutePanel() {
       const t = p.totals;
       $('sum-time').textContent = hm(t.totalMin);
       $('sum-stops').textContent = String(p.stops.length);
+      const gaps = stationGaps(p.stations, p.profile.totalKm);
+      const gapNote = gaps.length
+        ? ` ⚠ ${gaps.map((g) => `${g.from.toFixed(0)}–${g.to.toFixed(0)} km`).join(', ')} arasında bilinen hızlı (DC) istasyon yok; harita verisi eksik olabilir.`
+        : '';
       const thr = getState('route').minArrivalSoc;
       const dip = t.arriveSoc < thr - 0.5 ? ` — eşiğin ${(thr - t.arriveSoc).toFixed(0)} puan altı, tolerans içinde` : '';
       status.textContent = p.stops.length
-        ? `Varışta tahmini pil %${t.arriveSoc.toFixed(0)} (eşik %${thr}${dip}) · şarj ${hm(t.chargeMin)} · ${t.cost.toFixed(0)} TL`
-        : `Şarj gerekmiyor — varışta tahmini pil %${t.arriveSoc.toFixed(0)} (eşik %${thr}${dip}).`;
+        ? `Varışta tahmini pil %${t.arriveSoc.toFixed(0)} (eşik %${thr}${dip}) · şarj ${hm(t.chargeMin)} · ${t.cost.toFixed(0)} TL${gapNote}`
+        : `Şarj gerekmiyor — varışta tahmini pil %${t.arriveSoc.toFixed(0)} (eşik %${thr}${dip}).${gapNote}`;
       p.stops.forEach((s, i) => {
         const row = document.createElement('div');
         row.className = 'stop';
@@ -72,7 +77,7 @@ export function initRoutePanel() {
         const right = Object.assign(document.createElement('div'), { className: 'r', textContent: `${Math.round(s.minutes)} dk · ${s.cost.toFixed(0)} TL` });
         const meta = Object.assign(document.createElement('div'), {
           className: 'm',
-          textContent: `${s.km.toFixed(0)}. km · ${s.station.opName} ${s.station.kw} kW · %${s.arriveSoc.toFixed(0)} → %${s.leaveSoc}`
+          textContent: `${s.km.toFixed(0)}. km · ${s.station.opName} ${s.station.slow ? 'AC/yavaş ' : ''}${s.station.kw} kW · %${s.arriveSoc.toFixed(0)} → %${s.leaveSoc}`
             + (s.station.offKm > 0.3 ? ` · sapma ${s.station.offKm.toFixed(1)} km` : ''),
         });
         row.append(num, title, right, meta);

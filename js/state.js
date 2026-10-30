@@ -23,6 +23,7 @@ const store = {
     maxChargeTo: load('maxChargeTo', 90), // durakta şarj hedefi üst sınırı %
     minStopAdd: load('minStopAdd', 15), // durakta en az eklenen pil puanı
     tolerance: load('tolerance', 3), // eşik toleransı ± puan
+    allowSlow: load('allowSlow', true), // yavaş AC/belirsiz istasyonlar yedek aday
   },
   // OCR ayarları ve okuma durumu.
   ocr: { ...DEFAULT_CAMERA, ...load('camera', {}), raw: null, accepted: null, status: 'idle', rawSpeed: null, speedStatus: 'idle', lastOkAt: 0 },

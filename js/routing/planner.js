@@ -10,6 +10,21 @@ export function metric(mode, minutes, cost) {
   return cost + minutes * P.timeValueTlPerMin; // optimum
 }
 
+/** Planlanabilir istasyon: hızlı DC (≥ minKw) veya yedek olarak izin verilmişse yavaş AC/belirsiz. */
+export const usable = (s) => s.kw >= P.minKw || (P.allowSlow && s.slow);
+
+/**
+ * Hızlı DC istasyon bulunmayan uzun rota aralıkları (km). Veri eksikliğini (özellikle OSM'in seyrek olduğu bölgeler)
+ * kullanıcıya göstermek için; yalnızca `minGapKm`'den uzun boşluklar döner.
+ */
+export function stationGaps(stations, totalKm, minGapKm = 150) {
+  const km = stations.filter((s) => s.kw >= P.minKw).map((s) => s.km).sort((a, b) => a - b);
+  const pts = [0, ...km, totalKm];
+  const gaps = [];
+  for (let i = 1; i < pts.length; i++) if (pts[i] - pts[i - 1] > minGapKm) gaps.push({ from: pts[i - 1], to: pts[i] });
+  return gaps;
+}
+
 const detourKwh = (s) => s.offKm * 2 * P.detourKwhPerKm;
 const detourMin = (s) => ((s.offKm * 2) / P.detourKmh) * 60;
 
@@ -31,7 +46,7 @@ const dipPenalty = (mode, pts) => Math.max(0, pts) * (mode === 'fast' ? 3 : 20);
 function solve({ profile, stations, startKm = 0, startSoc, minArrival, mode = 'opt', k = 1, maxFirstStopKm = Infinity }, minAdd) {
   const tol = P.tolerance;
   const endKm = profile.totalKm;
-  const cands = stations.filter((s) => s.km > startKm + 0.5 && s.km < endKm - 0.5 && s.kw >= P.minKw).sort((a, b) => a.km - b.km);
+  const cands = stations.filter((s) => s.km > startKm + 0.5 && s.km < endKm - 0.5 && usable(s)).sort((a, b) => a.km - b.km);
   const levels = [];
   for (let l = P.minChargeTo; l <= P.maxChargeTo; l += P.chargeStep) levels.push(l);
 
@@ -113,7 +128,7 @@ function solve({ profile, stations, startKm = 0, startSoc, minArrival, mode = 'o
 export function rankStations({ profile, stations, startKm = 0, startSoc, k = 1, mode = 'opt', target = 80 }) {
   const rows = [];
   for (const s of stations) {
-    if (s.km <= startKm + 0.5) continue;
+    if (s.km <= startKm + 0.5 || !usable(s)) continue;
     const arrive = startSoc - ((profile.energyBetween(startKm, s.km, k) + detourKwh(s) * k) / BAT) * 100;
     if (arrive < P.chargerMinArrival) continue;
     const to = Math.max(target, Math.min(P.maxChargeTo, arrive + 10));
