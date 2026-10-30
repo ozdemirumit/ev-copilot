@@ -91,7 +91,7 @@ function solve({ profile, stations, startKm = 0, startSoc, minArrival, mode = 'o
 
   if (!best) {
     const need = (profile.energyBetween(startKm, endKm, k) / BAT) * 100;
-    return { feasible: false, reason: `Uygun şarj zinciri bulunamadı (tüketim ≈ %${need.toFixed(0)} pil, ${cands.length} aday istasyon).`, stops: [] };
+    return { feasible: false, reason: explainBreak({ profile, cands, states, nodeKm, startKm, endKm, startSoc, k, need }), stops: [] };
   }
 
   // Geriye doğru izle
@@ -119,6 +119,30 @@ function solve({ profile, stations, startKm = 0, startSoc, minArrival, mode = 'o
       arriveSoc: best.arriveEnd,
     },
   };
+}
+
+/**
+ * Zincir neden kurulamadı? Ulaşılabilen en uzak istasyonu ve oradan sonraki boşluğu bulup açıklar
+ * (genelde iki aday arası, tam şarjla gidilebilecek mesafeden uzundur: veri eksikliği veya çok uzun rota).
+ */
+function explainBreak({ profile, cands, states, nodeKm, startKm, endKm, startSoc, k, need }) {
+  let last = 0;
+  for (let n = 1; n < states.length; n++) if (states[n].some(Boolean)) last = n;
+  const fromKm = nodeKm[last];
+  const leave = last === 0 ? startSoc : P.maxChargeTo;
+  // fromKm'den `leave` pille eşik (giriş pili - tolerans) altına düşmeden gidilebilecek en uzak km (ikili arama)
+  let lo = fromKm;
+  let hi = endKm;
+  for (let i = 0; i < 24; i++) {
+    const mid = (lo + hi) / 2;
+    if (leave - (profile.energyBetween(fromKm, mid, k) / BAT) * 100 >= P.chargerMinArrival - P.tolerance) lo = mid; else hi = mid;
+  }
+  const reach = Math.max(0, lo - fromKm);
+  const nextKm = cands[last]?.km ?? endKm;
+  const where = last === 0 ? 'Başlangıçtan' : `${fromKm.toFixed(0)}. km'deki ${cands[last - 1].name} istasyonundan`;
+  const next = cands[last] ? `sonraki aday istasyon ${nextKm.toFixed(0)}. km'de (${(nextKm - fromKm).toFixed(0)} km)` : `varışa ${(endKm - fromKm).toFixed(0)} km var`;
+  return `Uygun şarj zinciri bulunamadı: ${where} sonra ${next}, ama %${Math.round(leave)} pille en fazla ~${reach.toFixed(0)} km gidilebilir. `
+    + `Bu aralıkta haritada istasyon eksik olabilir: İstasyon sekmesindeki "Kendi istasyonlarım"a bildiğin istasyonları ekle; ayrıca tüketimi, giriş pilini veya şarj hedefini gözden geçir (toplam tüketim ≈ %${need.toFixed(0)} pil, ${cands.length} aday istasyon).`;
 }
 
 /**

@@ -267,6 +267,21 @@ export async function testOcmKey(key) {
 
 /** Rotaya izdüşür, koridor dışını ele, yinelenenleri birleştir, operatör tablosuyla fiyat/kW ata. */
 // Kullanıcının istasyon başına operatör düzeltmeleri { istasyonId: operatörId } (OSM adı/etiketi yanlış veya eski olabilir).
+// Kullanıcının kendi eklediği istasyonlar (haritada eksik olanlar). Önbelleğe girmez, her planda eklenir ve yinelenenlerde öncelikli.
+const CUSTOM_KEY = 'customStations';
+export const getCustomStations = () => load(CUSTOM_KEY, []);
+export function addCustomStation({ name, lat, lon, opId, kw }) {
+  const list = getCustomStations();
+  list.push({ id: `my${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, name: name || 'Benim istasyonum', lat, lon, opId, kw: kw || null });
+  save(CUSTOM_KEY, list);
+}
+export function removeCustomStation(id) {
+  save(CUSTOM_KEY, getCustomStations().filter((c) => c.id !== id));
+}
+const customRaw = () => getCustomStations().map((c) => ({
+  id: c.id, name: c.name, lat: c.lat, lon: c.lon, opId: c.opId, osmKw: c.kw, uncertain: !c.kw, slow: false, src: 'Benim',
+}));
+
 const OVERRIDE_KEY = 'stationOps';
 const overrides = () => load(OVERRIDE_KEY, {});
 
@@ -334,7 +349,7 @@ export async function fetchChargers(pts, profile, ocmKey, cacheKey = null) {
   const key = cacheKey && 'chargers2:' + cacheKey + (ocmKey ? ':ocm' : '');
   const cached = key && load(key, null);
   if (cached && Date.now() - cached.t < CACHE_TTL_MS) {
-    return { stations: finalize(cached.raw, profile), errors: [], cached: true };
+    return { stations: finalize([...customRaw(), ...cached.raw], profile), errors: [], cached: true };
   }
 
   const raw = [];
@@ -361,7 +376,7 @@ export async function fetchChargers(pts, profile, ocmKey, cacheKey = null) {
     }
   }
   if (key && raw.length && !errors.length) save(key, { t: Date.now(), raw });
-  return { stations: finalize(raw, profile), errors, cached: false };
+  return { stations: finalize([...customRaw(), ...raw], profile), errors, cached: false };
 }
 
 /** Operatör tablosu değişince fiyat/kW'yi yeniden uygula (ağ çağrısı yok). */

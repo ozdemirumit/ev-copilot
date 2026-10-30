@@ -291,6 +291,25 @@
       <button class="btn hidden" id="station-retry" type="button" style="margin-bottom:8px">🔄 İstasyonları yeniden ara</button>
       <div id="station-list"></div>
     </div>
+    <div class="card stack" id="custom-card">
+      <h2 style="margin:0">Kendi istasyonlarım</h2>
+      <p class="small muted" style="margin:0">Haritada eksik olan istasyonları (ör. ZES/Trugo uygulamasından bildiklerin) ekle; plan bunları da aday sayar. Yalnızca bu telefonda saklanır.</p>
+      <label class="field">Yer ara
+        <input type="text" id="cs-search" autocomplete="off" spellcheck="false" enterkeyhint="search" placeholder="İstasyonun bulunduğu yer…">
+        <ul class="suggest hidden" id="cs-suggest" role="listbox"></ul>
+      </label>
+      <div class="grid2">
+        <label class="field">Operatör<select id="cs-op"></select></label>
+        <label class="field">Güç (kW, boşsa tablo)<input type="number" inputmode="numeric" id="cs-kw" step="10" min="7" max="400"></label>
+      </div>
+      <div class="row wrap">
+        <button class="btn" id="cs-add" type="button">➕ Ekle</button>
+        <button class="btn ghost" id="cs-here" type="button">📍 Bulunduğum yeri ekle</button>
+      </div>
+      <p class="small muted" id="cs-picked" style="margin:0"></p>
+      <div id="cs-list"></div>
+    </div>
+
     <div class="card">
       <h2>Operatör birim fiyat ve güç tablosu</h2>
       <table class="optable">
