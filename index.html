@@ -7,6 +7,7 @@
   <title>Smart EV Co-Pilot</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <link rel="stylesheet" href="css/styles.css">
@@ -15,7 +16,7 @@
 
 <!-- ===== Üst çubuk: canlı HUD ===== -->
 <header class="topbar">
-  <div class="brand">EV Co-Pilot<small>Togg T10X V2 LR</small></div>
+  <div class="brand">EV Co-Pilot<small>Togg T10X V2 LR · <button class="ver" id="btn-version" type="button" title="Sürüm notları">v…</button></small></div>
   <div class="hud" aria-live="off">
     <div class="hud-item soc"><b id="hud-soc">--</b><span>%</span></div>
     <div class="hud-item"><b id="hud-speed">--</b><span>km/h</span></div>
@@ -28,6 +29,8 @@
   <span class="badge" id="bd-ocr">OCR: kapalı</span>
   <span class="badge" id="bd-abrp">ABRP: pasif</span>
   <span class="badge test hidden" id="bd-sim">TEST MODU</span>
+  <button class="badge install hidden" id="btn-install" type="button">📲 Uygulamayı yükle</button>
+  <button class="badge data" id="btn-data" type="button" title="Veri kullanımı">📶 —</button>
 </div>
 <div class="advisor hidden" id="advisor-banner" role="status" aria-live="polite"></div>
 
@@ -363,10 +366,35 @@
   <button class="btn" id="qr-close" type="button" style="margin-top:12px;width:100%">Kapat</button>
 </dialog>
 
+<dialog id="data-dialog" class="qr-dialog dlg" aria-labelledby="data-title">
+  <h2 id="data-title">📶 Veri kullanımı</h2>
+  <table class="usage">
+    <thead><tr><th>Kategori</th><th class="num">↑ Giden</th><th class="num">↓ Gelen</th><th class="num">İstek</th></tr></thead>
+    <tbody id="usage-body"></tbody>
+  </table>
+  <dl class="kv" style="margin-top:10px">
+    <dt>Toplam</dt><dd id="usage-total">—</dd>
+    <dt>Bu oturum</dt><dd id="usage-session">—</dd>
+    <dt>Sıfırlamadan beri</dt><dd id="usage-since">—</dd>
+  </dl>
+  <p class="small muted">Uygulamanın kendi saydığı tahmini değerlerdir (≈ = tahmin). Operatör faturası TLS/TCP başlıkları nedeniyle %5–15 farklı olabilir. Önbellekten gelen yanıtlar da sayılabilir. OCR motoru ilk kurulumda bir kez tahmini eklenir.</p>
+  <div class="row">
+    <button class="btn" id="usage-reset" type="button" style="flex:1">Sayaçları sıfırla</button>
+    <button class="btn" id="usage-close" type="button" style="flex:1">Kapat</button>
+  </div>
+</dialog>
+
+<dialog id="about-dialog" class="qr-dialog dlg" aria-labelledby="about-title">
+  <h2 id="about-title">Sürüm notları · <span id="about-version"></span></h2>
+  <div id="changelog" class="changelog"></div>
+  <button class="btn" id="about-close" type="button" style="margin-top:12px;width:100%">Kapat</button>
+</dialog>
+
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="version.js"></script>
 <script type="module" src="js/app.js"></script>
 </body>
 </html>

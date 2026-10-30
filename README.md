@@ -8,6 +8,7 @@ Build adımı yok: saf ES modülleri + CDN kütüphaneleri (Leaflet, Tesseract.j
 ```
 MBRP/
 ├─ index.html                 Ana kabuk (6 sekme: Rota · Menzil · Kamera · İstasyon · ABRP · Test)
+├─ version.js                 Sürüm numarası + sürüm notları (tek kaynak)
 ├─ manifest.webmanifest, sw.js, icons/
 ├─ css/styles.css             Dark UI
 └─ js/
@@ -41,6 +42,7 @@ MBRP/
    │  ├─ fallback.js          5 sn'de bir varış SoC tahmini → bir önceki istasyona yönlendir
    │  ├─ ecoSpeed.js          Güvenli varış için en yüksek hız
    │  └─ voice.js             Web Speech API (tr-TR)
+   ├─ net/meter.js            Veri kullanımı sayacı (fetch sarmalayıcı + Resource Timing)
    ├─ abrp/telemetry.js       5 sn'de bir api.iternio.com/1/tlm/send + opsiyonel webhook
    ├─ sim/simulator.js        Test Modu "oynat": rota boyunca ilerler, pili fizikle düşürür
    └─ ui/                     tabs, mapView, roiBox, cameraPanel, routePanel, stationsView, abrpPanel, testPanel, cards, statusBadges, gpsControl, toast
@@ -62,6 +64,21 @@ Test Modu açıkken `effective()` sensör yerine sürgü değerlerini verir; GPS
 2. **Ölçüm:** `consumption.js` SoC'nin değiştiği anları (tam sayı SoC'nin belirsizliğini önlemek için) mesafeyle eşler → gerçek kWh/100km ve km/%1.
 3. **Kalibrasyon:** ölçülen / model enerji oranı **k** (EMA, 0.6–1.8) kaydedilir; planlayıcı ve menzil bunu kullanır. İlk sürüşlerde k öğrenilir.
 4. **Rota tahmini:** `routeProfile` her dilimi (eğim, rüzgar, yağış, sıcaklık, trafik) enerjiye çevirir; DP planlayıcı bunu ve şarj eğrisini kullanır.
+
+## Sürümleme
+
+Tek kaynak: [version.js](version.js) (`APP_VERSION` + `APP_CHANGELOG`). Sayfa üst çubuğunda `vX.Y.Z` görünür; dokununca sürüm notları açılır. Service worker önbellek adı sürümden türer, bu yüzden sürüm değişince telefon yeni dosyaları indirir.
+
+**Her değişiklikte:**
+1. `APP_VERSION`'ı artır (`z` düzeltme, `y` yeni özellik, `x` büyük/uyumsuz değişiklik).
+2. `APP_CHANGELOG`'un en üstüne tarihli bir kayıt ekle.
+3. Commit mesajını `vX.Y.Z: ...` ile başlat (isteğe bağlı: `git tag vX.Y.Z`).
+
+## Veri kullanımı sayacı
+
+Üst çubuktaki `📶 ↑… ↓…` rozeti, uygulamanın gönderdiği ve aldığı toplam veriyi gösterir; dokununca kategori dökümü (ABRP, rota/hava/arama servisleri, harita karoları, kütüphaneler/OCR, uygulama dosyaları, diğer), bu oturum ve sıfırlama düğmesi açılır (yanlışlıkla silinmesin diye iki dokunuş). Sayaç LocalStorage'da saklanır. Kaynak: [js/net/meter.js](js/net/meter.js).
+
+Sayaç **uygulama düzeyinde tahmindir** (operatör faturasından %5–15 farklı olabilir): `fetch` çağrıları Content-Length ve başlık tahminiyle, betik/CSS/harita karoları Resource Timing ile sayılır; ölçüm izni vermeyen CDN dosyaları ve harita karoları ölçülmüş/ortalama boyutla tahmin edilir (`≈`), OCR motoru (Web Worker içinde indiği için görünmez) ilk kurulumda bir kez ~4,4 MB eklenir. Önbellekten gelen `fetch` yanıtları da sayılabilir (üst sınır). Ölçülen ABRP yükü: istek başına yaklaşık 780 B giden + 350 B gelen (5 sn aralıkla ≈ 0,8 MB/saat).
 
 ## Çalıştırma
 

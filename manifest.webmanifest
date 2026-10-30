@@ -1,4 +1,5 @@
 {
+  "id": "./",
   "name": "Smart EV Co-Pilot & ABRP Bridge",
   "short_name": "EV Co-Pilot",
   "description": "Togg T10X için OCR + GPS + fizik tabanlı akıllı rota planlayıcı ve ABRP telemetri köprüsü",
@@ -9,7 +10,11 @@
   "background_color": "#0b0f14",
   "theme_color": "#0b0f14",
   "lang": "tr",
+  "categories": ["navigation", "utilities"],
   "icons": [
-    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ]
 }

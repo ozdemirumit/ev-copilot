@@ -1,12 +1,13 @@
 // Uygulama kabuğu önbelleği. Sürüm değişince eski önbellek silinir.
-const CACHE = 'ev-copilot-shell-v3';
+importScripts('./version.js'); // self.APP_VERSION: sürüm değişince önbellek adı ve sw.js'in bağımlılığı değişir → güncelleme
+const CACHE = 'ev-copilot-' + self.APP_VERSION;
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './icons/icon.svg', './css/styles.css',
   './js/app.js', './js/config.js', './js/state.js',
   './js/utils/storage.js', './js/utils/geo.js',
   './js/ui/toast.js', './js/ui/tabs.js', './js/ui/mapView.js', './js/ui/roiBox.js', './js/ui/cameraPanel.js',
   './js/ui/testPanel.js', './js/ui/abrpPanel.js', './js/ui/stationsView.js', './js/ui/cards.js',
-  './js/ui/gpsControl.js', './js/ui/statusBadges.js', './js/ui/routePanel.js', './js/ui/placeSearch.js', './js/ui/qrTransfer.js',
+  './js/ui/gpsControl.js', './js/ui/statusBadges.js', './js/ui/routePanel.js', './js/ui/placeSearch.js', './js/ui/qrTransfer.js', './js/ui/installPrompt.js', './js/ui/dataUsage.js', './js/ui/versionInfo.js', './js/net/meter.js', './version.js', './icons/icon-192.png', './icons/icon-512.png',
   './js/physics/model.js', './js/physics/traffic.js', './js/physics/weather.js', './js/physics/elevation.js',
   './js/physics/routeProfile.js', './js/physics/consumption.js', './js/physics/rangeEngine.js',
   './js/routing/operators.js', './js/routing/osrm.js', './js/routing/chargeCurve.js', './js/routing/chargerSource.js',

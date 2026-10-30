@@ -68,6 +68,8 @@ button { cursor: pointer; }
 .badge.wait { color: var(--warn); border-color: #7a5a22; }
 .badge.err { color: var(--bad); border-color: #7a2a33; }
 .badge.test { color: var(--info); border-color: #2b4f7a; }
+button.badge.install { cursor: pointer; color: var(--accent); border-color: var(--accent); font: inherit; font-size: 11px; font-weight: 600; }
+button.badge.install::before { content: none; }
 
 /* ---------- Layout ---------- */
 main { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
@@ -197,6 +199,19 @@ pre.packet { margin: 0; background: var(--bg); border: 1px solid var(--line); bo
 /* ---------- Test mode ---------- */
 .test-banner { background: #14263a; border: 1px solid #2b4f7a; color: var(--info); border-radius: var(--radius); padding: 10px 12px; font-size: 13px; }
 body.sim-on .brand { color: var(--info); }
+
+/* ---------- Sürüm ve veri kullanımı ---------- */
+button.ver { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; font-size: 10px; font-weight: 600; text-decoration: underline dotted; cursor: pointer; }
+button.badge.data { cursor: pointer; font: inherit; font-size: 11px; font-variant-numeric: tabular-nums; }
+button.badge.data::before { content: none; }
+.dlg { max-height: 86dvh; overflow-y: auto; }
+.usage { width: 100%; border-collapse: collapse; font-size: 13px; }
+.usage th { text-align: left; font-size: 11px; color: var(--muted); padding: 0 4px 6px; }
+.usage td { padding: 5px 4px; border-top: 1px solid var(--line); }
+.usage .num, .usage th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.btn.danger { border-color: var(--bad); color: var(--bad); }
+.changelog h3 { margin: 12px 0 4px; color: var(--accent); text-transform: none; letter-spacing: 0; font-size: 13px; }
+.changelog ul { margin: 0; padding-left: 18px; font-size: 13px; }
 
 /* ---------- QR iletişim kutusu ---------- */
 .qr-dialog { background: var(--card); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; width: min(92vw, 380px); }

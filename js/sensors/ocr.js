@@ -2,6 +2,7 @@ import { getState, patch } from '../state.js';
 import { OCR } from '../config.js';
 import { preprocess } from './preprocess.js';
 import { createFilter } from './outlierFilter.js';
+import { countOcrEngineOnce } from '../net/meter.js';
 
 const TESS_SRC = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
 const TESS_SRI = 'sha256-qOKZGNCYsrBuEBK9rv+0rsBEXF1WVHCQI+C9H0QqgOg=';
@@ -37,6 +38,7 @@ function getWorker() {
       tessedit_char_whitelist: '0123456789%',
       tessedit_pageseg_mode: window.Tesseract.PSM.SINGLE_LINE,
     });
+    countOcrEngineOnce(); // motor Web Worker içinde iner, sayfadan görünmez: ilk kurulumda tahmini ekle
     return worker;
   })().catch((err) => { workerPromise = null; throw err; });
   return workerPromise;
