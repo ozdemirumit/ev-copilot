@@ -90,6 +90,42 @@ export function initRoutePanel() {
     }
   }
 
+  /** Rota boyunca hava: km, sıcaklık, yağış, rüzgâr ve o dilimdeki kafa/arka rüzgâr (planın hesapta kullandığı veri). */
+  function paintWeather() {
+    const p = getState('plan');
+    const card = $('wx-card');
+    const wx = p.profile?.wx || [];
+    card.classList.toggle('hidden', !p.profile);
+    if (!p.profile) return;
+    const list = $('wx-list');
+    list.replaceChildren();
+    if (!wx.length) {
+      $('wx-sum').textContent = 'Hava durumu alınamadı: rüzgâr ve yağış hesaba katılmadı (Open-Meteo yanıt vermedi). Rotayı Planla ile tekrar dene.';
+      return;
+    }
+    const rows = wx.map((w) => {
+      const head = p.profile.segAt(w.km).headwind;
+      return { ...w, head };
+    });
+    const avg = (f) => rows.reduce((a, r) => a + f(r), 0) / rows.length;
+    const rainy = rows.filter((r) => r.rain >= 0.1);
+    $('wx-sum').textContent = `Ortalama ${avg((r) => r.temp).toFixed(0)} °C · en düşük ${Math.min(...rows.map((r) => r.temp)).toFixed(0)} °C`
+      + (rainy.length ? ` · yağış: ${rainy.map((r) => r.km.toFixed(0) + '. km').join(', ')}` : ' · yağış yok')
+      + ` · ortalama net rüzgâr ${avg((r) => r.head) >= 0 ? 'kafa' : 'arka'} ${Math.abs(avg((r) => r.head)).toFixed(0)} km/h`;
+    rows.forEach((r) => {
+      const row = document.createElement('div');
+      row.className = 'stop wx';
+      const rain = r.rain >= 0.1 ? `🌧️ ${r.rain.toFixed(1)} mm/sa` : '☀️ yağış yok';
+      const wind = `💨 ${r.windSpeed.toFixed(0)} km/h (${r.head >= 0 ? 'kafa +' : 'arka −'}${Math.abs(r.head).toFixed(0)})`;
+      row.append(
+        Object.assign(document.createElement('div'), { className: 'num', textContent: r.km.toFixed(0) }),
+        Object.assign(document.createElement('div'), { className: 't', textContent: `${r.temp.toFixed(0)} °C · ${rain}` }),
+        Object.assign(document.createElement('div'), { className: 'm', textContent: wind }),
+      );
+      list.append(row);
+    });
+  }
+
   gm.addEventListener('click', () => {
     const { start, end } = getState('route');
     const p = getState('plan');
@@ -97,7 +133,8 @@ export function initRoutePanel() {
     window.open(gmapsUrl(start, end, p.stops), '_blank', 'noopener');
   });
 
-  subscribe('plan', paint);
+  subscribe('plan', () => { paint(); paintWeather(); });
   subscribe('route', paint);
   paint();
+  paintWeather();
 }

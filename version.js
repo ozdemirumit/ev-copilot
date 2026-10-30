@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.14.0';
+self.APP_VERSION = '0.15.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.15.0', date: '2026-10-30',
+    notes: [
+      'Rota sekmesinde "Rota boyunca hava" kartı: her ~50 km için sıcaklık, yağış, rüzgâr hızı ve o dilimdeki kafa/arka rüzgâr (planın hesapta kullandığı veri) ile kısa özet. Hava verisi alınamazsa kart bunu söyler.',
+      'Hava servisi geçici sınır/yoğunluk (429/5xx) verirse bir kez bekleyip yeniden denenir.',
+    ],
+  },
   {
     v: '0.14.0', date: '2026-10-30',
     notes: [

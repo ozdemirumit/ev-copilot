@@ -11,7 +11,11 @@ export async function fetchWeather(points) {
   const url = `${BASE}?latitude=${lat}&longitude=${lon}`
     + '&hourly=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m'
     + '&wind_speed_unit=kmh&timeformat=unixtime&forecast_days=3';
-  const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
+  let res = await fetch(url, { signal: AbortSignal.timeout(12000) });
+  if (res.status === 429 || res.status >= 500) { // geçici sınır/yoğunluk: bir kez bekleyip tekrar dene
+    await new Promise((r) => setTimeout(r, 2000));
+    res = await fetch(url, { signal: AbortSignal.timeout(12000) });
+  }
   if (!res.ok) throw new Error('Open-Meteo HTTP ' + res.status);
   const json = await res.json();
   const list = Array.isArray(json) ? json : [json];
