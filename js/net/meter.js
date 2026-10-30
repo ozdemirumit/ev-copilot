@@ -31,7 +31,6 @@ const EST_OCR_ENGINE = 4.4e6; // Tesseract çekirdek + dil verisi, ilk kurulum (
 // Ölçüm izni (Timing-Allow-Origin) vermeyen CDN dosyaları için sıkıştırılmış aktarım boyutları (ölçüldü).
 const EST_BY_URL = [
   [/leaflet\.js/, 42500], [/leaflet\.css/, 3500], [/tesseract\.min\.js/, 10200],
-  [/jsQR\.js/i, 53300], [/qrcode\.min\.js/, 7400],
 ];
 
 export function categoryOf(url) {

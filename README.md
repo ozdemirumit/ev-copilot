@@ -47,7 +47,7 @@ MBRP/
    ├─ sim/simulator.js        Test Modu "oynat": rota boyunca ilerler, pili fizikle düşürür
    └─ ui/                     tabs, mapView, roiBox, cameraPanel, routePanel, stationsView, abrpPanel, testPanel, cards, statusBadges, gpsControl, toast
       ├─ placeSearch.js       Yer/adres arama (Photon, yedek Nominatim) + haritadan seçince ad (reverse)
-      └─ qrTransfer.js        ABRP token/API Key'i QR ile cihazlar arası aktarma (üret: qrcode-generator, oku: BarcodeDetector veya jsQR)
+      └─ tokenScanner.js      ABRP token/API Key'i kamerayla ekrandaki METİNDEN okur (OCR); boş alana dokununca açılır
 ```
 
 ### Veri akışı
@@ -110,7 +110,7 @@ Tarayıcıda gerçek servislerle denendi: rota/rakım/hava planı, istasyon önb
 - **Canlı trafik yok:** anahtarsız ücretsiz bir trafik kaynağı yok. Trafik, Rota sekmesindeki yoğunluk tahmini (ve Test Modu sürgüsü) ile modellenir. Google Routes API gibi bir kaynak sonradan `traffic.js`'e bağlanabilir.
 - **Overpass** herkese açık ve sık yavaşlıyor/hız sınırlıyor (429/502). Parçalı sorgu + 3 ayna + 7 günlük önbellek var; yine de başarısız olabilir, o zaman "OpenChargeMap anahtarı" alanı ek kaynaktır. OSM'de güç/soket etiketi yoksa istasyon kW'ı operatör tablosundan gelir (listede `*`).
 - **Yer arama** herkese açık Photon/Nominatim servislerini kullanır (yazarken 350 ms gecikmeli, adil kullanım); yoğun kullanım için kendi geocoder'ını bağlamak gerekir.
-- **QR aktarımı:** QR gizli bilgi içerir; yalnızca kendi cihazına göster. Okunan QR'dan yalnızca token ve API Key kabul edilir (webhook gibi alanlar yok sayılır) ve kaydetmeden önce onay istenir.
+- **Token okuma (OCR):** boş User Token / API Key alanına dokununca kamera açılır, ekrandaki UUID biçimli metin okunur (art arda 2 okuma tutarlı olunca kabul). OCR yanılabilir (sentetik testte 6 rastgele token'ın 5'i birebir okundu; ince monospace yazılar daha zayıf, bazı karakterler karışabilir, örn. `4`↔`d`); biçime uymayan okumalar reddedilir ama biçime uyan yanlış okuma kabul edilebilir, bu yüzden kaydetmeden önce değer düzenlenebilir kutuda gösterilir: ekrandakiyle karakter karakter karşılaştır. Yalnızca 8-4-4-4-12 onaltılı biçim okunur; farklı biçimli bir API Key'i elle yaz. Okuma küçük/ince yazıda zorlanır: metni büyüt ve kutuya sığdır.
 - **OSRM demo sunucusu** yoğun kullanıma uygun değildir; kendi OSRM'ni kurmak için `routing/osrm.js` tek yerdir.
 - **Operatör fiyatları** `config.js`'te yer tutucudur; İstasyon sekmesinden güncelle.
 - **Rakım/eğim:** SRTM ~90 m çözünürlük; 2 km dilimlerde yaklaşık eğim verir.

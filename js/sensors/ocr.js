@@ -17,7 +17,7 @@ let running = false;
 let timer = null;
 let previewTimer = null;
 
-function loadScript() {
+export function loadTesseract() {
   if (window.Tesseract) return Promise.resolve();
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');
@@ -32,7 +32,7 @@ function loadScript() {
 
 function getWorker() {
   workerPromise ||= (async () => {
-    await loadScript();
+    await loadTesseract();
     const worker = await window.Tesseract.createWorker('eng');
     await worker.setParameters({
       tessedit_char_whitelist: '0123456789%',

@@ -265,8 +265,11 @@
       <div class="row wrap">
         <button class="btn ghost" id="abrp-reveal" type="button">👁️ Göster</button>
         <button class="btn ghost" id="abrp-clear" type="button">Temizle</button>
-        <button class="btn" id="btn-qr-scan" type="button">📷 QR ile oku</button>
-        <button class="btn" id="btn-qr-show" type="button">🔳 QR göster</button>
+        <button class="btn" id="btn-qr-scan" type="button">📷 Kamerayla oku</button>
+      </div>
+      <div class="row between">
+        <label for="scan-on-focus">Boş alana dokununca kamerayı aç</label>
+        <label class="switch"><input type="checkbox" id="scan-on-focus" checked><i></i></label>
       </div>
       <p class="small muted" style="margin:0">Bilgiler yalnızca bu cihazın LocalStorage'ında düz metin saklanır.</p>
     </div>
@@ -343,25 +346,25 @@
 </nav>
 
 <dialog id="qr-dialog" class="qr-dialog" aria-labelledby="qr-title">
-  <h2 id="qr-title">QR</h2>
-  <div id="qr-show" class="hidden stack">
-    <div class="qr-box"><img id="qr-img" alt="ABRP token QR kodu"></div>
-    <div class="row between">
-      <label for="qr-with-key">API Key'i de ekle</label>
-      <label class="switch"><input type="checkbox" id="qr-with-key" checked><i></i></label>
+  <h2 id="qr-title">Token oku</h2>
+  <div id="qr-scan" class="stack">
+    <div class="qr-view" id="qr-view">
+      <video id="qr-video" playsinline muted autoplay></video>
+      <div class="qr-guide" aria-hidden="true"></div>
     </div>
-    <p class="small muted" id="qr-show-note" style="margin:0"></p>
-  </div>
-  <div id="qr-scan" class="hidden stack">
-    <div class="qr-view"><video id="qr-video" playsinline muted autoplay></video></div>
-    <p class="small muted" id="qr-status" style="margin:0"></p>
+    <p class="small muted" id="qr-hint" style="margin:0"></p>
+    <p class="small" id="qr-status" style="margin:0"></p>
     <div id="qr-confirm" class="hidden stack">
-      <p id="qr-found" style="margin:0;font-weight:600"></p>
+      <label class="field"><span id="qr-found-label">Okunan değer</span>
+        <input type="text" id="qr-found" autocomplete="off" spellcheck="false" autocapitalize="off" style="font-family:ui-monospace,Consolas,monospace;font-size:13px">
+      </label>
+      <p id="qr-verify" class="small" style="margin:0;color:var(--warn)">OCR yanılabilir: değeri ekrandakiyle karakter karakter karşılaştır. Yanlış karakter varsa kutuda düzeltebilir ya da Tekrar tara'ya basabilirsin.</p>
       <div class="row">
         <button class="btn primary" id="qr-save" type="button" style="flex:1">Kaydet</button>
         <button class="btn" id="qr-retry" type="button" style="flex:1">Tekrar tara</button>
       </div>
     </div>
+    <button class="btn ghost" id="qr-manual" type="button">⌨️ Elle yaz</button>
   </div>
   <button class="btn" id="qr-close" type="button" style="margin-top:12px;width:100%">Kapat</button>
 </dialog>

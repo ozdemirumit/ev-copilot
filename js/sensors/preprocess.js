@@ -34,7 +34,8 @@ export function preprocess(video, stage, opts, canvas) {
   const { sx, sy, sw, sh } = roiToVideoRect(video, stage, opts.roi);
   if (sw < 4 || sh < 4) return false;
 
-  const h = TARGET_H;
+  // maxH verilirse ROI özgün yüksekliğinin `scale` katına (varsayılan 1) ölçeklenir, en çok maxH piksel; yoksa sabit hedef yükseklik.
+  const h = opts.maxH ? Math.min(Math.round(sh * (opts.scale || 1)), opts.maxH) : opts.targetH || TARGET_H;
   const w = Math.max(16, Math.round((sw / sh) * h));
   canvas.width = w + PAD * 2;
   canvas.height = h + PAD * 2;
