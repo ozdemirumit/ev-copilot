@@ -118,16 +118,16 @@
         <input type="range" id="cons-adj" min="-30" max="100" step="1" value="0">
       </div>
       <div class="slider-row">
-        <label for="charger-min">Ara istasyona varışta en az pil</label>
+        <label for="charger-min">Şarj istasyonuna giriş pili (en az)</label>
         <output id="charger-min-out">%10</output>
-        <input type="range" id="charger-min" min="5" max="30" step="1" value="10">
+        <input type="range" id="charger-min" min="5" max="50" step="1" value="10">
       </div>
       <div class="slider-row">
-        <label for="max-charge">Durakta şarj hedefi (en fazla)</label>
+        <label for="max-charge">Şarj hedefi, istasyondan çıkış (en fazla)</label>
         <output id="max-charge-out">%90</output>
         <input type="range" id="max-charge" min="50" max="100" step="5" value="90">
       </div>
-      <p class="small muted" style="margin:0">Tüketimi fizik modeli tahmin eder; gerçek değeri yazarsan ya da düzeltme verirsen plan ve menzil buna göre değişir. Daha çok durak için tüketimi artır, varış payını yükselt veya şarj hedefini düşür.</p>
+      <p class="small muted" style="margin:0">Tüketimi fizik modeli tahmin eder; gerçek değeri yazarsan ya da düzeltme verirsen plan ve menzil buna göre değişir. Giriş pili: istasyona en az bu pille varılır (yükselirse daha erken ve daha çok durak). Şarj hedefi: durakta bu seviyeyi geçmez; plan daha az gerekiyorsa daha az şarj eder.</p>
     </div>
 
     <div class="card stack" id="plan-card">
