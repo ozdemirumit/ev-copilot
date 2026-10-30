@@ -5,6 +5,7 @@ import { load, save } from '../utils/storage.js';
 
 // Herkese açık sunucular sık "at capacity" (502/504) verir veya hiç yanıt vermez: biri takılırsa sıradakine geçilir.
 const OVERPASS = [
+  'https://overpass.openstreetmap.fr/api/interpreter',
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
   'https://overpass.private.coffee/api/interpreter',
@@ -54,9 +55,8 @@ function fromOsm(el) {
  * Bir parça için sunucuları sırayla dener ama sıradakini yanıtı beklemeden HEDGE_MS sonra başlatır (ilk gelen kazanır):
  * yanıtsız sunucu tüm süreyi tüketmesin. Yanıt vermeyen sunucu bu planlamada `down` kümesine alınıp bir daha denenmez.
  */
-async function queryChunk(poly, down) {
-  const q = `[out:json][timeout:15];(node["amenity"="charging_station"](around:${PLANNER.corridorM},${poly});`
-    + `way["amenity"="charging_station"](around:${PLANNER.corridorM},${poly}););out center tags;`;
+async function queryChunk(bbox, down) {
+  const q = `[out:json][timeout:15];(node["amenity"="charging_station"](${bbox});way["amenity"="charging_station"](${bbox}););out center tags;`;
   const urls = OVERPASS.filter((u) => !down.has(u));
   if (!urls.length) throw new Error('tüm Overpass sunucuları yanıtsız');
   const ctrl = new AbortController();
@@ -73,7 +73,10 @@ async function queryChunk(poly, down) {
         signal: AbortSignal.any([ctrl.signal, AbortSignal.timeout(MIRROR_TIMEOUT_MS)]),
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
-      return (await res.json()).elements;
+      const json = await res.json();
+      // Overpass zaman aşımı/bellek hatasında HTTP 200 + boş "elements" + "remark" döndürür: bunu başarı sayma.
+      if (json.remark && /error|timed out|out of memory/i.test(json.remark)) throw new Error('sunucu hata verdi');
+      return json.elements;
     } catch (err) {
       if (!ctrl.signal.aborted) {
         down.add(url);
@@ -93,15 +96,25 @@ async function queryChunk(poly, down) {
 }
 
 /**
- * Rota ~10 km aralıkla seyreltilir ve ~110 km'lik parçalara bölünür (tek büyük sorgu herkese açık sunucuda
- * zaman aşımına uğruyor). Overpass `around` çoklu nokta (polyline) destekler. Parçalar 2'şerli çalışır.
+ * Rota ~10 km aralıkla seyreltilir ve ~60 km'lik parçalara bölünür; her parça için sınır kutusu (bbox) sorgulanır:
+ * `around` çoklu nokta sorgusuna göre sunucuya çok daha ucuzdur (uzun rotada zaman aşımı vermez). Kutu koridor payı kadar
+ * genişletilir, koridor dışı sonuçlar finalize()'da izdüşümle elenir. Parçalar 2'şerli çalışır.
  * Dönüş: { list, failed, total } — başarısız parça olsa bile kısmi sonuç döner.
  */
+function bboxOf(c) {
+  const lats = c.map((p) => p.lat);
+  const lons = c.map((p) => p.lon);
+  const padLat = PLANNER.corridorM / 111000;
+  const padLon = padLat / Math.cos((((Math.min(...lats) + Math.max(...lats)) / 2) * Math.PI) / 180);
+  return [Math.min(...lats) - padLat, Math.min(...lons) - padLon, Math.max(...lats) + padLat, Math.max(...lons) + padLon]
+    .map((v) => v.toFixed(4)).join(',');
+}
+
 async function overpass(pts) {
   const thin = pts.filter((_, i) => i % 5 === 0);
   if (thin.at(-1) !== pts.at(-1)) thin.push(pts.at(-1));
   const chunks = [];
-  for (let i = 0; i < thin.length - 1; i += 11) chunks.push(thin.slice(i, i + 12));
+  for (let i = 0; i < thin.length - 1; i += 6) chunks.push(thin.slice(i, i + 7));
 
   const byId = new Map();
   let failed = 0;
@@ -112,7 +125,7 @@ async function overpass(pts) {
     while (next < chunks.length) {
       const c = chunks[next++];
       try {
-        const els = await queryChunk(c.map((p) => `${p.lat.toFixed(4)},${p.lon.toFixed(4)}`).join(','), down);
+        const els = await queryChunk(bboxOf(c), down);
         els.forEach((el) => { const s = fromOsm(el); if (s) byId.set(s.id, s); });
       } catch (err) {
         console.warn('Overpass parçası başarısız:', err.message);
