@@ -7,7 +7,7 @@ const SHELL = [
   './js/utils/storage.js', './js/utils/geo.js',
   './js/ui/toast.js', './js/ui/tabs.js', './js/ui/mapView.js', './js/ui/roiBox.js', './js/ui/cameraPanel.js',
   './js/ui/testPanel.js', './js/ui/abrpPanel.js', './js/ui/stationsView.js', './js/ui/cards.js',
-  './js/ui/gpsControl.js', './js/ui/statusBadges.js', './js/ui/routePanel.js', './js/ui/placeSearch.js', './js/ui/tokenScanner.js', './js/ui/installPrompt.js', './js/ui/dataUsage.js', './js/ui/versionInfo.js', './js/net/meter.js', './version.js', './icons/icon-192.png', './icons/icon-512.png',
+  './js/ui/gpsControl.js', './js/ui/statusBadges.js', './js/ui/routePanel.js', './js/ui/vehiclePanel.js', './js/ui/placeSearch.js', './js/ui/tokenScanner.js', './js/ui/installPrompt.js', './js/ui/dataUsage.js', './js/ui/versionInfo.js', './js/net/meter.js', './version.js', './icons/icon-192.png', './icons/icon-512.png',
   './js/physics/model.js', './js/physics/traffic.js', './js/physics/weather.js', './js/physics/elevation.js',
   './js/physics/routeProfile.js', './js/physics/consumption.js', './js/physics/rangeEngine.js',
   './js/routing/operators.js', './js/routing/osrm.js', './js/routing/chargeCurve.js', './js/routing/chargerSource.js',

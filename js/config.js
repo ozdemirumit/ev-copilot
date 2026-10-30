@@ -1,12 +1,16 @@
 // Araç sabitleri ve varsayılanlar.
+import { load } from './utils/storage.js';
 
-export const VEHICLE = {
-  name: 'Togg T10X V2 Uzun Menzil',
-  batteryNetKwh: 88.5,
-  massKg: 2150,
-  cd: 0.29,
-  maxDcKw: 180,
-};
+// Hazır araçlar. Değerler TAHMİNDİR (üretici verisi değil); "Özel araç" ile her biri düzeltilebilir.
+export const VEHICLES = [
+  { id: 'togg-v2-lr', name: 'Togg T10X V2 Uzun Menzil', batteryNetKwh: 88.5, massKg: 2150, cd: 0.29, frontalAreaM2: 2.55, maxDcKw: 180 },
+  { id: 'togg-v2-sr', name: 'Togg T10X V2 Standart Menzil (tahmini)', batteryNetKwh: 52.4, massKg: 1950, cd: 0.29, frontalAreaM2: 2.55, maxDcKw: 150 },
+  { id: 'custom', name: 'Özel araç', batteryNetKwh: 88.5, massKg: 2150, cd: 0.29, frontalAreaM2: 2.55, maxDcKw: 180 },
+];
+
+// Seçili araç LocalStorage'dan başlangıçta okunur (araç değişince sayfa yenilenir; modüller bataryayı sabit olarak yakalar).
+const savedVehicle = load('vehicle', null);
+export const VEHICLE = { ...VEHICLES[0], ...(savedVehicle?.spec || {}), id: savedVehicle?.id || VEHICLES[0].id };
 
 // Fizik katsayıları TAHMİNDİR (üretici verisi değil). rangeEngine ölçülen tüketimle bir düzeltme çarpanı (k) öğrenir.
 export const PHYSICS = {
@@ -22,13 +26,14 @@ export const PHYSICS = {
   comfortC: 21,
   rainCrrPerMm: 0.02,
   g: 9.81,
+  consScale: 1 + load('consAdj', 0) / 100, // kullanıcının tüketim düzeltmesi (çarpan); sürgüyle canlı değişir
 };
 
 export const PLANNER = {
-  chargerMinArrival: 8, // ara istasyona varışta güvenli minimum %
+  chargerMinArrival: load('chargerMin', 10), // ara istasyona varışta güvenli minimum % (kullanıcı ayarlar)
   hardMinArrival: 5, // fallback'te kabul edilen mutlak minimum %
   minChargeTo: 20,
-  maxChargeTo: 90,
+  maxChargeTo: load('maxChargeTo', 90), // bir durakta en fazla şarj hedefi % (kullanıcı ayarlar)
   chargeStep: 5,
   stopOverheadMin: 4, // fişe takma/çıkarma
   timeValueTlPerMin: 3, // "Optimum" modunda 1 dk'nın TL karşılığı

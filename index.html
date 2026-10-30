@@ -94,6 +94,42 @@
       </div>
     </div>
 
+    <div class="card stack" id="vehicle-card">
+      <h2>Araç ve tüketim</h2>
+      <label class="field">Araç
+        <select id="veh-select"></select>
+      </label>
+      <div class="grid2">
+        <label class="field">Batarya (net kWh)<input type="number" inputmode="decimal" id="veh-bat" step="0.1" min="10" max="250"></label>
+        <label class="field">Ağırlık (kg)<input type="number" inputmode="numeric" id="veh-mass" step="10" min="600" max="4000"></label>
+        <label class="field">Sürtünme katsayısı (Cd)<input type="number" inputmode="decimal" id="veh-cd" step="0.01" min="0.15" max="0.5"></label>
+        <label class="field">Ön alan (m²)<input type="number" inputmode="decimal" id="veh-area" step="0.05" min="1.5" max="4"></label>
+        <label class="field">En çok DC şarj (kW)<input type="number" inputmode="numeric" id="veh-dc" step="10" min="20" max="400"></label>
+      </div>
+      <button class="btn" id="veh-apply" type="button">Aracı uygula (sayfa yenilenir)</button>
+
+      <p class="small muted" id="cons-info" style="margin:6px 0 0"></p>
+      <label class="field">Tüketimim (kWh/100 km, seyir hızında, düz yolda)
+        <input type="number" inputmode="decimal" id="cons-target" step="0.1" min="8" max="45" placeholder="model tahmini">
+      </label>
+      <div class="slider-row">
+        <label for="cons-adj">Tüketim düzeltmesi</label>
+        <output id="cons-adj-out">%0</output>
+        <input type="range" id="cons-adj" min="-30" max="100" step="1" value="0">
+      </div>
+      <div class="slider-row">
+        <label for="charger-min">Ara istasyona varışta en az pil</label>
+        <output id="charger-min-out">%10</output>
+        <input type="range" id="charger-min" min="5" max="30" step="1" value="10">
+      </div>
+      <div class="slider-row">
+        <label for="max-charge">Durakta şarj hedefi (en fazla)</label>
+        <output id="max-charge-out">%90</output>
+        <input type="range" id="max-charge" min="50" max="100" step="5" value="90">
+      </div>
+      <p class="small muted" style="margin:0">Tüketimi fizik modeli tahmin eder; gerçek değeri yazarsan ya da düzeltme verirsen plan ve menzil buna göre değişir. Daha çok durak için tüketimi artır, varış payını yükselt veya şarj hedefini düşür.</p>
+    </div>
+
     <div class="card stack" id="plan-card">
       <div class="row between">
         <h2 style="margin:0">Şarj planı</h2>

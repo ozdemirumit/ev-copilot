@@ -97,7 +97,7 @@ main { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 
 /* ---------- Form controls ---------- */
 label.field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
-input[type=text], input[type=password], input[type=url], input[type=number] {
+input[type=text], input[type=password], input[type=url], input[type=number], select {
   background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
   padding: 9px 10px; width: 100%; color: var(--text); min-width: 0;
 }

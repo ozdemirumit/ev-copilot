@@ -18,6 +18,9 @@ const store = {
     minArrivalSoc: load('minArrival', 15),
     cruise: load('cruise', 100),
     traffic: load('trafficEst', 0),
+    consAdj: load('consAdj', 0), // % tüketim düzeltmesi (PHYSICS.consScale ile eşleşir)
+    chargerMin: load('chargerMin', 10), // ara istasyona varışta en az %
+    maxChargeTo: load('maxChargeTo', 90), // durakta şarj hedefi üst sınırı %
   },
   // OCR ayarları ve okuma durumu.
   ocr: { ...DEFAULT_CAMERA, ...load('camera', {}), raw: null, accepted: null, status: 'idle', rawSpeed: null, speedStatus: 'idle', lastOkAt: 0 },

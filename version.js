@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.12.3';
+self.APP_VERSION = '0.13.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.13.0', date: '2026-10-30',
+    notes: [
+      'Araç seçimi: Togg T10X V2 Uzun Menzil (varsayılan), Standart Menzil (tahmini) ve Özel araç; batarya, ağırlık, Cd, ön alan ve DC şarj gücü düzenlenebilir (Rota sekmesi, Araç ve tüketim). Araç değişince sayfa yenilenir.',
+      'Tüketim ayarı: gerçek tüketimini (kWh/100 km) yaz veya düzeltme sürgüsünü kullan; plan, menzil ve eco-hız buna göre hesaplanır. Modelin hız başına tahmini gösterilir.',
+      'Plan payları ayarlanabilir: ara istasyona varışta en az pil (varsayılan %8 yerine %10) ve durakta şarj hedefi üst sınırı. Daha yüksek tüketim/pay = daha çok şarj durağı.',
+    ],
+  },
   {
     v: '0.12.3', date: '2026-10-30',
     notes: [
