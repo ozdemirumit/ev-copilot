@@ -33,6 +33,8 @@ export const PLANNER = {
   chargerMinArrival: load('chargerMin', 10), // ara istasyona varışta güvenli minimum % (kullanıcı ayarlar)
   hardMinArrival: 5, // fallback'te kabul edilen mutlak minimum %
   minChargeTo: 20,
+  minStopAdd: load('minStopAdd', 15), // bir durakta en az eklenecek pil puanı (6 puanlık anlamsız mola olmasın)
+  tolerance: load('tolerance', 3), // giriş/varış eşiğinde ± puan: altına düşmek yasak değil, cezalı (eşikte "uçurum" olmasın)
   maxChargeTo: load('maxChargeTo', 90), // bir durakta en fazla şarj hedefi % (kullanıcı ayarlar)
   chargeStep: 5,
   stopOverheadMin: 4, // fişe takma/çıkarma

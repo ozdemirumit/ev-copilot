@@ -127,7 +127,17 @@
         <output id="max-charge-out">%90</output>
         <input type="range" id="max-charge" min="50" max="100" step="5" value="90">
       </div>
-      <p class="small muted" style="margin:0">Tüketimi fizik modeli tahmin eder; gerçek değeri yazarsan ya da düzeltme verirsen plan ve menzil buna göre değişir. Giriş pili: istasyona en az bu pille varılır (yükselirse daha erken ve daha çok durak). Şarj hedefi: durakta bu seviyeyi geçmez; plan daha az gerekiyorsa daha az şarj eder.</p>
+      <div class="slider-row">
+        <label for="min-add">Durakta en az eklenecek pil</label>
+        <output id="min-add-out">%15</output>
+        <input type="range" id="min-add" min="0" max="40" step="1" value="15">
+      </div>
+      <div class="slider-row">
+        <label for="tolerance">Eşik toleransı (± puan)</label>
+        <output id="tolerance-out">±3</output>
+        <input type="range" id="tolerance" min="0" max="8" step="1" value="3">
+      </div>
+      <p class="small muted" style="margin:0">Tüketimi fizik modeli tahmin eder; gerçek değeri yazarsan ya da düzeltme verirsen plan ve menzil buna göre değişir. Giriş pili: istasyona en az bu pille varılır (yükselirse daha erken ve daha çok durak). Şarj hedefi: durakta bu seviyeyi geçmez; plan daha az gerekiyorsa daha az şarj eder. En az eklenecek pil: 6 puanlık anlamsız molaları engeller. Tolerans: giriş/varış eşiğinin ± bu kadar altına inmek yasak değil ama cezalıdır (eşikte ani sıçrama olmaz).</p>
     </div>
 
     <div class="card stack" id="plan-card">

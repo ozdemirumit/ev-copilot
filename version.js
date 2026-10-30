@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.13.1';
+self.APP_VERSION = '0.13.2';
 self.APP_CHANGELOG = [
+  {
+    v: '0.13.2', date: '2026-10-30',
+    notes: [
+      'DÜZELTME: Plan, birbirine 6 km uzaklıktaki iki istasyonda ikişer dakikalık anlamsız duraklar çıkarabiliyordu (giriş eşiğinde 1 puanlık uçurum yüzünden). Artık "Durakta en az eklenecek pil" (varsayılan 15 puan) uygulanır; kuralla çözüm çıkmazsa kuralsız yeniden denenir.',
+      'Eşik toleransı (± puan, varsayılan 3): giriş ve varış eşiğinin biraz altına inmek yasak değil ama cezalı; plan eşikte sıçramaz. Varış eşiğin altındaysa durum satırında belirtilir.',
+    ],
+  },
   {
     v: '0.13.1', date: '2026-10-30',
     notes: [

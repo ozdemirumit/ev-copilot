@@ -59,9 +59,11 @@ export function initRoutePanel() {
       const t = p.totals;
       $('sum-time').textContent = hm(t.totalMin);
       $('sum-stops').textContent = String(p.stops.length);
+      const thr = getState('route').minArrivalSoc;
+      const dip = t.arriveSoc < thr - 0.5 ? ` — eşiğin ${(thr - t.arriveSoc).toFixed(0)} puan altı, tolerans içinde` : '';
       status.textContent = p.stops.length
-        ? `Varışta tahmini pil %${t.arriveSoc.toFixed(0)} (eşik %${getState('route').minArrivalSoc}) · şarj ${hm(t.chargeMin)} · ${t.cost.toFixed(0)} TL`
-        : `Şarj gerekmiyor — varışta tahmini pil %${t.arriveSoc.toFixed(0)} (eşik %${getState('route').minArrivalSoc}).`;
+        ? `Varışta tahmini pil %${t.arriveSoc.toFixed(0)} (eşik %${thr}${dip}) · şarj ${hm(t.chargeMin)} · ${t.cost.toFixed(0)} TL`
+        : `Şarj gerekmiyor — varışta tahmini pil %${t.arriveSoc.toFixed(0)} (eşik %${thr}${dip}).`;
       p.stops.forEach((s, i) => {
         const row = document.createElement('div');
         row.className = 'stop';

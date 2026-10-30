@@ -72,10 +72,11 @@ export function initVehiclePanel() {
   const margin = (id, outId, key, storeKey, apply) => {
     const el = $(id);
     el.value = getState('route')[key];
-    $(outId).textContent = `%${el.value}`;
+    const fmt = (v) => (key === 'tolerance' ? `±${v}` : `%${v}`);
+    $(outId).textContent = fmt(el.value);
     el.addEventListener('input', () => {
       const v = Number(el.value);
-      $(outId).textContent = `%${v}`;
+      $(outId).textContent = fmt(v);
       apply(v);
       save(storeKey, v);
       patch('route', { [key]: v });
@@ -83,4 +84,6 @@ export function initVehiclePanel() {
   };
   margin('charger-min', 'charger-min-out', 'chargerMin', 'chargerMin', (v) => { PLANNER.chargerMinArrival = v; });
   margin('max-charge', 'max-charge-out', 'maxChargeTo', 'maxChargeTo', (v) => { PLANNER.maxChargeTo = v; });
+  margin('min-add', 'min-add-out', 'minStopAdd', 'minStopAdd', (v) => { PLANNER.minStopAdd = v; });
+  margin('tolerance', 'tolerance-out', 'tolerance', 'tolerance', (v) => { PLANNER.tolerance = v; });
 }

@@ -19,7 +19,17 @@ const detourMin = (s) => ((s.offKm * 2) / P.detourKmh) * 60;
  *  - ara istasyona varış SoC ≥ chargerMinArrival, varışa varış SoC ≥ minArrival
  *  - maxFirstStopKm: dinamik fallback'te ilk durağın bu km'den ileride olmasını yasaklar.
  */
-export function planRoute({ profile, stations, startKm = 0, startSoc, minArrival, mode = 'opt', k = 1, maxFirstStopKm = Infinity }) {
+export function planRoute(args) {
+  const strict = solve(args, P.minStopAdd);
+  // Çok kısıtlı rotada (az/uzak istasyon) "en az ekleme" kuralı çözümü engelliyorsa kuralsız yeniden dene.
+  return strict.feasible || !P.minStopAdd ? strict : solve(args, 0);
+}
+
+/** Eşik altına düşme cezası: puan başına ≈ 7 dk veya 20 TL (hızlı modda 3 dk). */
+const dipPenalty = (mode, pts) => Math.max(0, pts) * (mode === 'fast' ? 3 : 20);
+
+function solve({ profile, stations, startKm = 0, startSoc, minArrival, mode = 'opt', k = 1, maxFirstStopKm = Infinity }, minAdd) {
+  const tol = P.tolerance;
   const endKm = profile.totalKm;
   const cands = stations.filter((s) => s.km > startKm + 0.5 && s.km < endKm - 0.5 && s.kw >= P.minKw).sort((a, b) => a.km - b.km);
   const levels = [];
@@ -37,21 +47,25 @@ export function planRoute({ profile, stations, startKm = 0, startSoc, minArrival
       const fromKm = nodeKm[n];
 
       const arriveEnd = st.leave - (profile.energyBetween(fromKm, endKm, k) / BAT) * 100;
-      if (arriveEnd >= minArrival && (!best || st.metric < best.metric)) best = { metric: st.metric, from: [n, si], arriveEnd };
+      if (arriveEnd >= minArrival - tol) {
+        const total = st.metric + dipPenalty(mode, minArrival - arriveEnd);
+        if (!best || total < best.metric) best = { metric: total, from: [n, si], arriveEnd };
+      }
 
       for (let j = n + 1; j < states.length; j++) {
         const s = cands[j - 1];
         if (n === 0 && s.km > maxFirstStopKm) break;
         const eRoute = profile.energyBetween(fromKm, s.km, k);
-        if (st.leave - (eRoute / BAT) * 100 < P.chargerMinArrival) break; // daha ilerisi daha da zor
+        if (st.leave - (eRoute / BAT) * 100 < P.chargerMinArrival - tol) break; // daha ilerisi daha da zor
         const arrive = st.leave - ((eRoute + detourKwh(s) * k) / BAT) * 100;
-        if (arrive < P.chargerMinArrival) continue;
+        if (arrive < P.chargerMinArrival - tol) continue;
+        const dip = dipPenalty(mode, P.chargerMinArrival - arrive);
 
         levels.forEach((L, li) => {
-          if (L < arrive + 3) return;
+          if (L < arrive + Math.max(3, minAdd)) return;
           const mins = chargeMinutes(s.kw, arrive, L);
           const cost = (((L - arrive) / 100) * BAT / P.billedEff) * s.price;
-          const m = st.metric + metric(mode, mins + P.stopOverheadMin + detourMin(s), cost);
+          const m = st.metric + dip + metric(mode, mins + P.stopOverheadMin + detourMin(s), cost);
           if (!states[j][li] || m < states[j][li].metric) {
             states[j][li] = { leave: L, metric: m, prev: [n, si], arrive, mins, cost };
           }
