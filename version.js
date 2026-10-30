@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.10.0';
+self.APP_VERSION = '0.11.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.11.0', date: '2026-10-30',
+    notes: [
+      'DÜZELTME: Yer aramada Türkçe şehir adları (Selanik, Üsküp, Atina, Köln…) bulunuyor. Arama artık Nominatim ve Photon sonuçlarını birleştirir; Photon Türkçe adları çözemiyordu.',
+    ],
+  },
   {
     v: '0.10.0', date: '2026-10-30',
     notes: [

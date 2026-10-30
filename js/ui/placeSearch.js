@@ -1,5 +1,7 @@
-// Yer/adres arama (geocoding). Photon (OSM verisi, anahtarsız, CORS açık); başarısız olursa Nominatim yedek.
-// Her ikisi de herkese açık servislerdir: yalnızca kullanıcı yazarken (350 ms gecikmeli) çağrılır.
+// Yer/adres arama (geocoding), anahtarsız ve CORS açık iki OSM servisi birlikte:
+//  - Nominatim: yer adlarını her dilde (name:tr "Selanik" → Thessaloniki) eşleştirir, şehir/ülke düzeyinde güçlüdür.
+//  - Photon: yazarken tamamlama ve POI/sokak için iyidir ama Türkçe adları çözmez (lang=tr desteklemez).
+// Sonuçlar birleştirilir (önce Nominatim). Yalnızca kullanıcı yazarken (350 ms gecikmeli) çağrılır.
 
 const PHOTON = 'https://photon.komoot.io/api/';
 const NOMINATIM = 'https://nominatim.openstreetmap.org/';
@@ -34,21 +36,34 @@ async function photon(q, signal) {
 }
 
 async function nominatim(q, signal) {
-  const res = await fetch(`${NOMINATIM}search?format=jsonv2&limit=7&accept-language=tr&q=${encodeURIComponent(q)}`, { signal });
+  const res = await fetch(`${NOMINATIM}search?format=jsonv2&limit=6&addressdetails=1&accept-language=tr&q=${encodeURIComponent(q)}`, { signal });
   if (!res.ok) throw new Error('Nominatim HTTP ' + res.status);
   return (await res.json()).map((r) => {
-    const [first, ...rest] = r.display_name.split(', ');
-    return { label: first, sub: rest.slice(0, 3).join(', '), lat: Number(r.lat), lon: Number(r.lon) };
+    const a = r.address || {};
+    const label = r.name || r.display_name.split(', ')[0];
+    const place = a.city || a.town || a.village || a.municipality || a.county;
+    return {
+      label,
+      sub: join(place !== label ? place : null, a.state && a.state !== label && a.state !== place ? a.state : null, a.country),
+      lat: Number(r.lat),
+      lon: Number(r.lon),
+    };
   });
 }
 
+/** Aynı yeri iki servis farklı adla döndürebilir: ~2 km içindeki ikinci sonucu at. */
+const near = (a, b) => Math.abs(a.lat - b.lat) < 0.02 && Math.abs(a.lon - b.lon) < 0.03;
+
 export async function searchPlaces(q, signal) {
-  try {
-    return await photon(q, signal);
-  } catch (err) {
-    if (err.name === 'AbortError') throw err;
-    return nominatim(q, signal);
-  }
+  const settled = await Promise.allSettled([nominatim(q, signal), photon(q, signal)]);
+  if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+  const merged = [];
+  settled.forEach((s) => {
+    if (s.status !== 'fulfilled') return;
+    s.value.forEach((r) => { if (!merged.some((m) => near(m, r))) merged.push(r); });
+  });
+  if (!merged.length && settled.every((s) => s.status === 'rejected')) throw settled[0].reason;
+  return merged.slice(0, 8);
 }
 
 /** Haritadan seçilen noktaya okunur ad (Nominatim reverse). Başarısızsa null. */
