@@ -44,9 +44,10 @@ const store = {
   system: { wakeLock: false, camera: false, ocr: false },
   // Sürüş geçmişi kaydı değişince güncellenir (kayıtlar physics/history.js içinde)
   hist: { n: 0, at: 0 },
-  // Navigasyon: active = dönüş dönüş yönlendirme açık; voice = sesli yönlendirme; lowSoc = düşük pil uyarı eşiği (%).
+  // Navigasyon (limit = Google Roads yol hız limiti): active = dönüş dönüş yönlendirme açık; voice = sesli yönlendirme; lowSoc = düşük pil uyarı eşiği (%).
   nav: { active: false, voice: load('voiceOn', true), lowSoc: load('lowSoc', 20), step: null, alert: null,
-    speedAlert: load('speedAlert', 0), headingUp: load('headingUp', true), ahead: { rain: null, traffic: null, speed: null }, liveRemain: null },
+    speedAlert: load('speedAlert', 0), headingUp: load('headingUp', true),
+    limitOn: load('limitOn', true), limit: null, limitErr: null, ahead: { rain: null, traffic: null, speed: null }, liveRemain: null },
 };
 
 const listeners = {};

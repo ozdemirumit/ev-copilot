@@ -24,34 +24,13 @@ function gmapsUrl(start, end, stops) {
 }
 
 export function initRoutePanel() {
-  // Seyir hızı ve trafik tahmini sürgüleri
-  const bind = (id, outId, key, storeKey, fmt) => {
-    const el = $(id);
-    el.value = getState('route')[key];
-    $(outId).textContent = fmt(el.value);
-    el.addEventListener('input', () => {
-      $(outId).textContent = fmt(el.value);
-      patch('route', { [key]: Number(el.value) });
-      save(storeKey, Number(el.value));
-    });
-  };
-  bind('cruise', 'cruise-out', 'cruise', 'cruise', (v) => `${v} km/h`);
-  bind('traffic-est', 'traffic-est-out', 'traffic', 'trafficEst', (v) => `%${v}`);
-
-  // Trafik: otomatik (Google'ın trafikli süresinden) ya da elle. Sürgüyü elle oynatmak otomatiği kapatır.
-  const auto = $('traffic-auto');
-  auto.checked = getState('route').trafficAuto;
+  // Hız ve trafik Google'dan okunur (elle ayar yok): planlama sonrası özet burada gösterilir
   const paintTraffic = () => {
-    const r = getState('route');
-    auto.checked = r.trafficAuto;
-    $('traffic-est').value = r.traffic;
-    $('traffic-est-out').textContent = `%${r.traffic}`;
-    const i = r.trafficInfo;
-    $('traffic-info').textContent = !i ? '' : `Google: trafikli süre ${hm(i.driveMin)}, trafiksiz ${hm(i.freeMin)} (×${i.ratio.toFixed(2)})`
-      + (r.trafficAuto ? ` → yoğunluk %${r.traffic}` : ' · otomatik kapalı: sürgü senin ayarın');
+    const i = getState('route').trafficInfo;
+    if (!i) return;
+    $('traffic-info').textContent = `Google: trafikli süre ${hm(i.driveMin)}, trafiksiz ${hm(i.freeMin)} (×${i.ratio.toFixed(2)}) · ortalama serbest hız ${Math.round(i.avgFreeKmh)} km/s`
+      + (i.jamKm >= 1 ? ` · yavaş/sıkışık ${i.jamKm.toFixed(0)} km` : ' · trafik akıcı');
   };
-  auto.addEventListener('change', () => { patch('route', { trafficAuto: auto.checked }); save('trafficAuto', auto.checked); paintTraffic(); });
-  $('traffic-est').addEventListener('input', () => { if (getState('route').trafficAuto) { patch('route', { trafficAuto: false }); save('trafficAuto', false); } paintTraffic(); });
   subscribe('route', paintTraffic);
   paintTraffic();
 
@@ -93,6 +72,9 @@ export function initRoutePanel() {
         ? `Varışta tahmini pil %${t.arriveSoc.toFixed(0)} (eşik %${thr}${dip}) · şarj ${hm(t.chargeMin)} · ${t.cost.toFixed(0)} TL${gapNote}`
         : `Şarj gerekmiyor — varışta tahmini pil %${t.arriveSoc.toFixed(0)} (eşik %${thr}${dip}).${gapNote}`;
       stops.forEach((s, i) => {
+        // Parantez: bir önceki şarj durağına (ilk duraksa yolculuğun başına / geçilen son durağa) olan mesafe
+        const fi = p.stops.indexOf(s); // geçilen duraklar listeden gizlenir ama önceki durak hesabında sayılır
+        const prevKm = fi > 0 ? p.stops[fi - 1].km : (p.lastStopKm ?? 0);
         const row = document.createElement('div');
         row.className = 'stop';
         const num = Object.assign(document.createElement('div'), { className: 'num', textContent: String(i + 1) });
@@ -100,7 +82,7 @@ export function initRoutePanel() {
         const right = Object.assign(document.createElement('div'), { className: 'r', textContent: `${Math.round(s.minutes)} dk · ${s.cost.toFixed(0)} TL` });
         const meta = Object.assign(document.createElement('div'), {
           className: 'm',
-          textContent: `${Math.max(0, s.km - here).toFixed(0)} km kaldı (${s.km.toFixed(0)}. km) · ${s.station.opName} ${s.station.slow ? 'AC/yavaş ' : ''}${s.station.kw} kW · %${s.arriveSoc.toFixed(0)} → %${s.leaveSoc}`
+          textContent: `${Math.max(0, s.km - here).toFixed(0)} km kaldı (${fi > 0 || p.lastStopKm != null ? 'önceki duraktan' : 'yolculuk başından'} ${(s.km - prevKm).toFixed(0)} km) · ${s.station.opName} ${s.station.slow ? 'AC/yavaş ' : ''}${s.station.kw} kW · %${s.arriveSoc.toFixed(0)} → %${s.leaveSoc}`
             + (s.station.offKm > 0.3 ? ` · sapma ${s.station.offKm.toFixed(1)} km` : '')
             + (slotLabel(s.station) ? ` · ${slotLabel(s.station)}` : ''),
         });

@@ -2,8 +2,17 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.28.0';
+self.APP_VERSION = '0.29.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.29.0', date: '2026-10-31',
+    notes: [
+      'Seyir hızı ve trafik yoğunluğu sürgüleri kaldırıldı: rota hızı artık Google dan okunur. Her rota dilimi için Routes API adımlarının trafiksiz süresinden serbest akış hızı (yol limiti ve yol sınıfı yansır) ve trafik aralıklarından (akıcı, yavaş, sıkışık) hız çarpanı alınır; enerji, süre, hava zamanlaması ve şarj planı bunlarla hesaplanır. Rota sekmesinde Google süreleri, ortalama hız ve yavaş km yazar.',
+      'Yol hız limiti (Google Roads, Asset Tracking lisansı ister): sürerken okunur, üstte limit işareti çıkar, aşınca sesli uyarılır. Lisans yoksa nedeni yazılır ve senin belirlediğin eşik kullanılır. Maliyet düşük tutuldu (tek nokta, en az 20 sn ve 1 km arayla) ve aylık sorgu sayısı ile tahmini tutar gösterilir.',
+      'Şarj planında parantez içindeki km artık şarj istasyonları arasındaki mesafe: 311 km kaldı (yolculuk başından 311 km), 483 km kaldı (önceki duraktan 172 km).',
+      'Ortak önbellek: aynı bilgi tekrar sorulmaz. Hava (30 dk), rakım, adres, hız limiti, yer ayrıntısı (6 saat), trafikli rota ve arama (10 dk), doluluk (2 dk). Rota sekmesinde kaç çağrının Google a gitmediği görünür, Önbelleği temizle düğmesi vardır.',
+    ],
+  },
   {
     v: '0.28.0', date: '2026-10-31',
     notes: [

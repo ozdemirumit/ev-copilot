@@ -2,6 +2,7 @@
 // oturumu tek faturalanır), ters arama için Geocoding API. Yalnızca kullanıcı yazarken (350 ms gecikmeli) çağrılır.
 import { gfetch, GoogleError } from '../google/api.js';
 import { googleKey } from '../google/loader.js';
+import { cached, TTL } from '../utils/cache.js';
 
 const COORD = /^\s*(-?\d{1,2}(?:\.\d+)?)\s*[,; ]\s*(-?\d{1,3}(?:\.\d+)?)\s*$/;
 
@@ -19,10 +20,10 @@ const newToken = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.no
 
 /** Öneriler: [{ label, sub, placeId }] (koordinat yok; seçilince resolvePlace ile alınır). */
 export async function searchPlaces(q, token) {
-  const json = await gfetch('https://places.googleapis.com/v1/places:autocomplete', {
+  const json = await cached(`ac:${q.toLowerCase()}`, TTL.route, () => gfetch('https://places.googleapis.com/v1/places:autocomplete', {
     method: 'POST',
     body: { input: q, languageCode: 'tr', sessionToken: token },
-  });
+  }), { persist: false }); // aynı metni tekrar yazınca/geri silince Google'a gidilmez
   return (json.suggestions || [])
     .filter((s) => s.placePrediction)
     .map((s) => {
@@ -35,9 +36,9 @@ export async function searchPlaces(q, token) {
 
 /** Seçilen önerinin koordinatı (Place Details: yalnızca konum ve ad alanları). */
 export async function resolvePlace(s, token) {
-  const j = await gfetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(s.placeId)}?languageCode=tr&sessionToken=${encodeURIComponent(token)}`, {
+  const j = await cached(`pd:${s.placeId}`, TTL.long, () => gfetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(s.placeId)}?languageCode=tr&sessionToken=${encodeURIComponent(token)}`, {
     mask: 'location,displayName',
-  });
+  }));
   if (j.location?.latitude == null) throw new GoogleError('Yerin konumu alınamadı');
   return { ...s, lat: j.location.latitude, lon: j.location.longitude };
 }
@@ -46,6 +47,14 @@ export async function resolvePlace(s, token) {
 export async function reverseLabel(lat, lon) {
   const key = googleKey();
   if (!key) return null;
+  try {
+    return await cached(`rg:${lat.toFixed(4)},${lon.toFixed(4)}`, TTL.long, () => geocode(lat, lon, key));
+  } catch {
+    return null;
+  }
+}
+
+async function geocode(lat, lon, key) {
   try {
     const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&language=tr&key=${encodeURIComponent(key)}`, { signal: AbortSignal.timeout(8000) });
     const j = await res.json();

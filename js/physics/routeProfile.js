@@ -1,6 +1,6 @@
 import { haversineKm, bearing, headwindComponent } from '../utils/geo.js';
 import { batteryPowerKw } from './model.js';
-import { speedFactor, stopGoOverhead } from './traffic.js';
+import { speedFactor, stopGoOverhead, densityFromRatio } from './traffic.js';
 
 export const STEP_KM = 2;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -33,7 +33,7 @@ export function resampleRoute(coords, stepKm = STEP_KM) {
  *  pts: resampleRoute çıktısı · elevations: pts ile aynı uzunlukta (m) veya null
  *  wx: [{ km, temp, rain, windSpeed, windDir }] · cruise: km/h · traffic: 0..100
  */
-export function buildProfile({ pts, elevations, wx, cruise, traffic, elevSource = null }) {
+export function buildProfile({ pts, elevations, wx, cruise, traffic, elevSource = null, speeds = null }) {
   const segs = [];
   for (let i = 0; i < pts.length - 1; i++) {
     const a = pts[i];
@@ -50,14 +50,21 @@ export function buildProfile({ pts, elevations, wx, cruise, traffic, elevSource 
       temp: w?.temp ?? 15,
       rain: w?.rain ?? 0,
       wind: w ? { speed: w.windSpeed, dir: w.windDir } : null,
+      // Google'dan: serbest akış hızı ve trafik çarpanı (yoksa seyir hızı + trafik yoğunluğuna düşülür)
+      vFree: speeds?.[i]?.vFree ?? null,
+      tf: speeds?.[i]?.tf ?? null,
     });
   }
 
-  const cost = (seg, vFree, density = traffic) => {
-    const vEff = Math.max(5, vFree * speedFactor(density));
+  // vOv: hızı elle geçersiz kıl (eco-hız tavsiyesi). Yoksa dilimin Google hızı (vFree × tf), o da yoksa seyir hızı × trafik.
+  const cost = (seg, vOv = null) => {
+    const vf = vOv ?? seg.vFree ?? cruise;
+    const tfac = seg.tf ?? speedFactor(traffic);
+    const dens = seg.tf != null ? densityFromRatio(1 / seg.tf) : traffic;
+    const vEff = Math.max(5, vf * tfac);
     const p = batteryPowerKw({ v: vEff, grade: seg.grade, headwind: seg.headwind, temp: seg.temp, rain: seg.rain });
     const h = seg.dKm / vEff;
-    return { kwh: p * h * stopGoOverhead(density), h, p };
+    return { kwh: p * h * stopGoOverhead(dens), h, p };
   };
 
   // Varsayılan seyir hızında kümülatif diziler
@@ -67,7 +74,7 @@ export function buildProfile({ pts, elevations, wx, cruise, traffic, elevSource 
   let ascent = 0;
   let descent = 0;
   segs.forEach((s, i) => {
-    const c = cost(s, cruise);
+    const c = cost(s);
     cumKwh.push(cumKwh[i] + c.kwh);
     cumH.push(cumH[i] + c.h);
     if (c.p < 0) regen += -c.p * c.h;

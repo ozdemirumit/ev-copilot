@@ -18,6 +18,7 @@
   <div class="hud" aria-live="off">
     <div class="hud-item soc"><b id="hud-soc">--</b><span>%</span></div>
     <div class="hud-item"><b id="hud-speed">--</b><span>km/h</span></div>
+    <div class="limit-sign hidden" id="hud-limit" title="Yol hız limiti"></div>
   </div>
   <button class="icon-btn" id="btn-gps" type="button" aria-pressed="false" title="GPS aç/kapat">📍</button>
   <button class="icon-btn" id="btn-wake" type="button" aria-pressed="false" title="Ekranı açık tut (Wake Lock)">🔆</button>
@@ -58,6 +59,7 @@
       <div id="map" role="application" aria-label="Rota haritası"></div>
       <div class="navhud hidden" id="navhud">
         <div class="nh-cell"><b id="nh-speed">0</b><small>km/s</small></div>
+        <div class="limit-sign hidden" id="nh-limit" title="Yol hız limiti"></div>
         <div class="nh-cell nh-main"><b id="nh-eta">--:--</b><small id="nh-rem">—</small></div>
         <div class="nh-cell"><b id="nh-soc">--</b><small>% pil</small></div>
         <div class="nh-btns">
@@ -83,6 +85,10 @@
         <button class="btn primary" id="btn-gkey-test" type="button">✔️ Kaydet ve sına</button>
       </div>
       <div class="small" id="g-test-out"></div>
+      <div class="row between">
+        <span class="small muted" id="cache-info"></span>
+        <button class="btn ghost sm" id="cache-clear" type="button">🧹 Önbelleği temizle</button>
+      </div>
     </div>
 
     <div class="card stack">
@@ -112,21 +118,7 @@
         <input type="range" id="min-arrival" min="5" max="40" step="1" value="15">
       </div>
 
-      <div class="slider-row">
-        <label for="cruise">Seyir hızı (rota tahmini)</label>
-        <output id="cruise-out">100 km/h</output>
-        <input type="range" id="cruise" min="60" max="130" step="5" value="100">
-      </div>
-      <div class="slider-row">
-        <label for="traffic-est">Trafik yoğunluğu tahmini</label>
-        <output id="traffic-est-out">%0</output>
-        <input type="range" id="traffic-est" min="0" max="100" step="5" value="0">
-      </div>
-      <div class="row between">
-        <label for="traffic-auto">Trafik yoğunluğunu Google'dan otomatik al</label>
-        <label class="switch"><input type="checkbox" id="traffic-auto" checked><i></i></label>
-      </div>
-      <p class="small muted" id="traffic-info" style="margin:0"></p>
+      <p class="small muted" id="traffic-info" style="margin:0">Hız ve trafik rota planlanınca Google'dan okunur (yol limiti, trafik).</p>
 
       <div class="row between">
         <label for="map-saver">Haritayı gizle (veri tasarrufu)</label>
@@ -219,8 +211,13 @@
         <output id="low-soc-out">%20</output>
         <input type="range" id="low-soc" min="10" max="40" step="1" value="20">
       </div>
+      <div class="row between">
+        <label for="limit-on">Yol hız limitini Google Roads'tan al (lisans gerektirir)</label>
+        <label class="switch"><input type="checkbox" id="limit-on" checked><i></i></label>
+      </div>
+      <p class="small muted" id="limit-status" style="margin:0"></p>
       <div class="slider-row">
-        <label for="speed-alert">Hız uyarısı (senin belirlediğin eşik; yolun yasal sınırı değildir)</label>
+        <label for="speed-alert">Hız uyarısı (yol limiti alınamazsa kullanılan eşik)</label>
         <output id="speed-alert-out">kapalı</output>
         <input type="range" id="speed-alert" min="0" max="150" step="5" value="0">
       </div>

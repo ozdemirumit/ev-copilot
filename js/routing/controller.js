@@ -5,6 +5,7 @@ import { fetchChargers, reprice, reproject } from './chargerSource.js';
 import { planRoute, rankStations } from './planner.js';
 import { resampleRoute, buildProfile } from '../physics/routeProfile.js';
 import { densityFromRatio, speedFactor } from '../physics/traffic.js';
+import { segmentSpeeds } from '../physics/routeSpeed.js';
 import { kForSpeed } from '../physics/history.js';
 import { PHYSICS } from '../config.js';
 import { fetchElevations } from '../physics/elevation.js';
@@ -27,7 +28,7 @@ const routeSig = () => {
 
 function buildFromRaw() {
   const r = getState('route');
-  return buildProfile({ ...raw, cruise: r.cruise, traffic: r.traffic });
+  return buildProfile({ ...raw, cruise: r.cruise, traffic: r.traffic }); // raw.speeds = Google'dan dilim hızları
 }
 
 /**
@@ -123,26 +124,27 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
     patch('plan', { status: 'loading', text: 'Rota alınıyor…', stops: [], totals: null, ranking: [], fromKm: 0, fromSoc: null });
     patch('sim', { routeKm: 0, lat: null, lon: null, play: false }); // simüle araç yeni rotanın başına
     const rt = await fetchRoute(start, end, via ? [via] : []);
-    // Trafik: Google'ın trafikli süresinden yoğunluğu türet → enerji, hız ve süre hesabına girer (elle ayarı ezer)
-    patch('route', { trafficInfo: { ratio: rt.trafficRatio, driveMin: rt.durationH * 60, freeMin: (rt.durationH * 60) / rt.trafficRatio } });
-    if (getState('route').trafficAuto) {
-      const d = densityFromRatio(rt.trafficRatio);
-      patch('route', { traffic: d });
-      save('trafficEst', d);
-    }
     const pts = resampleRoute(rt.coords);
+    // Hız ve trafik Google'dan: dilim başına serbest akış hızı (yol limiti/sınıfı) ve trafik çarpanı. Elle ayar yok.
+    const speeds = segmentSpeeds(rt, pts);
+    patch('route', {
+      trafficInfo: { ratio: rt.trafficRatio, driveMin: rt.durationH * 60, freeMin: (rt.durationH * 60) / rt.trafficRatio, avgFreeKmh: speeds.avgFreeKmh, jamKm: rt.intervals.reduce((a, iv) => a + (iv.to - iv.from), 0) },
+      cruise: Math.round(speeds.avgFreeKmh), // gösterim ve eco-hız üst sınırı için ortalama serbest hız
+      traffic: densityFromRatio(rt.trafficRatio), // rota genelinde yoğunluk (planK hız bandı için)
+    });
     mapApi.drawRoute(rt.coords, { fit: !from });
     if (from) mapApi.setPoint('start', from, { fit: false });
 
     patch('plan', { text: 'Rakım ve hava durumu alınıyor…' });
-    const cruise = getState('route').cruise;
-    const wxPts = pts.filter((_, i) => i % (WX_STEP_KM / 2) === 0);
-    if (wxPts.at(-1) !== pts.at(-1)) wxPts.push(pts.at(-1));
+    // Hava noktaları ve geçiş saatleri: dilim hızlarından hesaplanan gerçek varış süresiyle
+    const wxIdx = pts.map((_, i) => i).filter((i) => i % (WX_STEP_KM / 2) === 0);
+    if (wxIdx.at(-1) !== pts.length - 1) wxIdx.push(pts.length - 1);
+    const wxPts = wxIdx.map((i) => pts[i]);
     const t0 = Date.now();
     let wxError = null;
     const [elev, wxRes] = await Promise.all([
       fetchElevations(pts),
-      fetchWeather(wxPts.map((p) => ({ lat: p.lat, lon: p.lon, t: t0 + (p.km / cruise) * 3600e3 }))).catch((err) => { console.warn(err); wxError = err.message; return null; }),
+      fetchWeather(wxIdx.map((i) => ({ lat: pts[i].lat, lon: pts[i].lon, t: t0 + speeds.cumH[i] * 3600e3 }))).catch((err) => { console.warn(err); wxError = err.message; return null; }),
     ]);
     if (!elev) toast('Rakım alınamadı: rota düz kabul edildi');
     if (!wxRes) toast('Hava durumu alınamadı: rüzgar/yağış yok sayıldı');
@@ -151,13 +153,14 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
       pts,
       elevations: elev?.elevations ?? null,
       elevSource: elev?.source ?? null,
+      speeds: speeds.segs,
       wx: wxRes ? wxRes.map((w, i) => ({ km: wxPts[i].km, ...w })) : [],
     };
     sig = routeSig();
     const profile = buildFromRaw();
     const pool = from ? [...getState('plan').stations, ...extra.filter((x) => !getState('plan').stations.some((s) => s.id === x.id))] : [];
     const kept = from ? reproject(pool, profile) : [];
-    patch('plan', { route: rt, profile, steps: projectSteps(rt.steps, profile), planId: Date.now(), wxInfo: { source: wxRes?.source ?? null, fallbackReason: wxRes?.fallbackReason ?? null, error: wxError }, forceFirstId: via?.id ?? null, stations: kept, stationInfo: from ? getState('plan').stationInfo : null, text: 'Şarj istasyonları aranıyor…' });
+    patch('plan', { route: rt, profile, steps: projectSteps(rt.steps, profile), planId: Date.now(), wxInfo: { source: wxRes?.source ?? null, fallbackReason: wxRes?.fallbackReason ?? null, error: wxError }, forceFirstId: via?.id ?? null, lastStopKm: null, stations: kept, stationInfo: from ? getState('plan').stationInfo : null, text: 'Şarj istasyonları aranıyor…' });
 
     if (!kept.length) {
       cacheKey = [start, end].map((p) => `${p.lat.toFixed(2)},${p.lon.toFixed(2)}`).join('>');

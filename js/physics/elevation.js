@@ -1,12 +1,23 @@
 // Rakım YALNIZCA Google Elevation'dan. Elevation web servisi tarayıcıdan (CORS) çağrılamaz; Maps JavaScript API'nin
 // ElevationService'i aynı veriyi sunar, bu yüzden o kullanılır.
 import { loadGoogle } from '../google/loader.js';
+import { cached, TTL } from '../utils/cache.js';
 
 const CHUNK = 256;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Nokta başına rakım (m). Servis başarısız olursa null döner (rota düz kabul edilir). */
 export async function fetchElevations(points) {
+  if (!points.length) return null;
+  // Rakım (Google'da öğe başına ücretli) aynı rota için 6 saat saklanır: yeniden planlama/aynı rota tekrar ücretlenmez
+  const f = points[0];
+  const m = points[points.length >> 1];
+  const l = points.at(-1);
+  const key = `el:${points.length}:${[f, m, l].map((p) => `${p.lat.toFixed(3)},${p.lon.toFixed(3)}`).join('>')}`;
+  return cached(key, TTL.long, () => elevationsFromGoogle(points));
+}
+
+async function elevationsFromGoogle(points) {
   try {
     await loadGoogle();
     const { ElevationService } = await google.maps.importLibrary('elevation');

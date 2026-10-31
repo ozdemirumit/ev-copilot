@@ -41,6 +41,8 @@ function check() {
 
   if (passed || drift > SOC_TOLERANCE || far) {
     lastReplan = Date.now();
+    const behind = plan.stops.filter((s) => s.km < km - PASSED_KM).map((s) => s.km);
+    if (behind.length) patch('plan', { lastStopKm: Math.max(...behind) }); // sonraki durağa 'önceki duraktan' mesafe için
     replanFrom({ km, soc: e.soc, maxFirstStopKm: Infinity }); // uygun plan yoksa eski plan kalır
   }
 }

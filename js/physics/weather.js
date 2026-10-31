@@ -1,5 +1,6 @@
 // Hava durumu YALNIZCA Google Weather API'den (saatlik tahmin). Yedek servis yoktur.
 import { gfetch } from '../google/api.js';
+import { cacheGet, cacheSet, TTL } from '../utils/cache.js';
 
 const URL_BASE = 'https://weather.googleapis.com/v1/forecast/hours:lookup';
 const SOURCE = 'Google Hava Durumu';
@@ -13,7 +14,10 @@ const toKmh = (v, unit) => (/MILES/i.test(unit || '') ? v * 1.609344 : /METERS_P
 async function pointForecast(p, now) {
   const ahead = Math.max(0, Math.round((p.t - now) / HOUR_MS));
   const need = Math.min(240, ahead + 2);
-  const hours = [];
+  // ~11 km'lik hücre başına saatlik tahmin 30 dk saklanır; yeterli saati kapsıyorsa yeniden istenmez (aynı rotayı tekrar planlamak, aynı bölgeden geçmek)
+  const ckey = `wx:${p.lat.toFixed(1)},${p.lon.toFixed(1)}`;
+  const hit = cacheGet(ckey);
+  const hours = hit && hit.length >= need ? [...hit] : [];
   let token = null;
   for (let page = 0; page < 12 && hours.length < need; page++) {
     const url = `${URL_BASE}?location.latitude=${p.lat.toFixed(4)}&location.longitude=${p.lon.toFixed(4)}&hours=${need}` + (need > 24 ? '&pageSize=24' : '')
@@ -24,6 +28,7 @@ async function pointForecast(p, now) {
     if (!token) break;
   }
   if (!hours.length) throw new Error('Google Hava Durumu: bu bölge için tahmin yok');
+  if (!hit || hit.length < hours.length) cacheSet(ckey, hours, TTL.weather);
   let best = hours[0];
   const mid = (h) => Date.parse(h.interval?.startTime) + HOUR_MS / 2;
   for (const h of hours) if (Math.abs(mid(h) - p.t) < Math.abs(mid(best) - p.t)) best = h;

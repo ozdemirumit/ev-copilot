@@ -65,6 +65,7 @@ export async function testGoogleKey() {
       body: { includedTypes: ['electric_vehicle_charging_station'], maxResultCount: 1, locationRestriction: { circle: { center: A, radius: 1000 } } },
     })],
     ['Weather API (hava)', () => gfetch(`https://weather.googleapis.com/v1/forecast/hours:lookup?location.latitude=${A.latitude}&location.longitude=${A.longitude}&hours=1`, { keyInQuery: true })],
+    ['Roads API (yol hız limiti; Asset Tracking lisansı ister)', () => gfetch(`https://roads.googleapis.com/v1/speedLimits?path=${A.latitude},${A.longitude}&units=KPH`, { keyInQuery: true })],
     ['Geocoding API (adres adı)', async () => {
       const j = await (await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${A.latitude},${A.longitude}&key=${encodeURIComponent(googleKey())}`)).json();
       if (j.status !== 'OK' && j.status !== 'ZERO_RESULTS') throw new Error(j.error_message || j.status);

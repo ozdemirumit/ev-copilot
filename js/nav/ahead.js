@@ -8,6 +8,7 @@ import { gfetch } from '../google/api.js';
 import { decodePolyline } from '../routing/googleRoute.js';
 import { haversineKm } from '../utils/geo.js';
 import { speak } from '../advisor/voice.js';
+import { currentLimit } from './speedLimit.js';
 
 const $ = (id) => document.getElementById(id);
 const CHECK_MS = 5000;
@@ -121,13 +122,15 @@ function check() {
   const e = effective();
 
   // Hız eşiği (kullanıcı belirler; yolun yasal sınırı değildir)
-  const limit = nav.speedAlert;
-  const over = limit > 0 && (e.speed ?? 0) > limit + SPEED_TOLERANCE;
+  // Yol limiti (Google Roads) biliniyorsa o; yoksa kullanıcının eşiği. Resmî limitte GPS payı için 5 km/h tolerans.
+  const road = currentLimit();
+  const limit = road ?? nav.speedAlert;
+  const over = limit > 0 && (e.speed ?? 0) > limit + (road ? 5 : SPEED_TOLERANCE);
   if (over) {
     overSince ||= Date.now();
     if (Date.now() - overSince >= SPEED_HOLD_MS) {
-      if (nav.ahead.speed == null) setAhead({ speed: `⚠️ Hız eşiğini aştın: ${Math.round(e.speed)} km/s (eşik ${limit})` });
-      speak(`Hız eşiğini aştınız. ${Math.round(e.speed)} kilometre.`, { key: 'speed', cooldownMs: 45000 });
+      if (nav.ahead.speed == null) setAhead({ speed: `⚠️ ${road ? 'Yol hız limitini' : 'Hız eşiğini'} aştın: ${Math.round(e.speed)} km/s (${road ? 'limit' : 'eşik'} ${limit})` });
+      speak(`${road ? 'Hız limitini' : 'Hız eşiğini'} aştınız. ${Math.round(e.speed)} kilometre, limit ${limit}.`, { key: 'speed', cooldownMs: 45000 });
     }
   } else {
     overSince = 0;

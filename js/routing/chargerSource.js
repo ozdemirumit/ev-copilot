@@ -7,6 +7,7 @@ import { haversineKm } from '../utils/geo.js';
 import { load, save } from '../utils/storage.js';
 import { gfetch } from '../google/api.js';
 import { slotsOf } from './slots.js';
+import { cached, TTL } from '../utils/cache.js';
 
 const NEARBY_URL = 'https://places.googleapis.com/v1/places:searchNearby';
 const TEXT_URL = 'https://places.googleapis.com/v1/places:searchText';
@@ -331,7 +332,8 @@ export async function fetchAvailability(stations, max = 3) {
   const out = new Map();
   for (const s of stations.filter((x) => x.gid).slice(0, max)) {
     try {
-      const j = await gfetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(s.gid)}`, { mask: 'evChargeOptions' });
+      // aynı istasyon 2 dk içinde yeniden sorulmaz (ekran yenilemeleri/çift tetikleme)
+      const j = await cached(`av:${s.gid}`, TTL.short, () => gfetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(s.gid)}`, { mask: 'evChargeOptions' }), { persist: false });
       out.set(s.id, slotsOf(j.evChargeOptions, DC_TYPES));
     } catch (err) {
       if (err.fatal) break;
