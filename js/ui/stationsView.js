@@ -39,11 +39,15 @@ function renderList() {
     hint.textContent = 'Rota planlayınca rotadaki istasyonlar burada listelenir.';
     return;
   }
-  const planned = new Map(p.stops.map((s, i) => [s.station.id, i + 1]));
-  const rows = p.ranking.filter((r) => !planned.has(r.station.id)).slice(0, 25);
-  const planRows = p.stops.map((s) => ({ station: s.station, arrive: s.arriveSoc, to: s.leaveSoc, minutes: s.minutes + s.overheadMin, cost: s.cost }));
+  const here = getState('engine').routeKm ?? p.fromKm ?? 0;
+  const ahead = (st) => st.km > here - 0.3; // geride kalan istasyonlar listeden çıkar
+  const stops = p.stops.filter((s) => ahead(s.station));
+  const planned = new Map(stops.map((s, i) => [s.station.id, i + 1]));
+  const rows = p.ranking.filter((r) => ahead(r.station) && !planned.has(r.station.id)).slice(0, 25);
+  const planRows = stops.map((s) => ({ station: s.station, arrive: s.arriveSoc, to: s.leaveSoc, minutes: s.minutes + s.overheadMin, cost: s.cost }));
 
-  hint.textContent = `${p.stations.length} istasyon bulundu, ${p.ranking.length} tanesine ek şarj olmadan ulaşılabiliyor. `
+  const aheadCount = p.stations.filter(ahead).length;
+  hint.textContent = `${aheadCount} istasyon ileride, ${rows.length + planRows.length} tanesine ek şarj olmadan ulaşılabiliyor. `
     + 'Aday satırlarında süre/maliyet: varış pilinden %80\'e (veya +10 puana) şarj.';
 
   [...planRows, ...rows].forEach((r) => {
@@ -56,7 +60,7 @@ function renderList() {
     meta.className = 'meta';
     meta.append(
       text('span', 'tag ' + (n ? 'best' : ''), n ? `Planda #${n}` : 'Aday'),
-      text('span', '', `${r.station.opName} · ${r.station.slow ? 'AC/yavaş ' : ''}${r.station.kw} kW${r.station.uncertain ? '*' : ''} · ${r.station.price.toFixed(2)} TL/kWh · ${r.station.km.toFixed(0)}. km · varış %${r.arrive.toFixed(0)} → %${Math.round(r.to)}`),
+      text('span', '', `${r.station.opName} · ${r.station.slow ? 'AC/yavaş ' : ''}${r.station.kw} kW${r.station.uncertain ? '*' : ''} · ${r.station.price.toFixed(2)} TL/kWh · ${Math.max(0, r.station.km - here).toFixed(0)} km ileride · varış %${r.arrive.toFixed(0)} → %${Math.round(r.to)}`),
     );
     left.append(meta);
 
@@ -126,6 +130,12 @@ export function initStationsView() {
 
   $('station-retry').addEventListener('click', refetchStations);
   subscribe('plan', () => { paintChips(); renderList(); });
+  // Araç ilerledikçe mesafeler güncellenir (her tam km'de bir)
+  let shownKm = -1;
+  subscribe('engine', () => {
+    const km = Math.floor(getState('engine').routeKm ?? -1);
+    if (km !== shownKm) { shownKm = km; renderList(); }
+  });
   paintChips();
   renderOperators();
   renderList();

@@ -76,7 +76,9 @@ function applyPlan(out, extra = {}) {
     totals: result.totals || null,
     ranking,
   });
-  mapApi.drawStations(getState('plan').stations, result.stops);
+  const pl = getState('plan');
+  const from = (pl.fromKm ?? 0) - 0.3;
+  mapApi.drawStations(pl.stations.filter((s) => s.km > from), result.stops); // geride kalan istasyonlar haritadan da çıkar
 }
 
 /** İstasyonları getir ve plan durumuna yaz; hata/önbellek bilgisi İstasyon sekmesinde kalıcı gösterilir. */

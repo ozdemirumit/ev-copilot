@@ -11,7 +11,7 @@ const SHELL = [
   './js/physics/model.js', './js/physics/traffic.js', './js/physics/weather.js', './js/physics/elevation.js',
   './js/physics/routeProfile.js', './js/physics/consumption.js', './js/physics/rangeEngine.js',
   './js/routing/operators.js', './js/routing/googleRoute.js', './js/google/loader.js', './js/google/api.js', './js/ui/googleKey.js', './js/routing/chargeCurve.js', './js/routing/chargerSource.js',
-  './js/routing/planner.js', './js/routing/controller.js',
+  './js/routing/planner.js', './js/routing/controller.js', './js/routing/livePlan.js',
   './js/advisor/voice.js', './js/advisor/ecoSpeed.js', './js/advisor/fallback.js',
   './js/abrp/telemetry.js', './js/sim/simulator.js',
   './js/sensors/camera.js', './js/sensors/wakeLock.js', './js/sensors/gps.js', './js/sensors/ocr.js',

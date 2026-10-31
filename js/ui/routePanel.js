@@ -58,8 +58,12 @@ export function initRoutePanel() {
   const status = $('plan-status');
   const gm = $('btn-gmaps');
 
+  /** Araç rotada nerede: canlı konum, yoksa planın başlangıcı. Geçilen duraklar/istasyonlar bu km'ye göre elenir. */
+  const curKm = () => getState('engine').routeKm ?? getState('plan').fromKm ?? 0;
+
   function paint() {
     const p = getState('plan');
+    const here = curKm();
     $('plan-mode-label').textContent = MODE_LABEL[p.mode];
     list.replaceChildren();
     gm.classList.toggle('hidden', p.status !== 'ready');
@@ -76,17 +80,18 @@ export function initRoutePanel() {
     if (p.status === 'ready') {
       const t = p.totals;
       $('sum-time').textContent = hm(t.totalMin);
-      $('sum-stops').textContent = String(p.stops.length);
+      const stops = p.stops.filter((s) => s.km > here - 0.3); // geride kalanlar plandan çıkar
+      $('sum-stops').textContent = String(stops.length);
       const gaps = stationGaps(p.stations, p.profile.totalKm);
       const gapNote = gaps.length
         ? ` ⚠ ${gaps.map((g) => `${g.from.toFixed(0)}–${g.to.toFixed(0)} km`).join(', ')} arasında bilinen hızlı (DC) istasyon yok; harita verisi eksik olabilir.`
         : '';
       const thr = getState('route').minArrivalSoc;
       const dip = t.arriveSoc < thr - 0.5 ? ` — eşiğin ${(thr - t.arriveSoc).toFixed(0)} puan altı, tolerans içinde` : '';
-      status.textContent = p.stops.length
+      status.textContent = stops.length
         ? `Varışta tahmini pil %${t.arriveSoc.toFixed(0)} (eşik %${thr}${dip}) · şarj ${hm(t.chargeMin)} · ${t.cost.toFixed(0)} TL${gapNote}`
         : `Şarj gerekmiyor — varışta tahmini pil %${t.arriveSoc.toFixed(0)} (eşik %${thr}${dip}).${gapNote}`;
-      p.stops.forEach((s, i) => {
+      stops.forEach((s, i) => {
         const row = document.createElement('div');
         row.className = 'stop';
         const num = Object.assign(document.createElement('div'), { className: 'num', textContent: String(i + 1) });
@@ -94,7 +99,7 @@ export function initRoutePanel() {
         const right = Object.assign(document.createElement('div'), { className: 'r', textContent: `${Math.round(s.minutes)} dk · ${s.cost.toFixed(0)} TL` });
         const meta = Object.assign(document.createElement('div'), {
           className: 'm',
-          textContent: `${s.km.toFixed(0)}. km · ${s.station.opName} ${s.station.slow ? 'AC/yavaş ' : ''}${s.station.kw} kW · %${s.arriveSoc.toFixed(0)} → %${s.leaveSoc}`
+          textContent: `${Math.max(0, s.km - here).toFixed(0)} km kaldı (${s.km.toFixed(0)}. km) · ${s.station.opName} ${s.station.slow ? 'AC/yavaş ' : ''}${s.station.kw} kW · %${s.arriveSoc.toFixed(0)} → %${s.leaveSoc}`
             + (s.station.offKm > 0.3 ? ` · sapma ${s.station.offKm.toFixed(1)} km` : ''),
         });
         row.append(num, title, right, meta);
@@ -149,11 +154,18 @@ export function initRoutePanel() {
     const { start, end } = getState('route');
     const p = getState('plan');
     if (!start || !end) return;
-    window.open(gmapsUrl(start, end, p.stops), '_blank', 'noopener');
+    const here = curKm();
+    window.open(gmapsUrl(start, end, p.stops.filter((s) => s.km > here - 0.3)), '_blank', 'noopener'); // yalnızca kalan duraklar
   });
 
   subscribe('plan', () => { paint(); paintWeather(); });
   subscribe('route', paint);
+  // Araç ilerledikçe kalan mesafeler güncellenir (her tam km'de bir yeniden çiz)
+  let shownKm = -1;
+  subscribe('engine', () => {
+    const km = Math.floor(getState('engine').routeKm ?? -1);
+    if (km !== shownKm) { shownKm = km; paint(); }
+  });
   paint();
   paintWeather();
 }

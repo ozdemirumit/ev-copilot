@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.25.2';
+self.APP_VERSION = '0.26.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.26.0', date: '2026-10-31',
+    notes: [
+      'Şarj planı artık konuma göre canlı: araç ilerledikçe her durak için kaç km kaldı yazar (her km güncellenir); geçilen duraklar plandan, geride kalan istasyonlar Şarj planı, İstasyon listesi ve haritadan çıkar.',
+      'Plan bulunulan konum ve gerçek pil yüzdesiyle kendiliğinden yeniden hesaplanır: bir durak geçilince, gerçek pil plan beklentisinden 4 puandan fazla saparsa veya son hesaptan 25 km sonra (en az 45 saniye arayla). Kalan durak sayısı, şarj süresi, maliyet ve varışta pil buna göre güncellenir.',
+      'Google Haritalar da aç düğmesi artık yalnızca kalan durakları gönderir.',
+    ],
+  },
   {
     v: '0.25.2', date: '2026-10-31',
     notes: [
