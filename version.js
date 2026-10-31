@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.20.1';
+self.APP_VERSION = '0.20.2';
 self.APP_CHANGELOG = [
+  {
+    v: '0.20.2', date: '2026-10-31',
+    notes: [
+      'Uzun rotada istasyon araması için çağrı sınırı 150den 300e çıkarıldı (çok uzun ve şehirli rotalarda liste artık kesilmez). Her çağrı Google kotasından düşer.',
+    ],
+  },
   {
     v: '0.20.1', date: '2026-10-31',
     notes: [
