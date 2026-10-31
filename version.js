@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.20.2';
+self.APP_VERSION = '0.21.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.21.0', date: '2026-10-31',
+    notes: [
+      'Yol önü uyarıları (navigasyon açıkken, 10 dakikada bir yenilenir): ileride yağmur (Google Weather, önümüzdeki 200 km, sıcaklık 2 derece altındaysa buzlanma riski) ve ileride yoğun veya yavaş trafik ile toplam gecikme (Google Routes trafik çizgisi). Üstte uyarı çubuğunda görünür ve sesli söylenir.',
+      'Hız uyarısı: Navigasyon kartından kendi belirlediğin eşiği ayarla (0 = kapalı); 5 saniye aşılırsa sesli uyarır. Bu yolun yasal sınırı değildir.',
+      'Not: Google Maps Platform kaza, polis, hız kamerası ve yol hız sınırı verisi sunmuyor; bu uyarılar şimdilik yok.',
+    ],
+  },
   {
     v: '0.20.2', date: '2026-10-31',
     notes: [

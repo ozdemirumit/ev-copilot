@@ -41,6 +41,7 @@
   </div>
   <button class="tog" id="nav-stop" type="button" aria-label="Navigasyonu durdur" title="Navigasyonu durdur">✕</button>
 </div>
+<div class="advisor warn hidden" id="road-alert" role="alert"></div>
 <div class="advisor warn near-alert hidden" id="near-alert" role="alert">
   <span id="near-alert-text"></span>
   <span class="row">
@@ -192,6 +193,11 @@
         <label for="low-soc">Düşük pil uyarısı (yakın istasyon öner)</label>
         <output id="low-soc-out">%20</output>
         <input type="range" id="low-soc" min="10" max="40" step="1" value="20">
+      </div>
+      <div class="slider-row">
+        <label for="speed-alert">Hız uyarısı (senin belirlediğin eşik; yolun yasal sınırı değildir)</label>
+        <output id="speed-alert-out">kapalı</output>
+        <input type="range" id="speed-alert" min="0" max="150" step="5" value="0">
       </div>
     </div>
 
