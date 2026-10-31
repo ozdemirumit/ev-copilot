@@ -7,7 +7,7 @@ import { toast } from './toast.js';
 
 const NOTES = {
   google: 'Google: harita, rota (canlı trafikle), istasyonlar ve doluluk, arama, hava, rakım ve yol hız limiti. Google anahtarı gerekir; kullandıkça ücretlenebilir (aşağıdaki sayaç).',
-  osm: 'Alternatif: OpenStreetMap tabanlı açık kaynak servisler. Anahtar gerekmez; canlı trafik ve istasyon doluluğu yoktur. Ülke haritası cihaza indirilirse çevrimdışı çalışır.',
+  osm: 'Alternatif: OpenStreetMap tabanlı açık kaynak servisler (harita OpenFreeMap, rota Valhalla, istasyon Overpass, hava ve rakım Open-Meteo/Valhalla, arama Photon). Anahtar gerekmez; canlı trafik ve istasyon doluluğu yoktur. Çevrimdışı harita sonraki sürümde.',
 };
 
 export function initSourcePanel() {
@@ -26,11 +26,9 @@ export function initSourcePanel() {
     return b;
   }));
   note.textContent = NOTES[current];
-  document.getElementById('g-card').classList.toggle('hidden', current !== 'google');
-
-  // Kaynağa göre hız limiti etiketleri (Google: ücretli Roads; Alternatif: ücretsiz OSM, etiketi olmayan yolda bilinmez)
-  const lbl = document.querySelector('label[for="limit-on"]');
-  if (lbl) lbl.textContent = current === 'google' ? 'Yol hız limiti kontrolü (Google Roads; ücretli, lisans ister)' : 'Yol hız limiti kontrolü (OpenStreetMap; ücretsiz, etiketi olmayan yolda bilinmez)';
+  // Kaynağa özgü metinler (data-g / data-osm) ve yalnızca Google'a ait bölümler (.g-only, CSS ile gizlenir)
+  document.body.dataset.source = current;
+  document.querySelectorAll('[data-osm]').forEach((e) => { e.textContent = current === 'google' ? e.dataset.g : e.dataset.osm; });
   const btn = document.getElementById('nh-limitbtn');
   if (btn) btn.title = current === 'google' ? 'Yol hız limiti kontrolü (ücretli)' : 'Yol hız limiti kontrolü';
 

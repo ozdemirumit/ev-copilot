@@ -342,3 +342,5 @@ html { overflow: hidden; }
 .seg button { flex: 1 1 140px; padding: 9px 10px; border-radius: var(--radius); border: 1px solid var(--line); background: transparent; color: var(--text); font: inherit; font-size: 13px; }
 .seg button.sel { border-color: var(--accent); background: var(--accent-dim); }
 .seg button:disabled { opacity: .55; }
+
+body[data-source="osm"] .g-only { display: none !important; }

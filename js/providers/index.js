@@ -8,7 +8,7 @@ import * as osm from './osm.js';
 /** ready: kaynak kullanıma hazır mı (hazır değilse seçilemez, Google'a düşülür). */
 export const SOURCES = [
   { id: 'google', label: 'Google', ready: true, impl: google },
-  { id: 'osm', label: 'Alternatif (açık kaynak)', ready: false, impl: osm },
+  { id: 'osm', label: 'Alternatif (açık kaynak)', ready: true, impl: osm },
 ];
 
 /** Kayıtlı seçim; bilinmiyor veya hazır değilse Google. */
@@ -28,6 +28,9 @@ export function setSource(id) {
 const cur = () => SOURCES.find((s) => s.id === getSource()).impl;
 
 export const capabilities = () => cur().capabilities;
+
+/** Kısa ad (arayüz metinlerinde): 'Google' veya 'Alternatif'. */
+export const sourceName = () => (getSource() === 'google' ? 'Google' : 'Alternatif');
 
 export const fetchRoute = (...a) => cur().fetchRoute(...a);
 export const fetchChargers = (...a) => cur().fetchChargers(...a);

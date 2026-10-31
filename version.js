@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.32.0';
+self.APP_VERSION = '0.33.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.33.0', date: '2026-10-31',
+    notes: [
+      'Alternatif veri kaynağı artık seçilebilir (Rota sekmesi, Veri kaynağı kartı). Seçince harita OpenFreeMap + MapLibre (OpenStreetMap), rota Valhalla, istasyon Overpass (+ isteğe bağlı OpenChargeMap), hava Open-Meteo, rakım Valhalla, arama Photon, yol hız limiti OpenStreetMap olur. Hepsi birlikte değişir, karışık kullanım yok.',
+      'Alternatifte canlı trafik ve istasyon doluluğu yoktur; süreler trafiksizdir. Çevrimdışı harita sonraki sürümde. Google varsayılan kalır ve aynen çalışır.',
+      'Harita katmanı bağdaştırıcıya ayrıldı (maps/google.js, maps/maplibre.js). MapLibre 5.6.0 uygulamayla birlikte sunulur (vendor/maplibre).',
+    ],
+  },
   {
     v: '0.32.0', date: '2026-10-31',
     notes: [

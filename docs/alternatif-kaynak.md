@@ -60,3 +60,10 @@ Doluluk bilgisi yok: slotlar "bilinmiyor" görünür.
 - Gerçek anahtarlar depoya, koda, teste yazılmaz (bkz. proje hafızası).
 - Google modu bozulmadan kalır; her faz sonunda Google modu aynı davranır.
 - OSM verisi ODbL: uygulamada "© OpenStreetMap katkıcıları" yazılır.
+
+## Durum (2026-10-31)
+
+- Faz 1 (v0.31.0): sağlayıcı katmanı ve Veri kaynağı seçimi: tamam.
+- Faz 2 (v0.31.1, v0.33.0): Alternatif çevrimiçi: MapLibre + OpenFreeMap harita, Valhalla rota ve rakım, Photon arama, Open-Meteo hava: tamam, seçilebilir.
+- Faz 3 (v0.32.0): Overpass/OpenChargeMap istasyonlar ve Valhalla/OSM hız limiti: tamam. Overpass'e geliştirme makinesinden ulaşılamadı; Türkiye verisi gerçek cihazda doğrulanmalı. Hız kamerası verisi henüz yok.
+- Faz 4-6 (çevrimdışı harita, çevrimdışı veri paketi, cihazda rota): yapılmadı. Araştırma sonuçları: çevrimdışı harita için Protomaps PMTiles (Türkiye z≤14 yaklaşık 670 MB, tahmin), cihazda rota için önce Valhalla-WASM ölçüm denemesi (3-5 gün).
