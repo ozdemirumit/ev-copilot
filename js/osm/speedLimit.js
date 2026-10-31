@@ -1,7 +1,7 @@
-// Alternatif kaynak: yol hız limiti Valhalla /locate'ten (OpenStreetMap maxspeed etiketi, anahtarsız, ücretsiz).
+// Yol hız limiti Valhalla /locate'ten (OpenStreetMap maxspeed etiketi, anahtarsız, ücretsiz).
 // Konuma yakın yol parçaları döner (iki yön ayrı); gidiş yönüne en uygun olan seçilir. OSM'de etiketi olmayan yolda (Türkiye'de
 // şehir içi/ikincil yollarda sık) limit bilinmez: null döner ve uygulama kullanıcının hız eşiğine düşer, tahmin YAPILMAZ.
-import { valhalla } from './route.js';
+import { valhalla } from './valhalla.js';
 
 const angDiff = (a, b) => Math.abs(((a - b + 540) % 360) - 180);
 

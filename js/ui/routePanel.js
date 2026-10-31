@@ -2,7 +2,6 @@ import { getState, patch, subscribe } from '../state.js';
 import { save } from '../utils/storage.js';
 import { stationGaps } from '../routing/planner.js';
 import { slotLabel } from '../routing/slots.js';
-import { getSource } from '../providers/index.js';
 
 const $ = (id) => document.getElementById(id);
 const MODE_LABEL = { fast: 'En Hızlı', cheap: 'En Ekonomik', opt: 'Optimum' };
@@ -29,10 +28,8 @@ export function initRoutePanel() {
   const paintTraffic = () => {
     const i = getState('route').trafficInfo;
     if (!i) return;
-    $('traffic-info').textContent = getSource() === 'google'
-      ? `Google: trafikli süre ${hm(i.driveMin)}, trafiksiz ${hm(i.freeMin)} (×${i.ratio.toFixed(2)}) · ortalama serbest hız ${Math.round(i.avgFreeKmh)} km/s`
-        + (i.jamKm >= 1 ? ` · yavaş/sıkışık ${i.jamKm.toFixed(0)} km` : ' · trafik akıcı')
-      : `Alternatif: süre ${hm(i.driveMin)} (trafiksiz, canlı trafik yok) · ortalama hız ${Math.round(i.avgFreeKmh)} km/s`;
+    $('traffic-info').textContent = `Google: trafikli süre ${hm(i.driveMin)}, trafiksiz ${hm(i.freeMin)} (×${i.ratio.toFixed(2)}) · ortalama serbest hız ${Math.round(i.avgFreeKmh)} km/s`
+      + (i.jamKm >= 1 ? ` · yavaş/sıkışık ${i.jamKm.toFixed(0)} km` : ' · trafik akıcı');
   };
   subscribe('route', paintTraffic);
   paintTraffic();

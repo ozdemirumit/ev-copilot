@@ -13,10 +13,7 @@ export const SKUS = {
   details: { label: 'İstasyon doluluğu (Place Details, Enterprise)', price: 20, free: 1000 },
   placeLoc: { label: 'Yer konumu (Place Details, Essentials)', price: 5, free: 10000 },
   autocomplete: { label: 'Arama önerisi (Autocomplete, üst sınır)', price: 2.83, free: 10000 },
-  weather: { label: 'Hava durumu', price: 0.15, free: 10000 },
-  elevation: { label: 'Rakım (nokta başına)', price: 5, free: 5000 },
   geocode: { label: 'Adres adı (Geocoding)', price: 5, free: 10000 },
-  roads: { label: 'Yol hız limiti (Roads, öğe başına)', price: 20, free: 5000 },
 };
 
 const month = () => new Date().toISOString().slice(0, 7);
@@ -35,7 +32,6 @@ export function skuOf(url, mask = '') {
   let u;
   try { u = new URL(url); } catch { return null; }
   if (u.hostname === 'routes.googleapis.com') return 'routes';
-  if (u.hostname === 'weather.googleapis.com') return 'weather';
   if (u.hostname === 'places.googleapis.com') {
     if (u.pathname.endsWith(':searchNearby')) return 'nearby';
     if (u.pathname.endsWith(':searchText')) return 'text';

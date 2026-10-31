@@ -54,13 +54,11 @@ export async function testGoogleKey() {
   const B = { latitude: 39.9300, longitude: 32.8700 };
   const wp = (p) => ({ location: { latLng: p } });
   const checks = [
-    ['Maps JavaScript API (harita, rakım)', async () => {
+    ['Maps JavaScript API (harita)', async () => {
       await loadGoogle();
       await new Promise((r) => setTimeout(r, 1200));
       if (googleAuthError()) throw new Error(googleAuthError());
-      const { ElevationService } = await google.maps.importLibrary('elevation');
-      await new ElevationService().getElevationForLocations({ locations: [{ lat: A.latitude, lng: A.longitude }] });
-      record('elevation', 1);
+      await google.maps.importLibrary('maps');
     }],
     ['Routes API (rota)', () => gfetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
       method: 'POST', mask: 'routes.distanceMeters',
@@ -70,8 +68,6 @@ export async function testGoogleKey() {
       method: 'POST', mask: 'places.id',
       body: { includedTypes: ['electric_vehicle_charging_station'], maxResultCount: 1, locationRestriction: { circle: { center: A, radius: 1000 } } },
     })],
-    ['Weather API (hava)', () => gfetch(`https://weather.googleapis.com/v1/forecast/hours:lookup?location.latitude=${A.latitude}&location.longitude=${A.longitude}&hours=1`, { keyInQuery: true })],
-    ['Roads API (yol hız limiti; Asset Tracking lisansı ister)', () => gfetch(`https://roads.googleapis.com/v1/speedLimits?path=${A.latitude},${A.longitude}&units=KPH`, { keyInQuery: true })],
     ['Geocoding API (adres adı)', async () => {
       const j = await (await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${A.latitude},${A.longitude}&key=${encodeURIComponent(googleKey())}`)).json();
       if (j.status !== 'OK' && j.status !== 'ZERO_RESULTS') throw new Error(j.error_message || j.status);

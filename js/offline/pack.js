@@ -1,4 +1,4 @@
-// Çevrimdışı ülke haritası paketi (yalnızca Alternatif kaynak). Paket, Protomaps verisinden üretilmiş tek bir .pmtiles dosyasıdır
+// Çevrimdışı ülke haritası paketi . Paket, Protomaps verisinden üretilmiş tek bir .pmtiles dosyasıdır
 // (GitHub Actions üretir, Cloudflare R2'de durur). Burada: bildirim (manifest) okuma, OPFS'e indirme, silme, depolama bilgisi.
 // Dosya adresi (R2) koda yazılmaz: kullanıcı telefonda girer (localStorage `mapBase`).
 import { load, save, remove } from '../utils/storage.js';
@@ -47,17 +47,20 @@ async function dirHandle(create = false) {
   return root.getDirectoryHandle(DIR, { create });
 }
 
-/** Kaydedilmiş paketin dosyası (OPFS File) veya paket yoksa/eksikse null. */
+/**
+ * Kaydedilmiş paketin dosyası (OPFS File) veya paket yoksa/eksikse null. Dosya silinmişse (tarayıcı depolamayı temizlemiş olabilir,
+ * özellikle iPhone'da) ya da boyutu tutmuyorsa kayıt da düşürülür: arayüz "indirildi" demeye devam etmesin.
+ */
 export async function packFile(id) {
   const info = packInfo(id);
   if (!info) return null;
   try {
     const fh = await (await dirHandle()).getFileHandle(info.file.split('/').pop());
     const file = await fh.getFile();
-    return file.size === info.size ? { file, info } : null;
-  } catch {
-    return null;
-  }
+    if (file.size === info.size) return { file, info };
+  } catch { /* dosya yok */ }
+  remove(`pack.${id}`);
+  return null;
 }
 
 /** Tamamlanmamış (yarım) indirme baytı: pakette kayıtlı olmayan dosyaların toplam boyutu (0 = yok). */

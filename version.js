@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.35.0';
+self.APP_VERSION = '0.36.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.36.0', date: '2026-10-31',
+    notes: [
+      'Alternatif veri kaynağı modu kaldırıldı. Her veri türü için sabit kaynak: harita, rota (trafikli), trafik, yer arama, adres adı, istasyon ve doluluk Google; hava Open-Meteo; rakım ve yol hız limiti Valhalla/OpenStreetMap (ücretsiz). Google anahtarı artık Weather, Roads ve Elevation API istemiyor.',
+      'Çevrimdışı harita yedek oldu: indirilmiş ülke haritası varsa ve uygulama internetsiz açılırsa (ya da Google haritası açılamazsa) o kullanılır. Google Haritalar uygulamasının indirdiği harita bu uygulamada kullanılamaz.',
+      'Düzeltme: indirilen harita dosyası tarayıcı tarafından silinmişse kart artık indirildi demiyor, yeniden indirmeni söylüyor.',
+    ],
+  },
   {
     v: '0.35.0', date: '2026-10-31',
     notes: [

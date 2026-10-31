@@ -1,4 +1,4 @@
-// Alternatif kaynak: hava durumu Open-Meteo'dan (anahtarsız, ticari olmayan kullanım ücretsiz). Çıktı Google modülüyle aynı biçimdedir.
+// Hava durumu Open-Meteo'dan (anahtarsız, ticari olmayan kullanım ücretsiz).
 import { cacheGet, cacheSet, TTL } from '../utils/cache.js';
 
 const URL_BASE = 'https://api.open-meteo.com/v1/forecast';

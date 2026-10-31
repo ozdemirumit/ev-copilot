@@ -1,15 +1,11 @@
-// Yol hız limiti, seçili veri kaynağından (providers): Google Roads veya OpenStreetMap (ücretsiz). Google Roads servisi "Asset Tracking" lisansı gerektirir; anahtarın lisanslı değilse
-// istek reddedilir (faturalanmaz), uygulama nedenini yazıp 10 dk bekler ve kullanıcının eşiğine döner.
-// MALİYET: Speed Limits ≈ 0,02 $ / dönen öğe. Bu yüzden tek noktayla (1 öğe) ve seyrek sorulur: en az 20 sn ve en az 1 km arayla.
-// Aylık sorgu sayısı sayılıp ekranda tahmini tutarla gösterilir.
+// Yol hız limiti OpenStreetMap maxspeed etiketinden (Valhalla, ücretsiz): etiketi olmayan yolda bilinmez ve kullanıcının eşiği kullanılır.
+// Herkese açık sunucuya yük bindirmemek için tek noktayla ve seyrek sorulur: en az 20 sn ve en az 1 km arayla; sonuç önbelleğe alınır.
 import { getState, patch, subscribe, effective } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { fetchSpeedLimit } from '../providers/index.js';
 import { haversineKm } from '../utils/geo.js';
 import { toast } from '../ui/toast.js';
 import { cached, TTL } from '../utils/cache.js';
-import { usageSummary, SKUS } from '../google/usage.js';
-import { getSource } from '../providers/index.js';
 
 const $ = (id) => document.getElementById(id);
 const EVERY_MS = 20000; // iki sorgu arası en az süre
@@ -22,7 +18,6 @@ let busy = false;
 let blockedUntil = 0;
 let lastQ = { lat: null, lon: null, at: 0 };
 
-const monthRoads = () => usageSummary().rows.find((r) => r.sku === 'roads') || { n: 0, cost: 0 };
 const setLimit = (limit, err = null) => patch('nav', { limit, limitErr: err });
 
 async function query(e) {
@@ -73,11 +68,9 @@ function paint() {
   }
   const st = $('limit-status');
   if (st) {
-    const u = monthRoads();
-    const cost = u.n && getSource() === 'google' ? ` · bu ay ${u.n} öğe ≈ ${u.cost.toFixed(2)} $ (ilk ${SKUS.roads.free} ücretsiz)` : '';
-    st.textContent = !nav.limitOn ? (getSource() === 'google' ? 'Kapalı: Google Roads çağrılmaz, ücret çıkmaz. Hız uyarısı senin belirlediğin eşikle çalışır.' : 'Kapalı: yol hız limiti sorgulanmaz. Hız uyarısı senin belirlediğin eşikle çalışır.')
+    st.textContent = !nav.limitOn ? 'Kapalı: yol hız limiti sorgulanmaz. Hız uyarısı senin belirlediğin eşikle çalışır.'
       : nav.limitErr ? `Yol hız limiti alınamadı (${nav.limitErr}); senin eşiğin kullanılır.`
-        : (lim ? `Bu yolun hız limiti: ${lim} km/s` : 'Yol hız limiti sürerken okunur') + cost;
+        : (lim ? `Bu yolun hız limiti: ${lim} km/s` : 'Yol hız limiti sürerken okunur (OpenStreetMap; etiketi olmayan yolda bilinmez)');
   }
 }
 
@@ -94,8 +87,7 @@ export function initSpeedLimit() {
     patch('nav', { limitOn: on, limit: null, limitErr: null });
     save('limitOn', on);
     blockedUntil = 0;
-    const g = getSource() === 'google';
-    toast(on ? (g ? 'Yol hız limiti kontrolü açık (Google Roads, kullandıkça ücretlenir)' : 'Yol hız limiti kontrolü açık (OpenStreetMap, ücretsiz)') : (g ? 'Yol hız limiti kontrolü kapalı: Google Roads çağrılmaz' : 'Yol hız limiti kontrolü kapalı'));
+    toast(on ? 'Yol hız limiti kontrolü açık (OpenStreetMap, ücretsiz)' : 'Yol hız limiti kontrolü kapalı');
     paintOn();
     paint();
   };

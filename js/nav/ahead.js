@@ -2,7 +2,7 @@
 // belirlediği hız eşiği. Navigasyon açıkken periyodik yenilenir. Google kaza, polis ve hız kamerası verisi SUNMAZ.
 import { getState, patch, subscribe, effective } from '../state.js';
 import { save } from '../utils/storage.js';
-import { fetchWeather, fetchTrafficAhead, capabilities } from '../providers/index.js';
+import { fetchWeather, fetchTrafficAhead } from '../providers/index.js';
 import { speak } from '../advisor/voice.js';
 import { currentLimit } from './speedLimit.js';
 
@@ -112,7 +112,7 @@ function check() {
   const km = getState('engine').routeKm;
   if (km == null || plan.profile.totalKm - km < 3) return;
   if (!busyWx && Date.now() - wxAt > WEATHER_EVERY_MS) refreshRain(km);
-  if (!busyTr && Date.now() - trAt > TRAFFIC_EVERY_MS && getState('route').end && capabilities().traffic) refreshTraffic();
+  if (!busyTr && Date.now() - trAt > TRAFFIC_EVERY_MS && getState('route').end) refreshTraffic();
 }
 
 export function initAhead() {

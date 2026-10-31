@@ -1,7 +1,7 @@
-// Alternatif kaynak: rakım. Birincil: Valhalla /height (tek istekte tüm rota). Yedek: Open-Meteo Elevation (Copernicus DEM, ~90 m,
-// istek başına 100 nokta). Çıktı Google modülüyle aynı biçimdedir.
+// Rakım (ücretsiz açık servisler). Birincil: Valhalla /height (tek istekte tüm rota). Yedek: Open-Meteo Elevation (Copernicus DEM, ~90 m,
+// istek başına 100 nokta). Çıktı: { elevations, source }.
 import { cached, TTL } from '../utils/cache.js';
-import { valhalla } from './route.js';
+import { valhalla } from './valhalla.js';
 
 const OM_URL = 'https://api.open-meteo.com/v1/elevation';
 const VH_CHUNK = 700; // Valhalla tek istekte bu kadar nokta (550 noktalık rota tek istekte ölçüldü)

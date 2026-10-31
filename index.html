@@ -71,45 +71,25 @@
       </div>
     </div>
 
-    <div class="card stack" id="source-card">
-      <h2 style="margin:0">🗺️ Veri kaynağı</h2>
-      <p class="small muted" style="margin:0">Harita, rota, istasyon, arama, hava, rakım ve hız limiti verisinin hepsi seçtiğin kaynaktan gelir; karışık kullanılmaz.</p>
-      <div class="seg" id="source-seg" role="radiogroup" aria-label="Veri kaynağı"></div>
-      <p class="small muted" id="source-note" style="margin:0"></p>
-      <div class="stack hidden" id="osm-settings">
-        <label class="field">OpenChargeMap anahtarı (isteğe bağlı: istasyon kapsamını artırır)
-          <input type="text" id="ocm-key" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="openchargemap.org/site/develop/api">
-        </label>
-        <div class="row between">
-          <span class="small muted" id="ocm-out">Anahtar yalnızca bu telefonda saklanır.</span>
-          <button class="btn ghost sm" id="ocm-test" type="button">✔️ Sına</button>
+    <div class="card stack" id="offline-card">
+      <h2 style="margin:0">📥 Çevrimdışı harita</h2>
+      <p class="small muted" style="margin:0">Ülke haritasını telefona indir: internet yokken uygulama açılırsa harita yine görünür (OpenStreetMap tabanlı ayrı bir harita; Google Haritalar uygulamasının indirdiği harita bu uygulamada kullanılamaz). İnternet varken Google haritası kullanılır. Dosya kendi Cloudflare R2 kovandan iner (kurulum: docs/offline-harita.md). Büyük dosyadır, Wi-Fi'de indir.</p>
+      <label class="field">Harita dosyası adresi (R2)
+        <input type="text" id="map-base" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://harita.alanadin.com">
+      </label>
+      <div class="row between">
+        <span class="small muted" id="map-pack-status"></span>
+        <div class="row">
+          <button class="btn primary sm" id="map-pack-dl" type="button">⬇️ Haritayı indir (Türkiye)</button>
+          <button class="btn ghost sm hidden" id="map-pack-del" type="button">🗑️ Sil</button>
         </div>
-        <h3 style="margin:10px 0 0">📥 Çevrimdışı harita</h3>
-        <p class="small muted" style="margin:0">Ülke haritasını telefona indir: internet olmadan da harita görünür. Dosya kendi Cloudflare R2 kovandan iner (kurulum: docs/offline-harita.md). Büyük dosyadır, Wi-Fi'de indir.</p>
-        <label class="field">Harita dosyası adresi (R2)
-          <input type="text" id="map-base" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://harita.alanadin.com">
-        </label>
-        <div class="row between">
-          <span class="small muted" id="map-pack-status"></span>
-          <div class="row">
-            <button class="btn primary sm" id="map-pack-dl" type="button">⬇️ Haritayı indir (Türkiye)</button>
-            <button class="btn ghost sm hidden" id="map-pack-del" type="button">🗑️ Sil</button>
-          </div>
-        </div>
-        <progress id="map-pack-bar" class="hidden" max="100" value="0" style="width:100%"></progress>
-        <label class="field">Harita kaynağı
-          <select id="map-mode">
-            <option value="auto">Otomatik: internet varsa çevrimiçi, yoksa indirilen</option>
-            <option value="offline">Hep indirilen harita</option>
-            <option value="online">Hep çevrimiçi harita</option>
-          </select>
-        </label>
       </div>
+      <progress id="map-pack-bar" class="hidden" max="100" value="0" style="width:100%"></progress>
     </div>
 
-    <div class="card stack g-only" id="g-card">
+    <div class="card stack" id="g-card">
       <h2 style="margin:0">🔑 Google Haritalar anahtarı</h2>
-      <p class="small muted" style="margin:0">Harita, rota, istasyon, yer arama, hava ve rakım verisi yalnızca Google'dan gelir. Anahtar sadece bu telefonda saklanır. Google Cloud'da anahtarı HTTP yönlendiren kısıtıyla (ozdemirumit.github.io/*) ve şu API'lerle sınırla: Maps JavaScript, Routes, Places (New), Weather, Geocoding, Elevation.</p>
+      <p class="small muted" style="margin:0">Harita, rota (trafikli), istasyon ve doluluk, yer arama ve adres adı Google'dan gelir (hava, rakım ve yol hız limiti ücretsiz açık servislerden). Anahtar sadece bu telefonda saklanır. Google Cloud'da anahtarı HTTP yönlendiren kısıtıyla (ozdemirumit.github.io/*) ve şu API'lerle sınırla: Maps JavaScript, Routes, Places (New), Geocoding.</p>
       <label class="field">API anahtarı
         <input type="text" id="g-key" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="AIza ile başlar">
       </label>
@@ -157,13 +137,13 @@
         <input type="range" id="min-arrival" min="5" max="40" step="1" value="15">
       </div>
 
-      <p class="small muted" id="traffic-info" style="margin:0" data-g="Hız ve trafik rota planlanınca Google'dan okunur (yol limiti, trafik)." data-osm="Hız rota planlanınca rota sunucusundan okunur (yol sınıfı ve limit). Canlı trafik yok.">Hız ve trafik rota planlanınca Google'dan okunur (yol limiti, trafik).</p>
+      <p class="small muted" id="traffic-info" style="margin:0">Hız ve trafik rota planlanınca Google'dan okunur.</p>
 
       <div class="row between">
         <label for="map-saver">Haritayı gizle (veri tasarrufu)</label>
         <label class="switch"><input type="checkbox" id="map-saver"><i></i></label>
       </div>
-      <div class="row between g-only">
+      <div class="row between">
         <label for="map-traffic">Haritada trafik renkleri (Google)</label>
         <label class="switch"><input type="checkbox" id="map-traffic"><i></i></label>
       </div>
@@ -234,7 +214,7 @@
       </div>
       <p class="small muted" id="plan-status" style="margin:0">Başlangıç ve varış seçip Rotayı Planla'ya dokun.</p>
       <div id="plan-list"></div>
-      <button class="btn ghost hidden g-only" id="btn-gmaps" type="button">🧭 Google Haritalar'da aç (duraklarla)</button>
+      <button class="btn ghost hidden" id="btn-gmaps" type="button">🧭 Google Haritalar'da aç (duraklarla)</button>
     </div>
 
     <div class="card stack" id="nav-card">
@@ -255,7 +235,7 @@
         <input type="range" id="low-soc" min="10" max="40" step="1" value="20">
       </div>
       <div class="row between">
-        <label for="limit-on" data-g="Yol hız limiti kontrolü (Google Roads; ücretli, lisans ister)" data-osm="Yol hız limiti kontrolü (OpenStreetMap; ücretsiz, etiketi olmayan yolda bilinmez)">Yol hız limiti kontrolü (Google Roads; ücretli, lisans ister)</label>
+        <label for="limit-on">Yol hız limiti kontrolü (OpenStreetMap; ücretsiz, etiketi olmayan yolda bilinmez)</label>
         <label class="switch"><input type="checkbox" id="limit-on"><i></i></label>
       </div>
       <p class="small muted" id="limit-status" style="margin:0"></p>
@@ -311,7 +291,7 @@
     </div>
 
     <div class="card">
-      <h3 data-g="🌦️ Hava durumu (Google)" data-osm="🌦️ Hava durumu (Open-Meteo)">🌦️ Hava durumu (Google)</h3>
+      <h3>🌦️ Hava durumu (Open-Meteo)</h3>
       <dl class="kv">
         <dt>Dış sıcaklık</dt><dd id="w-temp">—</dd>
         <dt>Yağış</dt><dd id="w-rain">—</dd>
@@ -323,7 +303,7 @@
     </div>
 
     <div class="card">
-      <h3 data-g="⛰️ Rakım (Google Elevation)" data-osm="⛰️ Rakım (Valhalla)">⛰️ Rakım (Google Elevation)</h3>
+      <h3>⛰️ Rakım (Valhalla)</h3>
       <dl class="kv">
         <dt>Anlık irtifa</dt><dd id="e-alt">—</dd>
         <dt>Eğim</dt><dd id="e-grade">—</dd>

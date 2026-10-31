@@ -1,26 +1,23 @@
-// Çevrimdışı harita kartı (yalnızca Alternatif kaynak seçiliyken görünen ayarlar içinde): R2 adresi, indir/durdur/sil, harita modu.
-import { getSource } from '../providers/index.js';
-import { save } from '../utils/storage.js';
-import { COUNTRIES, mapBase, setMapBase, supported, packInfo, partialBytes, storageInfo, downloadPack, cancelDownload, downloading, deletePack, fmtMb } from '../offline/pack.js';
-import { mapMode } from './maps/maplibre.js';
+// Çevrimdışı harita kartı: R2 adresi, indir/durdur/sil. İnternet yokken uygulama açılırsa indirilen harita kullanılır (ui/mapView.js).
+import { COUNTRIES, mapBase, setMapBase, supported, packInfo, packFile, partialBytes, storageInfo, downloadPack, cancelDownload, downloading, deletePack, fmtMb } from '../offline/pack.js';
 import { toast } from './toast.js';
 
 const $ = (id) => document.getElementById(id);
 
 export function initOfflinePanel() {
-  if (getSource() !== 'osm') return;
   const country = COUNTRIES[0];
   const status = $('map-pack-status');
   const dl = $('map-pack-dl');
   const del = $('map-pack-del');
   const bar = $('map-pack-bar');
   const base = $('map-base');
-  const mode = $('map-mode');
   base.value = mapBase();
-  mode.value = mapMode();
 
   async function paint(note = '') {
+    const had = !!packInfo(country.id);
+    await packFile(country.id); // dosya silinmişse kaydı düşürür
     const info = packInfo(country.id);
+    if (had && !info && !note) note = '⚠️ İndirilen harita dosyası silinmiş (tarayıcı temizlemiş olabilir): yeniden indir';
     const part = info ? 0 : await partialBytes(country.id);
     const st = await storageInfo();
     const free = st ? ` · boş yer ~${fmtMb(Math.max(0, st.free))}` : '';
@@ -35,11 +32,6 @@ export function initOfflinePanel() {
   }
 
   base.addEventListener('change', () => { setMapBase(base.value); base.value = mapBase(); });
-  mode.addEventListener('change', () => {
-    save('mapMode', mode.value);
-    toast('Harita kaynağı değişti, sayfa yenileniyor');
-    setTimeout(() => location.reload(), 900);
-  });
 
   dl.addEventListener('click', async () => {
     if (downloading()) { cancelDownload(); return; }

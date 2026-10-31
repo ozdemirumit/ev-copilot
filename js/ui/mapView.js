@@ -2,7 +2,8 @@ import { getState, patch, subscribe, effective } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { toast } from './toast.js';
 import { attachSearch } from './placeSearch.js';
-import { getSource, reverseLabel } from '../providers/index.js';
+import { reverseLabel } from '../providers/index.js';
+import { packInfo } from '../offline/pack.js';
 import { createGoogleMap } from './maps/google.js';
 import { createMapLibreMap } from './maps/maplibre.js';
 
@@ -42,12 +43,34 @@ export function initMap() {
   saver.checked = load('noTiles', navigator.connection?.saveData === true);
   mapEl.classList.toggle('hidden', saver.checked);
 
+  /**
+   * İnternet varken Google haritası. İnternet yoksa (veya Google açılamazsa) indirilmiş çevrimdışı harita varsa o açılır.
+   * Google'ın kendi uygulamasındaki indirilmiş haritaları web uygulamasından kullanılamaz; çevrimdışı harita ayrı bir paket (OpenStreetMap).
+   */
+  async function openMap() {
+    const hasPack = !!packInfo('tur');
+    if (!navigator.onLine && hasPack) return createMapLibreMap(mapEl);
+    try {
+      return await createGoogleMap(mapEl);
+    } catch (err) {
+      if (!hasPack) throw err;
+      console.warn('Google haritası açılamadı, çevrimdışı harita kullanılıyor:', err.message);
+      mapEl.replaceChildren();
+      return createMapLibreMap(mapEl);
+    }
+  }
+
+  // Açıkken internet koparsa Google haritası kalır; indirilmiş harita varsa yenileyince çevrimdışı olan açılır
+  window.addEventListener('offline', () => {
+    if (adapter?.name === 'google' && packInfo('tur')) toast('İnternet koptu. Çevrimdışı harita için sayfayı yenile (rota planı sıfırlanır)', 7000);
+  });
+
   boot = async () => {
     if (adapter || saver.checked) return;
     booting ??= (async () => {
       try {
         note(''); // uyarı katmanı kalksın: harita boş bir kapta kurulur
-        adapter = await (getSource() === 'google' ? createGoogleMap(mapEl) : createMapLibreMap(mapEl));
+        adapter = await openMap();
         adapter.onClick(onMapClick);
         adapter.onDragStart(() => { lastDrag = Date.now(); });
         queue.splice(0).forEach((fn) => fn());

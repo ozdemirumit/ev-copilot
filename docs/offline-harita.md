@@ -1,4 +1,4 @@
-# Çevrimdışı harita kurulumu (Alternatif kaynak)
+# Çevrimdışı harita kurulumu
 
 Ülke haritası tek bir `.pmtiles` dosyasıdır (Türkiye, yakınlaştırma 14'e kadar ≈ 0,7 GB; 12'ye kadar ≈ 0,2 GB, tahmin).
 GitHub Actions dosyayı üretir ve **senin** Cloudflare R2 kovana yükler; uygulama oradan telefona indirir. Bu bir kerelik kurulumdur.
@@ -63,9 +63,9 @@ Yanıt `206 Partial Content` ve `Content-Range` içermeli.
 
 ## 5. Uygulamada
 
-Rota sekmesi → **Veri kaynağı: Alternatif** → **Çevrimdışı harita** → adresi gir (`https://harita.alanadin.com`) → **Haritayı indir (Türkiye)**.
+Rota sekmesi → **Çevrimdışı harita** kartı → adresi gir (`https://harita.alanadin.com`) → **Haritayı indir (Türkiye)**.
 Büyük dosyadır: Wi-Fi'de indir, ekranı açık tut. İndirme kesilirse "Devam et" kaldığı yerden sürer.
-Harita kaynağı **Otomatik** iken internet varsa çevrimiçi harita, yoksa indirilen harita kullanılır.
+İnternet varken Google haritası kullanılır. Uygulama internetsiz açılırsa (veya Google haritası açılamazsa) indirilen harita kullanılır. Açıkken internet koparsa sayfayı yenilemek gerekir (rota planı sıfırlanır, çünkü rota henüz cihazda saklanmıyor). Google Haritalar uygulamasının kendi indirdiği çevrimdışı haritalar bu uygulamada kullanılamaz.
 
 ## Notlar
 
