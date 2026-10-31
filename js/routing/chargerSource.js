@@ -14,7 +14,7 @@ const MAX_RESULTS = 20; // Nearby Search üst sınırı: dolu dönen daire daha 
 const MAX_RADIUS_M = 50000; // Nearby Search yarıçap üst sınırı
 const SPACING_KM = 45; // rota boyunca daire merkezleri arası
 const CIRCLE_KM = 30; // her dairenin yarıçapı (koridor payı + virajlar için geniş)
-const MAX_CALLS = 120; // bir aramada üst sınır (kota/fatura koruması)
+const MAX_CALLS = 150; // bir aramada üst sınır (kota/fatura koruması)
 const DC_TYPES = new Set(['EV_CONNECTOR_TYPE_CCS_COMBO_1', 'EV_CONNECTOR_TYPE_CCS_COMBO_2', 'EV_CONNECTOR_TYPE_CHADEMO']);
 const AC_FALLBACK_KW = 11; // yalnızca AC/gücü bilinmeyen istasyonda varsayılan güç (aracın AC şarj sınırına yakın)
 const CACHE_TTL_MS = 6 * 3600e3; // Google içeriği için kısa süreli yerel önbellek (hizmet şartları uzun saklamayı kısıtlar)
@@ -50,19 +50,16 @@ function fromGoogle(p) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/**
- * Bir daire içindeki istasyonlar. 20 sonuç dönerse (üst sınır) daire 4 küçük daireye bölünüp tekrar sorulur
- * (yoğun kentlerde kapsamı kaybetmemek için); derinlik sınırlı, toplam çağrı `ctx.calls` ile sınırlı.
- */
-async function searchCircle(lat, lon, radiusM, depth, ctx) {
-  if (ctx.calls >= MAX_CALLS) { ctx.capped = true; return; }
+/** Tek daire sorgusu. Dönüş: sonuç sayısı 20'ye ulaştıysa true (dolu: bölünmeli). Anahtar/API sorunu (fatal) fırlatır. */
+async function queryCircle(c, ctx) {
+  if (ctx.calls >= MAX_CALLS) { ctx.capped = true; return false; }
   ctx.calls++;
   const body = {
     includedTypes: ['electric_vehicle_charging_station'],
     maxResultCount: MAX_RESULTS,
     rankPreference: 'DISTANCE',
     languageCode: 'tr',
-    locationRestriction: { circle: { center: { latitude: lat, longitude: lon }, radius: Math.min(radiusM, MAX_RADIUS_M) } },
+    locationRestriction: { circle: { center: { latitude: c.lat, longitude: c.lon }, radius: Math.min(c.radiusM, MAX_RADIUS_M) } },
   };
   let json;
   try {
@@ -77,30 +74,46 @@ async function searchCircle(lat, lon, radiusM, depth, ctx) {
     if (err.fatal) throw err; // anahtar/etkin-API sorunu: tüm arama durur
     ctx.failed++;
     ctx.lastError = err.message;
-    return;
+    return false;
   }
   const places = json.places || [];
   places.forEach((p) => { const s = fromGoogle(p); if (s) ctx.out.set(s.id, s); });
-  if (places.length >= MAX_RESULTS && depth > 0) {
-    const dLat = (radiusM / 2000) / 110.57; // yarıçapın yarısı kadar kaydır (km → derece)
-    const dLon = (radiusM / 2000) / (111.32 * Math.cos((lat * Math.PI) / 180));
-    for (const [a, b] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
-      await searchCircle(lat + a * dLat, lon + b * dLon, radiusM * 0.72, depth - 1, ctx);
-    }
-  }
+  return places.length >= MAX_RESULTS;
 }
 
-/** Daire listesini 4'erli paralel çalıştır. */
-async function runCircles(circles, depth) {
-  const ctx = { out: new Map(), calls: 0, failed: 0, lastError: '', capped: false };
-  let next = 0;
-  const worker = async () => {
-    while (next < circles.length) {
-      const c = circles[next++];
-      await searchCircle(c.lat, c.lon, c.radiusM, depth, ctx);
-    }
-  };
-  await Promise.all([worker(), worker(), worker(), worker()]);
+/** Dolu bir dairenin 4 alt dairesi; rota koridoruna değmeyenler atlanır (kota boşa gitmesin). */
+function subCircles(c, ctx) {
+  const dLat = (c.radiusM / 2000) / 110.57; // yarıçapın yarısı kadar kaydır (km → derece)
+  const dLon = (c.radiusM / 2000) / (111.32 * Math.cos((c.lat * Math.PI) / 180));
+  const rM = c.radiusM * 0.72;
+  const out = [];
+  for (const [a, b] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+    const sub = { lat: c.lat + a * dLat, lon: c.lon + b * dLon, radiusM: rM };
+    if (ctx.pts && !ctx.pts.some((p) => haversineKm(sub, p) <= rM / 1000 + PLANNER.corridorM / 1000)) continue;
+    out.push(sub);
+  }
+  return out;
+}
+
+/**
+ * Daireleri kademeli sorgula: önce hepsi (kapsam), sonra yalnızca dolu olanların koridora değen alt daireleri (en çok 2 kat).
+ * Kademeli olması, çağrı sınırı dolduğunda rotanın sonunun sorgusuz kalmasını önler. ctx.pts: rota noktaları (yakın arama için null).
+ */
+async function runCircles(circles, { pts = null } = {}) {
+  const ctx = { out: new Map(), calls: 0, failed: 0, lastError: '', capped: false, pts };
+  let level = circles;
+  for (let depth = 0; level.length && depth <= 2; depth++) {
+    const full = [];
+    let next = 0;
+    const worker = async () => {
+      while (next < level.length) {
+        const c = level[next++];
+        if (await queryCircle(c, ctx)) full.push(c);
+      }
+    };
+    await Promise.all([worker(), worker(), worker(), worker()]);
+    level = full.flatMap((c) => subCircles(c, ctx));
+  }
   return ctx;
 }
 
@@ -200,7 +213,7 @@ export async function fetchChargers(pts, profile, cacheKey = null) {
   const errors = [];
   let raw = [];
   try {
-    const ctx = await runCircles(circles, 2);
+    const ctx = await runCircles(circles, { pts });
     raw = [...ctx.out.values()];
     if (ctx.failed) errors.push(`Google: ${ctx.failed} arama başarısız${ctx.lastError ? ' — ' + ctx.lastError : ''}`);
     if (ctx.capped) errors.push(`Çok uzun rota: arama ${MAX_CALLS} çağrıda kesildi (liste eksik olabilir)`);
@@ -245,7 +258,7 @@ export async function fetchAround(lat, lon, radiusKm, force = false) {
   const errors = [];
   let raw = [];
   try {
-    const ctx = await runCircles([{ lat, lon, radiusM: Math.min(radiusKm, 50) * 1000 }], 2);
+    const ctx = await runCircles([{ lat, lon, radiusM: Math.min(radiusKm, 50) * 1000 }]);
     raw = [...ctx.out.values()];
     if (ctx.failed) errors.push(`Google: ${ctx.failed} arama başarısız${ctx.lastError ? ' — ' + ctx.lastError : ''}`);
   } catch (err) {

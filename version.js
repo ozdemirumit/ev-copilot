@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.20.0';
+self.APP_VERSION = '0.20.1';
 self.APP_CHANGELOG = [
+  {
+    v: '0.20.1', date: '2026-10-31',
+    notes: [
+      'Uzun rotada istasyon araması artık kademeli: önce rotanın tamamı taranır, sonra yalnızca dolu ve rotaya değen daireler bölünür. Çağrı sayısı çok azaldı; arama 120 çağrıda kesilip zincirin rotanın ortasında kopması düzeltildi.',
+      'Hava durumu: tek bir noktadaki geçici Google hatası artık tüm hava verisini düşürmüyor (nokta bir kez yeniden denenir, olmazsa komşu nokta kullanılır). Google API etkin değil veya faturalandırma yok hataları açık Türkçe yazılır.',
+    ],
+  },
   {
     v: '0.20.0', date: '2026-10-31',
     notes: [

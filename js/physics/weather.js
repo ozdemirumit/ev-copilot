@@ -16,7 +16,7 @@ async function pointForecast(p, now) {
   const hours = [];
   let token = null;
   for (let page = 0; page < 12 && hours.length < need; page++) {
-    const url = `${URL_BASE}?location.latitude=${p.lat.toFixed(4)}&location.longitude=${p.lon.toFixed(4)}&hours=${need}&pageSize=24`
+    const url = `${URL_BASE}?location.latitude=${p.lat.toFixed(4)}&location.longitude=${p.lon.toFixed(4)}&hours=${need}` + (need > 24 ? '&pageSize=24' : '')
       + (token ? `&pageToken=${encodeURIComponent(token)}` : '');
     const json = await gfetch(url, { keyInQuery: true });
     hours.push(...(json.forecastHours || []));
@@ -41,15 +41,34 @@ async function pointForecast(p, now) {
  */
 export async function fetchWeather(points) {
   const now = Date.now();
-  const out = new Array(points.length);
+  const out = new Array(points.length).fill(null);
+  const errors = [];
   let next = 0;
   const worker = async () => {
     while (next < points.length) {
       const i = next++;
-      out[i] = await pointForecast(points[i], now);
+      for (let attempt = 0; attempt < 2 && !out[i]; attempt++) {
+        try {
+          out[i] = await pointForecast(points[i], now);
+        } catch (err) {
+          if (err.fatal) throw err; // anahtar/etkin-API sorunu: tekrarlamanın anlamı yok
+          errors.push(err.message);
+          await new Promise((r) => setTimeout(r, 1200)); // geçici hata/hız sınırı: bir kez daha dene
+        }
+      }
     }
   };
-  await Promise.all([worker(), worker(), worker(), worker()]);
+  await Promise.all([worker(), worker(), worker()]);
+  if (out.every((o) => !o)) throw new Error(errors[0] || 'Google Hava Durumu yanıt vermedi');
+  // Tek tük noktada hata varsa en yakın başarılı komşunun değeri kullanılır (rota boyunca hava yavaş değişir).
+  out.forEach((o, i) => {
+    if (o) return;
+    for (let d = 1; d < out.length; d++) {
+      const near = out[i - d] || out[i + d];
+      if (near) { out[i] = near; break; }
+    }
+    console.warn('Hava noktası komşudan dolduruldu:', i, errors[0]);
+  });
   out.source = SOURCE;
   return out;
 }

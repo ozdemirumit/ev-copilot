@@ -11,6 +11,8 @@ export class GoogleError extends Error {
 
 function explain(status, msg) {
   if (/API key not valid|API_KEY_INVALID/i.test(msg)) return ['Google anahtarı geçersiz: yanlış karakter olabilir, Rota sekmesinde tekrar gir', true];
+  if (/has not been used in project|is disabled|SERVICE_DISABLED/i.test(msg)) return ["Google: bu API projede etkin değil (Cloud Console > API Kitaplığı'ndan etkinleştir, etkinleştirdiysen birkaç dakika bekle)", true];
+  if (/enable Billing|BILLING/i.test(msg)) return ['Google: projeye faturalandırma hesabı bağlı değil (Cloud Console > Faturalandırma)', true];
   if (status === 403) return [`Google erişimi reddetti: ilgili API etkin değil veya anahtar kısıtlı (${msg || 'HTTP 403'})`, true];
   if (status === 429) return ['Google istek sınırı/kota doldu (biraz bekle veya kotayı artır)', false];
   return [msg ? `Google: ${msg}` : `Google HTTP ${status}`, false];
