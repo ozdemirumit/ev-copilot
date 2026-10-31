@@ -67,6 +67,13 @@ export function initMap() {
     if (!saver.checked) boot().then(() => adapter?.resize());
   });
 
+  // Trafik renk katmanı (yalnızca Google haritasında): anahtar kalıcıdır, harita hazır olunca uygulanır
+  const trafficSw = document.getElementById('map-traffic');
+  trafficSw.checked = load('trafficLayer', false);
+  const applyTraffic = () => adapter?.traffic?.(trafficSw.checked);
+  trafficSw.addEventListener('change', () => { save('trafficLayer', trafficSw.checked); applyTraffic(); });
+  readyHooks.push(applyTraffic);
+
   const marker = (pos, content, title = '') => adapter.marker(pos, content, title);
   const unmark = (m) => m?.remove();
   const fit = (points, pad) => adapter.fit(points, pad);

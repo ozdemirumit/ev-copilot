@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.34.0';
+self.APP_VERSION = '0.35.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.35.0', date: '2026-10-31',
+    notes: [
+      'Google haritasında trafik renk katmanı: Rota sekmesindeki harita ayarlarında "Haritada trafik renkleri" anahtarı (akıcı, yavaş, yoğun yollar renkli görünür). Seçimin kalıcıdır. Yalnızca Google kaynağında; Alternatif kaynakta canlı trafik verisi yok.',
+    ],
+  },
   {
     v: '0.34.0', date: '2026-10-31',
     notes: [

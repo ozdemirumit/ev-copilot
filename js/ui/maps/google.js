@@ -17,6 +17,7 @@ export async function createGoogleMap(container) {
   });
   record('maps'); // her harita oluşturma bir Dynamic Maps yüklemesi sayılır
   const ll = (p) => ({ lat: p.lat, lng: p.lon });
+  let trafficLayer = null; // Google trafik renk katmanı (akıcı / yavaş / yoğun), açılınca oluşturulur
 
   return {
     name: 'google',
@@ -49,5 +50,9 @@ export async function createGoogleMap(container) {
     onDragStart: (fn) => gmap.addListener('dragstart', fn),
     cursor: (c) => gmap.setOptions({ draggableCursor: c }),
     resize: () => core.event.trigger(gmap, 'resize'),
+    traffic(on) {
+      trafficLayer ??= new maps.TrafficLayer();
+      trafficLayer.setMap(on ? gmap : null);
+    },
   };
 }
