@@ -27,7 +27,7 @@ body {
   font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  height: var(--app-h, 100dvh); /* js/app.js gerçek görünür yüksekliği yazar (yenilemeden sonra dvh yanlış kalabiliyor) */
   overflow: hidden;
 }
 h2 { font-size: 15px; margin: 0 0 10px; font-weight: 600; letter-spacing: .2px; }
@@ -307,3 +307,7 @@ body.navmode .topbar { padding-top: calc(4px + var(--safe-t)); padding-bottom: 4
 .hchart { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 6px; }
 .hchart svg { width: 100%; height: 120px; display: block; }
 .hchart .empty { padding: 28px 8px; text-align: center; color: var(--muted); font-size: 12px; }
+
+/* Uyarı çubukları ortak kutuda: ekranın ~%38'ini aşamaz (aşarsa kutu kayar), alt menü her zaman görünür kalır */
+#banners { flex: 0 1 auto; min-height: 0; max-height: 38dvh; overflow-y: auto; }
+html { overflow: hidden; }

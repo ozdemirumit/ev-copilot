@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.24.0';
+self.APP_VERSION = '0.24.1';
 self.APP_CHANGELOG = [
+  {
+    v: '0.24.1', date: '2026-10-31',
+    notes: [
+      'Yenileme sonrası alt menünün kaybolması için iki önlem: uygulama yüksekliği artık gerçek görünür alandan ölçülür (sayfa yenilenince 100dvh yanlış kalabiliyordu) ve yenilemede geri yüklenen belge kaydırması sıfırlanır.',
+      'Uyarı çubukları (navigasyon, yol önü, düşük pil, tavsiye) ortak kutuya alındı; kutu ekranın en çok %38ini kaplar, fazlası kutunun içinde kayar. Uyarılar ne kadar birikse alt menü ve içerik alanı görünür kalır.',
+    ],
+  },
   {
     v: '0.24.0', date: '2026-10-31',
     notes: [

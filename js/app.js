@@ -1,3 +1,16 @@
+// Görünür yüksekliği (adres çubuğu/gezinme çubuğu hariç) CSS değişkenine yaz: sayfa yenilendikten sonra 100dvh bazı
+// tarayıcılarda gerçek alandan büyük kalıp alt menüyü ekranın dışına itiyordu.
+(() => {
+  const fit = () => {
+    const h = Math.round(window.visualViewport?.height ?? window.innerHeight);
+    document.documentElement.style.setProperty('--app-h', h + 'px');
+    window.scrollTo(0, 0); // yenilemede geri yüklenen belge kaydırması varsa sıfırla (gövde kaydırılmaz)
+  };
+  fit();
+  ['resize', 'orientationchange', 'pageshow'].forEach((ev) => window.addEventListener(ev, fit));
+  window.visualViewport?.addEventListener('resize', fit);
+})();
+
 import { installMeter } from './net/meter.js';
 import { initVersionInfo } from './ui/versionInfo.js';
 import { initDataUsage } from './ui/dataUsage.js';
