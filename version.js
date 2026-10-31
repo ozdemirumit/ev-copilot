@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.38.0';
+self.APP_VERSION = '0.39.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.39.0', date: '2026-11-01',
+    notes: [
+      'İstasyon aramasında Google günlük kotası (SearchNearbyRequest per day) dolunca kalan aramalar artık boşuna denenmiyor, kota hakkı yakılmıyor. Hata mesajı kaç aramanın denenmediğini söylüyor.',
+      'Başarılı arama daireleri 6 saat saklanır: yarım kalan bir aramayı (kota, internet, hız sınırı) tekrarlayınca tamamlanan daireler yeniden sorulmaz, yalnızca eksikler gider.',
+    ],
+  },
   {
     v: '0.38.0', date: '2026-11-01',
     notes: [

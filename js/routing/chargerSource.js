@@ -7,7 +7,7 @@ import { haversineKm } from '../utils/geo.js';
 import { load, save } from '../utils/storage.js';
 import { gfetch } from '../google/api.js';
 import { slotsOf } from './slots.js';
-import { cached, TTL } from '../utils/cache.js';
+import { cached, cacheGet, cacheSet, TTL } from '../utils/cache.js';
 
 const NEARBY_URL = 'https://places.googleapis.com/v1/places:searchNearby';
 const TEXT_URL = 'https://places.googleapis.com/v1/places:searchText';
@@ -55,32 +55,42 @@ function fromGoogle(p, drop = {}) {
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const DAY_QUOTA = /per day|günlük/i; // Google 429 iletisi: "… limit 'SearchNearbyRequest per day' …"
 
 /** Tek daire sorgusu. Dönüş: sonuç sayısı 20'ye ulaştıysa true (dolu: bölünmeli). Anahtar/API sorunu (fatal) fırlatır. */
 async function queryCircle(c, ctx) {
-  if (ctx.calls >= MAX_CALLS) { ctx.capped = true; return false; }
-  ctx.calls++;
-  const body = {
-    includedTypes: ['electric_vehicle_charging_station'],
-    maxResultCount: MAX_RESULTS,
-    rankPreference: 'DISTANCE',
-    languageCode: 'tr',
-    locationRestriction: { circle: { center: { latitude: c.lat, longitude: c.lon }, radius: Math.min(c.radiusM, MAX_RADIUS_M) } },
-  };
-  let json;
-  try {
+  if (ctx.stop) { ctx.skipped++; return false; } // günlük kota bitti: kalan aramalar boşa istek atmasın
+  // Başarılı daire sonuçları saklanır: yarım kalan bir aramayı (kota, hız sınırı, internet) tekrarlayınca tamamlanan daireler yeniden sorulmaz
+  const ckey = `nc:${c.lat.toFixed(3)},${c.lon.toFixed(3)}:${Math.round(c.radiusM)}`;
+  let json = cacheGet(ckey);
+  if (json === undefined) {
+    if (ctx.calls >= MAX_CALLS) { ctx.capped = true; return false; }
+    ctx.calls++;
+    const body = {
+      includedTypes: ['electric_vehicle_charging_station'],
+      maxResultCount: MAX_RESULTS,
+      rankPreference: 'DISTANCE',
+      languageCode: 'tr',
+      locationRestriction: { circle: { center: { latitude: c.lat, longitude: c.lon }, radius: Math.min(c.radiusM, MAX_RADIUS_M) } },
+    };
     try {
-      json = await gfetch(NEARBY_URL, { method: 'POST', mask: FIELD_MASK, body });
+      try {
+        json = await gfetch(NEARBY_URL, { method: 'POST', mask: FIELD_MASK, body });
+      } catch (err) {
+        if (err.status !== 429 || DAY_QUOTA.test(err.message)) throw err; // günlük kotada beklemenin anlamı yok
+        await sleep(1500); // dakikalık hız sınırı: bir kez bekleyip tekrar
+        json = await gfetch(NEARBY_URL, { method: 'POST', mask: FIELD_MASK, body });
+      }
     } catch (err) {
-      if (err.status !== 429) throw err;
-      await sleep(1500); // hız sınırı: bir kez bekleyip tekrar
-      json = await gfetch(NEARBY_URL, { method: 'POST', mask: FIELD_MASK, body });
+      if (err.fatal) throw err; // anahtar/etkin-API sorunu: tüm arama durur
+      ctx.failed++;
+      ctx.lastError = err.message;
+      if (err.status === 429 && DAY_QUOTA.test(err.message)) ctx.stop = true;
+      return false;
     }
-  } catch (err) {
-    if (err.fatal) throw err; // anahtar/etkin-API sorunu: tüm arama durur
-    ctx.failed++;
-    ctx.lastError = err.message;
-    return false;
+    cacheSet(ckey, json, CACHE_TTL_MS);
+  } else {
+    ctx.fromCache++;
   }
   const places = json.places || [];
   ctx.raw += places.length;
@@ -95,6 +105,7 @@ async function queryCircle(c, ctx) {
  * olan kayıtlar alınır. Çağrı sınırına dahildir.
  */
 async function textFallback(c, ctx) {
+  if (ctx.stop) return;
   if (ctx.calls >= MAX_CALLS) { ctx.capped = true; return; }
   ctx.calls++;
   ctx.textCalls++;
@@ -119,6 +130,7 @@ async function textFallback(c, ctx) {
     if (err.fatal) throw err;
     ctx.failed++;
     ctx.lastError = err.message;
+    if (err.status === 429 && DAY_QUOTA.test(err.message)) ctx.stop = true;
   }
 }
 
@@ -141,7 +153,7 @@ function subCircles(c, ctx) {
  * Kademeli olması, çağrı sınırı dolduğunda rotanın sonunun sorgusuz kalmasını önler. ctx.pts: rota noktaları (yakın arama için null).
  */
 async function runCircles(circles, { pts = null } = {}) {
-  const ctx = { out: new Map(), calls: 0, failed: 0, lastError: '', capped: false, pts, raw: 0, drop: {}, textCalls: 0, textFound: 0 };
+  const ctx = { out: new Map(), calls: 0, failed: 0, skipped: 0, fromCache: 0, stop: false, lastError: '', capped: false, pts, raw: 0, drop: {}, textCalls: 0, textFound: 0 };
   let level = circles;
   for (let depth = 0; level.length && depth <= 2; depth++) {
     const full = [];
@@ -269,7 +281,7 @@ export async function fetchChargers(pts, profile, cacheKey = null) {
     const ctx = await runCircles(circles, { pts });
     ctxInfo = ctx;
     raw = [...ctx.out.values()];
-    if (ctx.failed) errors.push(`Google: ${ctx.failed} arama başarısız${ctx.lastError ? ' — ' + ctx.lastError : ''}`);
+    if (ctx.failed) errors.push(`Google: ${ctx.failed} arama başarısız${ctx.skipped ? `, ${ctx.skipped} arama hiç denenmedi (günlük kota bitti)` : ''}${ctx.fromCache ? `; ${ctx.fromCache} daire önbellekten geldi, tekrar denersen yalnızca eksikler sorulur` : ''}${ctx.lastError ? ' — ' + ctx.lastError : ''}`);
     if (ctx.capped) errors.push(`Çok uzun rota: arama ${MAX_CALLS} çağrıda kesildi (liste eksik olabilir)`);
   } catch (err) {
     errors.push(err.message);
@@ -316,7 +328,7 @@ export async function fetchAround(lat, lon, radiusKm, force = false) {
   try {
     const ctx = await runCircles([{ lat, lon, radiusM: Math.min(radiusKm, 50) * 1000 }]);
     raw = [...ctx.out.values()];
-    if (ctx.failed) errors.push(`Google: ${ctx.failed} arama başarısız${ctx.lastError ? ' — ' + ctx.lastError : ''}`);
+    if (ctx.failed) errors.push(`Google: ${ctx.failed} arama başarısız${ctx.skipped ? `, ${ctx.skipped} arama hiç denenmedi (günlük kota bitti)` : ''}${ctx.fromCache ? `; ${ctx.fromCache} daire önbellekten geldi, tekrar denersen yalnızca eksikler sorulur` : ''}${ctx.lastError ? ' — ' + ctx.lastError : ''}`);
   } catch (err) {
     errors.push(err.message);
   }
