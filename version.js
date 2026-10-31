@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.29.0';
+self.APP_VERSION = '0.29.1';
 self.APP_CHANGELOG = [
+  {
+    v: '0.29.1', date: '2026-10-31',
+    notes: [
+      'Yol hız limiti kontrolü (Google Roads, ücretli) artık varsayılan kapalı: istemeden ücret çıkmaz. Navigasyon kartındaki anahtardan veya navigasyon sırasında haritadaki bariyer düğmesinden açılıp kapatılır. Kapalıyken Google Roads hiç çağrılmaz, hız uyarısı senin eşiğinle çalışır.',
+      'Bir ekran bileşeni hata verirse (ör. geçersiz anahtarla harita açılamadı) diğer bileşenlerin güncellenmesi durmaz.',
+    ],
+  },
   {
     v: '0.29.0', date: '2026-10-31',
     notes: [

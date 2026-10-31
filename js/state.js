@@ -44,10 +44,10 @@ const store = {
   system: { wakeLock: false, camera: false, ocr: false },
   // Sürüş geçmişi kaydı değişince güncellenir (kayıtlar physics/history.js içinde)
   hist: { n: 0, at: 0 },
-  // Navigasyon (limit = Google Roads yol hız limiti): active = dönüş dönüş yönlendirme açık; voice = sesli yönlendirme; lowSoc = düşük pil uyarı eşiği (%).
+  // Navigasyon (limitOn: Google Roads hız limiti kontrolü ücretlidir, varsayılan kapalı): active = dönüş dönüş yönlendirme açık; voice = sesli yönlendirme; lowSoc = düşük pil uyarı eşiği (%).
   nav: { active: false, voice: load('voiceOn', true), lowSoc: load('lowSoc', 20), step: null, alert: null,
     speedAlert: load('speedAlert', 0), headingUp: load('headingUp', true),
-    limitOn: load('limitOn', true), limit: null, limitErr: null, ahead: { rain: null, traffic: null, speed: null }, liveRemain: null },
+    limitOn: load('limitOn', false), limit: null, limitErr: null, ahead: { rain: null, traffic: null, speed: null }, liveRemain: null },
 };
 
 const listeners = {};
@@ -58,7 +58,8 @@ export function getState(slice) {
 
 export function patch(slice, part) {
   Object.assign(store[slice], part);
-  (listeners[slice] || []).forEach((fn) => fn(store[slice]));
+  // Bir dinleyici (ör. harita geçersiz anahtarla başlamadı) hata verirse diğerleri çalışmaya devam etsin
+  (listeners[slice] || []).forEach((fn) => { try { fn(store[slice]); } catch (err) { console.error(`${slice} dinleyicisi hata verdi:`, err); } });
 }
 
 export function subscribe(slices, fn) {

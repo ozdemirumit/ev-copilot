@@ -6,6 +6,7 @@ import { getState, patch, subscribe, effective } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { gfetch } from '../google/api.js';
 import { haversineKm } from '../utils/geo.js';
+import { toast } from '../ui/toast.js';
 import { cached, TTL } from '../utils/cache.js';
 
 const $ = (id) => document.getElementById(id);
@@ -80,7 +81,7 @@ function paint() {
   if (st) {
     const u = usage();
     const cost = u.n ? ` · bu ay ${u.n} öğe ≈ ${(u.n * USD_PER_ELEMENT).toFixed(2)} $` : '';
-    st.textContent = !nav.limitOn ? ''
+    st.textContent = !nav.limitOn ? 'Kapalı: Google Roads çağrılmaz, ücret çıkmaz. Hız uyarısı senin belirlediğin eşikle çalışır.'
       : nav.limitErr ? `Yol hız limiti alınamadı (${nav.limitErr}); senin eşiğin kullanılır.`
         : (lim ? `Bu yolun hız limiti: ${lim} km/s` : 'Yol hız limiti sürerken okunur') + cost;
   }
@@ -88,13 +89,25 @@ function paint() {
 
 export function initSpeedLimit() {
   const sw = $('limit-on');
-  sw.checked = getState('nav').limitOn;
-  sw.addEventListener('change', () => {
-    patch('nav', { limitOn: sw.checked, limit: null, limitErr: null });
-    save('limitOn', sw.checked);
+  const btn = $('nh-limitbtn');
+  const paintOn = () => {
+    const on = getState('nav').limitOn;
+    sw.checked = on;
+    btn.classList.toggle('on', on);
+  };
+  /** Açma/kapama: her iki denetim (Navigasyon kartı anahtarı ve harita üstü düğme) bunu kullanır. */
+  const setOn = (on) => {
+    patch('nav', { limitOn: on, limit: null, limitErr: null });
+    save('limitOn', on);
     blockedUntil = 0;
-  });
+    toast(on ? 'Yol hız limiti kontrolü açık (Google Roads, kullandıkça ücretlenir)' : 'Yol hız limiti kontrolü kapalı: Google Roads çağrılmaz');
+    paintOn();
+    paint();
+  };
+  sw.addEventListener('change', () => setOn(sw.checked));
+  btn.addEventListener('click', () => setOn(!getState('nav').limitOn));
   subscribe('nav', paint);
   setInterval(() => { check(); paint(); }, 3000);
+  paintOn();
   paint();
 }

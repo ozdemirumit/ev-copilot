@@ -63,6 +63,7 @@
         <div class="nh-cell nh-main"><b id="nh-eta">--:--</b><small id="nh-rem">—</small></div>
         <div class="nh-cell"><b id="nh-soc">--</b><small>% pil</small></div>
         <div class="nh-btns">
+          <button type="button" id="nh-limitbtn" aria-label="Yol hız limiti kontrolünü aç/kapat" title="Yol hız limiti kontrolü (ücretli)">🚧</button>
           <button type="button" id="nh-voice" aria-label="Sesli yönlendirme aç/kapat">🔊</button>
           <button type="button" id="nh-overview" aria-label="Rotanın tamamını göster">⛶</button>
           <button type="button" id="nh-recenter" class="hidden" aria-label="Aracı ortala">🎯</button>
@@ -212,8 +213,8 @@
         <input type="range" id="low-soc" min="10" max="40" step="1" value="20">
       </div>
       <div class="row between">
-        <label for="limit-on">Yol hız limitini Google Roads'tan al (lisans gerektirir)</label>
-        <label class="switch"><input type="checkbox" id="limit-on" checked><i></i></label>
+        <label for="limit-on">Yol hız limiti kontrolü (Google Roads; ücretli, lisans ister)</label>
+        <label class="switch"><input type="checkbox" id="limit-on"><i></i></label>
       </div>
       <p class="small muted" id="limit-status" style="margin:0"></p>
       <div class="slider-row">
