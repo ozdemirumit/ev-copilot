@@ -2,8 +2,17 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.33.0';
+self.APP_VERSION = '0.34.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.34.0', date: '2026-10-31',
+    notes: [
+      'Çevrimdışı harita (Alternatif kaynak): ülke haritası telefona indirilir (OPFS, kaldığı yerden devam eder) ve internetsiz çizilir. Veri kaynağı kartında Çevrimdışı harita bölümü: R2 adresi, indir/durdur/sil, harita kaynağı (otomatik, hep indirilen, hep çevrimiçi).',
+      'Otomatik modda internet kopunca harita kendiliğinden indirilen haritaya geçer, bağlantı gelince çevrimiçine döner; rota çizgisi ve işaretler kaybolmaz.',
+      'Paketi GitHub Actions üretir ve Cloudflare R2 kovana yükler (.github/workflows/build-offline-map.yml). Kurulum adımları docs/offline-harita.md içinde. Dosya adresi koda yazılmaz, telefonda girilir.',
+      'pmtiles, Protomaps stili ve yazı tipleri/simgeler uygulamayla birlikte sunulur (vendor/).',
+    ],
+  },
   {
     v: '0.33.0', date: '2026-10-31',
     notes: [

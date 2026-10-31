@@ -1,0 +1,100 @@
+# Çevrimdışı ülke haritası paketini üretir ve Cloudflare R2'ye yükler (Protomaps gezegen yapısından `pmtiles extract`).
+# Elle ("Run workflow") veya ayda bir çalışır. Gizli bilgiler depo Settings > Secrets and variables > Actions altında durur,
+# koda yazılmaz: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET. Kurulum: docs/offline-harita.md
+name: build-offline-map
+
+on:
+  workflow_dispatch:
+    inputs:
+      country_iso3:
+        description: 'ISO3 ülke kodu (TUR = Türkiye)'
+        default: 'TUR'
+      maxzoom:
+        description: 'Azami yakınlaştırma (14 ≈ 0,7 GB, 12 ≈ 0,2 GB Türkiye için)'
+        default: '14'
+  schedule:
+    - cron: '17 3 1 * *' # ayda bir: Protomaps indirmelerini sık yüklemeyin
+
+permissions:
+  contents: read
+
+env:
+  PMTILES_VERSION: '1.31.2'
+  COUNTRY: ${{ inputs.country_iso3 || 'TUR' }}
+  MAXZOOM: ${{ inputs.maxzoom || '14' }}
+  AWS_DEFAULT_REGION: auto
+  AWS_REQUEST_CHECKSUM_CALCULATION: when_required # aws-cli ≥ 2.23 ile R2 sağlama toplamı uyumsuzluğuna karşı
+  AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+
+jobs:
+  extract-and-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: pmtiles CLI kur
+        run: |
+          curl -fsSL "https://github.com/protomaps/go-pmtiles/releases/download/v${PMTILES_VERSION}/go-pmtiles_${PMTILES_VERSION}_Linux_x86_64.tar.gz" | tar xz pmtiles
+          ./pmtiles version
+
+      - name: En son gezegen yapısını bul
+        run: |
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          import json, urllib.request
+          req = urllib.request.Request("https://build-metadata.protomaps.dev/builds.json",
+                                       headers={"User-Agent": "smart-ev-copilot-ci/1.0"})
+          builds = json.load(urllib.request.urlopen(req, timeout=60))
+          latest = sorted(builds, key=lambda b: b["key"])[-1]
+          print("BUILD_DATE=" + latest["key"].split(".")[0])
+          print("PLANET_URL=https://build.protomaps.com/" + latest["key"])
+          PY
+          grep -E '^(BUILD_DATE|PLANET_URL)=' "$GITHUB_ENV"
+
+      - name: Ülke çokgenini hazırla (kamu malı sınır verisi, 0,1 derece tampon)
+        run: |
+          pip install --quiet shapely
+          curl -fsSL -o countries.geojson https://raw.githubusercontent.com/datasets/geo-countries/main/data/countries.geojson
+          python3 - <<'PY'
+          import json, os
+          from shapely.geometry import shape, mapping
+          iso = os.environ["COUNTRY"].upper()
+          fc = json.load(open("countries.geojson"))
+          f = next(x for x in fc["features"] if x["properties"].get("ISO3166-1-Alpha-3") == iso)
+          g = shape(f["geometry"]).buffer(0.1).simplify(0.005)
+          json.dump({"type": "Feature", "properties": {}, "geometry": mapping(g)}, open("region.geojson", "w"))
+          PY
+
+      - name: Kuru çalıştırma (boyut ve karo sayısı raporu)
+        continue-on-error: true
+        run: ./pmtiles extract "$PLANET_URL" /tmp/dry.pmtiles --region=region.geojson --maxzoom="$MAXZOOM" --dry-run
+
+      - name: Çıkar
+        run: |
+          OUT="${COUNTRY,,}-${BUILD_DATE}-z${MAXZOOM}.pmtiles"
+          echo "OUT=$OUT" >> "$GITHUB_ENV"
+          ./pmtiles extract "$PLANET_URL" "$OUT" --region=region.geojson --maxzoom="$MAXZOOM" --download-threads=4
+          ./pmtiles show "$OUT"
+          ./pmtiles verify "$OUT"
+          ls -l "$OUT"
+
+      - name: R2'ye yükle (S3 uyumlu API)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          # Dosya adı sürümlüdür ve değişmez (aynı adın üzerine yazılmaz): yarım indirmeler yeni sürümle karışmaz.
+          aws s3 cp "$OUT" "s3://${R2_BUCKET}/maps/${OUT}" \
+            --endpoint-url "$R2_ENDPOINT" \
+            --content-type application/octet-stream \
+            --cache-control "public, max-age=31536000, immutable"
+          SIZE=$(stat -c %s "$OUT")
+          SHA=$(sha256sum "$OUT" | cut -d' ' -f1)
+          printf '{"country":"%s","file":"maps/%s","size":%s,"sha256":"%s","build":"%s","maxzoom":%s}\n' \
+            "$COUNTRY" "$OUT" "$SIZE" "$SHA" "$BUILD_DATE" "$MAXZOOM" > manifest.json
+          cat manifest.json
+          # Uygulamanın okuduğu bildirim: kısa önbellekli, her yeni yapıda güncellenir
+          aws s3 cp manifest.json "s3://${R2_BUCKET}/maps/${COUNTRY,,}-latest.json" \
+            --endpoint-url "$R2_ENDPOINT" \
+            --content-type application/json \
+            --cache-control "public, max-age=300"
