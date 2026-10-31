@@ -1,3 +1,5 @@
+import { getState } from '../state.js';
+
 const lastSpoken = new Map();
 let voice = null;
 
@@ -9,12 +11,13 @@ function pickVoice() {
 }
 
 /** Web Speech API ile Türkçe sesli uyarı. Aynı `key` için `cooldownMs` içinde tekrar konuşmaz. */
-export function speak(text, { key = text, cooldownMs = 60000 } = {}) {
+export function speak(text, { key = text, cooldownMs = 60000, force = false, interrupt = false } = {}) {
   const synth = window.speechSynthesis;
-  if (!synth) return false;
+  if (!synth || (!force && !getState('nav').voice)) return false;
   const now = Date.now();
   if (now - (lastSpoken.get(key) || 0) < cooldownMs) return false;
   lastSpoken.set(key, now);
+  if (interrupt) synth.cancel(); // eski komut kuyruğa yığılmasın (yalnızca güncel talimat konuşulsun)
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'tr-TR';
   const v = pickVoice();

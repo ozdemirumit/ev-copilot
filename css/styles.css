@@ -276,3 +276,16 @@ label.field { position: relative; }
 .tog:active { background: var(--accent-dim); color: var(--accent); }
 .card.collapsed > :not(.card-head-row) { display: none !important; }
 .card.collapsed > .card-head { margin-bottom: 0; }
+
+/* Navigasyon banner'ı ve yakın istasyon uyarısı */
+.navbar { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #0f2a22; border-bottom: 2px solid var(--accent); }
+.navbar.warn { background: #2b2210; border-bottom-color: var(--warn); }
+.nav-arrow { font-size: 34px; line-height: 1; width: 46px; text-align: center; flex: none; }
+.nav-main { flex: 1; min-width: 0; }
+.nav-dist { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.nav-text { font-size: 15px; font-weight: 600; }
+.nav-road, .nav-sub { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.near-alert { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.btn.sm { padding: 6px 10px; font-size: 12px; }
+a.btn { text-decoration: none; color: var(--text); display: inline-block; }
+.station.focus { outline: 1px solid var(--accent-dim); outline-offset: 6px; border-radius: 8px; }

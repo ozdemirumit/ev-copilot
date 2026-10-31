@@ -1,13 +1,14 @@
 import { getState, patch, subscribe, effective } from '../state.js';
 import { load } from '../utils/storage.js';
 import { fetchRoute } from './osrm.js';
-import { fetchChargers, reprice } from './chargerSource.js';
+import { fetchChargers, reprice, reproject } from './chargerSource.js';
 import { planRoute, rankStations } from './planner.js';
 import { resampleRoute, buildProfile } from '../physics/routeProfile.js';
 import { fetchElevations } from '../physics/elevation.js';
 import { fetchWeather } from '../physics/weather.js';
 import { mapApi } from '../ui/mapView.js';
 import { toast } from '../ui/toast.js';
+import { projectSteps } from '../nav/steps.js';
 
 const WX_STEP_KM = 50;
 let raw = null; // { pts, elevations, elevSource, wx } — profil ayarları değişince yeniden kurmak için
@@ -78,8 +79,14 @@ export async function refetchStations() {
   }
 }
 
-export async function planTrip() {
-  const { start, end } = getState('route');
+/**
+ * Rotayı planla. `from` verilirse (yeniden rota: rotadan çıkıldı) başlangıç o konumdur ve istasyonlar yeniden aranmaz,
+ * mevcut liste yeni rotaya izdüşürülür (Overpass'e tekrar gitmemek için).
+ */
+export async function planTrip(from = null) {
+  const route = getState('route');
+  const start = from || route.start;
+  const end = route.end;
   if (!start || !end) return toast('Önce başlangıç ve varış seç');
   const e = effective();
   startSoc = e.soc ?? 80;
@@ -90,7 +97,8 @@ export async function planTrip() {
     patch('sim', { routeKm: 0, lat: null, lon: null, play: false }); // simüle araç yeni rotanın başına
     const rt = await fetchRoute(start, end);
     const pts = resampleRoute(rt.coords);
-    mapApi.drawRoute(rt.coords);
+    mapApi.drawRoute(rt.coords, { fit: !from });
+    if (from) mapApi.setPoint('start', from, { fit: false });
 
     patch('plan', { text: 'Rakım ve hava durumu alınıyor…' });
     const cruise = getState('route').cruise;
@@ -113,16 +121,27 @@ export async function planTrip() {
     };
     sig = routeSig();
     const profile = buildFromRaw();
-    patch('plan', { route: rt, profile, wxInfo: { source: wxRes?.source ?? null, fallbackReason: wxRes?.fallbackReason ?? null, error: wxError }, stations: [], stationInfo: null, text: 'Şarj istasyonları aranıyor…' });
+    const kept = from ? reproject(getState('plan').stations, profile) : [];
+    patch('plan', { route: rt, profile, steps: projectSteps(rt.steps, profile), planId: Date.now(), wxInfo: { source: wxRes?.source ?? null, fallbackReason: wxRes?.fallbackReason ?? null, error: wxError }, stations: kept, stationInfo: from ? getState('plan').stationInfo : null, text: 'Şarj istasyonları aranıyor…' });
 
-    cacheKey = [start, end].map((p) => `${p.lat.toFixed(2)},${p.lon.toFixed(2)}`).join('>');
-    await loadStations(pts, profile);
+    if (!kept.length) {
+      cacheKey = [start, end].map((p) => `${p.lat.toFixed(2)},${p.lon.toFixed(2)}`).join('>');
+      await loadStations(pts, profile);
+    }
     applyPlan(computePlan(), { startSoc });
   } catch (err) {
     console.error(err);
     patch('plan', { status: 'error', text: err.message });
     toast('Plan hatası: ' + err.message, 4000);
   }
+}
+
+/** Navigasyon: rotadan çıkıldı, bulunduğun konumdan varışa yeniden rota kur. */
+export function rerouteFromHere() {
+  const e = effective();
+  if (e.lat == null || getState('plan').status === 'loading') return false;
+  planTrip({ lat: e.lat, lon: e.lon, label: 'Konumum' });
+  return true;
 }
 
 /** İstasyon fiyat/kW tablosu değişti: ağ çağrısı olmadan yeniden fiyatla ve planla. */
@@ -153,7 +172,7 @@ function refresh() {
 }
 
 export function initRouteController() {
-  document.getElementById('btn-plan').addEventListener('click', planTrip);
+  document.getElementById('btn-plan').addEventListener('click', () => planTrip());
   let lastMode = getState('plan').mode;
   subscribe('plan', (p) => {
     if (p.mode !== lastMode) { lastMode = p.mode; refresh(); }

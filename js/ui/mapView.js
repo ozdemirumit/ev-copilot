@@ -4,7 +4,7 @@ import { toast } from './toast.js';
 import { attachSearch, reverseLabel } from './placeSearch.js';
 
 /** Harita çizim API'si; initMap() çağrılınca dolar (routing/controller.js kullanır). */
-export const mapApi = { drawRoute() {}, drawStations() {} };
+export const mapApi = { drawRoute() {}, drawStations() {}, drawNearby() {}, setPoint() {}, follow() {} };
 
 const fmt = (p) => (p ? `${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}` : '');
 
@@ -53,6 +53,8 @@ export function initMap() {
   let pickMode = null; // 'start' | 'end' | null
   let me = null; // canlı konum işareti
 
+  mapApi.setPoint = (...a) => setPoint(...a);
+
   const startInput = document.getElementById('route-start');
   const endInput = document.getElementById('route-end');
   const pickBtns = { start: document.getElementById('pick-start'), end: document.getElementById('pick-end') };
@@ -66,7 +68,7 @@ export function initMap() {
 
   const inputFor = (kind) => (kind === 'start' ? startInput : endInput);
 
-  function setPoint(kind, point, { zoom = false } = {}) {
+  function setPoint(kind, point, { zoom = false, fit = true } = {}) {
     patch('route', { [kind]: point });
     if (markers[kind]) { markers[kind].remove(); markers[kind] = null; }
     inputFor(kind).value = point ? point.label || fmt(point) : '';
@@ -74,8 +76,8 @@ export function initMap() {
       markers[kind] = L.marker([point.lat, point.lon], { icon: pinIcon(kind, kind === 'start' ? 'A' : 'B') }).addTo(map);
     }
     const { start, end } = getState('route');
-    if (start && end) map.fitBounds(L.latLngBounds([start.lat, start.lon], [end.lat, end.lon]), { padding: [40, 40] });
-    else if (point && zoom) map.setView([point.lat, point.lon], 12);
+    if (start && end && fit) map.fitBounds(L.latLngBounds([start.lat, start.lon], [end.lat, end.lon]), { padding: [40, 40] });
+    else if (point && zoom && fit) map.setView([point.lat, point.lon], 12);
   }
 
   // Yer/adres arama: yazarken öneri, seçince işaret koy ve oraya git
@@ -121,10 +123,31 @@ export function initMap() {
   // Rota çizgisi ve istasyon işaretleri (routing/controller.js çağırır)
   let routeLine = null;
   const stationLayer = L.layerGroup().addTo(map);
-  mapApi.drawRoute = (coords) => {
+  mapApi.drawRoute = (coords, { fit = true } = {}) => {
     routeLine?.remove();
     routeLine = L.polyline(coords.map((c) => [c[1], c[0]]), { color: '#2ee6a6', weight: 5, opacity: 0.85 }).addTo(map);
-    map.fitBounds(routeLine.getBounds(), { padding: [30, 30] });
+    if (fit) map.fitBounds(routeLine.getBounds(), { padding: [30, 30] });
+  };
+
+  // Navigasyonda harita aracı izler; kullanıcı haritayı elle kaydırırsa 15 sn izleme durur.
+  let lastDrag = 0;
+  map.on('dragstart', () => { lastDrag = Date.now(); });
+  mapApi.follow = (lat, lon, zoom = null, force = false) => {
+    if (!force && Date.now() - lastDrag < 15000) return;
+    map.setView([lat, lon], zoom ?? map.getZoom(), { animate: false });
+  };
+
+  // "Yakınımdaki istasyonlar" listesindekiler (seçili olan vurgulanır)
+  const nearLayer = L.layerGroup().addTo(map);
+  mapApi.drawNearby = (list, focusId = null) => {
+    nearLayer.clearLayers();
+    list.forEach((s) => {
+      const tip = document.createElement('span');
+      tip.textContent = `${s.name} · ${s.kw} kW · ${s.price.toFixed(2)} TL/kWh`;
+      const on = s.id === focusId;
+      L.circleMarker([s.lat, s.lon], { radius: on ? 9 : 6, color: on ? '#fff' : '#b48cff', fillColor: '#b48cff', fillOpacity: 0.85, weight: on ? 3 : 1 })
+        .bindTooltip(tip).addTo(nearLayer);
+    });
   };
   mapApi.drawStations = (stations, stops) => {
     stationLayer.clearLayers();

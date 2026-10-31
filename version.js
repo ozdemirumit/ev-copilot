@@ -2,8 +2,17 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.18.0';
+self.APP_VERSION = '0.19.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.19.0', date: '2026-10-31',
+    notes: [
+      'Navigasyon: Rota sekmesinde Navigasyonu başlat. Üstte dönüş dönüş banner (yön oku, kalan metre, yol adı, kalan km, varış saati, sıradaki şarj durağı). Harita aracı izler; haritayı elle kaydırırsan 15 sn izleme durur.',
+      'Sesli yönlendirme (Türkçe, açma/kapama anahtarı): dönüşlere 2 km, 500 m ve 120 m kala; şarj durağına 5 km ve 1 km kala. Rotadan 350 m çıkıp 12 sn sürerse bulunduğun yerden otomatik yeniden rota kurar (istasyon listesi korunur).',
+      'İstasyon sekmesinde Yakınımdaki istasyonlar: 10/25/50 km çevre, uzaklık, kW, TL/kWh, tahmini varış pili, %80e şarj süresi ve maliyeti; Git (navigasyonu başlatır), Google Haritalar ve haritada göster. Fiyatlar operatör tablosundaki tahmin değerlerdir.',
+      'Düşük pil: pil eşiğin (ayarlanır, varsayılan %20) altına inince veya menzil yetmeyecek görününce en yakın uygun istasyon üstte önerilir ve sesli söylenir. Navigasyon açıkken veya sürerken yakın istasyon listesi 15 dk ya da 10 km yol sonrası kendiliğinden yenilenir.',
+    ],
+  },
   {
     v: '0.18.0', date: '2026-10-31',
     notes: [

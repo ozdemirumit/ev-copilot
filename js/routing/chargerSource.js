@@ -191,12 +191,12 @@ async function overpass(pts) {
 }
 
 // OpenChargeMap (isteğe bağlı, ücretsiz API anahtarı gerekir): rota boyunca ~100 km aralıkla yarıçap sorgusu.
-async function openChargeMap(pts, key) {
+async function openChargeMap(pts, key, radiusKm = 60) {
   const samples = pts.filter((_, i) => i % 50 === 0 || i === pts.length - 1);
   const out = [];
   for (const p of samples) {
     const url = 'https://api.openchargemap.io/v3/poi?output=json&verbose=false&maxresults=200&minpowerkw=40'
-      + `&latitude=${p.lat.toFixed(4)}&longitude=${p.lon.toFixed(4)}&distance=60&distanceunit=KM&key=${encodeURIComponent(key)}`;
+      + `&latitude=${p.lat.toFixed(4)}&longitude=${p.lon.toFixed(4)}&distance=${radiusKm}&distanceunit=KM&key=${encodeURIComponent(key)}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
     if (res.status === 401 || res.status === 403) throw new Error(`OpenChargeMap anahtarı reddedildi (HTTP ${res.status}): anahtarı kontrol et (kamerayla okurken bir karakter yanlış olabilir)`);
     if (!res.ok) throw new Error('OpenChargeMap HTTP ' + res.status);
@@ -377,6 +377,63 @@ export async function fetchChargers(pts, profile, ocmKey, cacheKey = null) {
   }
   if (key && raw.length && !errors.length) save(key, { t: Date.now(), raw });
   return { stations: finalize([...customRaw(), ...raw], profile), errors, cached: false };
+}
+
+/** Rota değişti (yeniden rota): mevcut istasyonları yeni rotaya izdüşür, koridor dışını ele. Ağ çağrısı yok. */
+export function reproject(stations, profile) {
+  const out = [];
+  for (const s of stations) {
+    const { km, offKm } = profile.project(s.lat, s.lon);
+    if (offKm <= PLANNER.corridorM / 1000 + 0.5) out.push({ ...s, km, offKm });
+  }
+  return out.sort((a, b) => a.km - b.km);
+}
+
+const NEAR_TTL_MS = 6 * 3600e3;
+
+/**
+ * Bir noktanın etrafındaki (yarıçap km) herkese açık istasyonlar, uzaklığa göre sıralı: { stations, errors, cached }.
+ * Sorgu 0,1° ızgara merkezinde yapılır (yarıçap + 10 km) ve 6 saat saklanır: aynı bölgede dolaşırken her seferinde
+ * Overpass'e gidilmez. Canlı sorgu başarısızsa yerleşik listeden doldurulur. `force` önbelleği atlar.
+ */
+export async function fetchAround(lat, lon, radiusKm, ocmKey = '', force = false) {
+  const cLat = Math.round(lat * 10) / 10;
+  const cLon = Math.round(lon * 10) / 10;
+  const qKm = radiusKm + 10;
+  const key = `near:${cLat},${cLon}:${radiusKm}` + (ocmKey ? ':ocm' : '');
+  const here = { lat, lon };
+  const finish = (raw, errors, cached) => {
+    const list = [];
+    for (const s of dedupe([...customRaw(), ...raw])) {
+      const distKm = haversineKm(here, s);
+      if (distKm <= radiusKm) list.push({ ...priced(s), distKm });
+    }
+    return { stations: list.sort((a, b) => a.distKm - b.distKm), errors, cached };
+  };
+
+  const hit = !force && load(key, null);
+  if (hit && Date.now() - hit.t < NEAR_TTL_MS) return finish(hit.raw, [], true);
+
+  const dLat = qKm / 110.57;
+  const dLon = qKm / (111.32 * Math.cos((cLat * Math.PI) / 180));
+  const bbox = [cLat - dLat, cLon - dLon, cLat + dLat, cLon + dLon].map((v) => v.toFixed(4)).join(',');
+  const raw = [];
+  const errors = [];
+  const jobs = [queryChunk(bbox, new Set()).then((els) => els.forEach((el) => { const s = fromOsm(el); if (s) raw.push(s); }))
+    .catch((e) => errors.push('Overpass: ' + e.message))];
+  if (ocmKey) jobs.push(openChargeMap([{ lat: cLat, lon: cLon }], ocmKey, qKm).then((r) => raw.push(...r)).catch((e) => errors.push('OCM: ' + e.message)));
+  await Promise.all(jobs);
+
+  if (errors.length || !raw.length) {
+    const snap = await loadSnapshot();
+    const rows = (snap?.rows || []).filter((r) => haversineKm({ lat: cLat, lon: cLon }, { lat: r[0], lon: r[1] }) <= qKm);
+    if (rows.length) {
+      raw.push(...rows.map(fromSnapshot));
+      errors.push(`Canlı sorgu eksik: yerleşik listeden ${rows.length} istasyon (${snap.date} tarihli)`);
+    }
+  }
+  if (raw.length && !errors.length) save(key, { t: Date.now(), raw });
+  return finish(raw, errors, false);
 }
 
 /** Operatör tablosu değişince fiyat/kW'yi yeniden uygula (ağ çağrısı yok). */

@@ -40,6 +40,8 @@ const store = {
   // ABRP köprüsü: status = idle | wait | ok | err
   abrp: { enabled: false, status: 'idle', text: 'Pasif', http: null, lastSentAt: null, webhook: null },
   system: { wakeLock: false, camera: false, ocr: false },
+  // Navigasyon: active = dönüş dönüş yönlendirme açık; voice = sesli yönlendirme; lowSoc = düşük pil uyarı eşiği (%).
+  nav: { active: false, voice: load('voiceOn', true), lowSoc: load('lowSoc', 20), step: null, alert: null },
 };
 
 const listeners = {};

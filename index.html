@@ -32,6 +32,23 @@
   <button class="badge data" id="btn-data" type="button" title="Veri kullanımı">📶 —</button>
 </div>
 <div class="advisor hidden" id="advisor-banner" role="status" aria-live="polite"></div>
+<div class="navbar hidden" id="nav-banner" role="status" aria-live="off">
+  <div class="nav-arrow" id="nav-arrow" aria-hidden="true">🧭</div>
+  <div class="nav-main">
+    <div class="nav-dist" id="nav-dist"></div>
+    <div class="nav-text" id="nav-text"></div>
+    <div class="nav-road" id="nav-road"></div>
+    <div class="nav-sub" id="nav-sub"></div>
+  </div>
+  <button class="tog" id="nav-stop" type="button" aria-label="Navigasyonu durdur" title="Navigasyonu durdur">✕</button>
+</div>
+<div class="advisor warn near-alert hidden" id="near-alert" role="alert">
+  <span id="near-alert-text"></span>
+  <span class="row">
+    <button class="btn primary sm" id="near-alert-go" type="button">🧭 Git</button>
+    <button class="btn ghost sm" id="near-alert-close" type="button" aria-label="Uyarıyı kapat (10 dk)">✕</button>
+  </span>
+</div>
 
 <main>
 
@@ -152,6 +169,21 @@
       <p class="small muted" id="plan-status" style="margin:0">Başlangıç ve varış seçip Rotayı Planla'ya dokun.</p>
       <div id="plan-list"></div>
       <button class="btn ghost hidden" id="btn-gmaps" type="button">🧭 Google Haritalar'da aç (duraklarla)</button>
+    </div>
+
+    <div class="card stack" id="nav-card">
+      <h2 style="margin:0">🧭 Navigasyon</h2>
+      <p class="small muted" style="margin:0">Rota planlandıktan sonra dönüş dönüş yönlendirme ve sesli uyarılar. Rotadan çıkarsan bulunduğun yerden yeniden rota kurar; pil düşerse yakındaki en uygun istasyonu önerir.</p>
+      <button class="btn primary" id="btn-nav" type="button">▶ Navigasyonu başlat</button>
+      <div class="row between">
+        <label for="nav-voice">Sesli yönlendirme</label>
+        <label class="switch"><input type="checkbox" id="nav-voice" checked><i></i></label>
+      </div>
+      <div class="slider-row">
+        <label for="low-soc">Düşük pil uyarısı (yakın istasyon öner)</label>
+        <output id="low-soc-out">%20</output>
+        <input type="range" id="low-soc" min="10" max="40" step="1" value="20">
+      </div>
     </div>
 
     <div class="card stack hidden" id="wx-card">
@@ -279,6 +311,26 @@
 
   <!-- ===== 4) İSTASYONLAR ===== -->
   <section class="tab" id="tab-stations" data-title="İstasyon">
+    <div class="card stack" id="near-card">
+      <h2 style="margin:0">📍 Yakınımdaki istasyonlar</h2>
+      <div class="row">
+        <select id="near-radius" aria-label="Arama yarıçapı" style="flex:1">
+          <option value="10">10 km çevre</option>
+          <option value="25">25 km çevre</option>
+          <option value="50">50 km çevre</option>
+        </select>
+        <button class="btn primary" id="near-refresh" type="button">🔄 Ara</button>
+      </div>
+      <div class="row between">
+        <label for="near-ac">Yavaş AC istasyonlarını da göster</label>
+        <label class="switch"><input type="checkbox" id="near-ac"><i></i></label>
+      </div>
+      <p class="small muted" id="near-status" style="margin:0"></p>
+      <p class="small hidden" id="near-warn" style="margin:0;color:var(--warn,#f5b942)"></p>
+      <div id="near-list"></div>
+      <p class="small muted" style="margin:0">Fiyat ve kW operatör tablosundan alınan tahmindir (gerçek tarife değil); * işaretli kW OSM'de yazmıyor. Pil ve süre tahmini kuş uçuşu mesafenin ×1,35'i yol varsayımıyla hesaplanır.</p>
+    </div>
+
     <div class="chips" role="group" aria-label="Sıralama">
       <button class="btn" data-sort="fast" type="button">⏱️ En Hızlı</button>
       <button class="btn" data-sort="cheap" type="button">💰 En Ekonomik</button>
