@@ -33,6 +33,8 @@ function paint() {
   metric('c-range', g.rangeKm);
   metric('c-kwh100', g.kwh100Measured, 1);
   metric('c-kmpct', g.kmPerPct, 1);
+  metric('c-speed', e.speed);
+  metric('c-power', g.powerKw, 0);
   set('c-window', g.measuredKm == null ? 'veri bekleniyor (≥3 puan düşüş)' : `${g.measuredKm.toFixed(1)} km`);
   set('c-model', g.kwh100Est == null ? '—' : `${g.kwh100Est.toFixed(1)} kWh/100km`);
   set('c-k', g.k.toFixed(2) + (Math.abs(g.k - 1) < 0.005 ? ' (kalibre değil)' : ''));

@@ -4,7 +4,9 @@ import { fetchRoute } from './googleRoute.js';
 import { fetchChargers, reprice, reproject } from './chargerSource.js';
 import { planRoute, rankStations } from './planner.js';
 import { resampleRoute, buildProfile } from '../physics/routeProfile.js';
-import { densityFromRatio } from '../physics/traffic.js';
+import { densityFromRatio, speedFactor } from '../physics/traffic.js';
+import { kForSpeed } from '../physics/history.js';
+import { PHYSICS } from '../config.js';
 import { fetchElevations } from '../physics/elevation.js';
 import { fetchWeather } from '../physics/weather.js';
 import { mapApi } from '../ui/mapView.js';
@@ -28,26 +30,44 @@ function buildFromRaw() {
   return buildProfile({ ...raw, cruise: r.cruise, traffic: r.traffic });
 }
 
+/**
+ * Planlamada kullanılan tüketim düzeltmesi k (ölçülen / model). Geçmiş ölçümlerden, planın gerçekte süreceği
+ * hızda (seyir hızı × trafik) bulunur; ≥ 40 km veri varsa kullanılır. Şu an ölçüm de yapılıyorsa canlı k ile yarı yarıya karıştırılır.
+ */
+export function planK() {
+  const r = getState('route');
+  const eng = getState('engine');
+  const v = Math.max(30, r.cruise * speedFactor(r.traffic));
+  const h = kForSpeed(v);
+  const hist = h && h.km >= 40 ? Math.min(1.6, Math.max(0.7, h.kBase / PHYSICS.consScale)) : null;
+  const live = eng.measuredKm != null ? eng.k : null;
+  if (hist != null && live != null) return { k: 0.5 * hist + 0.5 * live, src: `geçmiş (${Math.round(h.km)} km) + canlı`, v };
+  if (hist != null) return { k: hist, src: `geçmiş ölçüm (~${Math.round(v)} km/s civarı, ${Math.round(h.km)} km)`, v };
+  return { k: eng.k, src: eng.k !== 1 ? 'canlı kalibrasyon' : 'kalibre değil (model varsayımı)', v };
+}
+
 /** Mevcut profil/istasyonlarla planı (yeniden) hesapla. fromKm/soc verilirse o konumdan (dinamik yeniden planlama). */
 export function computePlan({ fromKm = 0, soc = startSoc, maxFirstStopKm = Infinity } = {}) {
   const plan = getState('plan');
   const r = getState('route');
-  const k = getState('engine').k;
   if (!plan.profile) return null;
+  const kInfo = planK();
+  const k = kInfo.k;
   const stations = plan.stations;
   const result = planRoute({
     profile: plan.profile, stations, startKm: fromKm, startSoc: soc,
     minArrival: r.minArrivalSoc, mode: plan.mode, k, maxFirstStopKm,
   });
   const ranking = rankStations({ profile: plan.profile, stations, startKm: fromKm, startSoc: soc, k, mode: plan.mode });
-  return { result, ranking };
+  return { result, ranking, kInfo };
 }
 
 function applyPlan(out, extra = {}) {
   if (!out) return;
-  const { result, ranking } = out;
+  const { result, ranking, kInfo } = out;
   patch('plan', {
     ...extra,
+    kInfo,
     status: result.feasible ? 'ready' : 'infeasible',
     text: result.feasible ? '' : result.reason,
     stops: result.stops,

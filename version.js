@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.23.0';
+self.APP_VERSION = '0.24.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.24.0', date: '2026-10-31',
+    notes: [
+      'Menzil sekmesine Hız ve Anlık güç (tahmin) kartları ve Yolculuk ve tüketim geçmişi eklendi: bu yolculuk ve tüm geçmiş (km, kWh/100km, ortalama hız), tüketim ve hız grafiği, hız bandı tablosu (kWh/100km ve düzeltme k) ve Geçmişi sil düğmesi.',
+      'Geçmiş kaydı: sürerken pil yüzdesi düştükçe ölçüm penceresi (en az 5 km, 3 puan) kayda alınır; cihazda saklanır. Test Modu ve şarj sırasındaki veri kaydedilmez.',
+      'Planlama artık geçmişten öğrenir: seyir hızına yakın (±12 km/s) ölçümlerden bulunan düzeltme k, enerji ve şarj planına uygulanır (en az 40 km veri; aykırı ölçümler atılır; canlı ölçüm varsa yarı yarıya karışır). Hangi k nin neden kullanıldığı Menzil sekmesinde yazar.',
+    ],
+  },
   {
     v: '0.23.0', date: '2026-10-31',
     notes: [

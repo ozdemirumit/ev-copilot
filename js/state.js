@@ -42,6 +42,8 @@ const store = {
   // ABRP köprüsü: status = idle | wait | ok | err
   abrp: { enabled: false, status: 'idle', text: 'Pasif', http: null, lastSentAt: null, webhook: null },
   system: { wakeLock: false, camera: false, ocr: false },
+  // Sürüş geçmişi kaydı değişince güncellenir (kayıtlar physics/history.js içinde)
+  hist: { n: 0, at: 0 },
   // Navigasyon: active = dönüş dönüş yönlendirme açık; voice = sesli yönlendirme; lowSoc = düşük pil uyarı eşiği (%).
   nav: { active: false, voice: load('voiceOn', true), lowSoc: load('lowSoc', 20), step: null, alert: null,
     speedAlert: load('speedAlert', 0), ahead: { rain: null, traffic: null, speed: null }, liveRemain: null },

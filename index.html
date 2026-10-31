@@ -226,6 +226,8 @@
       <div class="card metric"><span class="k">Pil</span><span class="v" id="c-soc">—<small>%</small></span></div>
       <div class="card metric"><span class="k">Son mesafe tüketimi</span><span class="v" id="c-kwh100"><span class="pending">—</span><small>kWh/100km</small></span></div>
       <div class="card metric"><span class="k">%1 pil başına</span><span class="v" id="c-kmpct"><span class="pending">—</span><small>km</small></span></div>
+      <div class="card metric"><span class="k">Hız</span><span class="v" id="c-speed"><span class="pending">—</span><small>km/h</small></span></div>
+      <div class="card metric"><span class="k">Anlık güç (tahmin)</span><span class="v" id="c-power"><span class="pending">—</span><small>kW</small></span></div>
     </div>
 
     <div class="card">
@@ -235,6 +237,23 @@
         <dt>Model tahmini (şimdiki koşul)</dt><dd id="c-model">—</dd>
         <dt>Düzeltme çarpanı k (ölçülen / model)</dt><dd id="c-k">—</dd>
       </dl>
+    </div>
+
+    <div class="card stack" id="hist-card">
+      <h3>🧾 Yolculuk ve tüketim geçmişi</h3>
+      <dl class="kv">
+        <dt>Bu yolculuk</dt><dd id="h-trip">—</dd>
+        <dt>Tüm geçmiş</dt><dd id="h-all">—</dd>
+        <dt>Planda kullanılan düzeltme k</dt><dd id="h-k">—</dd>
+      </dl>
+      <div id="h-chart" class="hchart" role="img" aria-label="Tüketim ve hız grafiği"></div>
+      <p class="small muted" style="margin:0" id="h-legend"></p>
+      <table class="optable">
+        <thead><tr><th>Hız bandı (km/s)</th><th>Ölçülen km</th><th>kWh/100km</th><th>k</th></tr></thead>
+        <tbody id="h-bands"></tbody>
+      </table>
+      <p class="small muted" style="margin:0">Ölçüm pil yüzdesinin düşüşünden gelir (kamerayla pil okuma açıkken). Planlama, seyir hızına yakın geçmiş ölçümlerle düzeltilir; Test Modu ve şarj sırasındaki veriler kaydedilmez.</p>
+      <button class="btn ghost" id="h-clear" type="button">🗑️ Geçmişi sil</button>
     </div>
 
     <div class="card">

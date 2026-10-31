@@ -6,6 +6,7 @@ import { batteryPowerKw, kwhPer100 } from './model.js';
 import { createTracker } from './consumption.js';
 import { trafficBreakdown, stopGoOverhead } from './traffic.js';
 import { fetchWeather } from './weather.js';
+import { feed as feedHistory } from './history.js';
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const tracker = createTracker();
@@ -87,6 +88,13 @@ function tick() {
   const modelKw = batteryPowerKw({ v: speed, ...cond });
   tracker.addDistance(dKm, (modelKw * dt * overhead) / 3600);
   tracker.addSoc(e.soc == null ? null : Math.round(e.soc));
+  // Geçmiş: gerçek sürüş ölçümleri kayda alınır (Test Modu'nda değil)
+  if (!sim.enabled) {
+    feedHistory({
+      dKm, dt, moving: speed > 5, modelStepKwh: (modelKw * dt * overhead) / 3600,
+      soc: e.soc == null ? null : Math.round(e.soc), temp: cond.temp ?? 15, headwind: cond.headwind ?? 0, grade: cond.grade ?? 0,
+    });
+  }
 
   const st = tracker.stats();
   let k = getState('engine').k;
@@ -133,6 +141,7 @@ function tick() {
     kmPerPct: st?.kmPerPct ?? null,
     measuredKm: st?.distKm ?? null,
     kwh100Est: est,
+    powerKw: speed > 0 ? modelKw * k : null, // anlık güç tahmini (model × k)
     rangeKm: usable == null ? null : (usable / est) * 100,
     netWind, aeroPct, traffic,
   });
