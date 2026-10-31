@@ -38,7 +38,6 @@ function tick() {
   const nav = getState('nav');
   const bar = $('nav-banner');
   bar.classList.toggle('hidden', !nav.active);
-  $('junction').classList.add('hidden'); // yalnızca ana akışta (followMap) yeniden gösterilir
   if (!nav.active) return followSim();
 
   const plan = getState('plan');
@@ -80,7 +79,6 @@ function tick() {
     speak('Varış noktasına ulaştınız.', { key: 'arrived', cooldownMs: 0, interrupt: true });
     patch('nav', { active: false });
     mapApi.navView(false);
-    $('junction').classList.add('hidden');
     toast('Varış noktasına ulaştınız');
     return tick();
   }
@@ -165,18 +163,6 @@ function followMap(e, distM, st, routeHeading) {
   // Dönüş yönü rotanın gidiş yönünden alınır (GPS yönü olmasa da çalışır); rota dışındaysa GPS yönü
   const heading = routeHeading ?? ((e.speed ?? 0) > 5 ? e.heading : null);
   mapApi.follow(e.lat, e.lon, change ? want : null, change, getState('nav').headingUp ? heading : null);
-
-  // Kavşak penceresi: 400 m'den itibaren büyük ok + mesafe + talimat
-  const j = $('junction');
-  const show = !isMinor(st) && distM <= 400;
-  j.classList.toggle('hidden', !show);
-  if (show) {
-    const ins = instruction(st);
-    $('j-arrow').textContent = ins.arrow;
-    $('j-dist').textContent = fmtDist(distM);
-    $('j-text').textContent = ins.text;
-    j.classList.toggle('now', distM <= 120);
-  }
 }
 
 /** Navigasyonu başlat (plan hazırsa). Kullanıcı dokunuşuyla çağrıldığı için sesli yönlendirme tarayıcıda açılır. */
@@ -194,7 +180,6 @@ export function startNav() {
   const up = getState('nav').headingUp;
   mapApi.navView(true, up);
   if (e.lat != null) mapApi.follow(e.lat, e.lon, 16, true, up ? (track ? headingAt(track, trackKm ?? 0) : (e.speed ?? 0) > 5 ? e.heading : null) : null);
-  $('junction').classList.add('hidden');
   document.querySelector('main').scrollTop = 0;
   speak('Navigasyon başladı.', { key: 'navstart', cooldownMs: 0, interrupt: true });
   tick();
@@ -203,7 +188,6 @@ export function startNav() {
 export function stopNav() {
   patch('nav', { active: false });
   mapApi.navView(false);
-  $('junction').classList.add('hidden');
   window.speechSynthesis?.cancel();
   tick();
 }

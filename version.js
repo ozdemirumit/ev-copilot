@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.29.1';
+self.APP_VERSION = '0.29.2';
 self.APP_CHANGELOG = [
+  {
+    v: '0.29.2', date: '2026-10-31',
+    notes: [
+      'Haritanın üstündeki büyük dönüş penceresi kaldırıldı (aracın konumunu kapatıyordu). Dönüş bilgisi üstteki yön kartında kalır: ok, kalan metre, talimat, bir sonraki dönüş. Dönüşe 250 m kala haritanın yakınlaşması aynen sürer.',
+    ],
+  },
   {
     v: '0.29.1', date: '2026-10-31',
     notes: [
