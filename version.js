@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.36.0';
+self.APP_VERSION = '0.37.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.37.0', date: '2026-10-31',
+    notes: [
+      'Kayıtlı rota: planlanan rota, adımlar, şarj planı, istasyonlar ve hava/rakım verisi telefona kaydedilir ve uygulama açılınca (internet olmasa da) geri yüklenir. Çevrimdışı haritayla birlikte planın üzerinden yola devam edebilirsin. 36 saatten eski kayıt kullanılmaz; "Rotayı temizle" kaydı da siler.',
+      'Yeni rota alınamazsa (internet yok, Google hatası) mevcut plan artık bozulmuyor: eski plan ve istasyonlar korunur, uyarı çıkar.',
+    ],
+  },
   {
     v: '0.36.0', date: '2026-10-31',
     notes: [

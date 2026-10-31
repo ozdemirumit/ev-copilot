@@ -73,4 +73,5 @@ Doluluk bilgisi yok: slotlar "bilinmiyor" görünür.
 ## Güncel durum (v0.36.0)
 
 - Alternatif kaynak modu kaldırıldı. `js/providers/index.js` veri türü başına sabit eşlemeyi tutar.
-- Çevrimdışı harita: `js/offline/`, `js/ui/maps/maplibre.js`, `docs/offline-harita.md`. İnternet yokken yedek harita; yeni rota hesabı ve rota saklama yok.
+- Çevrimdışı harita: `js/offline/`, `js/ui/maps/maplibre.js`, `docs/offline-harita.md`. İnternet yokken yedek harita.
+- Kayıtlı rota (v0.37.0): son plan IndexedDB'de (`js/utils/idb.js`, `controller.js` saveTrip/restoreTrip), açılışta geri yüklenir. Çevrimdışı YENİ rota hesabı yok.
