@@ -8,6 +8,7 @@ import { load, save } from '../utils/storage.js';
 import { gfetch } from '../google/api.js';
 
 const NEARBY_URL = 'https://places.googleapis.com/v1/places:searchNearby';
+const TEXT_URL = 'https://places.googleapis.com/v1/places:searchText';
 // Yalnızca gereken alanlar (faturalama alan düzeyine göre): kimlik, ad, konum, soket/güç, işletme durumu.
 const FIELD_MASK = 'places.id,places.displayName,places.location,places.evChargeOptions,places.businessStatus';
 const MAX_RESULTS = 20; // Nearby Search üst sınırı: dolu dönen daire daha küçük dairelere bölünür
@@ -20,16 +21,17 @@ const AC_FALLBACK_KW = 11; // yalnızca AC/gücü bilinmeyen istasyonda varsayı
 const CACHE_TTL_MS = 6 * 3600e3; // Google içeriği için kısa süreli yerel önbellek (hizmet şartları uzun saklamayı kısıtlar)
 
 /** Google Place → aday istasyon. Tesla/NACS'a özel, kapalı ya da konumsuz kayıtlar elenir. */
-function fromGoogle(p) {
-  if (p.businessStatus && p.businessStatus !== 'OPERATIONAL') return null;
+function fromGoogle(p, drop = {}) {
+  const no = (why) => { drop[why] = (drop[why] || 0) + 1; return null; };
+  if (p.businessStatus && p.businessStatus !== 'OPERATIONAL') return no('kapalı');
   const lat = p.location?.latitude;
   const lon = p.location?.longitude;
-  if (lat == null || lon == null) return null;
+  if (lat == null || lon == null) return no('konumsuz');
   const name = p.displayName?.text || 'Şarj istasyonu';
   // Tesla Supercharger'lar Togg için varsayılan olarak aday değil (ağ erişimi garanti değil).
-  if (/tesla/i.test(name)) return null;
+  if (/tesla/i.test(name)) return no('Tesla');
   const agg = p.evChargeOptions?.connectorAggregation || [];
-  if (agg.length && agg.every((a) => /TESLA|NACS/.test(a.type))) return null;
+  if (agg.length && agg.every((a) => /TESLA|NACS/.test(a.type))) return no('Tesla/NACS');
 
   const dcAgg = agg.filter((a) => DC_TYPES.has(a.type));
   const hasDc = dcAgg.length > 0;
@@ -77,8 +79,43 @@ async function queryCircle(c, ctx) {
     return false;
   }
   const places = json.places || [];
-  places.forEach((p) => { const s = fromGoogle(p); if (s) ctx.out.set(s.id, s); });
+  ctx.raw += places.length;
+  places.forEach((p) => { const s = fromGoogle(p, ctx.drop); if (s) ctx.out.set(s.id, s); });
+  if (!places.length && c.textFallback) await textFallback(c, ctx); // tür filtresi boş döndü: serbest metin aramasıyla bir daha dene
   return places.length >= MAX_RESULTS;
+}
+
+/**
+ * Yedek: bazı bölgelerde (ör. Yunanistan) istasyonlar `electric_vehicle_charging_station` türüyle etiketli olmayabilir.
+ * Boş dönen daire için "EV charging station" metin aramasıyla bakılır; yalnızca şarj bilgisi (evChargeOptions) veya şarj türü
+ * olan kayıtlar alınır. Çağrı sınırına dahildir.
+ */
+async function textFallback(c, ctx) {
+  if (ctx.calls >= MAX_CALLS) { ctx.capped = true; return; }
+  ctx.calls++;
+  ctx.textCalls++;
+  try {
+    const json = await gfetch(TEXT_URL, {
+      method: 'POST',
+      mask: FIELD_MASK + ',places.types',
+      body: {
+        textQuery: 'EV charging station',
+        languageCode: 'tr',
+        maxResultCount: MAX_RESULTS,
+        locationBias: { circle: { center: { latitude: c.lat, longitude: c.lon }, radius: Math.min(c.radiusM, MAX_RADIUS_M) } },
+      },
+    });
+    for (const p of json.places || []) {
+      if (!p.evChargeOptions && !(p.types || []).includes('electric_vehicle_charging_station')) continue;
+      ctx.raw++;
+      const s = fromGoogle(p, ctx.drop);
+      if (s) { ctx.out.set(s.id, s); ctx.textFound++; }
+    }
+  } catch (err) {
+    if (err.fatal) throw err;
+    ctx.failed++;
+    ctx.lastError = err.message;
+  }
 }
 
 /** Dolu bir dairenin 4 alt dairesi; rota koridoruna değmeyenler atlanır (kota boşa gitmesin). */
@@ -100,7 +137,7 @@ function subCircles(c, ctx) {
  * Kademeli olması, çağrı sınırı dolduğunda rotanın sonunun sorgusuz kalmasını önler. ctx.pts: rota noktaları (yakın arama için null).
  */
 async function runCircles(circles, { pts = null } = {}) {
-  const ctx = { out: new Map(), calls: 0, failed: 0, lastError: '', capped: false, pts };
+  const ctx = { out: new Map(), calls: 0, failed: 0, lastError: '', capped: false, pts, raw: 0, drop: {}, textCalls: 0, textFound: 0 };
   let level = circles;
   for (let depth = 0; level.length && depth <= 2; depth++) {
     const full = [];
@@ -190,6 +227,17 @@ function finalize(raw, profile) {
   return out.sort((a, b) => a.km - b.km);
 }
 
+/** Arama özeti: Google kaç kayıt döndürdü, neden elendi, 100 km başına kaç aday kaldı (eksik bölgeleri göstermek için). */
+function summarize(stations, profile, ctx) {
+  const bins = [];
+  for (let b = 0; b * 100 < profile.totalKm; b++) bins.push(0);
+  stations.forEach((s) => { bins[Math.min(bins.length - 1, Math.floor(s.km / 100))]++; });
+  return {
+    raw: ctx?.raw ?? 0, kept: stations.length, drop: ctx?.drop ?? {}, calls: ctx?.calls ?? 0,
+    textCalls: ctx?.textCalls ?? 0, textFound: ctx?.textFound ?? 0, bins,
+  };
+}
+
 /**
  * Rota boyunca istasyonlar. Rota ~45 km aralıkla 30 km yarıçaplı dairelerle taranır (Nearby Search, her çağrı ≤ 20 sonuç;
  * dolu daireler bölünür). Başarılı sonuç `cacheKey` (rota uçları) ile 6 saat saklanır: aynı rotayı yeniden planlamak
@@ -199,29 +247,33 @@ export async function fetchChargers(pts, profile, cacheKey = null) {
   const key = cacheKey && 'chargersG:' + cacheKey;
   const cached = key && load(key, null);
   if (cached && Date.now() - cached.t < CACHE_TTL_MS) {
-    return { stations: finalize([...customRaw(), ...cached.raw], profile), errors: [], cached: true };
+    return { stations: finalize([...customRaw(), ...cached.raw], profile), errors: [], cached: true, summary: cached.summary ?? null };
   }
 
   const circles = [];
   let nextKm = 0;
   for (const p of pts) {
-    if (p.km >= nextKm) { circles.push({ lat: p.lat, lon: p.lon, radiusM: CIRCLE_KM * 1000 }); nextKm = p.km + SPACING_KM; }
+    if (p.km >= nextKm) { circles.push({ lat: p.lat, lon: p.lon, radiusM: CIRCLE_KM * 1000, textFallback: true }); nextKm = p.km + SPACING_KM; }
   }
   const last = pts.at(-1);
-  if (haversineKm(circles.at(-1), last) > SPACING_KM / 2) circles.push({ lat: last.lat, lon: last.lon, radiusM: CIRCLE_KM * 1000 });
+  if (haversineKm(circles.at(-1), last) > SPACING_KM / 2) circles.push({ lat: last.lat, lon: last.lon, radiusM: CIRCLE_KM * 1000, textFallback: true });
 
   const errors = [];
   let raw = [];
+  let ctxInfo = null;
   try {
     const ctx = await runCircles(circles, { pts });
+    ctxInfo = ctx;
     raw = [...ctx.out.values()];
     if (ctx.failed) errors.push(`Google: ${ctx.failed} arama başarısız${ctx.lastError ? ' — ' + ctx.lastError : ''}`);
     if (ctx.capped) errors.push(`Çok uzun rota: arama ${MAX_CALLS} çağrıda kesildi (liste eksik olabilir)`);
   } catch (err) {
     errors.push(err.message);
   }
-  if (key && raw.length && !errors.length) save(key, { t: Date.now(), raw });
-  return { stations: finalize([...customRaw(), ...raw], profile), errors, cached: false };
+  const stations = finalize([...customRaw(), ...raw], profile);
+  const summary = summarize(stations, profile, ctxInfo);
+  if (key && raw.length && !errors.length) save(key, { t: Date.now(), raw, summary });
+  return { stations, errors, cached: false, summary };
 }
 
 /** Rota değişti (yeniden rota): mevcut istasyonları yeni rotaya izdüşür, koridor dışını ele. Ağ çağrısı yok. */

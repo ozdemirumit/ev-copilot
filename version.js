@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.26.0';
+self.APP_VERSION = '0.26.1';
 self.APP_CHANGELOG = [
+  {
+    v: '0.26.1', date: '2026-10-31',
+    notes: [
+      'Yunanistan gibi bölgelerde istasyon bulunamama için yedek arama: Google istasyon türü filtresiyle bir bölgede hiç sonuç vermezse o bölge EV charging station metin aramasıyla bir daha sorgulanır (yalnızca şarj bilgisi olan kayıtlar alınır).',
+      'İstasyon sekmesinde arama özeti: Google kaç kayıt döndürdü, kaçı aday kaldı, neden elendi (Tesla, kapalı vb.), yedek aramanın kaç istasyon bulduğu ve her 100 km için aday sayısı. Eksik bölgeyi bu satırda görürsün.',
+    ],
+  },
   {
     v: '0.26.0', date: '2026-10-31',
     notes: [

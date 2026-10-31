@@ -83,10 +83,10 @@ function applyPlan(out, extra = {}) {
 
 /** İstasyonları getir ve plan durumuna yaz; hata/önbellek bilgisi İstasyon sekmesinde kalıcı gösterilir. */
 async function loadStations(pts, profile) {
-  const { stations, errors, cached } = await fetchChargers(pts, profile, cacheKey);
+  const { stations, errors, cached, summary } = await fetchChargers(pts, profile, cacheKey);
   if (errors.length) toast(errors.join(' · '), 7000);
   if (cached) toast('İstasyonlar önbellekten alındı');
-  patch('plan', { stations, stationInfo: { errors, cached } });
+  patch('plan', { stations, stationInfo: { errors, cached, summary } });
 }
 
 /** İstasyon sekmesindeki "Yeniden ara": rota/profil aynı kalır, yalnızca istasyon sorgusu tekrarlanır. */

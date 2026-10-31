@@ -47,8 +47,14 @@ function renderList() {
   const planRows = stops.map((s) => ({ station: s.station, arrive: s.arriveSoc, to: s.leaveSoc, minutes: s.minutes + s.overheadMin, cost: s.cost }));
 
   const aheadCount = p.stations.filter(ahead).length;
+  const sm = p.stationInfo?.summary;
+  const smText = sm
+    ? ` Google: ${sm.raw} kayıt → ${sm.kept} aday` + (Object.keys(sm.drop).length ? ` (elenen: ${Object.entries(sm.drop).map(([k, v]) => `${k} ${v}`).join(', ')})` : '')
+      + (sm.textCalls ? ` · yedek metin araması ${sm.textCalls} çağrı, ${sm.textFound} bulundu` : '')
+      + ` · 100 km başına aday: ${sm.bins.map((n, i) => `${i * 100}–${i * 100 + 100}: ${n}`).join(' · ')}.`
+    : '';
   hint.textContent = `${aheadCount} istasyon ileride, ${rows.length + planRows.length} tanesine ek şarj olmadan ulaşılabiliyor. `
-    + 'Aday satırlarında süre/maliyet: varış pilinden %80\'e (veya +10 puana) şarj.';
+    + 'Aday satırlarında süre/maliyet: varış pilinden %80\'e (veya +10 puana) şarj.' + smText;
 
   [...planRows, ...rows].forEach((r) => {
     const n = planned.get(r.station.id);
