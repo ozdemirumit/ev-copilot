@@ -38,6 +38,7 @@ function tick() {
   const nav = getState('nav');
   const bar = $('nav-banner');
   bar.classList.toggle('hidden', !nav.active);
+  $('junction').classList.add('hidden'); // yalnızca ana akışta (followMap) yeniden gösterilir
   if (!nav.active) return;
 
   const plan = getState('plan');
@@ -78,6 +79,8 @@ function tick() {
   if (st.type === 'arrive' && distM < 40) {
     speak('Varış noktasına ulaştınız.', { key: 'arrived', cooldownMs: 0, interrupt: true });
     patch('nav', { active: false });
+    mapApi.navView(false);
+    $('junction').classList.add('hidden');
     toast('Varış noktasına ulaştınız');
     return tick();
   }
@@ -109,7 +112,36 @@ function tick() {
     }
   }
 
-  mapApi.follow(e.lat, e.lon);
+  // Harita: hıza göre zoom (yavaş = yakın), kavşağa 250 m kala en yakın zoom; sürerken yön-yukarı
+  followMap(e, distM, st);
+}
+
+let zoomNow = null;
+let zoomAt = 0;
+let speedAvg = 0;
+
+/** Hıza göre hedef zoom (ortalama hızla yumuşatılmış); kavşağa yaklaşınca 18. */
+function followMap(e, distM, st) {
+  speedAvg = speedAvg * 0.8 + (e.speed ?? 0) * 0.2;
+  const junction = !isMinor(st) && st.type !== 'arrive' && distM <= 250;
+  const want = junction ? 18 : speedAvg < 40 ? 17 : speedAvg < 80 ? 16 : 15;
+  const now = Date.now();
+  // Kavşak zoom'u hemen; hız kaynaklı değişim en fazla 8 sn'de bir (titreşmesin)
+  const change = want !== zoomNow && (junction || now - zoomAt > 8000);
+  if (change) { zoomNow = want; zoomAt = now; }
+  mapApi.follow(e.lat, e.lon, change ? want : null, change, (e.speed ?? 0) > 5 ? e.heading : null);
+
+  // Kavşak penceresi: 400 m'den itibaren büyük ok + mesafe + talimat
+  const j = $('junction');
+  const show = !isMinor(st) && distM <= 400;
+  j.classList.toggle('hidden', !show);
+  if (show) {
+    const ins = instruction(st);
+    $('j-arrow').textContent = ins.arrow;
+    $('j-dist').textContent = fmtDist(distM);
+    $('j-text').textContent = ins.text;
+    j.classList.toggle('now', distM <= 120);
+  }
 }
 
 /** Navigasyonu başlat (plan hazırsa). Kullanıcı dokunuşuyla çağrıldığı için sesli yönlendirme tarayıcıda açılır. */
@@ -123,13 +155,19 @@ export function startNav() {
   planId = plan.planId;
   patch('nav', { active: true });
   document.querySelector('.bottomnav [data-tab="route"]')?.click();
-  if (e.lat != null) mapApi.follow(e.lat, e.lon, 15, true);
+  zoomNow = 16; zoomAt = Date.now(); speedAvg = e.speed ?? 0;
+  mapApi.navView(true);
+  if (e.lat != null) mapApi.follow(e.lat, e.lon, 16, true, (e.speed ?? 0) > 5 ? e.heading : null);
+  $('junction').classList.add('hidden');
+  document.querySelector('main').scrollTop = 0;
   speak('Navigasyon başladı.', { key: 'navstart', cooldownMs: 0, interrupt: true });
   tick();
 }
 
 export function stopNav() {
   patch('nav', { active: false });
+  mapApi.navView(false);
+  $('junction').classList.add('hidden');
   window.speechSynthesis?.cancel();
   tick();
 }
@@ -166,7 +204,16 @@ export function initNavigator() {
     save('lowSoc', Number(low.value));
   });
 
-  subscribe('nav', () => { paintBtn(); tick(); });
+  // Navigasyon modunda harita görünür alanı doldurur (üstteki bannerlar dahil kalan yükseklik); alt menü sabit kalır.
+  const main = document.querySelector('main');
+  const mapEl = $('map');
+  const sizeMap = () => {
+    const on = getState('nav').active;
+    document.body.classList.toggle('navmode', on);
+    mapEl.style.height = on ? Math.max(260, main.clientHeight - 24) + 'px' : '';
+  };
+  new ResizeObserver(sizeMap).observe(main);
+  subscribe('nav', () => { paintBtn(); sizeMap(); tick(); });
   paintBtn();
   setInterval(tick, 1000);
 }

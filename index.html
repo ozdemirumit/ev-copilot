@@ -54,7 +54,13 @@
 
   <!-- ===== 1) ROTA ===== -->
   <section class="tab active" id="tab-route" data-title="Rota">
-    <div id="map" role="application" aria-label="Rota haritası"></div>
+    <div class="mapwrap">
+      <div id="map" role="application" aria-label="Rota haritası"></div>
+      <div class="junction hidden" id="junction" aria-live="off">
+        <div class="j-arrow" id="j-arrow"></div>
+        <div class="j-main"><div class="j-dist" id="j-dist"></div><div class="j-text" id="j-text"></div></div>
+      </div>
+    </div>
 
     <div class="card stack" id="g-card">
       <h2 style="margin:0">🔑 Google Haritalar anahtarı</h2>

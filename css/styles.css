@@ -287,3 +287,18 @@ label.field { position: relative; }
 .btn.sm { padding: 6px 10px; font-size: 12px; }
 a.btn { text-decoration: none; color: var(--text); display: inline-block; }
 .station.focus { outline: 1px solid var(--accent-dim); outline-offset: 6px; border-radius: 8px; }
+
+/* Alt menü kaybolmasın: sabit yükseklikli öğeler sıkışmaz, taşan alanı <main> kaydırır */
+.topbar, .badges, .advisor, .navbar, .bottomnav { flex: none; }
+.mapwrap { position: relative; }
+/* Navigasyon modu: geniş harita (yüksekliği JS ölçer), durum rozetleri gizlenir */
+body.navmode .badges { display: none; }
+body.navmode #map { height: var(--navmap-h, 62dvh); }
+.junction { position: absolute; left: 10px; right: 10px; bottom: 28px; z-index: 5; display: flex; align-items: center; gap: 14px; padding: 12px 16px; background: rgba(11, 15, 20, .92); border: 2px solid var(--accent); border-radius: 16px; box-shadow: 0 6px 24px #000a; pointer-events: none; }
+.junction.now { border-color: var(--warn); animation: jpulse .8s ease-in-out infinite alternate; }
+@keyframes jpulse { to { box-shadow: 0 0 0 6px #ffb54755, 0 6px 24px #000a; } }
+.j-arrow { font-size: 52px; line-height: 1; width: 64px; text-align: center; flex: none; }
+.j-dist { font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.05; }
+.j-text { font-size: 16px; font-weight: 600; }
+body.navmode .advisor { padding: 5px 12px; font-size: 12px; }
+body.navmode .topbar { padding-top: calc(4px + var(--safe-t)); padding-bottom: 4px; }

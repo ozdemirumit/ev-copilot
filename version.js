@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.21.0';
+self.APP_VERSION = '0.22.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.22.0', date: '2026-10-31',
+    notes: [
+      'Alt menü kaybolması düzeltildi: üstte uyarı çubukları birikince menü sıkışıp görünmez oluyordu; artık sabit kalır, taşan kısmı sayfa kaydırır.',
+      'Navigasyon modu: Navigasyonu başlat deyince harita görünür alanı doldurur (durum rozetleri gizlenir), araç eğik ve yön-yukarı görünümde izlenir. Zoom hıza göre ayarlanır: yavaşken yakın, otoyol hızında uzak.',
+      'Kavşak ve dönüşlere 400 metre kala haritada büyük pencere açılır (ok, kalan metre, Google talimatı, örn. Kavşakta 2. çıkıştan çıkın); 250 metrede harita en yakın zoom a girer, 120 metrede pencere yanıp söner.',
+    ],
+  },
   {
     v: '0.21.0', date: '2026-10-31',
     notes: [

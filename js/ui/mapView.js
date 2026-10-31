@@ -5,7 +5,7 @@ import { attachSearch, reverseLabel } from './placeSearch.js';
 import { loadGoogle, googleKey } from '../google/loader.js';
 
 /** Harita çizim API'si; initMap() çağrılınca dolar (routing/controller.js, nav/* kullanır). Harita henüz yüklenmediyse çizimler sıraya alınır. */
-export const mapApi = { drawRoute() {}, drawStations() {}, drawNearby() {}, setPoint() {}, follow() {} };
+export const mapApi = { drawRoute() {}, drawStations() {}, drawNearby() {}, setPoint() {}, follow() {}, navView() {} };
 
 let boot = async () => {};
 /** Google anahtarı girilince/değişince haritayı (yeniden) başlat. */
@@ -166,10 +166,22 @@ export function initMap() {
   });
 
   // Navigasyonda harita aracı izler; kullanıcı haritayı elle kaydırırsa 15 sn izleme durur.
-  mapApi.follow = (lat, lon, zoom = null, force = false) => {
+  let lastHeading = 0;
+  mapApi.follow = (lat, lon, zoom = null, force = false, heading = null) => {
     if (!gmap || (!force && Date.now() - lastDrag < 15000)) return;
     gmap.setCenter({ lat, lng: lon });
     if (zoom != null) gmap.setZoom(zoom);
+    // Yön-yukarı: harita gidiş yönüne döner (vektör haritada). Küçük titreşimler yok sayılır.
+    if (heading != null && gmap.setHeading) {
+      const d = Math.abs(((heading - lastHeading + 540) % 360) - 180);
+      if (d > 6) { gmap.setHeading(heading); lastHeading = heading; }
+    }
+  };
+  /** Navigasyon görünümü: açıkken eğik (3D) ve yön-yukarı, kapanınca kuzey-yukarı düz harita. */
+  mapApi.navView = (on) => {
+    if (!gmap) return;
+    if (gmap.setTilt) gmap.setTilt(on ? 40 : 0);
+    if (!on && gmap.setHeading) { gmap.setHeading(0); lastHeading = 0; }
   };
 
   const dotEl = (color, size, ring = '#0b0f14') => {
