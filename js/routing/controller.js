@@ -1,9 +1,10 @@
 import { getState, patch, subscribe, effective } from '../state.js';
-import { load } from '../utils/storage.js';
+import { load, save } from '../utils/storage.js';
 import { fetchRoute } from './googleRoute.js';
 import { fetchChargers, reprice, reproject } from './chargerSource.js';
 import { planRoute, rankStations } from './planner.js';
 import { resampleRoute, buildProfile } from '../physics/routeProfile.js';
+import { densityFromRatio } from '../physics/traffic.js';
 import { fetchElevations } from '../physics/elevation.js';
 import { fetchWeather } from '../physics/weather.js';
 import { mapApi } from '../ui/mapView.js';
@@ -96,6 +97,13 @@ export async function planTrip(from = null) {
     patch('plan', { status: 'loading', text: 'Rota alınıyor…', stops: [], totals: null, ranking: [], fromKm: 0, fromSoc: null });
     patch('sim', { routeKm: 0, lat: null, lon: null, play: false }); // simüle araç yeni rotanın başına
     const rt = await fetchRoute(start, end);
+    // Trafik: Google'ın trafikli süresinden yoğunluğu türet → enerji, hız ve süre hesabına girer (elle ayarı ezer)
+    patch('route', { trafficInfo: { ratio: rt.trafficRatio, driveMin: rt.durationH * 60, freeMin: (rt.durationH * 60) / rt.trafficRatio } });
+    if (getState('route').trafficAuto) {
+      const d = densityFromRatio(rt.trafficRatio);
+      patch('route', { traffic: d });
+      save('trafficEst', d);
+    }
     const pts = resampleRoute(rt.coords);
     mapApi.drawRoute(rt.coords, { fit: !from });
     if (from) mapApi.setPoint('start', from, { fit: false });

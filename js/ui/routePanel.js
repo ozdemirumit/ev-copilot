@@ -37,6 +37,23 @@ export function initRoutePanel() {
   bind('cruise', 'cruise-out', 'cruise', 'cruise', (v) => `${v} km/h`);
   bind('traffic-est', 'traffic-est-out', 'traffic', 'trafficEst', (v) => `%${v}`);
 
+  // Trafik: otomatik (Google'ın trafikli süresinden) ya da elle. Sürgüyü elle oynatmak otomatiği kapatır.
+  const auto = $('traffic-auto');
+  auto.checked = getState('route').trafficAuto;
+  const paintTraffic = () => {
+    const r = getState('route');
+    auto.checked = r.trafficAuto;
+    $('traffic-est').value = r.traffic;
+    $('traffic-est-out').textContent = `%${r.traffic}`;
+    const i = r.trafficInfo;
+    $('traffic-info').textContent = !i ? '' : `Google: trafikli süre ${hm(i.driveMin)}, trafiksiz ${hm(i.freeMin)} (×${i.ratio.toFixed(2)})`
+      + (r.trafficAuto ? ` → yoğunluk %${r.traffic}` : ' · otomatik kapalı: sürgü senin ayarın');
+  };
+  auto.addEventListener('change', () => { patch('route', { trafficAuto: auto.checked }); save('trafficAuto', auto.checked); paintTraffic(); });
+  $('traffic-est').addEventListener('input', () => { if (getState('route').trafficAuto) { patch('route', { trafficAuto: false }); save('trafficAuto', false); } paintTraffic(); });
+  subscribe('route', paintTraffic);
+  paintTraffic();
+
   const list = $('plan-list');
   const status = $('plan-status');
   const gm = $('btn-gmaps');

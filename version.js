@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.22.0';
+self.APP_VERSION = '0.23.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.23.0', date: '2026-10-31',
+    notes: [
+      'Trafik artık otomatik: rota planlanırken Google trafikli süresinin trafiksiz süreye oranından trafik yoğunluğu hesaplanır ve enerji, hız, süre ile şarj planına girer. Rota sekmesinde Google süreleri ve çıkan yoğunluk yazar.',
+      'Sürgüyü elle oynatırsan otomatik kapanır (anahtardan tekrar açılır); elle değer korunur.',
+      'Navigasyondaki varış saati artık Google trafikli kalan süresini (10 dakikada bir yenilenir) ve kalan şarj molalarını kullanır.',
+    ],
+  },
   {
     v: '0.22.0', date: '2026-10-31',
     notes: [

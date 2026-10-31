@@ -88,7 +88,14 @@ function tick() {
   const ins = instruction(st);
   const remain = Math.max(0, plan.profile.totalKm - km);
   const nextStop = plan.stops.find((s) => s.km > km + 0.3);
-  const eta = hhmm(Date.now() + plan.profile.timeBetween(km, plan.profile.totalKm) * 3600e3);
+  // Varış: Google'ın trafikli kalan süresi (ahead.js 10 dk'da bir yeniler; arada geçen süre düşülür) + kalan şarj molaları.
+  // Yoksa rota süresinin kalan oranı, o da yoksa profil süresi.
+  const live = nav.liveRemain;
+  const driveH = live && Date.now() - live.at < 15 * 60e3 ? Math.max(0, live.h - (Date.now() - live.at) / 3600e3)
+    : plan.route?.durationH ? plan.route.durationH * (remain / plan.profile.totalKm)
+      : plan.profile.timeBetween(km, plan.profile.totalKm);
+  const chargeMin = plan.stops.filter((s) => s.km > km).reduce((a, s) => a + s.minutes + s.overheadMin, 0);
+  const eta = hhmm(Date.now() + driveH * 3600e3 + chargeMin * 60e3);
   const sub = `Kalan ${remain.toFixed(0)} km · varış ${eta}` + (nextStop ? ` · ⚡ ${nextStop.station.name} ${(nextStop.km - km).toFixed(0)} km` : '');
   paint(ins.arrow, fmtDist(distM), ins.text, ins.road, sub);
 

@@ -99,6 +99,7 @@ async function refreshTraffic() {
     const r = json.routes?.[0];
     if (!r?.polyline?.encodedPolyline) return setAhead({ traffic: null });
     const jam = findJam(decodePolyline(r.polyline.encodedPolyline), r.travelAdvisory?.speedReadingIntervals || []);
+    patch('nav', { liveRemain: { h: parseFloat(r.duration) / 3600, at: Date.now() } });
     const delayMin = Math.round((parseFloat(r.duration) - parseFloat(r.staticDuration || r.duration)) / 60);
     if (!jam) return setAhead({ traffic: delayMin >= 10 ? `🚦 Rotada trafik kaynaklı ≈ ${delayMin} dk gecikme var` : null });
     const len = jam.to - jam.from;

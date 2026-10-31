@@ -53,7 +53,7 @@ export async function fetchRoute(start, end) {
   const wp = (p) => ({ location: { latLng: { latitude: p.lat, longitude: p.lon } } });
   const json = await gfetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
     method: 'POST',
-    mask: 'routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline,routes.legs.steps.distanceMeters,routes.legs.steps.navigationInstruction',
+    mask: 'routes.distanceMeters,routes.duration,routes.staticDuration,routes.polyline.encodedPolyline,routes.legs.steps.distanceMeters,routes.legs.steps.navigationInstruction',
     body: {
       origin: wp(start),
       destination: wp(end),
@@ -76,6 +76,8 @@ export async function fetchRoute(start, end) {
     coords: decodePolyline(r.polyline.encodedPolyline),
     distanceKm: (r.distanceMeters || 0) / 1000,
     durationH: parseFloat(r.duration) / 3600,
+    // trafikli süre / trafiksiz süre (≥ 1): rotanın ortalama yavaşlaması
+    trafficRatio: r.staticDuration ? Math.max(1, parseFloat(r.duration) / parseFloat(r.staticDuration)) : 1,
     steps,
   };
 }

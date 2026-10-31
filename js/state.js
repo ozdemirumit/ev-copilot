@@ -18,6 +18,8 @@ const store = {
     minArrivalSoc: load('minArrival', 15),
     cruise: load('cruise', 100),
     traffic: load('trafficEst', 0),
+    trafficAuto: load('trafficAuto', true), // trafik yoğunluğunu Google süresinden otomatik türet
+    trafficInfo: null, // { ratio, driveMin, freeMin } son planlamada Google'dan
     consAdj: load('consAdj', 0), // % tüketim düzeltmesi (PHYSICS.consScale ile eşleşir)
     chargerMin: load('chargerMin', 10), // ara istasyona varışta en az %
     maxChargeTo: load('maxChargeTo', 90), // durakta şarj hedefi üst sınırı %
@@ -42,7 +44,7 @@ const store = {
   system: { wakeLock: false, camera: false, ocr: false },
   // Navigasyon: active = dönüş dönüş yönlendirme açık; voice = sesli yönlendirme; lowSoc = düşük pil uyarı eşiği (%).
   nav: { active: false, voice: load('voiceOn', true), lowSoc: load('lowSoc', 20), step: null, alert: null,
-    speedAlert: load('speedAlert', 0), ahead: { rain: null, traffic: null, speed: null } },
+    speedAlert: load('speedAlert', 0), ahead: { rain: null, traffic: null, speed: null }, liveRemain: null },
 };
 
 const listeners = {};

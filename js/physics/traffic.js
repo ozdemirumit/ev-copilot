@@ -2,12 +2,22 @@ import { batteryPowerKw, hvacKw } from './model.js';
 import { PHYSICS as P } from '../config.js';
 
 /**
- * Trafik yoğunluğu (0..100) → ortalama hız çarpanı. Anahtarsız ücretsiz bir canlı trafik kaynağı yok;
- * yoğunluk kullanıcı tahmini (Rota sekmesi) veya Test Modu sürgüsüdür.
+ * Trafik yoğunluğu (0..100) → ortalama hız çarpanı. Yoğunluk Google'ın trafikli süresinden otomatik
+ * türetilir (densityFromRatio) ya da kullanıcı tahmini (Rota sekmesi) / Test Modu sürgüsüdür.
  */
 export function speedFactor(density) {
   const d = Math.min(100, Math.max(0, density)) / 100;
   return 1 - 0.7 * d ** 1.3;
+}
+
+/**
+ * Google'ın trafikli/trafiksiz süre oranından (≥ 1) yoğunluk (0..100): speedFactor'ün tersi (hız çarpanı = 1/oran).
+ * %3'ten az yavaşlama "trafik yok" sayılır (süre tahmin gürültüsü).
+ */
+export function densityFromRatio(ratio) {
+  if (!(ratio > 1.03)) return 0;
+  const f = 1 / ratio;
+  return Math.min(100, Math.round(((1 - f) / 0.7) ** (1 / 1.3) * 100));
 }
 
 /** Dur-kalk enerji çarpanı (yoğunlukta fren/kalkış kayıpları; rejenerasyon bir kısmını geri alır). */
