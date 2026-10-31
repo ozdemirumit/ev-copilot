@@ -39,7 +39,7 @@ function tick() {
   const bar = $('nav-banner');
   bar.classList.toggle('hidden', !nav.active);
   $('junction').classList.add('hidden'); // yalnızca ana akışta (followMap) yeniden gösterilir
-  if (!nav.active) return;
+  if (!nav.active) return followSim();
 
   const plan = getState('plan');
   const e = effective();
@@ -121,6 +121,19 @@ function tick() {
 
   // Harita: hıza göre zoom (yavaş = yakın), kavşağa 250 m kala en yakın zoom; sürerken yön-yukarı
   followMap(e, distM, st);
+}
+
+let simFollowing = false;
+
+/** Navigasyon kapalıyken de Test Modu sürüş simülasyonu çalışıyorsa harita aracı izler (kaydırınca 15 sn durur). */
+function followSim() {
+  const sim = getState('sim');
+  const e = effective();
+  const on = sim.enabled && sim.play && e.lat != null;
+  if (!on) { simFollowing = false; return; }
+  const z = (e.speed ?? 0) < 40 ? 17 : (e.speed ?? 0) < 80 ? 16 : 15;
+  mapApi.follow(e.lat, e.lon, simFollowing ? null : z, !simFollowing); // ilk seferde yakınlaş ve odakla
+  simFollowing = true;
 }
 
 let zoomNow = null;
