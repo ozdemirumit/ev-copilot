@@ -10,12 +10,21 @@ export class GoogleError extends Error {
   }
 }
 
+/** 429 yanıtındaki "Quota exceeded for quota metric 'X' and limit 'Y' of service 'Z'" metninden hangi kotanın dolduğunu çıkar. */
+export function quotaText(msg) {
+  const metric = /quota metric '([^']+)'/i.exec(msg)?.[1];
+  const limit = /limit '([^']+)'/i.exec(msg)?.[1];
+  const service = /service '([^']+)'/i.exec(msg)?.[1];
+  if (!metric && !limit) return "Google istek sınırı/kota doldu (biraz bekle veya Cloud Console > Kotalar'dan artır)";
+  return `Google kota doldu: ${[metric, limit].filter(Boolean).join(' · ')}${service ? ` (${service})` : ''}. Dakikalık sınırsa biraz bekle; günlük kotaysa Cloud Console > Kotalar'dan artır ya da ertesi günü bekle`;
+}
+
 function explain(status, msg) {
   if (/API key not valid|API_KEY_INVALID/i.test(msg)) return ['Google anahtarı geçersiz: yanlış karakter olabilir, Rota sekmesinde tekrar gir', true];
   if (/has not been used in project|is disabled|SERVICE_DISABLED/i.test(msg)) return ["Google: bu API projede etkin değil (Cloud Console > API Kitaplığı'ndan etkinleştir, etkinleştirdiysen birkaç dakika bekle)", true];
   if (/enable Billing|BILLING/i.test(msg)) return ['Google: projeye faturalandırma hesabı bağlı değil (Cloud Console > Faturalandırma)', true];
   if (status === 403) return [`Google erişimi reddetti: ilgili API etkin değil veya anahtar kısıtlı (${msg || 'HTTP 403'})`, true];
-  if (status === 429) return ['Google istek sınırı/kota doldu (biraz bekle veya kotayı artır)', false];
+  if (status === 429) return [quotaText(msg), false];
   return [msg ? `Google: ${msg}` : `Google HTTP ${status}`, false];
 }
 

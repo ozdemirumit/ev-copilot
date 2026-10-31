@@ -1,6 +1,6 @@
-# Alternatif veri kaynağı (tasarım) — GÜNCEL DURUM EN ALTTA
+# Alternatif veri kaynağı (tasarım, tarihsel kayıt) — GÜNCEL DURUM EN ALTTA
 
-> **Karar değişti (v0.36.0):** Global "Google / Alternatif" anahtarı kaldırıldı. Veri türü başına sabit kaynak kullanılıyor: Google (harita, rota, trafik, arama, adres adı, istasyon, doluluk) + ücretsiz açık servisler (hava Open-Meteo, rakım ve yol hız limiti Valhalla/OSM). Çevrimdışı harita (PMTiles) yalnızca internet yokken yedek olarak açılıyor. Aşağıdaki "Alternatif kaynak" tasarımı tarihsel kayıttır; Overpass, OpenChargeMap, Photon, Valhalla rota ve OpenFreeMap kodları silindi.
+> **Karar değişti (v0.36.0):** Global "Google / Alternatif" anahtarı kaldırıldı. Veri türü başına sabit kaynak kullanılıyor: Google (harita, rota, trafik, arama, adres adı, istasyon, doluluk) + ücretsiz açık servisler (hava Open-Meteo, rakım ve yol hız limiti Valhalla/OSM). Çevrimdışı harita sonradan kaldırıldı. Aşağıdaki "Alternatif kaynak" tasarımı tarihsel kayıttır; Overpass, OpenChargeMap, Photon, Valhalla rota ve OpenFreeMap kodları silindi.
 
 Karar (2026-10-31): Rota sekmesinde tek bir **Veri kaynağı** anahtarı olacak: **Google** (varsayılan) veya **Alternatif** (açık kaynak).
 Seçilen kaynak harita, rota, istasyon, arama, hava, rakım ve hız limiti için **birlikte** kullanılır; karışık kullanım yoktur.
@@ -70,8 +70,8 @@ Doluluk bilgisi yok: slotlar "bilinmiyor" görünür.
 - Faz 3 (v0.32.0): Overpass/OpenChargeMap istasyonlar ve Valhalla/OSM hız limiti: tamam. Overpass'e geliştirme makinesinden ulaşılamadı; Türkiye verisi gerçek cihazda doğrulanmalı. Hız kamerası verisi henüz yok.
 - Faz 4-6 (çevrimdışı harita, çevrimdışı veri paketi, cihazda rota): yapılmadı. Araştırma sonuçları: çevrimdışı harita için Protomaps PMTiles (Türkiye z≤14 yaklaşık 670 MB, tahmin), cihazda rota için önce Valhalla-WASM ölçüm denemesi (3-5 gün).
 
-## Güncel durum (v0.36.0)
+## Güncel durum (v0.38.0)
 
-- Alternatif kaynak modu kaldırıldı. `js/providers/index.js` veri türü başına sabit eşlemeyi tutar.
-- Çevrimdışı harita: `js/offline/`, `js/ui/maps/maplibre.js`, `docs/offline-harita.md`. İnternet yokken yedek harita.
-- Kayıtlı rota (v0.37.0): son plan IndexedDB'de (`js/utils/idb.js`, `controller.js` saveTrip/restoreTrip), açılışta geri yüklenir. Çevrimdışı YENİ rota hesabı yok.
+- Alternatif kaynak modu kaldırıldı. `js/providers/index.js` veri türü başına sabit eşlemeyi tutar: Google (rota, trafik, arama, adres adı, istasyon, doluluk, harita) + ücretsiz Open-Meteo (hava) ve Valhalla/OSM (rakım, yol hız limiti).
+- Çevrimdışı harita özelliği denendi ve **kaldırıldı** (v0.38.0): kurulum (R2, Actions) ve bakım yükü kazanımına göre fazla ağırdı. Silinen: `js/offline/`, MapLibre/PMTiles/stil dosyaları, `docs/offline-harita.md`, Actions iş akışı. Eski indirmeler açılışta otomatik temizlenir.
+- Kayıtlı rota (v0.37.0) duruyor: son plan IndexedDB'de (`js/utils/idb.js`, `controller.js` saveTrip/restoreTrip), açılışta geri yüklenir. Çevrimdışı YENİ rota hesabı yok.

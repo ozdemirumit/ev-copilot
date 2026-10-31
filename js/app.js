@@ -28,7 +28,6 @@ import { initCards } from './ui/cards.js';
 import { initHistoryPanel } from './ui/historyPanel.js';
 import { initCollapse } from './ui/collapse.js';
 import { initGoogleKey } from './ui/googleKey.js';
-import { initOfflinePanel } from './ui/offlinePanel.js';
 import { initNavigator } from './nav/navigator.js';
 import { initNearby } from './nav/nearby.js';
 import { initAhead } from './nav/ahead.js';
@@ -70,7 +69,6 @@ initCollapse();
 initRoiBox();
 initCameraPanel();
 initWakeLock();
-initOfflinePanel();
 initGoogleKey();
 initMap();
 initRouteController();
@@ -83,3 +81,12 @@ initTabs();
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => { /* file:// vb. */ });
 }
+
+// Kaldırılan çevrimdışı harita özelliğinden kalan indirme dosyası ve ayarlar (telefondaki yer boşalsın)
+(async () => {
+  try {
+    ['pack.tur', 'mapBase', 'mapMode', 'ocmKey', 'source'].forEach((k) => localStorage.removeItem('evcp.' + k));
+    const root = await navigator.storage?.getDirectory?.();
+    await root?.removeEntry('maps', { recursive: true });
+  } catch { /* hiç indirilmemişti */ }
+})();

@@ -3,9 +3,7 @@ import { load, save } from '../utils/storage.js';
 import { toast } from './toast.js';
 import { attachSearch } from './placeSearch.js';
 import { reverseLabel } from '../providers/index.js';
-import { packInfo } from '../offline/pack.js';
 import { createGoogleMap } from './maps/google.js';
-import { createMapLibreMap } from './maps/maplibre.js';
 
 /** Harita çizim API'si; initMap() çağrılınca dolar (routing/controller.js, nav/* kullanır). Harita henüz yüklenmediyse çizimler sıraya alınır. */
 export const mapApi = { drawRoute() {}, drawStations() {}, drawNearby() {}, setPoint() {}, follow() {}, navView() {} };
@@ -25,13 +23,13 @@ function el(tag, cls, text) {
 const pinEl = (kind, label) => { const d = el('div', 'pin ' + kind); d.append(el('b', '', label)); return d; };
 
 /**
- * Harita: seçili veri kaynağına göre Google Maps JavaScript API veya MapLibre + OpenFreeMap (maps/ bağdaştırıcıları, koyu şema).
+ * Harita: Google Maps JavaScript API (maps/google.js bağdaştırıcısı, koyu şema).
  * Harita nesnesi hazır olana dek yapılan işaretleme/çizim çağrıları sıraya alınır ve harita hazır olunca uygulanır.
  * Rota/arama/istasyon mantığı haritadan bağımsızdır. Konumlar { lat, lon }; zoom Google ölçeğindedir.
  */
 export function initMap() {
   const mapEl = document.getElementById('map');
-  let adapter = null; // hazır harita bağdaştırıcısı (maps/google.js veya maps/maplibre.js)
+  let adapter = null; // hazır harita bağdaştırıcısı (maps/google.js)
   let booting = null;
   const queue = [];
   const readyHooks = []; // harita hazır olunca bir kez çalışacak güncellemeler (sıraya alınması gereksiz olanlar)
@@ -43,34 +41,12 @@ export function initMap() {
   saver.checked = load('noTiles', navigator.connection?.saveData === true);
   mapEl.classList.toggle('hidden', saver.checked);
 
-  /**
-   * İnternet varken Google haritası. İnternet yoksa (veya Google açılamazsa) indirilmiş çevrimdışı harita varsa o açılır.
-   * Google'ın kendi uygulamasındaki indirilmiş haritaları web uygulamasından kullanılamaz; çevrimdışı harita ayrı bir paket (OpenStreetMap).
-   */
-  async function openMap() {
-    const hasPack = !!packInfo('tur');
-    if (!navigator.onLine && hasPack) return createMapLibreMap(mapEl);
-    try {
-      return await createGoogleMap(mapEl);
-    } catch (err) {
-      if (!hasPack) throw err;
-      console.warn('Google haritası açılamadı, çevrimdışı harita kullanılıyor:', err.message);
-      mapEl.replaceChildren();
-      return createMapLibreMap(mapEl);
-    }
-  }
-
-  // Açıkken internet koparsa Google haritası kalır; indirilmiş harita varsa yenileyince çevrimdışı olan açılır
-  window.addEventListener('offline', () => {
-    if (adapter?.name === 'google' && packInfo('tur')) toast('İnternet koptu. Çevrimdışı harita için sayfayı yenile (rota planı sıfırlanır)', 7000);
-  });
-
   boot = async () => {
     if (adapter || saver.checked) return;
     booting ??= (async () => {
       try {
         note(''); // uyarı katmanı kalksın: harita boş bir kapta kurulur
-        adapter = await openMap();
+        adapter = await createGoogleMap(mapEl);
         adapter.onClick(onMapClick);
         adapter.onDragStart(() => { lastDrag = Date.now(); });
         queue.splice(0).forEach((fn) => fn());

@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.37.0';
+self.APP_VERSION = '0.38.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.38.0', date: '2026-11-01',
+    notes: [
+      'Çevrimdışı harita özelliği kaldırıldı (kurulumu ve bakımı fazla ağırdı). Rota sekmesindeki Çevrimdışı harita kartı, MapLibre ve harita dosyası indirme kodu silindi. Telefonda daha önce indirilmiş harita dosyası açılışta otomatik silinir.',
+      'Harita yalnızca Google. Kayıtlı rota (internetsiz açılışta son planın geri yüklenmesi) duruyor.',
+      'Google "istek sınırı/kota doldu" hatası artık hangi kotanın dolduğunu söylüyor (ör. Nearby Search, dakikalık ya da günlük) ve ne yapılacağını yazıyor.',
+    ],
+  },
   {
     v: '0.37.0', date: '2026-10-31',
     notes: [

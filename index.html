@@ -71,22 +71,6 @@
       </div>
     </div>
 
-    <div class="card stack" id="offline-card">
-      <h2 style="margin:0">📥 Çevrimdışı harita</h2>
-      <p class="small muted" style="margin:0">Ülke haritasını telefona indir: internet yokken uygulama açılırsa harita yine görünür (OpenStreetMap tabanlı ayrı bir harita; Google Haritalar uygulamasının indirdiği harita bu uygulamada kullanılamaz). İnternet varken Google haritası kullanılır. Dosya kendi Cloudflare R2 kovandan iner (kurulum: docs/offline-harita.md). Büyük dosyadır, Wi-Fi'de indir.</p>
-      <label class="field">Harita dosyası adresi (R2)
-        <input type="text" id="map-base" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://harita.alanadin.com">
-      </label>
-      <div class="row between">
-        <span class="small muted" id="map-pack-status"></span>
-        <div class="row">
-          <button class="btn primary sm" id="map-pack-dl" type="button">⬇️ Haritayı indir (Türkiye)</button>
-          <button class="btn ghost sm hidden" id="map-pack-del" type="button">🗑️ Sil</button>
-        </div>
-      </div>
-      <progress id="map-pack-bar" class="hidden" max="100" value="0" style="width:100%"></progress>
-    </div>
-
     <div class="card stack" id="g-card">
       <h2 style="margin:0">🔑 Google Haritalar anahtarı</h2>
       <p class="small muted" style="margin:0">Harita, rota (trafikli), istasyon ve doluluk, yer arama ve adres adı Google'dan gelir (hava, rakım ve yol hız limiti ücretsiz açık servislerden). Anahtar sadece bu telefonda saklanır. Google Cloud'da anahtarı HTTP yönlendiren kısıtıyla (ozdemirumit.github.io/*) ve şu API'lerle sınırla: Maps JavaScript, Routes, Places (New), Geocoding.</p>
