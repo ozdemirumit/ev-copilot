@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.26.1';
+self.APP_VERSION = '0.27.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.27.0', date: '2026-10-31',
+    notes: [
+      'Şarj yuvası doluluğu: Google in canlı konnektör verisi okunur ve Şarj planı, İstasyon listesi, Yakınımdaki istasyonlar ve düşük pil uyarısında gösterilir (örn. 3/4 boş, dolu 0/4, arızalı, kaç dk önceki bilgi). Bilgi vermeyen ağlar için doluluk bilgisi yok yazar.',
+      'Planlama doluluğu dikkate alır: tamamen arızalı istasyon aday olmaz, yakın (ilk 150 km) ve dolu görünen istasyona 20 dk bekleme eklenir. Düşük pil önerisinde arızalı istasyon önerilmez, dolu olan daha uzak sayılır.',
+      'Yaklaşan planlı duraklar için canlı doluluk 5 dakikada bir yenilenir. Durak dolu veya arızalı çıkarsa sesli uyarı verilir ve plan kendiliğinden yeniden hesaplanır.',
+    ],
+  },
   {
     v: '0.26.1', date: '2026-10-31',
     notes: [

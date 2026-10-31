@@ -6,6 +6,7 @@ import { classify, operatorById } from './operators.js';
 import { haversineKm } from '../utils/geo.js';
 import { load, save } from '../utils/storage.js';
 import { gfetch } from '../google/api.js';
+import { slotsOf } from './slots.js';
 
 const NEARBY_URL = 'https://places.googleapis.com/v1/places:searchNearby';
 const TEXT_URL = 'https://places.googleapis.com/v1/places:searchText';
@@ -42,6 +43,8 @@ function fromGoogle(p, drop = {}) {
   const slow = !hasDc && !(kwMax >= PLANNER.minKw) && (agg.length > 0 || opId === 'other');
   return {
     id: 'g' + p.id,
+    gid: p.id, // Google yer kimliği (canlı doluluk sorgusu için)
+    slots: slotsOf(p.evChargeOptions, DC_TYPES), // yuva doluluğu (bilinmiyorsa null)
     name, lat, lon, opId,
     srcKw: slow ? Math.min(kwMax ?? AC_FALLBACK_KW, AC_FALLBACK_KW) : (hasDc ? kwDc : kwMax), // yoksa operatör tablosundaki kW
     uncertain: (hasDc ? kwDc : kwMax) == null,
@@ -318,6 +321,23 @@ export async function fetchAround(lat, lon, radiusKm, force = false) {
   }
   if (raw.length && !errors.length) save(key, { t: Date.now(), raw });
   return finish(raw, errors, false);
+}
+
+/**
+ * Seçili istasyonların canlı yuva doluluğunu Google'dan yenile (Place Details, yalnızca evChargeOptions). Çağrı başına bir istasyon;
+ * en çok 3. Dönüş: { id → slots }. Kendi eklediğin ('Benim') istasyonlar atlanır; hata olursa o istasyon atlanır.
+ */
+export async function fetchAvailability(stations, max = 3) {
+  const out = new Map();
+  for (const s of stations.filter((x) => x.gid).slice(0, max)) {
+    try {
+      const j = await gfetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(s.gid)}`, { mask: 'evChargeOptions' });
+      out.set(s.id, slotsOf(j.evChargeOptions, DC_TYPES));
+    } catch (err) {
+      if (err.fatal) break;
+    }
+  }
+  return out;
 }
 
 /** Operatör tablosu değişince fiyat/kW'yi yeniden uygula (ağ çağrısı yok). */

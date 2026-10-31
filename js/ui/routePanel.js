@@ -1,6 +1,7 @@
 import { getState, patch, subscribe } from '../state.js';
 import { save } from '../utils/storage.js';
 import { stationGaps } from '../routing/planner.js';
+import { slotLabel } from '../routing/slots.js';
 
 const $ = (id) => document.getElementById(id);
 const MODE_LABEL = { fast: 'En Hızlı', cheap: 'En Ekonomik', opt: 'Optimum' };
@@ -100,7 +101,8 @@ export function initRoutePanel() {
         const meta = Object.assign(document.createElement('div'), {
           className: 'm',
           textContent: `${Math.max(0, s.km - here).toFixed(0)} km kaldı (${s.km.toFixed(0)}. km) · ${s.station.opName} ${s.station.slow ? 'AC/yavaş ' : ''}${s.station.kw} kW · %${s.arriveSoc.toFixed(0)} → %${s.leaveSoc}`
-            + (s.station.offKm > 0.3 ? ` · sapma ${s.station.offKm.toFixed(1)} km` : ''),
+            + (s.station.offKm > 0.3 ? ` · sapma ${s.station.offKm.toFixed(1)} km` : '')
+            + (slotLabel(s.station) ? ` · ${slotLabel(s.station)}` : ''),
         });
         row.append(num, title, right, meta);
         list.append(row);
@@ -158,7 +160,7 @@ export function initRoutePanel() {
     window.open(gmapsUrl(start, end, p.stops.filter((s) => s.km > here - 0.3)), '_blank', 'noopener'); // yalnızca kalan duraklar
   });
 
-  subscribe('plan', () => { paint(); paintWeather(); });
+  subscribe('plan', () => { paint(); paintWeather(); }); // doluluk yenilenince de (plan.availAt) yeniden çizilir
   subscribe('route', paint);
   // Araç ilerledikçe kalan mesafeler güncellenir (her tam km'de bir yeniden çiz)
   let shownKm = -1;

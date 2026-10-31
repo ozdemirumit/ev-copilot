@@ -3,6 +3,7 @@ import { load, save } from '../utils/storage.js';
 import { getOperators, persistOperators, resetOperators } from '../routing/operators.js';
 import { repriceAndReplan, refetchStations } from '../routing/controller.js';
 import { setStationOperator } from '../routing/chargerSource.js';
+import { slotLabel } from '../routing/slots.js';
 
 const $ = (id) => document.getElementById(id);
 const MODE_TITLE = { fast: 'En hızlı', cheap: 'En ekonomik', opt: 'Optimum (süre + maliyet)' };
@@ -66,7 +67,7 @@ function renderList() {
     meta.className = 'meta';
     meta.append(
       text('span', 'tag ' + (n ? 'best' : ''), n ? `Planda #${n}` : 'Aday'),
-      text('span', '', `${r.station.opName} · ${r.station.slow ? 'AC/yavaş ' : ''}${r.station.kw} kW${r.station.uncertain ? '*' : ''} · ${r.station.price.toFixed(2)} TL/kWh · ${Math.max(0, r.station.km - here).toFixed(0)} km ileride · varış %${r.arrive.toFixed(0)} → %${Math.round(r.to)}`),
+      text('span', '', `${r.station.opName} · ${r.station.slow ? 'AC/yavaş ' : ''}${r.station.kw} kW${r.station.uncertain ? '*' : ''} · ${r.station.price.toFixed(2)} TL/kWh · ${Math.max(0, r.station.km - here).toFixed(0)} km ileride · varış %${r.arrive.toFixed(0)} → %${Math.round(r.to)}` + (slotLabel(r.station) ? ` · ${slotLabel(r.station)}` : '')),
     );
     left.append(meta);
 

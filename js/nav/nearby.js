@@ -11,6 +11,7 @@ import { planTrip } from '../routing/controller.js';
 import { mapApi } from '../ui/mapView.js';
 import { toast } from '../ui/toast.js';
 import { speak } from '../advisor/voice.js';
+import { slotKind, slotLabel } from '../routing/slots.js';
 import { startNav } from './navigator.js';
 
 const $ = (id) => document.getElementById(id);
@@ -149,7 +150,8 @@ function render() {
     );
     const meta2 = cell('div', 'meta', `~${fmtKm(s.roadKm)} km yol`
       + (s.arrive != null ? ` · varışta %${Math.max(0, s.arrive).toFixed(0)}` : '')
-      + ` · %${CHARGE_TO}'e ≈ ${Math.round(s.minutes)} dk, ${s.cost.toFixed(0)} TL`);
+      + ` · %${CHARGE_TO}'e ≈ ${Math.round(s.minutes)} dk, ${s.cost.toFixed(0)} TL`
+      + (slotLabel(s) ? ` · ${slotLabel(s)}` : ' · doluluk bilgisi yok'));
     const acts = document.createElement('div');
     acts.className = 'row wrap';
     const go = cell('button', 'btn primary sm', '🧭 Git');
@@ -184,8 +186,11 @@ function rankNearby() {
     }
     return s.roadKm;
   };
-  const ok = pool.filter((s) => s.reachable);
-  return [...(ok.length ? ok : pool)].sort((a, b) => score(a) - score(b));
+  const live = pool.filter((s) => slotKind(s) !== 'out'); // tamamen arızalı istasyon önerilmez
+  const usablePool = live.length ? live : pool;
+  const ok = usablePool.filter((s) => s.reachable);
+  const pen = (s) => (slotKind(s) === 'full' ? 10 : 0); // dolu görünen istasyon ~10 km daha uzak sayılır
+  return [...(ok.length ? ok : usablePool)].sort((a, b) => score(a) + pen(a) - (score(b) + pen(b)));
 }
 
 /** Uyarı çubuğu: başlık + (varsa) en yakın 3 istasyon, her biri için Git düğmesi. */
@@ -200,7 +205,8 @@ function showAlert(title, stations = []) {
     const info = document.createElement('span');
     info.textContent = s.name;
     info.append(cell('small', '', `${fmtKm(s.distKm)} km · ${s.kw} kW · ${s.price.toFixed(2)} TL/kWh`
-      + (s.arrive != null ? ` · varışta ~%${Math.max(0, s.arrive).toFixed(0)}` : '') + (s.reachable ? '' : ' · yetmeyebilir')));
+      + (s.arrive != null ? ` · varışta ~%${Math.max(0, s.arrive).toFixed(0)}` : '') + (s.reachable ? '' : ' · yetmeyebilir')
+      + (slotLabel(s) ? ` · ${slotLabel(s)}` : '')));
     const go = cell('button', 'btn primary sm', '🧭 Git');
     go.type = 'button';
     go.addEventListener('click', () => goTo(s));

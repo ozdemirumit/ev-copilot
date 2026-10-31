@@ -1,5 +1,6 @@
 import { VEHICLE, PLANNER as P } from '../config.js';
 import { chargeMinutes } from './chargeCurve.js';
+import { slotKind, isFresh } from './slots.js';
 
 const BAT = VEHICLE.batteryNetKwh;
 
@@ -11,7 +12,7 @@ export function metric(mode, minutes, cost) {
 }
 
 /** Planlanabilir istasyon: hızlı DC (≥ minKw) veya yedek olarak izin verilmişse yavaş AC/belirsiz. */
-export const usable = (s) => s.kw >= P.minKw || (P.allowSlow && s.slow);
+export const usable = (s) => (s.kw >= P.minKw || (P.allowSlow && s.slow)) && !(isFresh(s) && slotKind(s) === 'out'); // tamamen arızalı (taze bilgi) istasyon aday olmaz
 
 /**
  * Hızlı DC istasyon bulunmayan uzun rota aralıkları (km). Veri eksikliğini (özellikle Google'ın istasyon kaydının seyrek olduğu bölgeler)
@@ -25,7 +26,10 @@ export function stationGaps(stations, totalKm, minGapKm = 150) {
   return gaps;
 }
 
+const WAIT_MIN = 20; // taze bilgiye göre tüm yuvalar doluysa tahmini bekleme (yalnızca yakın gelecekteki duraklar)
+const WAIT_NEAR_KM = 150; // doluluk bilgisi uzak duraklar için güvenilmez: ilk 150 km
 const detourKwh = (s) => s.offKm * 2 * P.detourKwhPerKm;
+const waitMin = (s, fromKm) => (isFresh(s) && slotKind(s) === 'full' && s.km - fromKm <= WAIT_NEAR_KM ? WAIT_MIN : 0);
 const detourMin = (s) => ((s.offKm * 2) / P.detourKmh) * 60;
 
 /**
@@ -82,7 +86,7 @@ function solve({ profile, stations, startKm = 0, startSoc, minArrival, mode = 'o
           if (L < arrive + Math.max(3, minAdd)) return;
           const mins = chargeMinutes(s.kw, arrive, L);
           const cost = (((L - arrive) / 100) * BAT / P.billedEff) * s.price;
-          const m = st.metric + dip + metric(mode, mins + P.stopOverheadMin + detourMin(s), cost);
+          const m = st.metric + dip + metric(mode, mins + P.stopOverheadMin + detourMin(s) + waitMin(s, startKm), cost);
           if (!states[j][li] || m < states[j][li].metric) {
             states[j][li] = { leave: L, metric: m, prev: [n, si], arrive, mins, cost };
           }
@@ -105,14 +109,14 @@ function solve({ profile, stations, startKm = 0, startSoc, minArrival, mode = 'o
     const s = cands[n - 1];
     stops.unshift({
       station: s, km: s.km, arriveSoc: st.arrive, leaveSoc: st.leave,
-      minutes: st.mins, overheadMin: P.stopOverheadMin + detourMin(s), cost: st.cost,
+      minutes: st.mins, overheadMin: P.stopOverheadMin + detourMin(s) + waitMin(s, startKm), cost: st.cost,
       kwhAdded: ((st.leave - st.arrive) / 100) * BAT,
     });
     ref = st.prev;
   }
 
   const driveMin = profile.timeBetween(startKm, endKm) * 60 + stops.reduce((a, s) => a + detourMin(s.station), 0);
-  const chargeMin = stops.reduce((a, s) => a + s.minutes + P.stopOverheadMin, 0);
+  const chargeMin = stops.reduce((a, s) => a + s.minutes + P.stopOverheadMin + waitMin(s.station, startKm), 0); // doluysa bekleme dahil
   return {
     feasible: true, mode, startKm, stops,
     totals: {
