@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.25.0';
+self.APP_VERSION = '0.25.1';
 self.APP_CHANGELOG = [
+  {
+    v: '0.25.1', date: '2026-10-31',
+    notes: [
+      'Test Modu sürüş simülasyonu: pil artık yalnızca hıza göre azalır. Planlı duraklarda anında şarj ve iniş/arka rüzgârdan gelen rejenerasyon artışı kaldırıldı (inişte bile en az yardımcı yük ve klima kadar harcanır).',
+      'Pil 0a gelince simülasyon durmaz: pil %80e sıfırlanır ve sürüş devam eder.',
+    ],
+  },
   {
     v: '0.25.0', date: '2026-10-31',
     notes: [

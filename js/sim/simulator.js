@@ -41,23 +41,17 @@ function tick() {
     upd.lon = lon + (dKm * Math.sin(h)) / (111.32 * Math.cos((lat * Math.PI) / 180));
   }
 
-  // Planlı durakları geçerken anında şarj et (simülasyon kolaylığı; gerçek şarj eğrisi planlayıcıda).
-  let charged = null;
-  if (profile) {
-    const prevKm = sim.routeKm ?? 0;
-    const stop = getState('plan').stops.find((s) => s.km > prevKm && s.km <= upd.routeKm);
-    if (stop && sim.soc < stop.leaveSoc) charged = stop;
-  }
-
   const hw = headwindComponent(sim.windSpeed, sim.windDir, heading);
   const kw = batteryPowerKw({ v: sim.speed, grade: sim.grade / 100, headwind: hw, temp: sim.temp, rain: sim.rain });
-  const kwh = (kw * dt * stopGoOverhead(sim.traffic)) / 3600;
+  // Simülasyonda pil yalnızca azalır: iniş/arka rüzgâr rejenerasyonu pili artırmasın, en az yardımcı yük + klima kadar harcansın.
+  const kwIdle = batteryPowerKw({ v: 0, temp: sim.temp });
+  const kwh = (Math.max(kw, kwIdle) * dt * stopGoOverhead(sim.traffic)) / 3600;
   upd.soc = Math.max(0, sim.soc - (kwh / BAT) * 100);
-  if (charged) {
-    upd.soc = charged.leaveSoc;
-    toast(`${charged.station.name}: %${charged.leaveSoc}'e şarj edildi (simülasyon)`);
+  // Pil bitince %80'den devam et (uzun test sürüşü kesilmesin)
+  if (upd.soc <= 0) {
+    upd.soc = 80;
+    toast("Pil bitti: simülasyonda %80'e sıfırlandı, sürüş devam ediyor");
   }
-  if (upd.soc <= 0) { upd.play = false; toast('Pil bitti'); }
   patch('sim', upd);
 }
 
