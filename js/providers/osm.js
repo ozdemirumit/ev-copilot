@@ -1,18 +1,14 @@
-// Alternatif (açık kaynak) sağlayıcı: henüz yazılmadı (docs/alternatif-kaynak.md, Faz 2-6).
-// providers/index.js bu kaynağı `ready` olana kadar seçtirmez; arayüz şimdiden aynı ada ve imzaya sahiptir.
+// Alternatif (açık kaynak) sağlayıcı: OpenStreetMap tabanlı servisler (docs/alternatif-kaynak.md). Harita (MapLibre) henüz yok:
+// providers/index.js bu kaynağı `ready` olana kadar seçtirmez. Canlı trafik ve istasyon doluluğu bu kaynakta yoktur.
 import { fetchRoute } from '../osm/route.js';
+import { fetchChargers, fetchAround, fetchAvailability } from '../osm/chargers.js';
+import { fetchSpeedLimit } from '../osm/speedLimit.js';
 import { fetchWeather } from '../osm/weather.js';
 import { fetchElevations } from '../osm/elevation.js';
 import { searchPlaces, resolvePlace, reverseLabel } from '../osm/search.js';
 
-const notReady = () => { throw new Error('Alternatif kaynak henüz hazır değil'); };
+export { fetchRoute, fetchChargers, fetchAround, fetchAvailability, fetchSpeedLimit, fetchWeather, fetchElevations, searchPlaces, resolvePlace, reverseLabel };
 
-export { fetchRoute, fetchWeather, fetchElevations, searchPlaces, resolvePlace, reverseLabel };
+export const capabilities = { traffic: false, availability: false, speedLimit: true, speedCameras: false, offline: false };
 
-export const capabilities = { traffic: false, availability: false, speedLimit: false, speedCameras: false, offline: false };
-
-export const fetchChargers = notReady;
-export const fetchAround = notReady;
-export const fetchAvailability = notReady;
-export const fetchSpeedLimit = notReady;
-export const fetchTrafficAhead = notReady;
+export const fetchTrafficAhead = async () => null; // canlı trafik verisi yok

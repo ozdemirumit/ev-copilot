@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.31.1';
+self.APP_VERSION = '0.32.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.32.0', date: '2026-10-31',
+    notes: [
+      'Alternatif kaynak (henüz seçilemez): istasyonlar OpenStreetMap Overpass sunucularından (rota 120 km parçalarla, parça başına önbellek, ulaşılamayan sunucu atlanır), isteğe bağlı OpenChargeMap anahtarıyla birleştirilir. Tesla ve herkese açık olmayanlar elenir. Canlı doluluk yoktur.',
+      'Alternatif kaynakta yol hız limiti OpenStreetMap etiketinden (Valhalla) okunur: ücretsiz; etiketi olmayan yolda bilinmez ve senin eşiğin kullanılır.',
+      'Veri kaynağı kartına OpenChargeMap anahtarı alanı eklendi (yalnızca Alternatif seçilince görünür).',
+    ],
+  },
   {
     v: '0.31.1', date: '2026-10-31',
     notes: [

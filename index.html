@@ -76,6 +76,15 @@
       <p class="small muted" style="margin:0">Harita, rota, istasyon, arama, hava, rakım ve hız limiti verisinin hepsi seçtiğin kaynaktan gelir; karışık kullanılmaz.</p>
       <div class="seg" id="source-seg" role="radiogroup" aria-label="Veri kaynağı"></div>
       <p class="small muted" id="source-note" style="margin:0"></p>
+      <div class="stack hidden" id="osm-settings">
+        <label class="field">OpenChargeMap anahtarı (isteğe bağlı: istasyon kapsamını artırır)
+          <input type="text" id="ocm-key" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="openchargemap.org/site/develop/api">
+        </label>
+        <div class="row between">
+          <span class="small muted" id="ocm-out">Anahtar yalnızca bu telefonda saklanır.</span>
+          <button class="btn ghost sm" id="ocm-test" type="button">✔️ Sına</button>
+        </div>
+      </div>
     </div>
 
     <div class="card stack" id="g-card">

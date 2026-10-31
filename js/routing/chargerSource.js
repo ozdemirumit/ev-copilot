@@ -169,7 +169,7 @@ export function addCustomStation({ name, lat, lon, opId, kw }) {
 export function removeCustomStation(id) {
   save(CUSTOM_KEY, getCustomStations().filter((c) => c.id !== id));
 }
-const customRaw = () => getCustomStations().map((c) => ({
+export const customRaw = () => getCustomStations().map((c) => ({
   id: c.id, name: c.name, lat: c.lat, lon: c.lon, opId: c.opId, srcKw: c.kw, uncertain: !c.kw, slow: false, src: 'Benim',
 }));
 
@@ -184,7 +184,7 @@ export function setStationOperator(stationId, opId) {
 }
 
 /** Operatörü (varsa kullanıcı düzeltmesiyle) uygulayıp fiyat/kW'yi ata. */
-function priced(s) {
+export function priced(s) {
   const ov = overrides()[s.id];
   const op = operatorById(ov || s.opId);
   return { ...s, opId: ov || s.opId, opRaw: s.opRaw ?? s.opId, corrected: !!ov, opName: op.name, price: op.price, kw: ov ? op.kw : (s.srcKw ?? op.kw) };
@@ -195,7 +195,7 @@ function priced(s) {
  * (ör. Astor + Trugo yan yana): ikisi de aday kalır. Operatörü bilinmeyen ("Diğer") kayıt, aynı noktadaki bilinen
  * operatör kaydının kopyası sayılır.
  */
-function dedupe(raw) {
+export function dedupe(raw) {
   const out = [];
   for (const s of raw) {
     const near = out.filter((o) => haversineKm(o, s) < 0.08);
@@ -207,7 +207,7 @@ function dedupe(raw) {
   return out;
 }
 
-function finalize(raw, profile) {
+export function finalize(raw, profile) {
   const list = [];
   for (const s of dedupe(raw)) {
     const { km, offKm } = profile.project(s.lat, s.lon);
@@ -232,7 +232,7 @@ function finalize(raw, profile) {
 }
 
 /** Arama özeti: Google kaç kayıt döndürdü, neden elendi, 100 km başına kaç aday kaldı (eksik bölgeleri göstermek için). */
-function summarize(stations, profile, ctx) {
+export function summarize(stations, profile, ctx) {
   const bins = [];
   for (let b = 0; b * 100 < profile.totalKm; b++) bins.push(0);
   stations.forEach((s) => { bins[Math.min(bins.length - 1, Math.floor(s.km / 100))]++; });
