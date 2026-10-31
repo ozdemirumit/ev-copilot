@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.30.0';
+self.APP_VERSION = '0.31.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.31.0', date: '2026-10-31',
+    notes: [
+      'Altyapı: veri kaynağı katmanı (js/providers). Harita dışındaki tüm veri (rota, istasyon, arama, hava, rakım, trafik, yol hız limiti) tek bir arayüzden gelir; Google şimdilik tek kaynak ve davranışı aynı.',
+      'Rota sekmesinde Veri kaynağı seçimi eklendi: Google veya Alternatif (açık kaynak). Alternatif hazırlanıyor, şimdilik seçilemez. İki kaynak hiçbir zaman karışık kullanılmaz.',
+    ],
+  },
   {
     v: '0.30.0', date: '2026-10-31',
     notes: [

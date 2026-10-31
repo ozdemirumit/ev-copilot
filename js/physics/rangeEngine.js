@@ -5,7 +5,7 @@ import { headwindComponent, haversineKm } from '../utils/geo.js';
 import { batteryPowerKw, kwhPer100 } from './model.js';
 import { createTracker } from './consumption.js';
 import { trafficBreakdown, stopGoOverhead } from './traffic.js';
-import { fetchWeather } from './weather.js';
+import { fetchWeather } from '../providers/index.js';
 import { feed as feedHistory } from './history.js';
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));

@@ -4,11 +4,11 @@
 // Aylık sorgu sayısı sayılıp ekranda tahmini tutarla gösterilir.
 import { getState, patch, subscribe, effective } from '../state.js';
 import { load, save } from '../utils/storage.js';
-import { gfetch } from '../google/api.js';
+import { fetchSpeedLimit } from '../providers/index.js';
 import { haversineKm } from '../utils/geo.js';
 import { toast } from '../ui/toast.js';
 import { cached, TTL } from '../utils/cache.js';
-import { record, usageSummary, SKUS } from '../google/usage.js';
+import { usageSummary, SKUS } from '../google/usage.js';
 
 const $ = (id) => document.getElementById(id);
 const EVERY_MS = 20000; // iki sorgu arası en az süre
@@ -31,11 +31,7 @@ async function query(e) {
     // Aynı yol kesiti (≈ 110 m hücre) ve gidiş yönü (8 dilim) için sonuç saklanır: aynı yolu tekrar sürerken Google'a (ve faturaya) gidilmez
     const key = `sl:${e.lat.toFixed(3)},${e.lon.toFixed(3)},${Math.round((e.heading ?? 0) / 45) % 8}`;
     const res = await cached(key, TTL.long, async () => {
-      const j = await gfetch(`https://roads.googleapis.com/v1/speedLimits?path=${e.lat.toFixed(6)},${e.lon.toFixed(6)}&units=KPH`, { keyInQuery: true });
-      const list = j.speedLimits || [];
-      record('roads', list.length || 1); // yalnızca gerçek Google çağrısı sayılır; dönen öğe sayısı kadar faturalanır
-      const hit = list.at(-1);
-      return { kph: hit?.speedLimit ? Math.round(hit.units === 'MPH' ? hit.speedLimit * 1.609344 : hit.speedLimit) : null };
+      return { kph: await fetchSpeedLimit(e.lat, e.lon) }; // yalnızca gerçek kaynak çağrısı yapılır; sonuç önbelleğe yazılır
     });
     setLimit(res.kph ? { kph: res.kph, at: Date.now(), lat: e.lat, lon: e.lon } : null); // null: bu yol için veri yok
   } catch (err) {

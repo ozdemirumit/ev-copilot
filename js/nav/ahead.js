@@ -1,12 +1,8 @@
-// Yol önü uyarıları (yalnızca Google verisiyle): ileride yağmur (Weather API), ileride yoğun/yavaş trafik (Routes API
-// TRAFFIC_ON_POLYLINE) ve kullanıcının belirlediği hız eşiği. Navigasyon açıkken periyodik yenilenir.
-// Google Maps Platform kaza, polis, hız kamerası ve yol hız sınırı verisi SUNMAZ; bu uyarılar bu yüzden yoktur.
+// Yol önü uyarıları (seçili veri kaynağından): ileride yağmur, ileride yoğun/yavaş trafik (kaynak sunuyorsa) ve kullanıcının
+// belirlediği hız eşiği. Navigasyon açıkken periyodik yenilenir. Google kaza, polis ve hız kamerası verisi SUNMAZ.
 import { getState, patch, subscribe, effective } from '../state.js';
 import { save } from '../utils/storage.js';
-import { fetchWeather } from '../physics/weather.js';
-import { gfetch } from '../google/api.js';
-import { decodePolyline } from '../routing/googleRoute.js';
-import { haversineKm } from '../utils/geo.js';
+import { fetchWeather, fetchTrafficAhead, capabilities } from '../providers/index.js';
 import { speak } from '../advisor/voice.js';
 import { currentLimit } from './speedLimit.js';
 
@@ -65,43 +61,14 @@ async function refreshRain(km) {
   }
 }
 
-/** speedReadingIntervals (çizgi nokta indeksleri) → bitişik yavaş/sıkışık aralıkların km cinsinden ilk önemli kümesi. */
-export function findJam(coords, intervals, maxAheadKm = 150) {
-  const cum = [0];
-  for (let i = 1; i < coords.length; i++) cum.push(cum[i - 1] + haversineKm({ lat: coords[i - 1][1], lon: coords[i - 1][0] }, { lat: coords[i][1], lon: coords[i][0] }));
-  const spans = [];
-  for (const iv of intervals) {
-    if (iv.speed !== 'SLOW' && iv.speed !== 'TRAFFIC_JAM') continue;
-    const from = cum[iv.startPolylinePointIndex ?? 0];
-    const to = cum[Math.min(iv.endPolylinePointIndex ?? 0, cum.length - 1)];
-    const last = spans.at(-1);
-    if (last && from - last.to < 0.5) { last.to = to; last.jam ||= iv.speed === 'TRAFFIC_JAM'; } // bitişikleri birleştir
-    else spans.push({ from, to, jam: iv.speed === 'TRAFFIC_JAM' });
-  }
-  // Önemli: sıkışık ≥ 0,5 km ya da yavaş ≥ 3 km
-  return spans.find((s) => s.from <= maxAheadKm && s.to - s.from >= (s.jam ? 0.5 : 3)) || null;
-}
-
 async function refreshTraffic() {
   busyTr = true;
   try {
     const e = effective();
-    const end = getState('route').end;
-    const wp = (p) => ({ location: { latLng: { latitude: p.lat, longitude: p.lon } } });
-    const json = await gfetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
-      method: 'POST',
-      mask: 'routes.duration,routes.staticDuration,routes.polyline.encodedPolyline,routes.travelAdvisory.speedReadingIntervals',
-      body: {
-        origin: wp(e), destination: wp(end), travelMode: 'DRIVE', routingPreference: 'TRAFFIC_AWARE',
-        extraComputations: ['TRAFFIC_ON_POLYLINE'], languageCode: 'tr-TR', units: 'METRIC',
-      },
-      timeoutMs: 30000,
-    });
-    const r = json.routes?.[0];
-    if (!r?.polyline?.encodedPolyline) return setAhead({ traffic: null });
-    const jam = findJam(decodePolyline(r.polyline.encodedPolyline), r.travelAdvisory?.speedReadingIntervals || []);
-    patch('nav', { liveRemain: { h: parseFloat(r.duration) / 3600, at: Date.now() } });
-    const delayMin = Math.round((parseFloat(r.duration) - parseFloat(r.staticDuration || r.duration)) / 60);
+    const t = await fetchTrafficAhead(e, getState('route').end);
+    if (!t) return setAhead({ traffic: null });
+    const { jam, delayMin } = t;
+    patch('nav', { liveRemain: { h: t.remainH, at: Date.now() } });
     if (!jam) return setAhead({ traffic: delayMin >= 10 ? `🚦 Rotada trafik kaynaklı ≈ ${delayMin} dk gecikme var` : null });
     const len = jam.to - jam.from;
     const where = jam.from < 1 ? 'Şu an' : `~${Math.round(jam.from)} km ileride`;
@@ -145,7 +112,7 @@ function check() {
   const km = getState('engine').routeKm;
   if (km == null || plan.profile.totalKm - km < 3) return;
   if (!busyWx && Date.now() - wxAt > WEATHER_EVERY_MS) refreshRain(km);
-  if (!busyTr && Date.now() - trAt > TRAFFIC_EVERY_MS && getState('route').end) refreshTraffic();
+  if (!busyTr && Date.now() - trAt > TRAFFIC_EVERY_MS && getState('route').end && capabilities().traffic) refreshTraffic();
 }
 
 export function initAhead() {

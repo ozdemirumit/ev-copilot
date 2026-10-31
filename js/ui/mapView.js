@@ -1,7 +1,8 @@
 import { getState, patch, subscribe, effective } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { toast } from './toast.js';
-import { attachSearch, reverseLabel } from './placeSearch.js';
+import { attachSearch } from './placeSearch.js';
+import { reverseLabel } from '../providers/index.js';
 import { loadGoogle, googleKey } from '../google/loader.js';
 import { record } from '../google/usage.js';
 

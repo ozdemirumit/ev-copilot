@@ -5,7 +5,7 @@ import { getState, patch, effective } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { VEHICLE, PLANNER } from '../config.js';
 import { haversineKm } from '../utils/geo.js';
-import { fetchAround } from '../routing/chargerSource.js';
+import { fetchAround } from '../providers/index.js';
 import { chargeMinutes } from '../routing/chargeCurve.js';
 import { planTrip } from '../routing/controller.js';
 import { mapApi } from '../ui/mapView.js';

@@ -1,15 +1,13 @@
 import { getState, patch, subscribe, effective } from '../state.js';
 import { load, save } from '../utils/storage.js';
-import { fetchRoute } from './googleRoute.js';
-import { fetchChargers, reprice, reproject } from './chargerSource.js';
+import { fetchRoute, fetchChargers, fetchElevations, fetchWeather } from '../providers/index.js';
+import { reprice, reproject } from './chargerSource.js';
 import { planRoute, rankStations } from './planner.js';
 import { resampleRoute, buildProfile } from '../physics/routeProfile.js';
 import { densityFromRatio, speedFactor } from '../physics/traffic.js';
 import { segmentSpeeds } from '../physics/routeSpeed.js';
 import { kForSpeed } from '../physics/history.js';
 import { PHYSICS } from '../config.js';
-import { fetchElevations } from '../physics/elevation.js';
-import { fetchWeather } from '../physics/weather.js';
 import { mapApi } from '../ui/mapView.js';
 import { toast } from '../ui/toast.js';
 import { projectSteps } from '../nav/steps.js';

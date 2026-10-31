@@ -337,3 +337,8 @@ html { overflow: hidden; }
 .g-usage-row.near i::after { background: var(--warn, #e0a800); }
 .g-usage-row.over i::after { background: var(--bad, #d64545); }
 .g-usage-row.over b { color: var(--bad, #d64545); }
+
+.seg { display: flex; gap: 6px; flex-wrap: wrap; }
+.seg button { flex: 1 1 140px; padding: 9px 10px; border-radius: var(--radius); border: 1px solid var(--line); background: transparent; color: var(--text); font: inherit; font-size: 13px; }
+.seg button.sel { border-color: var(--accent); background: var(--accent-dim); }
+.seg button:disabled { opacity: .55; }

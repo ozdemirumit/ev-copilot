@@ -3,7 +3,7 @@
 import { getState, effective, patch } from '../state.js';
 import { VEHICLE } from '../config.js';
 import { replanFrom } from './controller.js';
-import { fetchAvailability } from './chargerSource.js';
+import { fetchAvailability } from '../providers/index.js';
 import { slotKind } from './slots.js';
 import { speak } from '../advisor/voice.js';
 
