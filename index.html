@@ -38,6 +38,7 @@
     <div class="nav-dist" id="nav-dist"></div>
     <div class="nav-text" id="nav-text"></div>
     <div class="nav-road" id="nav-road"></div>
+    <div class="nav-then" id="nav-then"></div>
     <div class="nav-sub" id="nav-sub"></div>
   </div>
   <button class="tog" id="nav-stop" type="button" aria-label="Navigasyonu durdur" title="Navigasyonu durdur">✕</button>
@@ -55,6 +56,16 @@
   <section class="tab active" id="tab-route" data-title="Rota">
     <div class="mapwrap">
       <div id="map" role="application" aria-label="Rota haritası"></div>
+      <div class="navhud hidden" id="navhud">
+        <div class="nh-cell"><b id="nh-speed">0</b><small>km/s</small></div>
+        <div class="nh-cell nh-main"><b id="nh-eta">--:--</b><small id="nh-rem">—</small></div>
+        <div class="nh-cell"><b id="nh-soc">--</b><small>% pil</small></div>
+        <div class="nh-btns">
+          <button type="button" id="nh-voice" aria-label="Sesli yönlendirme aç/kapat">🔊</button>
+          <button type="button" id="nh-overview" aria-label="Rotanın tamamını göster">⛶</button>
+          <button type="button" id="nh-recenter" class="hidden" aria-label="Aracı ortala">🎯</button>
+        </div>
+      </div>
       <div class="junction hidden" id="junction" aria-live="off">
         <div class="j-arrow" id="j-arrow"></div>
         <div class="j-main"><div class="j-dist" id="j-dist"></div><div class="j-text" id="j-text"></div></div>
@@ -198,6 +209,10 @@
       <div class="row between">
         <label for="nav-voice">Sesli yönlendirme</label>
         <label class="switch"><input type="checkbox" id="nav-voice" checked><i></i></label>
+      </div>
+      <div class="row between">
+        <label for="nav-headingup">Harita gidiş yönüne dönsün (yön yukarı, 3D)</label>
+        <label class="switch"><input type="checkbox" id="nav-headingup" checked><i></i></label>
       </div>
       <div class="slider-row">
         <label for="low-soc">Düşük pil uyarısı (yakın istasyon öner)</label>

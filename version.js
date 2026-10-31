@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.27.0';
+self.APP_VERSION = '0.28.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.28.0', date: '2026-10-31',
+    notes: [
+      'Gerçek navigasyon ekranı: harita her zaman gidiş yönü yukarı olacak şekilde döner (rotanın yönünden alınır, GPS yönü olmasa da çalışır), 3D eğimli görünür ve araç ekranın alt kısmında, yol önü geniş görünür. Araç oku hep yukarı bakar. Nav kartındaki anahtardan kuzey-yukarı düz haritaya dönülebilir.',
+      'Harita üstü alt bilgi çubuğu: hız, varış saati, kalan km ve süre (şarj molaları dahil), pil yüzdesi; sesli yönlendirmeyi aç-kapat, tüm rotayı göster ve aracı ortala (haritayı kaydırınca çıkar) düğmeleri.',
+      'Üstteki yön kartında bir sonraki dönüş de gösterilir: Sonra (3 km sonra): ...',
+    ],
+  },
   {
     v: '0.27.0', date: '2026-10-31',
     notes: [

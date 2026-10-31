@@ -52,7 +52,7 @@ export function initMap() {
         ]);
         note('');
         gmap = new maps.Map(mapEl, {
-          center: { lat: 39.0, lng: 35.0 }, zoom: 6, mapId: 'DEMO_MAP_ID', colorScheme: 'DARK', clickableIcons: false,
+          center: { lat: 39.0, lng: 35.0 }, zoom: 6, mapId: 'DEMO_MAP_ID', renderingType: 'VECTOR', // vektör: dönme/eğim için şart colorScheme: 'DARK', clickableIcons: false,
           gestureHandling: 'greedy', streetViewControl: false, mapTypeControl: false, fullscreenControl: false,
         });
         lib = { Polyline: maps.Polyline, LatLngBounds: core.LatLngBounds, AdvancedMarkerElement: markerLib.AdvancedMarkerElement, event: core.event };
@@ -156,10 +156,12 @@ export function initMap() {
 
   // Rota çizgisi ve istasyon işaretleri
   let routeLine = null;
+  let routeCoords = null;
   let stationMarks = [];
   let nearMarks = [];
   mapApi.drawRoute = (coords, { fit: doFit = true } = {}) => whenMap(() => {
     routeLine?.setMap(null);
+    routeCoords = coords;
     const path = coords.map((c) => ({ lat: c[1], lng: c[0] }));
     routeLine = new lib.Polyline({ path, strokeColor: '#2ee6a6', strokeOpacity: 0.85, strokeWeight: 5, map: gmap });
     if (doFit) fit(coords.filter((_, i) => i % 20 === 0 || i === coords.length - 1).map((c) => ({ lat: c[1], lon: c[0] })), 30);
@@ -167,21 +169,51 @@ export function initMap() {
 
   // Navigasyonda harita aracı izler; kullanıcı haritayı elle kaydırırsa 15 sn izleme durur.
   let lastHeading = 0;
+  let navOn = false;
+  let headingUp = true;
+  let zoomNow = 6;
+
+  /**
+   * Araç takibi. heading verilirse (navigasyon) harita gidiş yönüne döner (yön-yukarı): dönüş her güncellemede farkın ~%60'ı
+   * kadar yumuşatılır. Navigasyonda merkez, aracın biraz İLERİSİNE konur: araç ekranın alt kısmında, yol önü geniş görünür.
+   */
   mapApi.follow = (lat, lon, zoom = null, force = false, heading = null) => {
     if (!gmap || (!force && Date.now() - lastDrag < 15000)) return;
-    gmap.setCenter({ lat, lng: lon });
-    if (zoom != null) gmap.setZoom(zoom);
-    // Yön-yukarı: harita gidiş yönüne döner (vektör haritada). Küçük titreşimler yok sayılır.
-    if (heading != null && gmap.setHeading) {
-      const d = Math.abs(((heading - lastHeading + 540) % 360) - 180);
-      if (d > 6) { gmap.setHeading(heading); lastHeading = heading; }
+    if (zoom != null) { gmap.setZoom(zoom); zoomNow = zoom; }
+    let center = { lat, lng: lon };
+    if (heading != null && headingUp && gmap.setHeading) {
+      const delta = ((heading - lastHeading + 540) % 360) - 180;
+      if (Math.abs(delta) > 2) { lastHeading = (lastHeading + delta * 0.6 + 360) % 360; gmap.setHeading(lastHeading); }
     }
+    if (navOn && headingUp) {
+      const mpp = (156543.03 * Math.cos((lat * Math.PI) / 180)) / 2 ** zoomNow; // metre/piksel
+      const d = mapEl.clientHeight * 0.22 * mpp; // harita yüksekliğinin ~%22'si kadar ileri
+      const h = (lastHeading * Math.PI) / 180;
+      center = { lat: lat + (d * Math.cos(h)) / 111320, lng: lon + (d * Math.sin(h)) / (111320 * Math.cos((lat * Math.PI) / 180)) };
+    }
+    gmap.setCenter(center);
   };
-  /** Navigasyon görünümü: açıkken eğik (3D) ve yön-yukarı, kapanınca kuzey-yukarı düz harita. */
-  mapApi.navView = (on) => {
-    if (!gmap) return;
-    if (gmap.setTilt) gmap.setTilt(on ? 40 : 0);
-    if (!on && gmap.setHeading) { gmap.setHeading(0); lastHeading = 0; }
+  /** Navigasyon görünümü: açıkken eğik (3D); up=true ise yön-yukarı, değilse kuzey-yukarı. Kapanınca düz kuzey-yukarı harita. */
+  mapApi.navView = (on, up = true) => {
+    navOn = on;
+    headingUp = up;
+    if (gmap) {
+      if (gmap.setTilt) gmap.setTilt(on && up ? 40 : 0);
+      if ((!on || !up) && gmap.setHeading) { gmap.setHeading(0); lastHeading = 0; }
+    }
+    updateMe();
+  };
+  /** Kullanıcı haritayı kaydırdı mı (takip duraklatıldı)? */
+  mapApi.dragged = () => Date.now() - lastDrag < 15000;
+  /** Takibe hemen dön (navigasyon görünümüne geri). */
+  mapApi.recenter = () => { lastDrag = 0; mapApi.navView(navOn, headingUp); };
+  /** Genel görünüm: tüm rota ekrana sığar (düz, kuzey-yukarı); 15 sn sonra veya Ortala ile takibe dönülür. */
+  mapApi.overview = () => {
+    if (!gmap || !routeCoords) return;
+    lastDrag = Date.now();
+    if (gmap.setTilt) gmap.setTilt(0);
+    if (gmap.setHeading) { gmap.setHeading(0); lastHeading = 0; }
+    fit(routeCoords.filter((_, i) => i % 20 === 0 || i === routeCoords.length - 1).map((c) => ({ lat: c[1], lon: c[0] })), 30);
   };
 
   const dotEl = (color, size, ring = '#0b0f14') => {
@@ -220,13 +252,22 @@ export function initMap() {
   });
 
   // Araç konumu: GPS, Test Modu'nda simülatör konumu
+  let meDot = null;
+  let meArrow = null;
   function updateMe() {
     const e = effective();
     if (!gmap || e.lat == null || e.lon == null) return;
     const color = e.source === 'sim' ? '#5aa9ff' : '#2ee6a6';
-    if (!me) me = marker({ lat: e.lat, lng: e.lon }, dotEl(color, 16, '#fff'), 'Konumum');
+    meDot ??= dotEl(color, 16, '#fff');
+    meArrow ??= el('div', 'me-arrow');
+    const arrow = navOn;
+    if (!me) me = marker({ lat: e.lat, lng: e.lon }, arrow ? meArrow : meDot, 'Konumum');
     me.position = { lat: e.lat, lng: e.lon };
-    me.content.style.background = color;
+    if (me.content !== (arrow ? meArrow : meDot)) me.content = arrow ? meArrow : meDot;
+    meDot.style.background = color;
+    meArrow.style.borderBottomColor = color;
+    // yön-yukarıda ok hep yukarıdır (harita döner); kuzey-yukarıda ok gidiş yönünü gösterir
+    meArrow.style.transform = `translateY(50%) rotate(${headingUp ? 0 : e.heading ?? 0}deg)`;
   }
   subscribe(['live', 'sim'], updateMe);
   readyHooks.push(updateMe);

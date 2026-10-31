@@ -1,7 +1,7 @@
 // Navigasyon için tam çözünürlüklü rota izi. Menzil motorunun profili ~2 km'lik kirişlerden oluşur; dönüşe kalan
 // mesafe metre hassasiyeti ister, bu yüzden araç Google rotasının gerçek geometrisine izdüşürülür (km ekseni profille aynıdır:
 // ikisi de aynı koordinatların yay uzunluğudur).
-import { haversineKm } from '../utils/geo.js';
+import { haversineKm, bearing } from '../utils/geo.js';
 
 export function buildTrack(coords) {
   const n = coords.length;
@@ -59,4 +59,19 @@ export function locate(track, lat, lon, hintKm = null) {
     if (o < off) { off = o; km = track.cum[i] + (track.cum[i + 1] - track.cum[i]) * t; }
   }
   return { km, offKm: off };
+}
+
+function pointAtKm(track, km) {
+  const i = Math.min(track.n - 1, firstIdxAtLeast(track.cum, km));
+  if (i === 0) return { lat: track.lat[0], lon: track.lon[0] };
+  const span = track.cum[i] - track.cum[i - 1] || 1;
+  const t = Math.min(1, Math.max(0, (km - track.cum[i - 1]) / span));
+  return { lat: track.lat[i - 1] + (track.lat[i] - track.lat[i - 1]) * t, lon: track.lon[i - 1] + (track.lon[i] - track.lon[i - 1]) * t };
+}
+
+/** Rotanın gidiş yönü (0–360°, kuzey = 0): bulunulan noktadan 150 m ilerisine bakar (GPS yönü yokken/oynakken de kararlı). */
+export function headingAt(track, km, lookKm = 0.15) {
+  const a = pointAtKm(track, Math.max(0, km - 0.02));
+  const b = pointAtKm(track, Math.min(track.totalKm, km + lookKm));
+  return bearing(a, b);
 }

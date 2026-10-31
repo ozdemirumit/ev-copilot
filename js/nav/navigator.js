@@ -7,7 +7,7 @@ import { toast } from '../ui/toast.js';
 import { rerouteFromHere } from '../routing/controller.js';
 import { speak } from '../advisor/voice.js';
 import { instruction, fmtDist, spoken, isMinor } from './steps.js';
-import { buildTrack, locate } from './track.js';
+import { buildTrack, locate, headingAt } from './track.js';
 
 const $ = (id) => document.getElementById(id);
 const TIERS_M = [120, 500, 2000]; // dönüşe bu kadar kala konuş (küçükten büyüğe)
@@ -98,6 +98,9 @@ function tick() {
   const eta = hhmm(Date.now() + driveH * 3600e3 + chargeMin * 60e3);
   const sub = `Kalan ${remain.toFixed(0)} km · varış ${eta}` + (nextStop ? ` · ⚡ ${nextStop.station.name} ${(nextStop.km - km).toFixed(0)} km` : '');
   paint(ins.arrow, fmtDist(distM), ins.text, ins.road, sub);
+  const then = steps.slice(idx + 1).find((x) => !isMinor(x));
+  $('nav-then').textContent = then && then.type !== 'arrive' ? `Sonra (${fmtDist((then.km - st.km) * 1000)} sonra): ${instruction(then).text}` : '';
+  paintHud(e, remain, eta, driveH, chargeMin);
 
   // Sesli yönlendirme: her manevra için en fazla bir kez, geçilen eşiklerin hepsi "söylendi" sayılır
   const tier = TIERS_M.find((t) => distM <= t);
@@ -120,7 +123,7 @@ function tick() {
   }
 
   // Harita: hıza göre zoom (yavaş = yakın), kavşağa 250 m kala en yakın zoom; sürerken yön-yukarı
-  followMap(e, distM, st);
+  followMap(e, distM, st, loc.offKm <= OFF_ROUTE_KM ? headingAt(track, km) : null);
 }
 
 let simFollowing = false;
@@ -136,12 +139,22 @@ function followSim() {
   simFollowing = true;
 }
 
+/** Harita üstü alt bilgi: hız, varış saati + kalan, pil; ortala düğmesi (harita kaydırıldıysa). */
+function paintHud(e, remainKm, eta, driveH, chargeMin) {
+  const totalMin = Math.round(driveH * 60 + chargeMin);
+  $('nh-speed').textContent = e.speed == null ? '--' : Math.round(e.speed);
+  $('nh-eta').textContent = eta;
+  $('nh-rem').textContent = `${remainKm.toFixed(0)} km · ${totalMin >= 60 ? `${Math.floor(totalMin / 60)} sa ${totalMin % 60} dk` : `${totalMin} dk`}`;
+  $('nh-soc').textContent = e.soc == null ? '--' : Math.round(e.soc);
+  $('nh-recenter').classList.toggle('hidden', !mapApi.dragged());
+}
+
 let zoomNow = null;
 let zoomAt = 0;
 let speedAvg = 0;
 
 /** Hıza göre hedef zoom (ortalama hızla yumuşatılmış); kavşağa yaklaşınca 18. */
-function followMap(e, distM, st) {
+function followMap(e, distM, st, routeHeading) {
   speedAvg = speedAvg * 0.8 + (e.speed ?? 0) * 0.2;
   const junction = !isMinor(st) && st.type !== 'arrive' && distM <= 250;
   const want = junction ? 18 : speedAvg < 40 ? 17 : speedAvg < 80 ? 16 : 15;
@@ -149,7 +162,9 @@ function followMap(e, distM, st) {
   // Kavşak zoom'u hemen; hız kaynaklı değişim en fazla 8 sn'de bir (titreşmesin)
   const change = want !== zoomNow && (junction || now - zoomAt > 8000);
   if (change) { zoomNow = want; zoomAt = now; }
-  mapApi.follow(e.lat, e.lon, change ? want : null, change, (e.speed ?? 0) > 5 ? e.heading : null);
+  // Dönüş yönü rotanın gidiş yönünden alınır (GPS yönü olmasa da çalışır); rota dışındaysa GPS yönü
+  const heading = routeHeading ?? ((e.speed ?? 0) > 5 ? e.heading : null);
+  mapApi.follow(e.lat, e.lon, change ? want : null, change, getState('nav').headingUp ? heading : null);
 
   // Kavşak penceresi: 400 m'den itibaren büyük ok + mesafe + talimat
   const j = $('junction');
@@ -176,8 +191,9 @@ export function startNav() {
   patch('nav', { active: true });
   document.querySelector('.bottomnav [data-tab="route"]')?.click();
   zoomNow = 16; zoomAt = Date.now(); speedAvg = e.speed ?? 0;
-  mapApi.navView(true);
-  if (e.lat != null) mapApi.follow(e.lat, e.lon, 16, true, (e.speed ?? 0) > 5 ? e.heading : null);
+  const up = getState('nav').headingUp;
+  mapApi.navView(true, up);
+  if (e.lat != null) mapApi.follow(e.lat, e.lon, 16, true, up ? (track ? headingAt(track, trackKm ?? 0) : (e.speed ?? 0) > 5 ? e.heading : null) : null);
   $('junction').classList.add('hidden');
   document.querySelector('main').scrollTop = 0;
   speak('Navigasyon başladı.', { key: 'navstart', cooldownMs: 0, interrupt: true });
@@ -234,6 +250,30 @@ export function initNavigator() {
   };
   new ResizeObserver(sizeMap).observe(main);
   subscribe('nav', () => { paintBtn(); sizeMap(); tick(); });
+
+  // Harita yönü: gidiş yönü yukarı (3D) ya da kuzey yukarı
+  const hu = $('nav-headingup');
+  hu.checked = nav.headingUp;
+  hu.addEventListener('change', () => {
+    patch('nav', { headingUp: hu.checked });
+    save('headingUp', hu.checked);
+    if (getState('nav').active) mapApi.navView(true, hu.checked);
+  });
+
+  // Harita üstü düğmeler: sesli aç/kapat, tüm rota, aracı ortala
+  $('nh-voice').addEventListener('click', () => {
+    const on = !getState('nav').voice;
+    patch('nav', { voice: on });
+    save('voiceOn', on);
+    voice.checked = on;
+    if (!on) window.speechSynthesis?.cancel();
+  });
+  $('nh-overview').addEventListener('click', () => mapApi.overview());
+  $('nh-recenter').addEventListener('click', () => { mapApi.recenter(); tick(); });
+  subscribe('nav', () => {
+    $('nh-voice').textContent = getState('nav').voice ? '🔊' : '🔇';
+    $('navhud').classList.toggle('hidden', !getState('nav').active);
+  });
   paintBtn();
   setInterval(tick, 1000);
 }

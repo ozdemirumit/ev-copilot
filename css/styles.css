@@ -316,3 +316,17 @@ html { overflow: hidden; }
 .near-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .near-row small { display: block; color: var(--muted); font-weight: 400; }
 .near-row > span { min-width: 0; }
+
+/* Navigasyon: araç oku (harita yön-yukarı dönerken ok hep yukarı bakar) */
+.me-arrow { width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-bottom: 30px solid #2ee6a6; filter: drop-shadow(0 2px 4px #000); transform: translateY(50%); }
+
+/* Navigasyon alt bilgi çubuğu (harita üzerinde) */
+.navhud { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 6; display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(11, 15, 20, .92); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 4px 18px #000a; }
+.nh-cell { display: flex; flex-direction: column; align-items: center; line-height: 1.1; min-width: 56px; }
+.nh-cell b { font-size: 26px; font-variant-numeric: tabular-nums; }
+.nh-cell small { color: var(--muted); font-size: 11px; }
+.nh-main { flex: 1; }
+.nh-btns { display: flex; gap: 6px; }
+.nh-btns button { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--card-2); font-size: 18px; }
+.navhud:not(.hidden) ~ .junction { bottom: 84px; }
+.nav-then { font-size: 12px; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

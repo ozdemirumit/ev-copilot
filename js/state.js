@@ -46,7 +46,7 @@ const store = {
   hist: { n: 0, at: 0 },
   // Navigasyon: active = dönüş dönüş yönlendirme açık; voice = sesli yönlendirme; lowSoc = düşük pil uyarı eşiği (%).
   nav: { active: false, voice: load('voiceOn', true), lowSoc: load('lowSoc', 20), step: null, alert: null,
-    speedAlert: load('speedAlert', 0), ahead: { rain: null, traffic: null, speed: null }, liveRemain: null },
+    speedAlert: load('speedAlert', 0), headingUp: load('headingUp', true), ahead: { rain: null, traffic: null, speed: null }, liveRemain: null },
 };
 
 const listeners = {};
