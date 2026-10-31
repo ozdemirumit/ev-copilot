@@ -1,6 +1,6 @@
 import { getState, patch, subscribe, effective } from '../state.js';
 import { load } from '../utils/storage.js';
-import { fetchRoute } from './osrm.js';
+import { fetchRoute } from './googleRoute.js';
 import { fetchChargers, reprice, reproject } from './chargerSource.js';
 import { planRoute, rankStations } from './planner.js';
 import { resampleRoute, buildProfile } from '../physics/routeProfile.js';
@@ -58,7 +58,7 @@ function applyPlan(out, extra = {}) {
 
 /** İstasyonları getir ve plan durumuna yaz; hata/önbellek bilgisi İstasyon sekmesinde kalıcı gösterilir. */
 async function loadStations(pts, profile) {
-  const { stations, errors, cached } = await fetchChargers(pts, profile, load('ocmKey', ''), cacheKey);
+  const { stations, errors, cached } = await fetchChargers(pts, profile, cacheKey);
   if (errors.length) toast(errors.join(' · '), 7000);
   if (cached) toast('İstasyonlar önbellekten alındı');
   patch('plan', { stations, stationInfo: { errors, cached } });
@@ -81,7 +81,7 @@ export async function refetchStations() {
 
 /**
  * Rotayı planla. `from` verilirse (yeniden rota: rotadan çıkıldı) başlangıç o konumdur ve istasyonlar yeniden aranmaz,
- * mevcut liste yeni rotaya izdüşürülür (Overpass'e tekrar gitmemek için).
+ * mevcut liste yeni rotaya izdüşürülür (Google'a yeniden gitmemek için).
  */
 export async function planTrip(from = null) {
   const route = getState('route');

@@ -2,8 +2,17 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.19.0';
+self.APP_VERSION = '0.20.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.20.0', date: '2026-10-31',
+    notes: [
+      'Tüm harita, rota, istasyon, yer arama, hava ve rakım verisi artık YALNIZCA Google Maps Platform servislerinden gelir (Maps JavaScript, Routes, Places New, Weather, Geocoding, Elevation). OSM, Overpass, OSRM, Nominatim, Photon, Open-Meteo, MET Norway, OpenChargeMap ve CARTO kaldırıldı.',
+      'Rota sekmesinin en üstündeki kutuya Google API anahtarını gir (kamerayla da okunur); anahtar yalnızca telefonda saklanır. Kaydet ve sına düğmesi hangi servisin çalıştığını veya kapalı olduğunu gösterir. Anahtar olmadan uygulama veri alamaz.',
+      'Dönüş talimatları ve sesli yönlendirme metni Google tarafından Türkçe gelir. Rota trafik farkındadır. İstasyon kW değeri Google evChargeOptions alanından okunur; fiyat Google tarafında olmadığı için operatör tablosundan gelir.',
+      'Yerleşik OSM istasyon listesi ve yedek servisler kaldırıldı; Google verisi eksikse Kendi istasyonlarım ile tamamla. Not: uzun rotada Places çağrısı sayısı kotayı ve faturayı etkiler; Google Cloud içinde bütçe uyarısı koy.',
+    ],
+  },
   {
     v: '0.19.0', date: '2026-10-31',
     notes: [

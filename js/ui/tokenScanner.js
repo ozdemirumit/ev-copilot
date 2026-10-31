@@ -13,7 +13,7 @@ const VALID = /^[A-Za-z0-9_-]{8,128}$/;
 const TARGETS = {
   token: { input: 'abrp-token', name: 'ABRP User Token' },
   apikey: { input: 'abrp-apikey', name: 'ABRP API Key' },
-  ocm: { input: 'ocm-key', name: 'OpenChargeMap API Key' },
+  gkey: { input: 'g-key', name: 'Google Haritalar anahtarı' },
 };
 
 const $ = (id) => document.getElementById(id);
@@ -111,7 +111,7 @@ export function initTokenScanner() {
   }
 
   $('btn-qr-scan').addEventListener('click', () => startScan('token'));
-  $('btn-ocm-scan').addEventListener('click', () => startScan('ocm'));
+  $('btn-gkey-scan').addEventListener('click', () => startScan('gkey'));
   $('qr-retry').addEventListener('click', () => startScan(target));
   $('qr-manual').addEventListener('click', () => {
     const input = $(TARGETS[target].input);
@@ -125,7 +125,7 @@ export function initTokenScanner() {
     if (!VALID.test(value)) return toast('Geçersiz değer: yalnızca harf, rakam ve tire');
     const el = $(TARGETS[target].input);
     el.value = value;
-    el.dispatchEvent(new Event('change')); // ilgili panel kaydeder (abrpPanel / stationsView)
+    el.dispatchEvent(new Event('change')); // ilgili panel kaydeder (abrpPanel / googleKey)
     dlg.close();
     toast(`${TARGETS[target].name} kaydedildi`);
   });

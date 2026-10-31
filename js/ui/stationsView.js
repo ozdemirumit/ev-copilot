@@ -2,7 +2,7 @@ import { getState, patch, subscribe } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { getOperators, persistOperators, resetOperators } from '../routing/operators.js';
 import { repriceAndReplan, refetchStations } from '../routing/controller.js';
-import { setStationOperator, testOcmKey } from '../routing/chargerSource.js';
+import { setStationOperator } from '../routing/chargerSource.js';
 
 const $ = (id) => document.getElementById(id);
 const MODE_TITLE = { fast: 'En hızlı', cheap: 'En ekonomik', opt: 'Optimum (süre + maliyet)' };
@@ -29,8 +29,8 @@ function renderList() {
   const none = !!p.profile && p.status !== 'loading' && !p.stations.length;
   warn.textContent = errs.length
     ? (none ? 'Hiç istasyon alınamadı. ' : 'Liste eksik olabilir. ') + errs.join(' · ')
-      + ' — Herkese açık Overpass sunucuları sık yoğun/yanıtsız kalır; biraz sonra yeniden dene veya aşağıdaki OpenChargeMap anahtarını gir (ücretsiz, daha güvenilir).'
-    : none ? 'Rota boyunca uygun (DC, ≥40 kW) istasyon bulunamadı.' : '';
+      + ' — Google anahtarını Rota sekmesinden "Kaydet ve sına" ile kontrol et; sorun geçiciyse biraz sonra yeniden dene.'
+    : none ? 'Rota boyunca uygun (DC, ≥40 kW) istasyon bulunamadı (Google verisi). Bildiğin istasyonları "Kendi istasyonlarım"dan ekleyebilirsin.' : '';
   warn.classList.toggle('hidden', !warn.textContent);
   retry.classList.toggle('hidden', !(errs.length || none));
   retry.disabled = p.status === 'loading';
@@ -60,11 +60,11 @@ function renderList() {
     );
     left.append(meta);
 
-    // Operatör yanlışsa (OSM etiketi eksik/eski) düzelt: fiyat ve kW tablodan buna göre alınır, kalıcıdır.
+    // Operatör yanlışsa (Google kaydındaki ad yanıltıcı olabilir) düzelt: fiyat ve kW tablodan buna göre alınır, kalıcıdır.
     const fix = document.createElement('select');
     fix.className = 'op-fix';
     fix.setAttribute('aria-label', 'Operatörü düzelt');
-    getOperators().forEach((o) => fix.append(new Option(o.name + (o.id === r.station.opRaw && r.station.corrected ? ' (OSM)' : ''), o.id)));
+    getOperators().forEach((o) => fix.append(new Option(o.name + (o.id === r.station.opRaw && r.station.corrected ? ' (Google)' : ''), o.id)));
     fix.value = r.station.opId;
     fix.addEventListener('change', () => {
       setStationOperator(r.station.id, fix.value === r.station.opRaw ? null : fix.value);
@@ -122,19 +122,6 @@ export function initStationsView() {
     resetOperators();
     renderOperators();
     repriceAndReplan();
-  });
-
-  const ocm = $('ocm-key');
-  ocm.value = load('ocmKey', '');
-  ocm.addEventListener('change', () => save('ocmKey', ocm.value.trim()));
-
-  $('btn-ocm-test').addEventListener('click', async () => {
-    const out = $('ocm-test-out');
-    out.textContent = 'Sınanıyor…';
-    const key = ocm.value.trim();
-    save('ocmKey', key);
-    const r = await testOcmKey(key);
-    out.textContent = (r.ok ? '✅ ' : '⚠️ ') + r.text;
   });
 
   $('station-retry').addEventListener('click', refetchStations);

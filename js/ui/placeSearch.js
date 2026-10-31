@@ -1,10 +1,8 @@
-// Yer/adres arama (geocoding), anahtarsız ve CORS açık iki OSM servisi birlikte:
-//  - Nominatim: yer adlarını her dilde (name:tr "Selanik" → Thessaloniki) eşleştirir, şehir/ülke düzeyinde güçlüdür.
-//  - Photon: yazarken tamamlama ve POI/sokak için iyidir ama Türkçe adları çözmez (lang=tr desteklemez).
-// Sonuçlar birleştirilir (önce Nominatim). Yalnızca kullanıcı yazarken (350 ms gecikmeli) çağrılır.
+// Yer/adres arama YALNIZCA Google'dan: Places API (New) Autocomplete + Place Details (oturum belirteciyle: arama
+// oturumu tek faturalanır), ters arama için Geocoding API. Yalnızca kullanıcı yazarken (350 ms gecikmeli) çağrılır.
+import { gfetch, GoogleError } from '../google/api.js';
+import { googleKey } from '../google/loader.js';
 
-const PHOTON = 'https://photon.komoot.io/api/';
-const NOMINATIM = 'https://nominatim.openstreetmap.org/';
 const COORD = /^\s*(-?\d{1,2}(?:\.\d+)?)\s*[,; ]\s*(-?\d{1,3}(?:\.\d+)?)\s*$/;
 
 /** "39.92, 32.85" biçimindeki metni konuma çevirir (yapıştırılan koordinatlar için). */
@@ -17,73 +15,54 @@ export function parseCoords(text) {
 }
 
 const join = (...parts) => parts.filter(Boolean).join(', ');
+const newToken = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
 
-async function photon(q, signal) {
-  const res = await fetch(`${PHOTON}?q=${encodeURIComponent(q)}&limit=7`, { signal });
-  if (!res.ok) throw new Error('Photon HTTP ' + res.status);
-  const json = await res.json();
-  return json.features.map((f) => {
-    const p = f.properties;
-    const street = p.street ? join(p.street + (p.housenumber ? ' ' + p.housenumber : '')) : '';
-    const label = p.name || street || p.city || p.state || '?';
-    return {
-      label,
-      sub: join(p.name && street, p.district, p.city && p.city !== label ? p.city : null, p.state !== label ? p.state : null, p.country),
-      lat: f.geometry.coordinates[1],
-      lon: f.geometry.coordinates[0],
-    };
+/** Öneriler: [{ label, sub, placeId }] (koordinat yok; seçilince resolvePlace ile alınır). */
+export async function searchPlaces(q, token) {
+  const json = await gfetch('https://places.googleapis.com/v1/places:autocomplete', {
+    method: 'POST',
+    body: { input: q, languageCode: 'tr', sessionToken: token },
   });
+  return (json.suggestions || [])
+    .filter((s) => s.placePrediction)
+    .map((s) => {
+      const p = s.placePrediction;
+      const main = p.structuredFormat?.mainText?.text || p.text?.text || '?';
+      return { label: main, sub: p.structuredFormat?.secondaryText?.text || '', placeId: p.placeId };
+    })
+    .slice(0, 8);
 }
 
-async function nominatim(q, signal) {
-  const res = await fetch(`${NOMINATIM}search?format=jsonv2&limit=6&addressdetails=1&accept-language=tr&q=${encodeURIComponent(q)}`, { signal });
-  if (!res.ok) throw new Error('Nominatim HTTP ' + res.status);
-  return (await res.json()).map((r) => {
-    const a = r.address || {};
-    const label = r.name || r.display_name.split(', ')[0];
-    const place = a.city || a.town || a.village || a.municipality || a.county;
-    return {
-      label,
-      sub: join(place !== label ? place : null, a.state && a.state !== label && a.state !== place ? a.state : null, a.country),
-      lat: Number(r.lat),
-      lon: Number(r.lon),
-    };
+/** Seçilen önerinin koordinatı (Place Details: yalnızca konum ve ad alanları). */
+export async function resolvePlace(s, token) {
+  const j = await gfetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(s.placeId)}?languageCode=tr&sessionToken=${encodeURIComponent(token)}`, {
+    mask: 'location,displayName',
   });
+  if (j.location?.latitude == null) throw new GoogleError('Yerin konumu alınamadı');
+  return { ...s, lat: j.location.latitude, lon: j.location.longitude };
 }
 
-/** Aynı yeri iki servis farklı adla döndürebilir: ~2 km içindeki ikinci sonucu at. */
-const near = (a, b) => Math.abs(a.lat - b.lat) < 0.02 && Math.abs(a.lon - b.lon) < 0.03;
-
-export async function searchPlaces(q, signal) {
-  const settled = await Promise.allSettled([nominatim(q, signal), photon(q, signal)]);
-  if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-  const merged = [];
-  settled.forEach((s) => {
-    if (s.status !== 'fulfilled') return;
-    s.value.forEach((r) => { if (!merged.some((m) => near(m, r))) merged.push(r); });
-  });
-  if (!merged.length && settled.every((s) => s.status === 'rejected')) throw settled[0].reason;
-  return merged.slice(0, 8);
-}
-
-/** Haritadan seçilen noktaya okunur ad (Nominatim reverse). Başarısızsa null. */
+/** Haritadan seçilen noktaya okunur ad (Geocoding API). Başarısızsa null. */
 export async function reverseLabel(lat, lon) {
+  const key = googleKey();
+  if (!key) return null;
   try {
-    const res = await fetch(`${NOMINATIM}reverse?format=jsonv2&zoom=16&accept-language=tr&lat=${lat}&lon=${lon}`, { signal: AbortSignal.timeout(8000) });
-    if (!res.ok) return null;
+    const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&language=tr&key=${encodeURIComponent(key)}`, { signal: AbortSignal.timeout(8000) });
     const j = await res.json();
-    const a = j.address || {};
-    return join(j.name || a.road, a.suburb || a.town || a.city || a.village, a.state) || null;
+    if (j.status !== 'OK') return null;
+    const r = j.results.find((x) => !x.types.includes('plus_code')) || j.results[0];
+    return r.formatted_address.split(', ').slice(0, 3).join(', ');
   } catch {
     return null;
   }
 }
 
-/** input'a öneri listesi bağlar. onPick({ label, lat, lon }) seçimde çağrılır. */
+/** input'a öneri listesi bağlar. onPick({ label, sub, lat, lon }) seçimde çağrılır. */
 export function attachSearch(input, list, onPick) {
   let timer = null;
-  let ctrl = null;
+  let ctrl = 0; // en son aramanın sırası: eski yanıtlar yok sayılır
   let items = [];
+  let token = newToken();
 
   const hide = () => { list.classList.add('hidden'); list.replaceChildren(); items = []; };
 
@@ -99,29 +78,43 @@ export function attachSearch(input, list, onPick) {
     list.append(li);
   }
 
+  async function pick(r) {
+    hide();
+    if (r.lat != null) return onPick(r);
+    show([], 'Konum alınıyor…');
+    try {
+      const full = await resolvePlace(r, token);
+      token = newToken(); // oturum Place Details ile kapandı
+      hide();
+      onPick(full);
+    } catch (err) {
+      show([], err.message || 'Konum alınamadı');
+    }
+  }
+
   function show(results, message) {
     list.replaceChildren();
     items = results;
     if (message) row(message);
-    results.forEach((r) => row(r.label, r.sub, () => { hide(); onPick(r); }));
+    results.forEach((r) => row(r.label, r.sub, () => pick(r)));
     list.classList.toggle('hidden', !list.children.length);
   }
 
   async function run() {
     const q = input.value.trim();
-    ctrl?.abort();
+    const mine = ++ctrl;
     if (q.length < 3) return hide();
 
     const c = parseCoords(q);
     if (c) return show([{ label: `Koordinat: ${c.lat}, ${c.lon}`, sub: '', ...c }]);
 
-    ctrl = new AbortController();
     show([], 'Aranıyor…');
     try {
-      const results = await searchPlaces(q, ctrl.signal);
+      const results = await searchPlaces(q, token);
+      if (mine !== ctrl) return;
       show(results, results.length ? '' : 'Sonuç bulunamadı');
     } catch (err) {
-      if (err.name !== 'AbortError') show([], 'Arama başarısız (internet?)');
+      if (mine === ctrl) show([], err.message || 'Arama başarısız (internet?)');
     }
   }
 
@@ -129,7 +122,7 @@ export function attachSearch(input, list, onPick) {
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (items.length) { const r = items[0]; hide(); onPick(r); } else { clearTimeout(timer); run(); }
+      if (items.length) pick(items[0]); else { clearTimeout(timer); run(); }
     } else if (e.key === 'Escape') hide();
   });
   input.addEventListener('blur', () => setTimeout(hide, 150));

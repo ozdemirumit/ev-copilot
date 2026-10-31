@@ -8,7 +8,6 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -56,6 +55,19 @@
   <section class="tab active" id="tab-route" data-title="Rota">
     <div id="map" role="application" aria-label="Rota haritası"></div>
 
+    <div class="card stack" id="g-card">
+      <h2 style="margin:0">🔑 Google Haritalar anahtarı</h2>
+      <p class="small muted" style="margin:0">Harita, rota, istasyon, yer arama, hava ve rakım verisi yalnızca Google'dan gelir. Anahtar sadece bu telefonda saklanır. Google Cloud'da anahtarı HTTP yönlendiren kısıtıyla (ozdemirumit.github.io/*) ve şu API'lerle sınırla: Maps JavaScript, Routes, Places (New), Weather, Geocoding, Elevation.</p>
+      <label class="field">API anahtarı
+        <input type="text" id="g-key" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="AIza ile başlar">
+      </label>
+      <div class="row wrap">
+        <button class="btn ghost" id="btn-gkey-scan" type="button">📷 Kamerayla oku</button>
+        <button class="btn primary" id="btn-gkey-test" type="button">✔️ Kaydet ve sına</button>
+      </div>
+      <div class="small" id="g-test-out"></div>
+    </div>
+
     <div class="card stack">
       <h2>Rota</h2>
       <div class="row">
@@ -95,12 +107,9 @@
       </div>
 
       <div class="row between">
-        <label for="map-saver">Harita karolarını yükleme (veri tasarrufu)</label>
+        <label for="map-saver">Haritayı gizle (veri tasarrufu)</label>
         <label class="switch"><input type="checkbox" id="map-saver"><i></i></label>
       </div>
-      <label class="field">CARTO harita anahtarı (isteğe bağlı)
-        <input type="password" id="carto-key" autocomplete="off" spellcheck="false" placeholder="boşsa OpenStreetMap karoları">
-      </label>
 
       <button class="btn primary" id="btn-plan" type="button">⚡ Rotayı Planla</button>
 
@@ -212,7 +221,7 @@
     </div>
 
     <div class="card">
-      <h3>🌦️ Hava durumu (Open-Meteo)</h3>
+      <h3>🌦️ Hava durumu (Google)</h3>
       <dl class="kv">
         <dt>Dış sıcaklık</dt><dd id="w-temp">—</dd>
         <dt>Yağış</dt><dd id="w-rain">—</dd>
@@ -224,7 +233,7 @@
     </div>
 
     <div class="card">
-      <h3>⛰️ Rakım (Open-Elevation)</h3>
+      <h3>⛰️ Rakım (Google Elevation)</h3>
       <dl class="kv">
         <dt>Anlık irtifa</dt><dd id="e-alt">—</dd>
         <dt>Eğim</dt><dd id="e-grade">—</dd>
@@ -328,7 +337,7 @@
       <p class="small muted" id="near-status" style="margin:0"></p>
       <p class="small hidden" id="near-warn" style="margin:0;color:var(--warn,#f5b942)"></p>
       <div id="near-list"></div>
-      <p class="small muted" style="margin:0">Fiyat ve kW operatör tablosundan alınan tahmindir (gerçek tarife değil); * işaretli kW OSM'de yazmıyor. Pil ve süre tahmini kuş uçuşu mesafenin ×1,35'i yol varsayımıyla hesaplanır.</p>
+      <p class="small muted" style="margin:0">Fiyat ve kW operatör tablosundan alınan tahmindir (gerçek tarife değil); * işaretli kW Google'da yazmıyor. Pil ve süre tahmini kuş uçuşu mesafenin ×1,35'i yol varsayımıyla hesaplanır.</p>
     </div>
 
     <div class="chips" role="group" aria-label="Sıralama">
@@ -370,16 +379,8 @@
       </table>
       <div class="row" style="margin-top:10px">
         <button class="btn ghost" id="op-reset" type="button">Varsayılana dön</button>
-        <span class="small muted">Fiyatlar yer tutucudur — güncel tarifeyle düzenle. kW: haritadaki etikette güç yazmıyorsa bu tablo kullanılır.</span>
+        <span class="small muted">Fiyatlar yer tutucudur — güncel tarifeyle düzenle. kW: Google istasyon kaydında güç yazmıyorsa bu tablo kullanılır.</span>
       </div>
-      <label class="field" style="margin-top:10px">OpenChargeMap API anahtarı (opsiyonel, ek istasyon verisi)
-        <input type="password" id="ocm-key" autocomplete="off" spellcheck="false" placeholder="Boşsa yalnızca OpenStreetMap/Overpass">
-      </label>
-      <div class="row wrap" style="margin-top:8px">
-        <button class="btn ghost" id="btn-ocm-scan" type="button">📷 Anahtarı kamerayla oku</button>
-        <button class="btn ghost" id="btn-ocm-test" type="button">✔️ Anahtarı sına</button>
-      </div>
-      <p class="small muted" id="ocm-test-out" style="margin:6px 0 0"></p>
     </div>
   </section>
 
@@ -545,7 +546,6 @@
 
 <div id="toast" role="status" aria-live="polite"></div>
 
-<script src="vendor/leaflet/leaflet.js"></script>
 <script src="version.js"></script>
 <script type="module" src="js/app.js"></script>
 </body>

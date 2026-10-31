@@ -10,7 +10,7 @@ const SHELL = [
   './js/ui/gpsControl.js', './js/ui/statusBadges.js', './js/ui/routePanel.js', './js/ui/vehiclePanel.js', './js/ui/customStations.js', './js/ui/collapse.js', './js/nav/steps.js', './js/nav/track.js', './js/nav/navigator.js', './js/nav/nearby.js', './js/ui/placeSearch.js', './js/ui/tokenScanner.js', './js/ui/installPrompt.js', './js/ui/dataUsage.js', './js/ui/versionInfo.js', './js/net/meter.js', './version.js', './icons/icon-192.png', './icons/icon-512.png',
   './js/physics/model.js', './js/physics/traffic.js', './js/physics/weather.js', './js/physics/elevation.js',
   './js/physics/routeProfile.js', './js/physics/consumption.js', './js/physics/rangeEngine.js',
-  './js/routing/operators.js', './js/routing/osrm.js', './js/routing/chargeCurve.js', './js/routing/chargerSource.js',
+  './js/routing/operators.js', './js/routing/googleRoute.js', './js/google/loader.js', './js/google/api.js', './js/ui/googleKey.js', './js/routing/chargeCurve.js', './js/routing/chargerSource.js',
   './js/routing/planner.js', './js/routing/controller.js',
   './js/advisor/voice.js', './js/advisor/ecoSpeed.js', './js/advisor/fallback.js',
   './js/abrp/telemetry.js', './js/sim/simulator.js',
@@ -20,8 +20,8 @@ const SHELL = [
 
 // Kütüphaneler (vendor/): uygulama sürümünden BAĞIMSIZ önbellek ve önce-önbellek stratejisi. Uygulama sürümü artınca
 // yeniden indirilmez (Tesseract ~4 MB). Kütüphane dosyaları değişirse bu adı artır.
-const VENDOR_CACHE = 'ev-copilot-vendor-v1';
-const VENDOR_PRECACHE = ['./vendor/leaflet/leaflet.js', './vendor/leaflet/leaflet.css']; // Tesseract ilk kullanımda önbelleğe girer
+const VENDOR_CACHE = 'ev-copilot-vendor-v2';
+const VENDOR_PRECACHE = []; // Tesseract ilk kullanımda önbelleğe girer
 const VENDOR_PATH = new URL('./vendor/', self.registration.scope).pathname;
 
 self.addEventListener('install', (e) => {
@@ -45,7 +45,7 @@ self.addEventListener('fetch', (e) => {
   const { request } = e;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
-  // API çağrıları (OSRM, Open-Meteo, ABRP...) ve harita karoları hiç önbelleğe alınmaz.
+  // API çağrıları (Google, ABRP...) ve harita karoları hiç önbelleğe alınmaz.
   if (url.origin !== location.origin) return;
   if (url.pathname.startsWith(VENDOR_PATH)) {
     e.respondWith(

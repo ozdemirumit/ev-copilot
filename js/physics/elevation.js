@@ -1,45 +1,34 @@
-const CHUNK = 100;
+// Rakım YALNIZCA Google Elevation'dan. Elevation web servisi tarayıcıdan (CORS) çağrılamaz; Maps JavaScript API'nin
+// ElevationService'i aynı veriyi sunar, bu yüzden o kullanılır.
+import { loadGoogle } from '../google/loader.js';
 
-async function openElevation(points) {
-  const out = [];
-  for (let i = 0; i < points.length; i += CHUNK) {
-    const locations = points.slice(i, i + CHUNK).map((p) => ({ latitude: +p.lat.toFixed(5), longitude: +p.lon.toFixed(5) }));
-    const res = await fetch('https://api.open-elevation.com/api/v1/lookup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ locations }),
-      signal: AbortSignal.timeout(9000),
-    });
-    if (!res.ok) throw new Error('Open-Elevation HTTP ' + res.status);
-    out.push(...(await res.json()).results.map((r) => r.elevation));
-  }
-  return out;
-}
+const CHUNK = 256;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// Yedek: genel Open-Elevation sunucusu yavaş/kararsız olabildiği için.
-async function openMeteoElevation(points) {
-  const out = [];
-  for (let i = 0; i < points.length; i += CHUNK) {
-    const part = points.slice(i, i + CHUNK);
-    const url = 'https://api.open-meteo.com/v1/elevation'
-      + `?latitude=${part.map((p) => p.lat.toFixed(4)).join(',')}`
-      + `&longitude=${part.map((p) => p.lon.toFixed(4)).join(',')}`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(9000) });
-    if (!res.ok) throw new Error('Open-Meteo elevation HTTP ' + res.status);
-    out.push(...(await res.json()).elevation);
-  }
-  return out;
-}
-
-/** Nokta başına rakım (m). İki servis de başarısız olursa null döner (rota düz kabul edilir). */
+/** Nokta başına rakım (m). Servis başarısız olursa null döner (rota düz kabul edilir). */
 export async function fetchElevations(points) {
-  for (const fn of [openElevation, openMeteoElevation]) {
-    try {
-      const e = await fn(points);
-      if (e.length === points.length && e.every(Number.isFinite)) return { elevations: e, source: fn === openElevation ? 'Open-Elevation' : 'Open-Meteo' };
-    } catch (err) {
-      console.warn('Rakım servisi başarısız:', err.message);
+  try {
+    await loadGoogle();
+    const { ElevationService } = await google.maps.importLibrary('elevation');
+    const svc = new ElevationService();
+    const out = [];
+    for (let i = 0; i < points.length; i += CHUNK) {
+      const locations = points.slice(i, i + CHUNK).map((p) => ({ lat: p.lat, lng: p.lon }));
+      let res;
+      for (let attempt = 0; ; attempt++) {
+        try {
+          res = await svc.getElevationForLocations({ locations });
+          break;
+        } catch (err) {
+          if (attempt >= 3 || !/OVER_QUERY_LIMIT|UNKNOWN_ERROR/.test(String(err.code || err.message))) throw err;
+          await sleep(1200 * (attempt + 1)); // hız sınırı: bekleyip tekrar
+        }
+      }
+      out.push(...res.results.map((r) => r.elevation));
     }
+    if (out.length === points.length && out.every(Number.isFinite)) return { elevations: out, source: 'Google Elevation' };
+  } catch (err) {
+    console.warn('Rakım servisi başarısız:', err.message || err);
   }
   return null;
 }

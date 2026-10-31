@@ -62,7 +62,7 @@ export async function refreshNearby({ force = false, silent = false } = {}) {
   busy = true;
   paintStatus('Yakındaki istasyonlar aranıyor…');
   try {
-    const res = await fetchAround(e.lat, e.lon, radius, load('ocmKey', ''), force);
+    const res = await fetchAround(e.lat, e.lon, radius, force);
     all = res.stations;
     meta = { at: Date.now(), lat: e.lat, lon: e.lon, errors: res.errors, cached: res.cached };
   } catch (err) {

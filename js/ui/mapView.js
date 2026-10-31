@@ -2,56 +2,90 @@ import { getState, patch, subscribe, effective } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { toast } from './toast.js';
 import { attachSearch, reverseLabel } from './placeSearch.js';
+import { loadGoogle, googleKey } from '../google/loader.js';
 
-/** Harita çizim API'si; initMap() çağrılınca dolar (routing/controller.js kullanır). */
+/** Harita çizim API'si; initMap() çağrılınca dolar (routing/controller.js, nav/* kullanır). Harita henüz yüklenmediyse çizimler sıraya alınır. */
 export const mapApi = { drawRoute() {}, drawStations() {}, drawNearby() {}, setPoint() {}, follow() {} };
 
+let boot = async () => {};
+/** Google anahtarı girilince/değişince haritayı (yeniden) başlat. */
+export const bootMap = () => boot();
+
 const fmt = (p) => (p ? `${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}` : '');
+const toLL = (p) => ({ lat: p.lat, lng: p.lon });
 
-function pinIcon(kind, label) {
-  return L.divIcon({
-    className: '',
-    html: `<div class="pin ${kind}"><b>${label}</b></div>`,
-    iconSize: [26, 26],
-    iconAnchor: [13, 26],
-  });
+function el(tag, cls, text) {
+  const d = document.createElement(tag);
+  d.className = cls;
+  if (text != null) d.textContent = text;
+  return d;
 }
+const pinEl = (kind, label) => { const d = el('div', 'pin ' + kind); d.append(el('b', '', label)); return d; };
 
+/**
+ * Harita: Google Maps JavaScript API (koyu şema). Harita nesnesi anahtar girilene dek oluşmaz; bu sırada yapılan
+ * işaretleme/çizim çağrıları sıraya alınır ve harita hazır olunca uygulanır. Rota/arama/istasyon mantığı haritadan bağımsızdır.
+ */
 export function initMap() {
-  const map = L.map('map', { zoomControl: true }).setView([39.0, 35.0], 6); // Türkiye
-  // Varsayılan: OpenStreetMap karoları, koyu görünüm CSS filtresiyle (.dark-tiles). Kullanıcı CARTO anahtarı girerse
-  // yerel koyu CARTO karoları kullanılır. Anahtar kod/depoda tutulmaz; yalnızca bu cihazın LocalStorage'ında durur.
-  const osmTiles = () => L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    className: 'dark-tiles',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-  });
-  const cartoTiles = (key) => L.tileLayer(`https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png?key=${encodeURIComponent(key)}`, {
-    maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-  });
-  const keyInput = document.getElementById('carto-key');
-  keyInput.value = load('cartoKey', '');
-  let tiles = keyInput.value ? cartoTiles(keyInput.value) : osmTiles();
+  const mapEl = document.getElementById('map');
+  let gmap = null;
+  let lib = null; // { Polyline, LatLngBounds, AdvancedMarkerElement, event }
+  let booting = null;
+  const queue = [];
+  const readyHooks = []; // harita hazır olunca bir kez çalışacak güncellemeler (sıraya alınması gereksiz olanlar)
+  const whenMap = (fn) => (gmap ? fn() : queue.push(fn));
+  const note = (t) => { mapEl.dataset.msg = t || ''; mapEl.classList.toggle('nomap', !!t); };
 
-  // Veri tasarrufu: harita karoları kapalıyken rota çizgisi, istasyonlar ve araç koyu zeminde görünür (karo başı ≈ 15–20 KB).
-  // Tarayıcının "Veri Tasarrufu" modu açıksa varsayılan kapalıdır.
+  // Veri tasarrufu: harita kapalıyken Google harita karoları hiç istenmez (rota, istasyon ve konum sayısal olarak çalışır).
   const saver = document.getElementById('map-saver');
   saver.checked = load('noTiles', navigator.connection?.saveData === true);
-  const applyTiles = () => (saver.checked ? map.removeLayer(tiles) : tiles.addTo(map));
-  saver.addEventListener('change', () => { save('noTiles', saver.checked); applyTiles(); });
-  keyInput.addEventListener('change', () => {
-    const key = keyInput.value.trim();
-    save('cartoKey', key);
-    map.removeLayer(tiles);
-    tiles = key ? cartoTiles(key) : osmTiles();
-    applyTiles();
+  mapEl.classList.toggle('hidden', saver.checked);
+
+  boot = async () => {
+    if (gmap || saver.checked) return;
+    if (!googleKey()) return note('Haritayı görmek için yukarıdaki kutuya Google anahtarını gir');
+    booting ??= (async () => {
+      try {
+        await loadGoogle();
+        const [maps, markerLib, core] = await Promise.all([
+          google.maps.importLibrary('maps'), google.maps.importLibrary('marker'), google.maps.importLibrary('core'),
+        ]);
+        note('');
+        gmap = new maps.Map(mapEl, {
+          center: { lat: 39.0, lng: 35.0 }, zoom: 6, mapId: 'DEMO_MAP_ID', colorScheme: 'DARK', clickableIcons: false,
+          gestureHandling: 'greedy', streetViewControl: false, mapTypeControl: false, fullscreenControl: false,
+        });
+        lib = { Polyline: maps.Polyline, LatLngBounds: core.LatLngBounds, AdvancedMarkerElement: markerLib.AdvancedMarkerElement, event: core.event };
+        gmap.addListener('click', onMapClick);
+        gmap.addListener('dragstart', () => { lastDrag = Date.now(); });
+        queue.splice(0).forEach((fn) => fn());
+        readyHooks.forEach((fn) => fn());
+      } catch (err) {
+        booting = null;
+        note(err.message);
+      }
+    })();
+    return booting;
+  };
+
+  saver.addEventListener('change', () => {
+    save('noTiles', saver.checked);
+    mapEl.classList.toggle('hidden', saver.checked);
+    if (!saver.checked) boot().then(() => gmap && lib.event.trigger(gmap, 'resize'));
   });
-  applyTiles();
+
+  const marker = (position, content, title = '') => new lib.AdvancedMarkerElement({ map: gmap, position, content, title });
+  const unmark = (m) => { if (m) m.map = null; };
+  const fit = (points, pad) => {
+    const b = new lib.LatLngBounds();
+    points.forEach((p) => b.extend(toLL(p)));
+    gmap.fitBounds(b, pad);
+  };
 
   const markers = { start: null, end: null };
   let pickMode = null; // 'start' | 'end' | null
   let me = null; // canlı konum işareti
+  let lastDrag = 0;
 
   mapApi.setPoint = (...a) => setPoint(...a);
 
@@ -62,22 +96,22 @@ export function initMap() {
   function setPickMode(mode) {
     pickMode = mode;
     Object.entries(pickBtns).forEach(([k, b]) => b.classList.toggle('sel', k === mode));
-    document.getElementById('map').style.cursor = mode ? 'crosshair' : '';
+    gmap?.setOptions({ draggableCursor: mode ? 'crosshair' : null });
     if (mode) toast(mode === 'start' ? 'Başlangıç için haritaya dokun' : 'Varış için haritaya dokun');
   }
 
   const inputFor = (kind) => (kind === 'start' ? startInput : endInput);
 
-  function setPoint(kind, point, { zoom = false, fit = true } = {}) {
+  function setPoint(kind, point, { zoom = false, fit: doFit = true } = {}) {
     patch('route', { [kind]: point });
-    if (markers[kind]) { markers[kind].remove(); markers[kind] = null; }
     inputFor(kind).value = point ? point.label || fmt(point) : '';
-    if (point) {
-      markers[kind] = L.marker([point.lat, point.lon], { icon: pinIcon(kind, kind === 'start' ? 'A' : 'B') }).addTo(map);
-    }
-    const { start, end } = getState('route');
-    if (start && end && fit) map.fitBounds(L.latLngBounds([start.lat, start.lon], [end.lat, end.lon]), { padding: [40, 40] });
-    else if (point && zoom && fit) map.setView([point.lat, point.lon], 12);
+    whenMap(() => {
+      unmark(markers[kind]);
+      markers[kind] = point ? marker(toLL(point), pinEl(kind, kind === 'start' ? 'A' : 'B'), point.label || '') : null;
+      const { start, end } = getState('route');
+      if (start && end && doFit) fit([start, end], 40);
+      else if (point && zoom && doFit) { gmap.setCenter(toLL(point)); gmap.setZoom(12); }
+    });
   }
 
   // Yer/adres arama: yazarken öneri, seçince işaret koy ve oraya git
@@ -88,16 +122,16 @@ export function initMap() {
     });
   });
 
-  map.on('click', (e) => {
+  function onMapClick(e) {
     if (!pickMode) return;
     const kind = pickMode;
-    const pt = { lat: e.latlng.lat, lon: e.latlng.lng };
+    const pt = { lat: e.latLng.lat(), lon: e.latLng.lng() };
     setPoint(kind, pt);
     reverseLabel(pt.lat, pt.lon).then((label) => { // okunur ad gelince kutuyu güncelle
       if (label && getState('route')[kind] === pt) { pt.label = label; inputFor(kind).value = label; }
     });
     setPickMode(kind === 'start' ? 'end' : null); // başlangıçtan sonra otomatik varışa geç
-  });
+  }
 
   pickBtns.start.addEventListener('click', () => setPickMode(pickMode === 'start' ? null : 'start'));
   pickBtns.end.addEventListener('click', () => setPickMode(pickMode === 'end' ? null : 'end'));
@@ -120,47 +154,47 @@ export function initMap() {
     );
   });
 
-  // Rota çizgisi ve istasyon işaretleri (routing/controller.js çağırır)
+  // Rota çizgisi ve istasyon işaretleri
   let routeLine = null;
-  const stationLayer = L.layerGroup().addTo(map);
-  mapApi.drawRoute = (coords, { fit = true } = {}) => {
-    routeLine?.remove();
-    routeLine = L.polyline(coords.map((c) => [c[1], c[0]]), { color: '#2ee6a6', weight: 5, opacity: 0.85 }).addTo(map);
-    if (fit) map.fitBounds(routeLine.getBounds(), { padding: [30, 30] });
-  };
+  let stationMarks = [];
+  let nearMarks = [];
+  mapApi.drawRoute = (coords, { fit: doFit = true } = {}) => whenMap(() => {
+    routeLine?.setMap(null);
+    const path = coords.map((c) => ({ lat: c[1], lng: c[0] }));
+    routeLine = new lib.Polyline({ path, strokeColor: '#2ee6a6', strokeOpacity: 0.85, strokeWeight: 5, map: gmap });
+    if (doFit) fit(coords.filter((_, i) => i % 20 === 0 || i === coords.length - 1).map((c) => ({ lat: c[1], lon: c[0] })), 30);
+  });
 
   // Navigasyonda harita aracı izler; kullanıcı haritayı elle kaydırırsa 15 sn izleme durur.
-  let lastDrag = 0;
-  map.on('dragstart', () => { lastDrag = Date.now(); });
   mapApi.follow = (lat, lon, zoom = null, force = false) => {
-    if (!force && Date.now() - lastDrag < 15000) return;
-    map.setView([lat, lon], zoom ?? map.getZoom(), { animate: false });
+    if (!gmap || (!force && Date.now() - lastDrag < 15000)) return;
+    gmap.setCenter({ lat, lng: lon });
+    if (zoom != null) gmap.setZoom(zoom);
+  };
+
+  const dotEl = (color, size, ring = '#0b0f14') => {
+    const d = el('div', 'dot');
+    Object.assign(d.style, { width: size + 'px', height: size + 'px', background: color, borderColor: ring });
+    return d;
   };
 
   // "Yakınımdaki istasyonlar" listesindekiler (seçili olan vurgulanır)
-  const nearLayer = L.layerGroup().addTo(map);
-  mapApi.drawNearby = (list, focusId = null) => {
-    nearLayer.clearLayers();
-    list.forEach((s) => {
-      const tip = document.createElement('span');
-      tip.textContent = `${s.name} · ${s.kw} kW · ${s.price.toFixed(2)} TL/kWh`;
+  mapApi.drawNearby = (list, focusId = null) => whenMap(() => {
+    nearMarks.forEach(unmark);
+    nearMarks = list.map((s) => {
       const on = s.id === focusId;
-      L.circleMarker([s.lat, s.lon], { radius: on ? 9 : 6, color: on ? '#fff' : '#b48cff', fillColor: '#b48cff', fillOpacity: 0.85, weight: on ? 3 : 1 })
-        .bindTooltip(tip).addTo(nearLayer);
+      return marker(toLL(s), dotEl('#b48cff', on ? 18 : 12, on ? '#fff' : '#0b0f14'), `${s.name} · ${s.kw} kW · ${s.price.toFixed(2)} TL/kWh`);
     });
-  };
-  mapApi.drawStations = (stations, stops) => {
-    stationLayer.clearLayers();
+  });
+
+  mapApi.drawStations = (stations, stops) => whenMap(() => {
+    stationMarks.forEach(unmark);
     const inPlan = new Set(stops.map((s) => s.station.id));
-    stations.forEach((s) => {
+    stationMarks = stations.map((s) => {
       const planned = inPlan.has(s.id);
-      const tip = document.createElement('span'); // OSM adları HTML olarak yorumlanmasın
-      tip.textContent = `${s.name} · ${s.kw} kW`;
-      L.circleMarker([s.lat, s.lon], {
-        radius: planned ? 9 : 5, color: planned ? '#ffb547' : '#5aa9ff', fillColor: planned ? '#ffb547' : '#5aa9ff', fillOpacity: 0.85,
-      }).bindTooltip(tip).addTo(stationLayer);
+      return marker(toLL(s), dotEl(planned ? '#ffb547' : '#5aa9ff', planned ? 18 : 11), `${s.name} · ${s.kw} kW`);
     });
-  };
+  });
 
   // Minimum varış pili eşiği
   const slider = document.getElementById('min-arrival');
@@ -174,18 +208,21 @@ export function initMap() {
   });
 
   // Araç konumu: GPS, Test Modu'nda simülatör konumu
-  subscribe(['live', 'sim'], () => {
+  function updateMe() {
     const e = effective();
-    if (e.lat == null || e.lon == null) return;
+    if (!gmap || e.lat == null || e.lon == null) return;
     const color = e.source === 'sim' ? '#5aa9ff' : '#2ee6a6';
-    if (!me) me = L.circleMarker([e.lat, e.lon], { radius: 7, weight: 3, fillOpacity: 0.9 }).addTo(map);
-    me.setLatLng([e.lat, e.lon]).setStyle({ color, fillColor: color });
-  });
+    if (!me) me = marker({ lat: e.lat, lng: e.lon }, dotEl(color, 16, '#fff'), 'Konumum');
+    me.position = { lat: e.lat, lng: e.lon };
+    me.content.style.background = color;
+  }
+  subscribe(['live', 'sim'], updateMe);
+  readyHooks.push(updateMe);
 
   // Gizli sekmede boyut 0 olur; görününce yeniden hesapla.
   document.addEventListener('tabchange', (e) => {
-    if (e.detail === 'route') setTimeout(() => map.invalidateSize(), 50);
+    if (e.detail === 'route' && gmap) setTimeout(() => lib.event.trigger(gmap, 'resize'), 50);
   });
 
-  return map;
+  boot();
 }

@@ -5,7 +5,7 @@ import { speedFactor, stopGoOverhead } from './traffic.js';
 export const STEP_KM = 2;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
-/** OSRM geometrisini (GeoJSON [lon,lat]) her ~2 km'de bir noktaya indirger. */
+/** Rota geometrisini (GeoJSON [lon,lat]) her ~2 km'de bir noktaya indirger. */
 export function resampleRoute(coords, stepKm = STEP_KM) {
   const pts = [{ km: 0, lat: coords[0][1], lon: coords[0][0] }];
   let cum = 0;

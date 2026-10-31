@@ -128,12 +128,10 @@ input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; }
 
 /* ---------- Map / route ---------- */
 #map { height: clamp(260px, 44dvh, 480px); border-radius: var(--radius); border: 1px solid var(--line); background: var(--bg-2); z-index: 0; }
-.leaflet-container { font: inherit; }
-.dark-tiles { filter: invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.7); }
-.leaflet-control-attribution { background: rgba(11, 15, 20, .7) !important; color: var(--muted) !important; }
-.leaflet-control-attribution a { color: var(--info) !important; }
-.pin { width: 26px; height: 26px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: grid; place-items: center; border: 2px solid #fff; box-shadow: 0 2px 6px #0008; }
-.pin b { transform: rotate(45deg); font-size: 12px; color: #fff; }
+#map.nomap::before { content: attr(data-msg); display: grid; place-items: center; height: 100%; padding: 16px; text-align: center; color: var(--muted); font-size: 13px; }
+.dot { border-radius: 50%; border: 2px solid #0b0f14; box-sizing: content-box; transform: translateY(50%); }
+.pin { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; border: 2px solid #fff; box-shadow: 0 2px 6px #0008; }
+.pin b { font-size: 12px; color: #fff; }
 .pin.start { background: var(--accent-dim); }
 .pin.end { background: var(--bad); }
 .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }

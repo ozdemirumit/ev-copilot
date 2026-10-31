@@ -1,5 +1,5 @@
 // Navigasyon için tam çözünürlüklü rota izi. Menzil motorunun profili ~2 km'lik kirişlerden oluşur; dönüşe kalan
-// mesafe metre hassasiyeti ister, bu yüzden araç OSRM'in gerçek geometrisine izdüşürülür (km ekseni profille aynıdır:
+// mesafe metre hassasiyeti ister, bu yüzden araç Google rotasının gerçek geometrisine izdüşürülür (km ekseni profille aynıdır:
 // ikisi de aynı koordinatların yay uzunluğudur).
 import { haversineKm } from '../utils/geo.js';
 

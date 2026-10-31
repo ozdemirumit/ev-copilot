@@ -1,7 +1,7 @@
 # Smart EV Co-Pilot & ABRP Bridge (Togg T10X V2 LR)
 
 Telefonda (Chrome PWA) çalışan; GPS + kamera OCR + fizik tabanlı menzil motoru, çok duraklı şarj planlayıcı, dinamik uyarılar ve ABRP canlı telemetri köprüsü.
-Build adımı yok: saf ES modülleri + CDN kütüphaneleri (Leaflet, Tesseract.js).
+Build adımı yok: saf ES modülleri + Tesseract.js (OCR). Harita, rota, istasyon, arama, hava ve rakım verisi YALNIZCA Google Maps Platform API'lerinden gelir (üçüncü taraf servis yok).
 
 ## Mimari
 
@@ -9,7 +9,7 @@ Build adımı yok: saf ES modülleri + CDN kütüphaneleri (Leaflet, Tesseract.j
 MBRP/
 ├─ index.html                 Ana kabuk (6 sekme: Rota · Menzil · Kamera · İstasyon · ABRP · Test)
 ├─ version.js                 Sürüm numarası + sürüm notları (tek kaynak)
-├─ vendor/                    Leaflet + Tesseract (çekirdek, işçi, dil verisi); sürümden bağımsız SW önbelleği
+├─ vendor/                    Tesseract (çekirdek, işçi, dil verisi); sürümden bağımsız SW önbelleği
 ├─ manifest.webmanifest, sw.js, icons/
 ├─ css/styles.css             Dark UI
 └─ js/
@@ -28,13 +28,13 @@ MBRP/
    │  ├─ model.js             Batarya gücü: aero + yuvarlanma + eğim + rejenerasyon + HVAC
    │  ├─ consumption.js       SoC "kenar" örneklerinden ölçülen kWh/100km, km/%1, k düzeltme çarpanı
    │  ├─ routeProfile.js      Rota → 2 km dilimler (eğim, kafa rüzgarı, sıcaklık, yağış), enerji/süre sorguları
-   │  ├─ elevation.js         Open-Elevation (yedek: Open-Meteo elevation)
-   │  ├─ weather.js           Open-Meteo saatlik tahmin (varış saatine göre)
+   │  ├─ elevation.js         Google Elevation (Maps JavaScript API ElevationService; web servisi CORS vermez)
+   │  ├─ weather.js           Google Weather API saatlik tahmin (varış saatine göre)
    │  ├─ traffic.js           Yoğunluk → hız çarpanı; ekstra HVAC kWh vs düşük hız tasarrufu
    │  └─ rangeEngine.js       1 sn döngü: mesafe/enerji entegrasyonu, k, menzil, rüzgar/trafik etkisi
    ├─ routing/
-   │  ├─ osrm.js              OSRM rota
-   │  ├─ chargerSource.js     Overpass (parçalı sorgu, 7 gün önbellek) + opsiyonel OpenChargeMap
+   │  ├─ googleRoute.js       Google Routes API (trafik farkında rota + Türkçe dönüş talimatları)
+   │  ├─ chargerSource.js     Google Places API (New) Nearby Search: rota boyunca daireler (dolu daire bölünür), 6 saat önbellek
    │  ├─ operators.js         Düzenlenebilir TL/kWh + kW tablosu, operatör sınıflama
    │  ├─ chargeCurve.js       Togg şarj eğrisi (maks 180 kW), şarj süresi integrali
    │  ├─ planner.js           DP ile çok duraklı plan: En Hızlı / En Ekonomik / Optimum
@@ -47,8 +47,8 @@ MBRP/
    ├─ abrp/telemetry.js       5 sn'de bir api.iternio.com/1/tlm/send + opsiyonel webhook
    ├─ sim/simulator.js        Test Modu "oynat": rota boyunca ilerler, pili fizikle düşürür
    └─ ui/                     tabs, mapView, roiBox, cameraPanel, routePanel, stationsView, abrpPanel, testPanel, cards, statusBadges, gpsControl, toast
-      ├─ placeSearch.js       Yer/adres arama (Nominatim + Photon birlikte; Türkçe yer adları Nominatim'den) + haritadan seçince ad (reverse)
-      └─ tokenScanner.js      ABRP token/API Key ve OpenChargeMap anahtarını kamerayla ekrandaki METİNDEN okur (OCR); boş alana dokununca açılır
+      ├─ placeSearch.js       Yer/adres arama (Places Autocomplete + Place Details oturum belirteciyle) + haritadan seçince ad (Geocoding)
+      └─ tokenScanner.js      ABRP token/API Key ve Google anahtarını kamerayla ekrandaki METİNDEN okur (OCR); boş alana dokununca açılır
 ```
 
 ### Veri akışı
@@ -94,7 +94,7 @@ Sayaç **uygulama düzeyinde tahmindir** (operatör faturasından %5–15 farkl�
 
 - **ABRP aralığı** ABRP sekmesinde ayarlanır (5–60 sn, varsayılan 10 sn ≈ 0,4 MB/saat; 5 sn ≈ 0,8 MB/saat). Araç duruyorken (hız < 1 km/h) en az 30 sn'de bir gönderilir.
 - **Harita karolarını yükleme** anahtarı (Rota sekmesi): kapalıyken rota çizgisi, istasyonlar ve araç koyu zeminde görünür, karo indirilmez (karo ≈ 15–20 KB). Tarayıcının Veri Tasarrufu modu açıksa varsayılan kapalıdır.
-- **Kütüphaneler uygulamayla birlikte** (`vendor/`, bkz. [vendor/README.md](vendor/README.md)): Leaflet ve Tesseract (çekirdek + dil verisi, ~11 MB depoda, istemciye gzip'li). Service worker bunları **sürümden bağımsız** `ev-copilot-vendor-v1` önbelleğine alır (Tesseract ilk OCR kullanımında, Leaflet kurulumda); uygulama sürümü artınca yeniden indirilmez ve CDN'e gidilmez. Kütüphane dosyaları değişirse `sw.js` içindeki `VENDOR_CACHE` adını artır.
+- **Kütüphaneler uygulamayla birlikte** (`vendor/`, bkz. [vendor/README.md](vendor/README.md)): Tesseract (çekirdek + dil verisi). Service worker bunları **sürümden bağımsız** `ev-copilot-vendor-v2` önbelleğine alır (ilk OCR kullanımında); uygulama sürümü artınca yeniden indirilmez. Kütüphane dosyaları değişirse `sw.js` içindeki `VENDOR_CACHE` adını artır.
 
 ## Çalıştırma
 
@@ -113,7 +113,7 @@ Bilgisayarda `http://localhost:8080`. Telefonda HTTPS gerekir (GitHub Pages, Clo
 | 1 | Mimari + Dark UI | ✅ |
 | 2 | GPS, kamera OCR, outlier filtresi, Wake Lock | ✅ |
 | 3 | Fizik / rakım / hava / trafik menzil motoru | ✅ |
-| 4 | OSRM rota + istasyonlar + şarj planlayıcı | ✅ |
+| 4 | Google rota + istasyonlar + şarj planlayıcı | ✅ |
 | 5 | Fallback + Eco-Speed + sesli uyarı | ✅ |
 | 6 | ABRP telemetri köprüsü | ✅ (gerçek token ile denenmedi) |
 | 7 | Simülatör + ekran hızı ROI'si | ✅ |
@@ -124,19 +124,18 @@ Tarayıcıda gerçek servislerle denendi: rota/rakım/hava planı, istasyon önb
 ## Bilinen sınırlar
 
 - **Canlı trafik yok:** anahtarsız ücretsiz bir trafik kaynağı yok. Trafik, Rota sekmesindeki yoğunluk tahmini (ve Test Modu sürgüsü) ile modellenir. Google Routes API gibi bir kaynak sonradan `traffic.js`'e bağlanabilir.
-- **Overpass** herkese açık ve sık yavaşlıyor/hız sınırlıyor (429/502). Parçalı sorgu + 3 ayna + 7 günlük önbellek var; yine de başarısız olabilir, o zaman "OpenChargeMap anahtarı" alanı ek kaynaktır. OSM'de güç/soket etiketi yoksa istasyon kW'ı operatör tablosundan gelir (listede `*`).
-- **Yerleşik istasyon listesi**: `data/stations.json` (OSM'den, Türkiye + Yunanistan + Balkanlar, 30.10.2026) Overpass yanıtsız/eksik kaldığında devreye girer; yenilemek için `tools/build-stations.js` tarayıcı konsolunda çalıştırılır. Hava için Open-Meteo yanıt vermezse MET Norway (anahtarsız) yedeği kullanılır.
-- **Kendi istasyonlarım**: OSM'de eksik istasyonlar (ör. Doğu Anadolu: İstanbul–Van arasında 626–1514. km'de OSM'de hiç istasyon yok) İstasyon sekmesinden elle eklenir (`customStations`, yalnızca cihazda). Plan, zincirin koptuğu yeri ve gidilebilir mesafeyi yazar.
+- **Google anahtarı**: Rota sekmesindeki kutuya yazılır (veya kamerayla okunur) ve yalnızca cihazın LocalStorage'ında durur; GitHub Pages sitesi herkese açık olduğundan anahtar koda/depoya KONMAZ. Anahtarı Google Cloud'da **HTTP yönlendiren** (`ozdemirumit.github.io/*`) ve API kısıtıyla (Maps JavaScript, Routes, Places (New), Weather, Geocoding, Elevation) sınırla; bütçe uyarısı/kota koy. "Kaydet ve sına" hangi API'nin kapalı olduğunu söyler. Fiyat: Google'da EV şarj fiyatı yok, operatör tablosundan gelir; kW Google'da yoksa tablodan (listede `*`).
+- **Maliyet/kota**: Nearby Search'te `evChargeOptions` alanı üst SKU'dur. Uzun rota ≈ rota_km/45 + dolu dairelerin bölünmesi kadar çağrı (en çok 120); sonuç 6 saat önbelleğe alınır (Google içeriğini uzun saklamak hizmet şartlarınca kısıtlı).
+- **Kendi istasyonlarım**: Google'da eksik istasyonlar İstasyon sekmesinden elle eklenir (`customStations`, yalnızca cihazda). Plan, zincirin koptuğu yeri ve gidilebilir mesafeyi yazar.
 - **Açılır kartlar**: her kartın başlığındaki + / − düğmesiyle açılıp kapanır, seçim cihazda saklanır ([js/ui/collapse.js](js/ui/collapse.js)). Kartta `data-collapsed="1"` varsa ilk açılışta kapalı gelir.
-- **Navigasyon** ([js/nav/navigator.js](js/nav/navigator.js), [steps.js](js/nav/steps.js), [track.js](js/nav/track.js)): OSRM `steps=true` talimatları Türkçeye çevrilir; araç, OSRM'in tam geometrisine izdüşürülür (menzil profilinin 2 km'lik kirişleri dönüş mesafesi için yeterince hassas değil). Sesli yönlendirme Web Speech API ile; tarayıcı sesi kullanıcı dokunuşundan sonra açar (Navigasyonu başlat düğmesi). Rotadan çıkınca (≥350 m, 12 sn) bulunulan yerden yeniden rota kurulur; mevcut istasyon listesi yeni rotaya izdüşürülür.
-- **Yakınımdaki istasyonlar / düşük pil** ([js/nav/nearby.js](js/nav/nearby.js)): konum çevresinde Overpass (+OCM anahtarı varsa) ile aranır, 0,1° ızgara hücresi başına 6 saat önbelleğe alınır, canlı sorgu başarısızsa yerleşik listeden doldurulur. Pil eşiğin altına inince veya advisor 'ulaşılamıyor' derse en yakın uygun istasyon önerilir. Fiyat/kW operatör tablosundan gelen tahmindir; gerçek tarife değildir.
-- **İstasyon güvenilirliği**: Veri OSM (ve isteğe bağlı OpenChargeMap) kaynaklıdır; Türkiye'de eksik/eski olabilir (ör. Kayseri–Malatya arasında OSM'de hızlı istasyon yoktur). Yalnızca herkese açık istasyonlar alınır. Aynı noktadaki farklı operatörler ayrı aday kalır; operatör yanlışsa İstasyon sekmesinde satırdan düzeltilir (LocalStorage `stationOps`). 150 km üzeri DC boşlukları uyarılır. En iyi kapsama için OpenChargeMap anahtarı girilmelidir.
+- **Navigasyon** ([js/nav/navigator.js](js/nav/navigator.js), [steps.js](js/nav/steps.js), [track.js](js/nav/track.js)): Routes API adımları (`navigationInstruction`, Türkçe metin Google'dan gelir); araç, rotanın tam geometrisine izdüşürülür (menzil profilinin 2 km'lik kirişleri dönüş mesafesi için yeterince hassas değil). Sesli yönlendirme Web Speech API ile; tarayıcı sesi kullanıcı dokunuşundan sonra açar (Navigasyonu başlat düğmesi). Rotadan çıkınca (≥350 m, 12 sn) bulunulan yerden yeniden rota kurulur; mevcut istasyon listesi yeni rotaya izdüşürülür.
+- **Yakınımdaki istasyonlar / düşük pil** ([js/nav/nearby.js](js/nav/nearby.js)): konum çevresinde Places Nearby Search ile aranır (en çok 50 km), ~1 km hücre başına 20 dk önbelleğe alınır. Pil eşiğin altına inince veya advisor 'ulaşılamıyor' derse en yakın uygun istasyon önerilir. Fiyat/kW operatör tablosundan gelen tahmindir; gerçek tarife değildir.
+- **İstasyon güvenilirliği**: Veri Google Places kaynaklıdır; erişim türü (özel/müşteri) Google'da belirtilmediği için bazı özel şarj noktaları listeye girebilir, Tesla/NACS'a özel kayıtlar elenir. Aynı noktadaki farklı operatörler ayrı aday kalır; operatör adı yanlışsa İstasyon sekmesinde satırdan düzeltilir (LocalStorage `stationOps`). 150 km üzeri DC boşlukları uyarılır.
 - **Araç ve tüketim**: Rota sekmesinde araç seçimi (batarya, ağırlık, Cd, ön alan, DC gücü; değişince sayfa yenilenir), tüketim düzeltmesi (`PHYSICS.consScale`, hem harcamaya uygulanır, rejenerasyona değil), ara istasyona varış payı ve şarj hedefi. Model 100 km/h'de ≈ 18,5, 120 km/h'de ≈ 23 kWh/100 km verir (düz yol, 15 °C); gerçek tüketim farklıysa düzeltme verilmelidir. Hazır araç değerleri tahminidir.
-- **İstasyon verisi**: Overpass herkese açık ve sık yanıtsız kalır. Rota ~60 km'lik sınır kutusu (bbox) parçalarıyla sorgulanır (`around` polyline sorgusu uzun rotada zaman aşımı veriyordu); 6 ayna kademeli (4 sn arayla paralel) denenir, boş+`remark` yanıtı hata sayılır; hepsi yanıtsızsa Photon'dan operatör adıyla yaklaşık liste (DC/kW doğrulanamaz) alınır. Sorun İstasyon sekmesinde kalıcı gösterilir, "İstasyonları yeniden ara" ile tekrarlanır. En güvenilir kaynak: OpenChargeMap anahtarı.
-- **Harita karoları**: varsayılan OpenStreetMap (CSS ile koyulaştırılır). Rota sekmesindeki "CARTO harita anahtarı" alanına anahtar yazılırsa CARTO dark_all karoları kullanılır; anahtar yalnızca cihazın LocalStorage'ında tutulur, depoya/koda konmaz (GitHub Pages sitesi herkese açık olduğundan kodda gizli kalmaz).
-- **Yer arama** herkese açık Nominatim ve Photon servislerini birlikte kullanır (Türkçe adlar — Selanik, Üsküp — Nominatim ile çözülür) (yazarken 350 ms gecikmeli, adil kullanım); yoğun kullanım için kendi geocoder'ını bağlamak gerekir.
+- **Harita**: Google Maps JavaScript API (koyu şema, `DEMO_MAP_ID`). "Haritayı gizle" anahtarı harita yüklenmesini kapatır (veri tasarrufu); rota ve plan çalışmaya devam eder.
+- **Yer arama** Google Places Autocomplete (Türkçe, yazarken 350 ms gecikmeli) + seçilince Place Details; oturum belirteci aramayı tek faturalanabilir oturum yapar.
 - **Token okuma (OCR):** boş User Token / API Key alanına dokununca kamera açılır, ekrandaki UUID biçimli metin okunur (art arda 2 okuma tutarlı olunca kabul). OCR yanılabilir (sentetik testte 6 rastgele token'ın 5'i birebir okundu; ince monospace yazılar daha zayıf, bazı karakterler karışabilir, örn. `4`↔`d`); biçime uymayan okumalar reddedilir ama biçime uyan yanlış okuma kabul edilebilir, bu yüzden kaydetmeden önce değer düzenlenebilir kutuda gösterilir: ekrandakiyle karakter karakter karşılaştır. Yalnızca 8-4-4-4-12 onaltılı biçim okunur; farklı biçimli bir API Key'i elle yaz. Okuma küçük/ince yazıda zorlanır: metni büyüt ve kutuya sığdır.
-- **OSRM demo sunucusu** yoğun kullanıma uygun değildir; kendi OSRM'ni kurmak için `routing/osrm.js` tek yerdir.
+- **Rota** Google Routes API (`TRAFFIC_AWARE`, yüksek kalite çizgi); varış saati trafik farkında süreden gelir, enerji modeli seyir hızıyla hesaplar.
 - **Operatör fiyatları** `config.js`'te yer tutucudur; İstasyon sekmesinden güncelle.
 - **Rakım/eğim:** SRTM ~90 m çözünürlük; 2 km dilimlerde yaklaşık eğim verir.
 - **Şarj eğrisi** üretici verisi değil, "%10→%80 ≈ 28 dk"ya ayarlı bir yaklaşım.

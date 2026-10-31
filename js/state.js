@@ -10,7 +10,7 @@ const store = {
   },
   // Test Modu değerleri (sürgüler + simülatör konumu).
   sim: { ...DEFAULT_SIM, ...load('sim', {}), enabled: false, play: false },
-  // Konumdaki hava durumu (Open-Meteo); rota hava durumu plan.profile.wx içinde.
+  // Konumdaki hava durumu (Google Weather); rota hava durumu plan.profile.wx içinde.
   weather: { temp: null, rain: null, windSpeed: null, windDir: null, at: 0, lat: null, lon: null },
   // Rota seçimleri ve kullanıcı tahminleri.
   route: {

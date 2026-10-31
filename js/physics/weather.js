@@ -1,83 +1,55 @@
-const BASE = 'https://api.open-meteo.com/v1/forecast';
+// Hava durumu YALNIZCA Google Weather API'den (saatlik tahmin). Yedek servis yoktur.
+import { gfetch } from '../google/api.js';
 
-const METNO = 'https://api.met.no/weatherapi/locationforecast/2.0/compact';
+const URL_BASE = 'https://weather.googleapis.com/v1/forecast/hours:lookup';
+const SOURCE = 'Google Hava Durumu';
+const HOUR_MS = 3600e3;
 
-/**
- * Nokta başına saatlik tahmin (varış saatine en yakın saat). Önce Open-Meteo (tek istek); yanıt vermezse
- * MET Norway (anahtarsız, CORS açık; nokta başına bir istek). Dönüş dizisinde `source` ve (Open-Meteo başarısızsa) `fallbackReason` var.
- * points: [{ lat, lon, t }]  (t: ms, o noktaya tahmini varış zamanı)
- * Dönüş: [{ temp (°C), rain (mm/sa), windSpeed (km/h), windDir (geldiği yön, °) }]
- */
-export async function fetchWeather(points) {
-  try {
-    const out = await openMeteo(points);
-    out.source = 'Open-Meteo';
-    return out;
-  } catch (err) {
-    const reason = err.name === 'TimeoutError' ? 'yanıt yok' : err.message.replace(/^Open-Meteo\s*/, '');
-    try {
-      const out = await metNo(points);
-      out.source = 'MET Norway';
-      out.fallbackReason = 'Open-Meteo ' + reason;
-      return out;
-    } catch (err2) {
-      throw new Error(`Open-Meteo ${reason}; MET Norway ${err2.name === 'TimeoutError' ? 'yanıt yok' : err2.message}`);
-    }
+const toC = (v, unit) => (/FAHRENHEIT/i.test(unit || '') ? ((v - 32) * 5) / 9 : v);
+const toMm = (v, unit) => (/INCH/i.test(unit || '') ? v * 25.4 : v);
+const toKmh = (v, unit) => (/MILES/i.test(unit || '') ? v * 1.609344 : /METERS_PER_SECOND/i.test(unit || '') ? v * 3.6 : v);
+
+/** Bir nokta için varış saatine en yakın saatlik tahmin. Gerekirse sayfa sayfa (en çok 24 saat/sayfa) okunur. */
+async function pointForecast(p, now) {
+  const ahead = Math.max(0, Math.round((p.t - now) / HOUR_MS));
+  const need = Math.min(240, ahead + 2);
+  const hours = [];
+  let token = null;
+  for (let page = 0; page < 12 && hours.length < need; page++) {
+    const url = `${URL_BASE}?location.latitude=${p.lat.toFixed(4)}&location.longitude=${p.lon.toFixed(4)}&hours=${need}&pageSize=24`
+      + (token ? `&pageToken=${encodeURIComponent(token)}` : '');
+    const json = await gfetch(url, { keyInQuery: true });
+    hours.push(...(json.forecastHours || []));
+    token = json.nextPageToken;
+    if (!token) break;
   }
+  if (!hours.length) throw new Error('Google Hava Durumu: bu bölge için tahmin yok');
+  let best = hours[0];
+  const mid = (h) => Date.parse(h.interval?.startTime) + HOUR_MS / 2;
+  for (const h of hours) if (Math.abs(mid(h) - p.t) < Math.abs(mid(best) - p.t)) best = h;
+  return {
+    temp: toC(best.temperature?.degrees ?? 15, best.temperature?.unit),
+    rain: toMm(best.precipitation?.qpf?.quantity ?? 0, best.precipitation?.qpf?.unit),
+    windSpeed: toKmh(best.wind?.speed?.value ?? 0, best.wind?.speed?.unit),
+    windDir: best.wind?.direction?.degrees ?? 0, // rüzgârın GELDİĞİ yön (Google belgesi)
+  };
 }
 
-/** MET Norway locationforecast: nokta başına istek, 4'erli paralel. Rüzgâr m/s → km/h; yağış sonraki 1 saat (yoksa 6 saatin ortalaması). */
-async function metNo(points) {
+/**
+ * Nokta başına saatlik tahmin. points: [{ lat, lon, t }]  (t: ms, o noktaya tahmini varış zamanı)
+ * Dönüş: [{ temp (°C), rain (mm/sa), windSpeed (km/h), windDir (geldiği yön, °) }] ve `.source`.
+ */
+export async function fetchWeather(points) {
+  const now = Date.now();
   const out = new Array(points.length);
   let next = 0;
   const worker = async () => {
     while (next < points.length) {
       const i = next++;
-      const p = points[i];
-      const res = await fetch(`${METNO}?lat=${p.lat.toFixed(3)}&lon=${p.lon.toFixed(3)}`, { signal: AbortSignal.timeout(12000) });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const series = (await res.json()).properties.timeseries;
-      const target = p.t;
-      let best = series[0];
-      for (const e of series) if (Math.abs(Date.parse(e.time) - target) < Math.abs(Date.parse(best.time) - target)) best = e;
-      const d = best.data.instant.details;
-      const rain = best.data.next_1_hours?.details?.precipitation_amount
-        ?? (best.data.next_6_hours?.details?.precipitation_amount ?? 0) / 6;
-      out[i] = { temp: d.air_temperature, rain, windSpeed: d.wind_speed * 3.6, windDir: d.wind_from_direction };
+      out[i] = await pointForecast(points[i], now);
     }
   };
   await Promise.all([worker(), worker(), worker(), worker()]);
+  out.source = SOURCE;
   return out;
-}
-
-async function openMeteo(points) {
-  const lat = points.map((p) => p.lat.toFixed(3)).join(',');
-  const lon = points.map((p) => p.lon.toFixed(3)).join(',');
-  const url = `${BASE}?latitude=${lat}&longitude=${lon}`
-    + '&hourly=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m'
-    + '&wind_speed_unit=kmh&timeformat=unixtime&forecast_days=3';
-  let res = await fetch(url, { signal: AbortSignal.timeout(12000) });
-  if (res.status === 429 || res.status >= 500) { // geçici sınır/yoğunluk: bir kez bekleyip tekrar dene
-    await new Promise((r) => setTimeout(r, 2000));
-    res = await fetch(url, { signal: AbortSignal.timeout(12000) });
-  }
-  if (!res.ok) throw new Error('Open-Meteo HTTP ' + res.status);
-  const json = await res.json();
-  const list = Array.isArray(json) ? json : [json];
-
-  return list.map((loc, i) => {
-    const times = loc.hourly.time;
-    const target = points[i].t / 1000;
-    let idx = 0;
-    for (let j = 1; j < times.length; j++) {
-      if (Math.abs(times[j] - target) < Math.abs(times[idx] - target)) idx = j;
-    }
-    const h = loc.hourly;
-    return {
-      temp: h.temperature_2m[idx],
-      rain: h.precipitation[idx] ?? 0,
-      windSpeed: h.wind_speed_10m[idx],
-      windDir: h.wind_direction_10m[idx],
-    };
-  });
 }

@@ -20,8 +20,8 @@ export const CATS = {
 
 const HOSTS = [
   [/(^|\.)iternio\.com$/, 'abrp'],
-  [/(^|\.)(tile\.openstreetmap\.org|basemaps\.cartocdn\.com)$/, 'tiles'],
-  [/^(router\.project-osrm\.org|api\.open-meteo\.com|api\.met\.no|api\.open-elevation\.com|(z\.|lz4\.)?overpass-api\.de|overpass\.openstreetmap\.fr|overpass\.kumi\.systems|overpass\.private\.coffee|photon\.komoot\.io|nominatim\.openstreetmap\.org|api\.openchargemap\.io)$/, 'services'],
+  [/(^|\.)(gstatic\.com|googleusercontent\.com)$|^(mt\d|khms\d)\.google\.com$/, 'tiles'],
+  [/^(maps\.googleapis\.com|routes\.googleapis\.com|places\.googleapis\.com|weather\.googleapis\.com)$/, 'services'],
   [/^(unpkg\.com|cdn\.jsdelivr\.net|cdnjs\.cloudflare\.com)$/, 'libs'],
 ];
 const REQ_OVERHEAD = 450; // tarayıcının eklediği başlıklar (User-Agent, Accept-*, Origin, Referer, Sec-*) için tahmin
@@ -30,7 +30,7 @@ const EST_TILE = 18000; // ölçülemeyen harita karosu için ortalama
 const EST_OCR_ENGINE = 4.4e6; // Tesseract çekirdek + dil verisi, ilk kurulum (ölçüm: ~4.36 MB)
 // Ölçüm izni (Timing-Allow-Origin) vermeyen CDN dosyaları için sıkıştırılmış aktarım boyutları (ölçüldü).
 const EST_BY_URL = [
-  [/leaflet\.js/, 42500], [/leaflet\.css/, 3500], [/tesseract\.min\.js/, 10200],
+  [/tesseract\.min\.js/, 10200],
 ];
 
 export function categoryOf(url) {
