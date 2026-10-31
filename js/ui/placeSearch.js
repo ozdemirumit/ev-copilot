@@ -2,6 +2,7 @@
 // oturumu tek faturalanır), ters arama için Geocoding API. Yalnızca kullanıcı yazarken (350 ms gecikmeli) çağrılır.
 import { gfetch, GoogleError } from '../google/api.js';
 import { googleKey } from '../google/loader.js';
+import { record } from '../google/usage.js';
 import { cached, TTL } from '../utils/cache.js';
 
 const COORD = /^\s*(-?\d{1,2}(?:\.\d+)?)\s*[,; ]\s*(-?\d{1,3}(?:\.\d+)?)\s*$/;
@@ -37,7 +38,7 @@ export async function searchPlaces(q, token) {
 /** Seçilen önerinin koordinatı (Place Details: yalnızca konum ve ad alanları). */
 export async function resolvePlace(s, token) {
   const j = await cached(`pd:${s.placeId}`, TTL.long, () => gfetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(s.placeId)}?languageCode=tr&sessionToken=${encodeURIComponent(token)}`, {
-    mask: 'location,displayName',
+    mask: 'location', // yalnızca konum: Essentials fiyatı (ad alanı Pro'dur, adı zaten öneriden biliyoruz)
   }));
   if (j.location?.latitude == null) throw new GoogleError('Yerin konumu alınamadı');
   return { ...s, lat: j.location.latitude, lon: j.location.longitude };
@@ -58,6 +59,7 @@ async function geocode(lat, lon, key) {
   try {
     const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&language=tr&key=${encodeURIComponent(key)}`, { signal: AbortSignal.timeout(8000) });
     const j = await res.json();
+    if (j.status === 'OK' || j.status === 'ZERO_RESULTS') record('geocode');
     if (j.status !== 'OK') return null;
     const r = j.results.find((x) => !x.types.includes('plus_code')) || j.results[0];
     return r.formatted_address.split(', ').slice(0, 3).join(', ');

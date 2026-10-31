@@ -8,6 +8,7 @@ import { gfetch } from '../google/api.js';
 import { haversineKm } from '../utils/geo.js';
 import { toast } from '../ui/toast.js';
 import { cached, TTL } from '../utils/cache.js';
+import { record, usageSummary, SKUS } from '../google/usage.js';
 
 const $ = (id) => document.getElementById(id);
 const EVERY_MS = 20000; // iki sorgu arası en az süre
@@ -15,14 +16,12 @@ const MOVE_KM = 1.0; // ve en az bu kadar yol (aynı yolda gereksiz sorgu yok)
 const VALID_KM = 1.5; // limit, sorgu noktasından bu kadar uzağa kadar geçerli sayılır
 const VALID_MS = 5 * 60e3; // ve en çok bu süre
 const BACKOFF_MS = 10 * 60e3;
-const USD_PER_ELEMENT = 0.02;
 
 let busy = false;
 let blockedUntil = 0;
 let lastQ = { lat: null, lon: null, at: 0 };
 
-const month = () => new Date().toISOString().slice(0, 7);
-const usage = () => { const u = load('roadsUsage', null); return u?.m === month() ? u : { m: month(), n: 0 }; };
+const monthRoads = () => usageSummary().rows.find((r) => r.sku === 'roads') || { n: 0, cost: 0 };
 const setLimit = (limit, err = null) => patch('nav', { limit, limitErr: err });
 
 async function query(e) {
@@ -34,9 +33,7 @@ async function query(e) {
     const res = await cached(key, TTL.long, async () => {
       const j = await gfetch(`https://roads.googleapis.com/v1/speedLimits?path=${e.lat.toFixed(6)},${e.lon.toFixed(6)}&units=KPH`, { keyInQuery: true });
       const list = j.speedLimits || [];
-      const u = usage();
-      u.n += list.length || 1; // yalnızca gerçek Google çağrısı sayılır; dönen öğe sayısı kadar faturalanır
-      save('roadsUsage', u);
+      record('roads', list.length || 1); // yalnızca gerçek Google çağrısı sayılır; dönen öğe sayısı kadar faturalanır
       const hit = list.at(-1);
       return { kph: hit?.speedLimit ? Math.round(hit.units === 'MPH' ? hit.speedLimit * 1.609344 : hit.speedLimit) : null };
     });
@@ -79,8 +76,8 @@ function paint() {
   }
   const st = $('limit-status');
   if (st) {
-    const u = usage();
-    const cost = u.n ? ` · bu ay ${u.n} öğe ≈ ${(u.n * USD_PER_ELEMENT).toFixed(2)} $` : '';
+    const u = monthRoads();
+    const cost = u.n ? ` · bu ay ${u.n} öğe ≈ ${u.cost.toFixed(2)} $ (ilk ${SKUS.roads.free} ücretsiz)` : '';
     st.textContent = !nav.limitOn ? 'Kapalı: Google Roads çağrılmaz, ücret çıkmaz. Hız uyarısı senin belirlediğin eşikle çalışır.'
       : nav.limitErr ? `Yol hız limiti alınamadı (${nav.limitErr}); senin eşiğin kullanılır.`
         : (lim ? `Bu yolun hız limiti: ${lim} km/s` : 'Yol hız limiti sürerken okunur') + cost;

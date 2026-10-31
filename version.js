@@ -2,8 +2,17 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.29.2';
+self.APP_VERSION = '0.30.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.30.0', date: '2026-10-31',
+    notes: [
+      'Google çağrı sayacı: Rota sekmesindeki anahtar kartında "Google kullanımı ve tahmini maliyet" bölümü. Çağrılar SKU bazında sayılır (harita, rota, istasyon arama, doluluk, hava, rakım, adres, Roads), ücretsiz kotaya göre kalan ve tahmini tutar gösterilir.',
+      'Ücretsiz kotanın %80i dolunca ve aşılınca uyarı çıkar. Yalnızca Google a gerçekten giden ve kabul edilen çağrılar sayılır; önbellekten gelenler sayılmaz. Sayaç ay başında sıfırlanır.',
+      'Yer seçerken Place Details yalnızca konum alanını ister (ad alanı Pro fiyatlıdır): çağrı başına maliyet düştü.',
+      'Düzeltme: harita karanlık temada açılmıyordu (bir satırdaki yorum, colorScheme ayarını yutuyordu).',
+    ],
+  },
   {
     v: '0.29.2', date: '2026-10-31',
     notes: [

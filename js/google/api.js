@@ -1,5 +1,6 @@
 // Google Maps Platform REST çağrıları (Routes, Places (New), Weather, Geocoding). Tek hizmet sağlayıcı: Google.
 import { googleKey, loadGoogle, googleAuthError } from './loader.js';
+import { record, skuOf } from './usage.js';
 
 export class GoogleError extends Error {
   constructor(message, { fatal = false, status = 0 } = {}) {
@@ -36,7 +37,11 @@ export async function gfetch(url, { method = 'GET', body, mask, keyInQuery = fal
   } catch (err) {
     throw new GoogleError(err.name === 'TimeoutError' ? 'Google yanıt vermedi (zaman aşımı)' : 'Google\'a ulaşılamadı (internet?)');
   }
-  if (res.ok) return res.json();
+  if (res.ok) {
+    const sku = skuOf(url, mask);
+    if (sku) record(sku); // yalnızca Google'ın kabul ettiği istek faturalanır
+    return res.json();
+  }
   let msg = '';
   try { msg = (await res.json()).error?.message || ''; } catch { /* gövde yok */ }
   const [text, fatal] = explain(res.status, msg);
@@ -55,6 +60,7 @@ export async function testGoogleKey() {
       if (googleAuthError()) throw new Error(googleAuthError());
       const { ElevationService } = await google.maps.importLibrary('elevation');
       await new ElevationService().getElevationForLocations({ locations: [{ lat: A.latitude, lng: A.longitude }] });
+      record('elevation', 1);
     }],
     ['Routes API (rota)', () => gfetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
       method: 'POST', mask: 'routes.distanceMeters',
@@ -69,6 +75,7 @@ export async function testGoogleKey() {
     ['Geocoding API (adres adı)', async () => {
       const j = await (await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${A.latitude},${A.longitude}&key=${encodeURIComponent(googleKey())}`)).json();
       if (j.status !== 'OK' && j.status !== 'ZERO_RESULTS') throw new Error(j.error_message || j.status);
+      record('geocode');
     }],
   ];
   return Promise.all(checks.map(async ([name, fn]) => {

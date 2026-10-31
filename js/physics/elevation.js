@@ -1,6 +1,7 @@
 // Rakım YALNIZCA Google Elevation'dan. Elevation web servisi tarayıcıdan (CORS) çağrılamaz; Maps JavaScript API'nin
 // ElevationService'i aynı veriyi sunar, bu yüzden o kullanılır.
 import { loadGoogle } from '../google/loader.js';
+import { record } from '../google/usage.js';
 import { cached, TTL } from '../utils/cache.js';
 
 const CHUNK = 256;
@@ -35,6 +36,7 @@ async function elevationsFromGoogle(points) {
           await sleep(1200 * (attempt + 1)); // hız sınırı: bekleyip tekrar
         }
       }
+      record('elevation', locations.length); // Elevation nokta başına faturalanır
       out.push(...res.results.map((r) => r.elevation));
     }
     if (out.length === points.length && out.every(Number.isFinite)) return { elevations: out, source: 'Google Elevation' };

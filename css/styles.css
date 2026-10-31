@@ -328,3 +328,12 @@ html { overflow: hidden; }
 .limit-sign { flex: none; width: 38px; height: 38px; border-radius: 50%; background: #fff; color: #111; border: 4px solid #e53935; display: grid; place-items: center; font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums; }
 
 .nh-btns button.on { border-color: var(--accent); background: var(--accent-dim); }
+
+.g-usage summary { cursor: pointer; font-size: .85rem; color: var(--muted); padding: 6px 0; }
+.g-usage-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; font-size: .78rem; padding: 4px 0; position: relative; }
+.g-usage-row b { font-weight: 600; text-align: right; }
+.g-usage-row i { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--surface-2, rgba(128,128,128,.2)); position: relative; overflow: hidden; }
+.g-usage-row i::after { content: ''; position: absolute; inset: 0 auto 0 0; width: var(--p); background: var(--accent); }
+.g-usage-row.near i::after { background: var(--warn, #e0a800); }
+.g-usage-row.over i::after { background: var(--bad, #d64545); }
+.g-usage-row.over b { color: var(--bad, #d64545); }

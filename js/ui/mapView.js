@@ -3,6 +3,7 @@ import { load, save } from '../utils/storage.js';
 import { toast } from './toast.js';
 import { attachSearch, reverseLabel } from './placeSearch.js';
 import { loadGoogle, googleKey } from '../google/loader.js';
+import { record } from '../google/usage.js';
 
 /** Harita çizim API'si; initMap() çağrılınca dolar (routing/controller.js, nav/* kullanır). Harita henüz yüklenmediyse çizimler sıraya alınır. */
 export const mapApi = { drawRoute() {}, drawStations() {}, drawNearby() {}, setPoint() {}, follow() {}, navView() {} };
@@ -52,9 +53,10 @@ export function initMap() {
         ]);
         note('');
         gmap = new maps.Map(mapEl, {
-          center: { lat: 39.0, lng: 35.0 }, zoom: 6, mapId: 'DEMO_MAP_ID', renderingType: 'VECTOR', // vektör: dönme/eğim için şart colorScheme: 'DARK', clickableIcons: false,
+          center: { lat: 39.0, lng: 35.0 }, zoom: 6, mapId: 'DEMO_MAP_ID', renderingType: 'VECTOR', colorScheme: 'DARK', clickableIcons: false, // vektör: dönme/eğim için şart
           gestureHandling: 'greedy', streetViewControl: false, mapTypeControl: false, fullscreenControl: false,
         });
+        record('maps'); // her harita oluşturma bir Dynamic Maps yüklemesi sayılır
         lib = { Polyline: maps.Polyline, LatLngBounds: core.LatLngBounds, AdvancedMarkerElement: markerLib.AdvancedMarkerElement, event: core.event };
         gmap.addListener('click', onMapClick);
         gmap.addListener('dragstart', () => { lastDrag = Date.now(); });
