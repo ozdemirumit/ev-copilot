@@ -94,7 +94,7 @@
       </div>
     </div>
 
-    <div class="card stack" id="vehicle-card">
+    <div class="card stack" id="vehicle-card" data-collapsed="1">
       <h2>Araç ve tüketim</h2>
       <label class="field">Araç
         <select id="veh-select"></select>
@@ -291,7 +291,7 @@
       <button class="btn hidden" id="station-retry" type="button" style="margin-bottom:8px">🔄 İstasyonları yeniden ara</button>
       <div id="station-list"></div>
     </div>
-    <div class="card stack" id="custom-card">
+    <div class="card stack" id="custom-card" data-collapsed="1">
       <h2 style="margin:0">Kendi istasyonlarım</h2>
       <p class="small muted" style="margin:0">Haritada eksik olan istasyonları (ör. ZES/Trugo uygulamasından bildiklerin) ekle; plan bunları da aday sayar. Yalnızca bu telefonda saklanır.</p>
       <label class="field">Yer ara
@@ -310,7 +310,7 @@
       <div id="cs-list"></div>
     </div>
 
-    <div class="card">
+    <div class="card" data-collapsed="1">
       <h2>Operatör birim fiyat ve güç tablosu</h2>
       <table class="optable">
         <thead><tr><th>Operatör</th><th>TL/kWh</th><th>kW</th></tr></thead>
@@ -372,7 +372,7 @@
       <p class="small muted" style="margin:0">Bilgiler yalnızca bu cihazın LocalStorage'ında düz metin saklanır.</p>
     </div>
 
-    <div class="card stack">
+    <div class="card stack" data-collapsed="1">
       <h2>Gönderilecek paket (önizleme)</h2>
       <pre class="packet" id="abrp-packet">—</pre>
       <dl class="kv">
