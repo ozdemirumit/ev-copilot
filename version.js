@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.24.1';
+self.APP_VERSION = '0.25.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.25.0', date: '2026-10-31',
+    notes: [
+      'Pil eşiğin altına inince (varsayılan %20; rota başlatılmamış olsa da) uygulama yakın istasyonları kendisi arar ve en yakın 3 tanesini uyarı kutusunda listeler (mesafe, kW, fiyat, varışta pil, Git). Çevrede bulunamazsa yarıçapı otomatik 50 kme çıkarır; konum yoksa GPSi açmanı ister. Tüm liste için İstasyon sekmesine tek dokunuş.',
+      'Git artık varış noktasını değiştirmez: rota bulunduğun yerden seçtiğin istasyon üzerinden asıl varışa yeniden kurulur ve plan ilk durak olarak orada şarj eder (varışta kaç pil, kaça şarj).',
+      'Plan sıradaki durağa ulaşılamıyor derse (navigasyon açıkken) rota en uygun yakın istasyon üzerinden kendiliğinden güncellenir, sesli söylenir; 10 dakikada en fazla bir kez.',
+    ],
+  },
   {
     v: '0.24.1', date: '2026-10-31',
     notes: [

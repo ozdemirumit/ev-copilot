@@ -311,3 +311,8 @@ body.navmode .topbar { padding-top: calc(4px + var(--safe-t)); padding-bottom: 4
 /* Uyarı çubukları ortak kutuda: ekranın ~%38'ini aşamaz (aşarsa kutu kayar), alt menü her zaman görünür kalır */
 #banners { flex: 0 1 auto; min-height: 0; max-height: 38dvh; overflow-y: auto; }
 html { overflow: hidden; }
+
+.near-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.near-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.near-row small { display: block; color: var(--muted); font-weight: 400; }
+.near-row > span { min-width: 0; }

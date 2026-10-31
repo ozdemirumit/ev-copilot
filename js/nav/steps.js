@@ -28,6 +28,7 @@ export function instruction(st) {
   let arrow = ARROW[st.modifier] || ARROW.straight;
   if (st.type === 'depart') arrow = '🚗';
   else if (st.type === 'arrive') arrow = '🏁';
+  else if (st.type === 'stop') arrow = '⚡';
   else if (st.type === 'roundabout') arrow = '🔄';
   else if (st.type === 'ferry') arrow = '⛴️';
   return { arrow, text: st.text || 'Devam edin', road: '' };

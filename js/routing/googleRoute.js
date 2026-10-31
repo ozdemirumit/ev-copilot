@@ -49,7 +49,8 @@ const MANEUVER = {
 const clean = (t) => String(t || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
 /** Google Routes API (trafik farkında). Dönüş: { coords [[lon,lat]], distanceKm, durationH, steps }. */
-export async function fetchRoute(start, end) {
+/** via: [{lat, lon}] ara duraklar (ör. şarj istasyonu). Her ara noktada 'stop' adımı eklenir; yalnızca son adım 'arrive' olur. */
+export async function fetchRoute(start, end, via = []) {
   const wp = (p) => ({ location: { latLng: { latitude: p.lat, longitude: p.lon } } });
   const json = await gfetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
     method: 'POST',
@@ -57,6 +58,7 @@ export async function fetchRoute(start, end) {
     body: {
       origin: wp(start),
       destination: wp(end),
+      ...(via.length ? { intermediates: via.map(wp) } : {}),
       travelMode: 'DRIVE',
       routingPreference: 'TRAFFIC_AWARE',
       polylineQuality: 'HIGH_QUALITY',
@@ -67,10 +69,17 @@ export async function fetchRoute(start, end) {
   });
   const r = json.routes?.[0];
   if (!r?.polyline?.encodedPolyline) throw new Error('Rota bulunamadı (Google yanıtı boş)');
-  const steps = (r.legs || []).flatMap((l) => l.steps || []).map((st) => {
-    const [type, modifier] = MANEUVER[st.navigationInstruction?.maneuver] || ['continue', 'straight'];
-    return { type, modifier, text: clean(st.navigationInstruction?.instructions), distM: st.distanceMeters || 0 };
+  const legs = r.legs || [];
+  const steps = legs.flatMap((l, i) => {
+    const mapped = (l.steps || []).map((st) => {
+      const [type, modifier] = MANEUVER[st.navigationInstruction?.maneuver] || ['continue', 'straight'];
+      return { type, modifier, text: clean(st.navigationInstruction?.instructions), distM: st.distanceMeters || 0 };
+    });
+    if (i === legs.length - 1) return mapped;
+    // ara nokta: Google'ın "varış" adımını at, yerine kendi 'stop' adımımızı koy (navigasyon burada bitmesin)
+    return [...mapped.filter((st) => st.type !== 'arrive'), { type: 'stop', modifier: null, text: 'Ara durağa ulaştınız', distM: 0 }];
   });
+  for (let i = steps.length - 1; i >= 0; i--) if (steps[i].type === 'arrive') steps.splice(i, 1); // Google'ın varış adımı yerine tek, kendi adımımız
   steps.push({ type: 'arrive', modifier: null, text: 'Varış noktasına ulaştınız', distM: 0 });
   return {
     coords: decodePolyline(r.polyline.encodedPolyline),

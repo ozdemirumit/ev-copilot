@@ -79,13 +79,34 @@ function paintStatus(text) {
   if (el) el.textContent = text;
 }
 
-function goTo(s) {
+/**
+ * İstasyona git. Varış noktası varsa (planlı rota): rota bulunduğun yerden istasyon ÜZERİNDEN asıl varışa yeniden kurulur ve
+ * plan ilk durak olarak orada şarj eder (varış değişmez). Varış yoksa istasyonun kendisi varış olur.
+ */
+function goTo(s, { auto = false } = {}) {
   const e = effective();
   if (e.lat == null) return toast('Konum yok');
-  mapApi.setPoint('start', { lat: e.lat, lon: e.lon, label: 'Konumum' }, { fit: false });
-  mapApi.setPoint('end', { lat: s.lat, lon: s.lon, label: s.name });
+  const start = { lat: e.lat, lon: e.lon, label: 'Konumum' };
+  const dest = getState('route').end;
+  mapApi.setPoint('start', start, { fit: false });
   document.querySelector('.bottomnav [data-tab="route"]')?.click();
-  planTrip().then(() => { if (getState('plan').steps?.length) startNav(); });
+  const keep = dest && getState('plan').profile && haversineKm(dest, s) > 1;
+  if (!keep) mapApi.setPoint('end', { lat: s.lat, lon: s.lon, label: s.name });
+  const done = () => { if (getState('plan').steps?.length) startNav(); };
+  if (keep) {
+    planTrip(start, { via: s, extra: all }).then(() => {
+      done();
+      const p = getState('plan');
+      const first = p.stops[0];
+      const msg = first?.station.id === s.id
+        ? `Rota güncellendi: ${s.name} üzerinden, orada %${Math.round(first.arriveSoc)} → %${Math.round(first.leaveSoc)} şarj`
+        : `Rota ${s.name} üzerinden güncellendi`;
+      toast(msg, 5000);
+      if (auto) speak(`Rota güncellendi. ${s.name} istasyonunda şarj durağı eklendi.`, { key: 'viaupdate', cooldownMs: 0, interrupt: true });
+    });
+  } else {
+    planTrip().then(done);
+  }
 }
 
 const mapsUrl = (s) => `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`;
@@ -150,12 +171,12 @@ function render() {
 
 // ---------- Düşük pil: en yakın uygun istasyonu öner ----------
 
-function pickBest() {
+/** Önerilecek istasyonlar: ulaşılabilir olanlar önce, yol üstündekiler hafif öncelikli, kalanı yola göre sıralı. */
+function rankNearby() {
   const items = visible().filter((s) => !s.slow);
   const pool = items.length ? items : enrich(all);
   const eng = getState('engine');
   const plan = getState('plan');
-  // Rota üzerindeyse ve ileride olanlar öncelikli (yoldan sapmadan şarj); değilse en yakın.
   const score = (s) => {
     if (plan.profile && eng.routeKm != null) {
       const p = plan.profile.project(s.lat, s.lon, eng.routeKm);
@@ -164,47 +185,92 @@ function pickBest() {
     return s.roadKm;
   };
   const ok = pool.filter((s) => s.reachable);
-  return (ok.length ? ok : pool).sort((a, b) => score(a) - score(b))[0] || null;
+  return [...(ok.length ? ok : pool)].sort((a, b) => score(a) - score(b));
 }
 
-function showAlert(text, station) {
+/** Uyarı çubuğu: başlık + (varsa) en yakın 3 istasyon, her biri için Git düğmesi. */
+function showAlert(title, stations = []) {
   const bar = $('near-alert');
-  if (!text) { bar.classList.add('hidden'); patch('nav', { alert: null }); return; }
-  $('near-alert-text').textContent = text;
-  const go = $('near-alert-go');
-  go.classList.toggle('hidden', !station);
-  go.onclick = station ? () => goTo(station) : null;
+  if (!title) { bar.classList.add('hidden'); patch('nav', { alert: null }); return; }
+  const body = $('near-alert-body');
+  body.replaceChildren(Object.assign(document.createElement('div'), { textContent: title }));
+  stations.forEach((s) => {
+    const row = document.createElement('div');
+    row.className = 'near-row';
+    const info = document.createElement('span');
+    info.textContent = s.name;
+    info.append(cell('small', '', `${fmtKm(s.distKm)} km · ${s.kw} kW · ${s.price.toFixed(2)} TL/kWh`
+      + (s.arrive != null ? ` · varışta ~%${Math.max(0, s.arrive).toFixed(0)}` : '') + (s.reachable ? '' : ' · yetmeyebilir')));
+    const go = cell('button', 'btn primary sm', '🧭 Git');
+    go.type = 'button';
+    go.addEventListener('click', () => goTo(s));
+    row.append(info, go);
+    body.append(row);
+  });
+  if (stations.length) {
+    const all3 = cell('button', 'btn ghost sm', '📋 Tüm listeyi aç');
+    all3.type = 'button';
+    all3.addEventListener('click', () => document.querySelector('.bottomnav [data-tab="stations"]')?.click());
+    body.append(all3);
+  }
   bar.classList.remove('hidden');
-  patch('nav', { alert: { text, id: station?.id ?? null } });
+  patch('nav', { alert: { text: title, id: stations[0]?.id ?? null } });
 }
 
 let dismissedUntil = 0;
+let lastAutoVia = 0;
+
+/** Pil eşiğin altında veya plan "ulaşılamıyor" diyorsa sorun var. */
+function inTrouble(e, nav) {
+  return e.soc != null && (e.soc <= nav.lowSoc || (getState('advisor').level === 'bad' && (e.speed ?? 0) > 5));
+}
+
+/** Veri yoksa/eskiyse kendiliğinden ara (45 sn'de bir; başarısız denemeler döngüye girmesin). */
+function autoSearch(widen = false) {
+  if (busy || Date.now() - meta.at < 45000) return;
+  if (widen && radius < 50) { radius = 50; save('nearRadius', radius); $('near-radius').value = '50'; }
+  refreshNearby({ silent: true, force: true });
+}
 
 function checkLow() {
   const e = effective();
   const nav = getState('nav');
-  if (e.soc == null || e.lat == null) return;
-  const trouble = e.soc <= nav.lowSoc || (getState('advisor').level === 'bad' && (e.speed ?? 0) > 5);
-  if (!trouble) {
+  if (e.soc == null) return;
+  if (e.lat == null) { // konum bilinmiyorsa istasyonlar aranamaz: kullanıcıyı uyar
+    if (e.soc <= nav.lowSoc && Date.now() >= dismissedUntil) showAlert(`Pil %${Math.round(e.soc)}: yakındaki istasyonları listelemek için konum gerekli. Üstteki 📍 düğmesiyle GPS'i aç.`);
+    return;
+  }
+  if (!inTrouble(e, nav)) {
     if (e.soc > nav.lowSoc + 3) { bands.clear(); if (getState('nav').alert) showAlert(null); }
     return;
   }
   if (Date.now() < dismissedUntil) return;
 
-  const best = all.length ? pickBest() : null;
-  if (!best) {
-    showAlert(`Pil %${Math.round(e.soc)}: yakındaki istasyon verisi yok (aranıyor veya bulunamadı). İstasyon sekmesinden "Ara"ya dokun.`, null);
+  const soc = Math.round(e.soc);
+  if (!all.length) {
+    const why = meta.at ? (meta.errors[0] ? `arama başarısız: ${meta.errors[0]}` : `${radius} km çevrede istasyon bulunamadı`) : 'aranıyor…';
+    showAlert(`Pil %${soc}: yakındaki istasyonlar ${why}`);
+    autoSearch(meta.at > 0); // önceki arama boş döndüyse yarıçapı 50 km'ye çıkarıp kendiliğinden yeniden dene
     return;
   }
-  const text = `Pil %${Math.round(e.soc)} — en yakın şarj: ${best.name} (${fmtKm(best.distKm)} km, ${best.kw} kW, ${best.price.toFixed(2)} TL/kWh)`
-    + (best.arrive != null ? `, varışta ~%${Math.max(0, best.arrive).toFixed(0)}` : '');
-  showAlert(text, best);
+  const ranked = rankNearby();
+  const best = ranked[0];
+  if (!best) { showAlert(`Pil %${soc}: uygun istasyon bulunamadı`); autoSearch(true); return; }
+  const planBroken = getState('advisor').level === 'bad';
+  const updated = Date.now() - lastAutoVia < 10 * 60e3;
+  showAlert(`Pil %${soc} — en yakın şarj istasyonları:` + (updated ? ' (rota otomatik güncellendi)' : ''), ranked.slice(0, 3));
+  // Plan sıradaki durağa/varışa ulaşılamıyor diyorsa: navigasyonda rotayı en uygun istasyon üzerinden kendiliğinden güncelle
+  if (planBroken && nav.active && getState('route').end && !updated && best.reachable && (best.arrive ?? 99) >= 5
+      && getState('plan').stops[0]?.station.id !== best.id && getState('plan').status !== 'loading') {
+    lastAutoVia = Date.now();
+    goTo(best, { auto: true });
+  }
 
   // Her pil bandında (eşik, 15, 10, 5) bir kez konuş
   const band = [nav.lowSoc, 15, 10, 5].filter((b) => e.soc <= b).sort((a, b) => a - b)[0] ?? nav.lowSoc;
   if (!bands.has(band)) {
     bands.add(band);
-    speak(`Pil yüzde ${Math.round(e.soc)}. En yakın şarj istasyonu ${best.name}, ${fmtKm(best.distKm)} kilometre. ${best.kw} kilovat, kilovat saati ${best.price.toFixed(1).replace('.', ',')} lira.`, { key: 'low' + band, cooldownMs: 0, interrupt: true });
+    speak(`Pil yüzde ${soc}. En yakın şarj istasyonu ${best.name}, ${fmtKm(best.distKm)} kilometre. ${best.kw} kilovat, kilovat saati ${best.price.toFixed(1).replace('.', ',')} lira.`, { key: 'low' + band, cooldownMs: 0, interrupt: true });
   }
 }
 
@@ -216,7 +282,7 @@ function watch() {
   const moving = nav.active || (e.speed ?? 0) > 5;
   const age = Date.now() - meta.at;
   const moved = meta.lat == null ? Infinity : haversineKm({ lat: meta.lat, lon: meta.lon }, e);
-  const lowNow = e.soc != null && e.soc <= nav.lowSoc;
+  const lowNow = inTrouble(e, nav);
   const wanted = moving && (all.length || nav.active) || lowNow;
   if (wanted && !busy && (age > (lowNow ? LOW_REFRESH_MS : REFRESH_MS) || moved > REFRESH_KM)) refreshNearby({ silent: true });
   else { if (meta.at) render(); checkLow(); }
@@ -233,4 +299,5 @@ export function initNearby() {
   $('near-alert-close').addEventListener('click', () => { dismissedUntil = Date.now() + 10 * 60e3; showAlert(null); });
   render();
   setInterval(watch, 30000);
+  setInterval(() => { if (!busy) checkLow(); }, 5000); // sorun varsa 30 sn beklemeden öner/ara
 }

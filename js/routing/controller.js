@@ -54,9 +54,11 @@ export function computePlan({ fromKm = 0, soc = startSoc, maxFirstStopKm = Infin
   const kInfo = planK();
   const k = kInfo.k;
   const stations = plan.stations;
+  // Zorunlu ilk durak yalnızca hâlâ ilerideyse geçerlidir (geçildiyse veya listede yoksa yok sayılır)
+  const forced = plan.forceFirstId && stations.some((s) => s.id === plan.forceFirstId && s.km > fromKm + 0.5) ? plan.forceFirstId : null;
   const result = planRoute({
     profile: plan.profile, stations, startKm: fromKm, startSoc: soc,
-    minArrival: r.minArrivalSoc, mode: plan.mode, k, maxFirstStopKm,
+    minArrival: r.minArrivalSoc, mode: plan.mode, k, maxFirstStopKm, forceFirstId: forced,
   });
   const ranking = rankStations({ profile: plan.profile, stations, startKm: fromKm, startSoc: soc, k, mode: plan.mode });
   return { result, ranking, kInfo };
@@ -103,8 +105,10 @@ export async function refetchStations() {
 /**
  * Rotayı planla. `from` verilirse (yeniden rota: rotadan çıkıldı) başlangıç o konumdur ve istasyonlar yeniden aranmaz,
  * mevcut liste yeni rotaya izdüşürülür (Google'a yeniden gitmemek için).
+ * via: şarj istasyonu — rota ondan geçer ve plan ilk durak olarak orada şarj eder (varış noktası değişmez).
+ * extra: plana eklenecek ek istasyonlar (ör. yakın çevre aramasından).
  */
-export async function planTrip(from = null) {
+export async function planTrip(from = null, { via = null, extra = [] } = {}) {
   const route = getState('route');
   const start = from || route.start;
   const end = route.end;
@@ -116,7 +120,7 @@ export async function planTrip(from = null) {
   try {
     patch('plan', { status: 'loading', text: 'Rota alınıyor…', stops: [], totals: null, ranking: [], fromKm: 0, fromSoc: null });
     patch('sim', { routeKm: 0, lat: null, lon: null, play: false }); // simüle araç yeni rotanın başına
-    const rt = await fetchRoute(start, end);
+    const rt = await fetchRoute(start, end, via ? [via] : []);
     // Trafik: Google'ın trafikli süresinden yoğunluğu türet → enerji, hız ve süre hesabına girer (elle ayarı ezer)
     patch('route', { trafficInfo: { ratio: rt.trafficRatio, driveMin: rt.durationH * 60, freeMin: (rt.durationH * 60) / rt.trafficRatio } });
     if (getState('route').trafficAuto) {
@@ -149,8 +153,9 @@ export async function planTrip(from = null) {
     };
     sig = routeSig();
     const profile = buildFromRaw();
-    const kept = from ? reproject(getState('plan').stations, profile) : [];
-    patch('plan', { route: rt, profile, steps: projectSteps(rt.steps, profile), planId: Date.now(), wxInfo: { source: wxRes?.source ?? null, fallbackReason: wxRes?.fallbackReason ?? null, error: wxError }, stations: kept, stationInfo: from ? getState('plan').stationInfo : null, text: 'Şarj istasyonları aranıyor…' });
+    const pool = from ? [...getState('plan').stations, ...extra.filter((x) => !getState('plan').stations.some((s) => s.id === x.id))] : [];
+    const kept = from ? reproject(pool, profile) : [];
+    patch('plan', { route: rt, profile, steps: projectSteps(rt.steps, profile), planId: Date.now(), wxInfo: { source: wxRes?.source ?? null, fallbackReason: wxRes?.fallbackReason ?? null, error: wxError }, forceFirstId: via?.id ?? null, stations: kept, stationInfo: from ? getState('plan').stationInfo : null, text: 'Şarj istasyonları aranıyor…' });
 
     if (!kept.length) {
       cacheKey = [start, end].map((p) => `${p.lat.toFixed(2)},${p.lon.toFixed(2)}`).join('>');
