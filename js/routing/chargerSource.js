@@ -50,7 +50,7 @@ export function setStationOperator(stationId, opId) {
 export function priced(s) {
   const ov = overrides()[s.id];
   const op = operatorById(ov || s.opId);
-  return { ...s, opId: ov || s.opId, opRaw: s.opRaw ?? s.opId, corrected: !!ov, opName: op.name, price: op.price, kw: ov ? op.kw : (s.srcKw ?? op.kw) };
+  return { ...s, opId: ov || s.opId, opRaw: s.opRaw ?? s.opId, corrected: !!ov, opName: op.name, price: s.slow ? (op.acPrice ?? op.price) : op.price, kw: ov ? op.kw : (s.srcKw ?? op.kw) };
 }
 
 /**

@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.71.1';
+self.APP_VERSION = '0.72.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.72.0', date: '2026-11-01',
+    notes: [
+      'Operatör fiyatları güncellendi (01.11.2026 liste tarifesi, kaynak arabamsarj.com.tr): DC hızlı şarj ZES 16,49, Trugo 14,98, Astor 13,99, Eşarj 13,50, Sharz 12,99, Voltrun 12,90 TL/kWh; eski değerler 9-10 TL civarındaydı. Yavaş AC istasyonlarda artık işletmecinin AC tarifesi kullanılır (yaklaşık 9,5-10 TL). Tabloda fiyatı kendin değiştirmediysen yeni fiyata otomatik geçer; değiştirdiysen senin değerin korunur. Planlama maliyeti, istasyon listesi ve şarj oturumu tahmini bu fiyatlarla hesaplanır. Canlı (Hollanda NDW) ve kullanıcı bildirimli fiyat varsa yine onlar öncelikli gösterilir.',
+    ],
+  },
   {
     v: '0.71.1', date: '2026-11-01',
     notes: [

@@ -160,4 +160,5 @@ export default {
   "Doluluk kontrol ediliyor…": "Beschikbaarheid controleren…",
   "{0} dolu istasyon elendi": "{0} volle stations uitgesloten",
   "Hepsi dolu görünüyor; en yakınlar listelendi": "Alles lijkt vol; de dichtstbijzijnde worden toch getoond",
+  "Varsayılan fiyatlar 01.11.2026 liste tarifesidir (üyelik indirimi yok): tablodaki fiyat DC hızlı şarj içindir, AC (yavaş) istasyonlarda işletmecinin AC tarifesi kullanılır. Kendi tarifen farklıysa düzenle.": "De standaardprijzen zijn de lijsttarieven per 01-11-2026 (zonder abonnementskorting): de prijs in de tabel geldt voor DC-snelladen; trage AC-stations gebruiken het AC-tarief van de aanbieder. Pas het aan als jouw tarief afwijkt.",
 };

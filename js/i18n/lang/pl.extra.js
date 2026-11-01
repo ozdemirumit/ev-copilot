@@ -160,4 +160,5 @@ export default {
   "Doluluk kontrol ediliyor…": "Sprawdzanie dostępności…",
   "{0} dolu istasyon elendi": "Pominięto zajęte stacje: {0}",
   "Hepsi dolu görünüyor; en yakınlar listelendi": "Wszystkie wyglądają na zajęte; mimo to pokazuję najbliższe",
+  "Varsayılan fiyatlar 01.11.2026 liste tarifesidir (üyelik indirimi yok): tablodaki fiyat DC hızlı şarj içindir, AC (yavaş) istasyonlarda işletmecinin AC tarifesi kullanılır. Kendi tarifen farklıysa düzenle.": "Domyślne ceny to taryfy cennikowe z 01.11.2026 (bez rabatów abonamentowych): cena w tabeli dotyczy szybkiego ładowania DC; wolne stacje AC używają taryfy AC operatora. Zmień ją, jeśli Twoja taryfa jest inna.",
 };

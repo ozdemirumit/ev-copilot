@@ -1,4 +1,4 @@
-import { DEFAULT_OPERATORS } from '../config.js';
+import { DEFAULT_OPERATORS, OLD_DEFAULT_PRICES } from '../config.js';
 import { load, save, remove } from '../utils/storage.js';
 
 // Kayıtlı tabloyu varsayılanlarla birleştir: sonradan eklenen operatörler eski kayıtta eksik kalmasın.
@@ -7,7 +7,9 @@ function merge(saved) {
   if (!Array.isArray(saved)) return base;
   return base.map((d) => {
     const s = saved.find((x) => x.id === d.id);
-    return s ? { ...d, price: s.price, kw: s.kw } : d;
+    if (!s) return d;
+    const untouched = s.price === OLD_DEFAULT_PRICES[d.id]; // eski yer tutucu fiyat: kullanıcı değiştirmediyse yeni liste tarifesine geç
+    return { ...d, price: untouched ? d.price : s.price, kw: s.kw };
   });
 }
 

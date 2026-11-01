@@ -160,4 +160,5 @@ export default {
   "Doluluk kontrol ediliyor…": "Проверка на заетостта…",
   "{0} dolu istasyon elendi": "{0} заети станции са изключени",
   "Hepsi dolu görünüyor; en yakınlar listelendi": "Всички изглеждат заети; показани са най-близките въпреки това",
+  "Varsayılan fiyatlar 01.11.2026 liste tarifesidir (üyelik indirimi yok): tablodaki fiyat DC hızlı şarj içindir, AC (yavaş) istasyonlarda işletmecinin AC tarifesi kullanılır. Kendi tarifen farklıysa düzenle.": "Цените по подразбиране са ценовите листи към 01.11.2026 (без отстъпки за абонамент): цената в таблицата е за бързо DC зареждане; бавните AC станции използват AC тарифата на оператора. Променете я, ако вашата тарифа е различна.",
 };

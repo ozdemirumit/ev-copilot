@@ -160,4 +160,5 @@ export default {
   "Doluluk kontrol ediliyor…": "Checking availability…",
   "{0} dolu istasyon elendi": "{0} full stations excluded",
   "Hepsi dolu görünüyor; en yakınlar listelendi": "All look full; showing the nearest anyway",
+  "Varsayılan fiyatlar 01.11.2026 liste tarifesidir (üyelik indirimi yok): tablodaki fiyat DC hızlı şarj içindir, AC (yavaş) istasyonlarda işletmecinin AC tarifesi kullanılır. Kendi tarifen farklıysa düzenle.": "Default prices are the list tariffs as of 1 Nov 2026 (no membership discounts): the table price is for DC fast charging; slow AC stations use the operator's AC tariff. Edit it if your own tariff differs.",
 };

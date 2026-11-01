@@ -64,16 +64,20 @@ export const OCR = {
   maxJumpKmh: 40, // ekran hızı için
 };
 
-// Birim fiyatlar YER TUTUCUDUR; kullanıcı tabloda günceller.
+// Varsayılan liste tarifeleri (TL/kWh): price = DC hızlı şarj, acPrice = AC/yavaş istasyon. Kaynak: arabamsarj.com.tr/fiyatlar, 01.11.2026
+// itibarıyla (üyelik/roaming indirimleri yok); kullanıcı tabloda değiştirebilir. Yeni tarife çıkınca değerleri ve PRICES_AS_OF'u güncelle.
+export const PRICES_AS_OF = '2026-11-01';
 export const DEFAULT_OPERATORS = [
-  { id: 'trugo', name: 'Trugo', price: 9.5, kw: 180, match: ['trugo'] },
-  { id: 'zes', name: 'ZES', price: 10.0, kw: 180, match: ['zes'] },
-  { id: 'esarj', name: 'Eşarj', price: 9.8, kw: 150, match: ['eşarj', 'esarj', 'e-şarj'] },
-  { id: 'astor', name: 'Astor', price: 9.2, kw: 120, match: ['astor'] },
-  { id: 'voltrun', name: 'Voltrun', price: 9.9, kw: 120, match: ['voltrun'] },
-  { id: 'sharz', name: 'Sharz.net', price: 10.5, kw: 120, match: ['sharz'] },
-  { id: 'other', name: 'Diğer', price: 11.0, kw: 60, match: [] },
+  { id: 'trugo', name: 'Trugo', price: 14.98, acPrice: 9.95, kw: 180, match: ['trugo'] },
+  { id: 'zes', name: 'ZES', price: 16.49, acPrice: 9.99, kw: 180, match: ['zes'] },
+  { id: 'esarj', name: 'Eşarj', price: 13.5, acPrice: 9.9, kw: 150, match: ['eşarj', 'esarj', 'e-şarj'] },
+  { id: 'astor', name: 'Astor', price: 13.99, acPrice: 9.89, kw: 120, match: ['astor'] },
+  { id: 'voltrun', name: 'Voltrun', price: 12.9, acPrice: 9.9, kw: 120, match: ['voltrun'] },
+  { id: 'sharz', name: 'Sharz.net', price: 12.99, acPrice: 9.49, kw: 120, match: ['sharz'] },
+  { id: 'other', name: 'Diğer', price: 12.42, acPrice: 9.49, kw: 60, match: [] }, // Diğer: sayfanın DC ve AC ortalaması
 ];
+/** Önceki varsayılan fiyatlar (yer tutucu): kayıtlı fiyat bunlardan biriyse kullanıcı değiştirmemiştir, yeni varsayılana geçer. */
+export const OLD_DEFAULT_PRICES = { trugo: 9.5, zes: 10, esarj: 9.8, astor: 9.2, voltrun: 9.9, sharz: 10.5, other: 11 };
 
 export const DEFAULT_SIM = {
   enabled: false,
