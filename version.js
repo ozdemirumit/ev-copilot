@@ -2,8 +2,17 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.42.1';
+self.APP_VERSION = '0.42.2';
 self.APP_CHANGELOG = [
+  {
+    v: '0.42.2', date: '2026-11-01',
+    notes: [
+      'İmleç artık yola yapışık: navigasyonda konum, rotanın en yakın noktasına çekilir (GPS doğruluğuna göre 70-200 m pay); harita da bu noktayı izler. Rotadan gerçekten çıkınca ham konum gösterilir.',
+      'Yeni rota kurulunca "hedefe geldiniz" hatası giderildi: navigasyonu başlatırken eski rotanın izi kullanılıyordu, araç eski rotanın sonunda olduğu için hemen varış sanılıyordu. Artık her başlatışta güncel rotanın izi kurulur.',
+      'Yön-yukarı harita yeni rotadan sonra da döner (rota çizilince harita kuzeye dönüyor ama açı eski değerde sanılıyordu; artık haritanın gerçek açısıyla kıyaslanır). Navigasyondayken yeni rota haritayı uzaklaştırmaz.',
+      'Farklı yola sapma daha erken algılanır: rotadan 70 m (GPS kötüyse daha fazla) uzakta 6 sn kalınca, 400 m\'den uzaktaysa hemen bulunduğun yerden yeni rota kurulur.',
+    ],
+  },
   {
     v: '0.42.1', date: '2026-11-01',
     notes: [

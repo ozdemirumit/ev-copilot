@@ -61,7 +61,7 @@ export function locate(track, lat, lon, hintKm = null) {
   return { km, offKm: off };
 }
 
-function pointAtKm(track, km) {
+export function pointAtKm(track, km) {
   const i = Math.min(track.n - 1, firstIdxAtLeast(track.cum, km));
   if (i === 0) return { lat: track.lat[0], lon: track.lon[0] };
   const span = track.cum[i] - track.cum[i - 1] || 1;

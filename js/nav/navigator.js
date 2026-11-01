@@ -7,13 +7,14 @@ import { toast } from '../ui/toast.js';
 import { rerouteFromHere } from '../routing/controller.js';
 import { speak } from '../advisor/voice.js';
 import { instruction, fmtDist, spoken, isMinor } from './steps.js';
-import { buildTrack, locate, headingAt } from './track.js';
+import { buildTrack, locate, headingAt, pointAtKm } from './track.js';
 
 const $ = (id) => document.getElementById(id);
 const TIERS_M = [120, 500, 2000]; // dönüşe bu kadar kala konuş (küçükten büyüğe)
-const OFF_ROUTE_KM = 0.35;
-const FAR_OFF_KM = 1; // bu kadar uzaktaysan (yanlış otoyol çıkışı vb.) beklemeden hemen yeni rota
-const OFF_ROUTE_MS = 8000;
+const OFF_BASE_KM = 0.07; // rotadan bu kadar uzak = başka yol (GPS doğruluğu kötüyse payı büyür)
+const OFF_MAX_KM = 0.2;
+const FAR_OFF_KM = 0.4; // bu kadar uzaktaysan (yanlış çıkış vb.) beklemeden hemen yeni rota
+const OFF_ROUTE_MS = 6000;
 const REROUTE_COOLDOWN_MS = 45000; // başarılı yeni rotadan sonra bir daha hemen sapma kontrolü yapma
 const RETRY_MS = 12000; // yeni rota alınamadıysa (internet yok vb.) bu kadar sonra tekrar dene
 
@@ -24,6 +25,18 @@ let lastReroute = 0;
 let rerouting = false;
 let track = null;
 let trackKm = null; // son bilinen iz konumu (arama penceresi için)
+
+/** Rota sapma/yapışma payı (km): GPS doğruluğunun 2,5 katı, en az 70 m, en çok 200 m. */
+const offLimit = () => Math.min(OFF_MAX_KM, Math.max(OFF_BASE_KM, (2.5 * (getState('live').acc || 0)) / 1000));
+
+/** Konumu rota üzerindeki en yakın noktaya yapıştır (harita imleci için): { lat, lon, heading } ya da yoldan sapmışsa null. */
+export function snapPoint(lat, lon) {
+  if (!track || !getState('nav').active) return null;
+  const loc = locate(track, lat, lon, trackKm);
+  if (loc.offKm > offLimit()) return null;
+  const p = pointAtKm(track, loc.km);
+  return { lat: p.lat, lon: p.lon, heading: headingAt(track, loc.km) };
+}
 
 function paint(arrow, dist, text, road, sub, warn = false) {
   $('nav-arrow').textContent = arrow;
@@ -57,11 +70,12 @@ function tick() {
   // Gerçek geometriye izdüşüm: dönüşe kalan mesafe ve rotadan sapma metre hassasiyetinde
   const loc = locate(track, e.lat, e.lon, trackKm);
   const km = loc.km;
-  if (loc.offKm <= OFF_ROUTE_KM) trackKm = km;
+  const lim = offLimit();
+  if (loc.offKm <= lim) trackKm = km;
 
   // Rotadan çıkış: kısa sapmalar (park, şerit) sayılmaz; 8 sn sürerse (1 km'den uzaktaysan hemen) bulunduğun yerden yeni rota.
   // GPS hızı yoksa (null) hareket ediyor sayılır: hız okunamayınca yeniden rota hiç kurulmaz olmasın.
-  if (loc.offKm > OFF_ROUTE_KM) {
+  if (loc.offKm > lim) {
     offSince ||= Date.now();
     const moving = e.speed == null || e.speed > 5;
     const waited = Date.now() - offSince > OFF_ROUTE_MS || loc.offKm > FAR_OFF_KM;
@@ -131,7 +145,9 @@ function tick() {
   }
 
   // Harita: hıza göre zoom (yavaş = yakın), kavşağa 250 m kala en yakın zoom; sürerken yön-yukarı
-  followMap(e, distM, st, loc.offKm <= OFF_ROUTE_KM ? headingAt(track, km) : null);
+  const onRoute = loc.offKm <= lim;
+  const at = onRoute ? pointAtKm(track, km) : null; // imleç ve kamera yola yapışık konumu izler
+  followMap(at ? { ...e, lat: at.lat, lon: at.lon } : e, distM, st, onRoute ? headingAt(track, km) : null);
 }
 
 let simFollowing = false;
@@ -184,6 +200,9 @@ export function startNav() {
   else if (!getState('system').wakeLock) toast('İpucu: ekran kapanmasın diye 🔆 düğmesine dokun', 3500);
   said = new Set();
   planId = plan.planId;
+  track = plan.route?.coords ? buildTrack(plan.route.coords) : null; // her başlatışta güncel rotanın izi
+  trackKm = null;
+  offSince = 0;
   patch('nav', { active: true });
   document.querySelector('.bottomnav [data-tab="map"]')?.click();
   zoomNow = 16; zoomAt = Date.now(); speedAvg = e.speed ?? 0;
@@ -216,6 +235,7 @@ export function initNavigator() {
   };
   btn.addEventListener('click', () => (getState('nav').active ? stopNav() : startNav()));
   $('nav-stop').addEventListener('click', stopNav);
+  mapApi.snap = snapPoint;
 
   voice.checked = nav.voice;
   voice.addEventListener('change', () => {

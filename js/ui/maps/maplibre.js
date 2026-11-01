@@ -98,5 +98,6 @@ export async function createMapLibreMap(container) {
     onDragStart: (fn) => map.on('dragstart', fn), // yalnızca kullanıcı sürüklemesi (programatik hareket değil)
     cursor: (c) => { map.getCanvas().style.cursor = c || ''; },
     resize: () => map.resize(),
+    bearing: () => map.getBearing(),
   };
 }

@@ -10,6 +10,7 @@ import { showTab } from './tabs.js';
 export const mapApi = {
   drawRoute() {}, drawStations() {}, drawNearby() {}, setPoint() {}, follow() {}, navView() {},
   setSatellite() {}, isSatellite: () => false, hasRoute: () => false, cancelPick() {}, pickBar() {}, // initMap doldurur (pickBar'ı ui/shell.js)
+  snap: () => null, // navigator.js: konumu rotaya yapıştırır
 };
 
 let boot = async () => {};
@@ -176,7 +177,7 @@ export function initMap() {
     whenMap(() => {
       unmark(routeLine);
       routeLine = adapter.line(coords);
-      if (doFit) fit(routeBounds(), 30);
+      if (doFit && !navOn) fit(routeBounds(), 30); // navigasyondayken yeni rota haritayı uzaklaştırıp yönünü bozmasın
     });
   };
 
@@ -195,6 +196,7 @@ export function initMap() {
     if (zoom != null) zoomNow = zoom;
     let turn = null;
     if (heading != null && headingUp) {
+      lastHeading = (adapter.bearing() + 360) % 360;
       const delta = ((heading - lastHeading + 540) % 360) - 180;
       if (Math.abs(delta) > 2) { lastHeading = (lastHeading + delta * 0.6 + 360) % 360; turn = lastHeading; }
     }
@@ -269,15 +271,17 @@ export function initMap() {
     const e = effective();
     if (!adapter || e.lat == null || e.lon == null) return;
     const color = e.source === 'sim' ? '#5aa9ff' : '#2ee6a6';
+    const snap = navOn ? mapApi.snap(e.lat, e.lon) : null; // navigasyonda imleç rotaya yapışır
+    const pos = snap || e;
     meDot ??= dotEl(color, 16, '#fff');
     meArrow ??= el('div', 'me-arrow');
     const content = navOn ? meArrow : meDot;
-    if (!me) me = marker(e, content, 'Konumum');
-    else { me.setPosition(e); me.setContent(content); }
+    if (!me) me = marker(pos, content, 'Konumum');
+    else { me.setPosition(pos); me.setContent(content); }
     meDot.style.background = color;
     meArrow.style.borderBottomColor = color;
     // yön-yukarıda ok hep yukarıdır (harita döner); kuzey-yukarıda ok gidiş yönünü gösterir
-    meArrow.style.transform = `translateY(50%) rotate(${headingUp ? 0 : e.heading ?? 0}deg)`;
+    meArrow.style.transform = `translateY(50%) rotate(${headingUp ? 0 : snap?.heading ?? e.heading ?? 0}deg)`;
   }
   subscribe(['live', 'sim'], updateMe);
   readyHooks.push(updateMe);
