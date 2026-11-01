@@ -45,6 +45,8 @@ node server\premium.mjs costs                  # kullanıcı başına Google mal
 
 **Yönetim paneli (tarayıcıda):** `https://evcopilot.duckdns.org/yonetim`. Yönetici kodunu (`ACCESS_CODES`'dan biri) girersin; Özet, Kullanıcılar (Premium ver/kaldır, hesabı kapat/aç), Davetler (link üret/iptal) ve Maliyet (kullanıcı başına Google, CSV) sekmeleri vardır. Kod yalnızca o sekmede tutulur, çıkışta silinir.
 
+Davet formunda e-posta yazarsan davet o Google hesabına bağlanır (başkası kullanamaz), istersen ilk girişte hediye Premium günü eklenir; SMTP ayarlıysa e-posta sunucudan gider, değilse paneldeki **E-posta uygulamamla gönder** düğmesi kendi e-posta uygulamanı açar. Kullanıcı satırından gün ya da kesin bitiş tarihiyle Premium verilir.
+
 Davet linkini kişiye gönder; linkte "Android uygulamasını indir" ve "Web'de aç" düğmeleri var. Yönetici hesabı (`ADMIN_EMAILS`) davetsiz girer ve her zaman Premium sayılır.
 
 Bir kullanıcıyı kapatmak/açmak (yönetici kodu `.env`'deki ilk `ACCESS_CODES` değeridir):
@@ -68,6 +70,7 @@ Değiştirince `node server\restart.mjs`. Şablon: `server\.env.example`.
 | `MAPBOX_TOKEN`, `OCM_KEY` | trafikli rota/istasyon araması ve OpenChargeMap (yalnızca sunucuda) |
 | `GOOGLE_PLACES_KEY` | **boş bırak** (Türkiye'de veri vermiyor, Google kuralları Google dışı haritayla kullanımı kısıtlıyor) |
 | `PREMIUM_REQUIRED` | `0` yazarsan herkes Premium sayılır |
+| `SMTP_USER`, `SMTP_PASS` | davet e-postası göndermek için Gmail adresin ve **Google uygulama şifresi** (Google Hesabı > Güvenlik > 2 adımlı doğrulama açık > Uygulama şifreleri; normal şifreni yazma). İsteğe bağlı: `SMTP_HOST` (smtp.gmail.com), `SMTP_PORT` (465), `MAIL_FROM_NAME` |
 | `GOOGLE_COST_PER_CALL_USD` | Google çağrı başına tahmini maliyet (varsayılan `0.04`); maliyet kayıtlarında kullanılır |
 | `MAPBOX_DAILY_PER_USER`, `OCCUPANCY_DAILY_PER_USER`, `GOOGLE_DAILY_PER_USER`, `GOOGLE_DAILY_TOTAL`, `GOOGLE_SOC_BELOW` | günlük kotalar ve eşikler |
 | `TRUST_PROXY=1`, `HOST`, `PORT`, `ALLOW_ORIGINS`, `DATA_DIR`, `SESSION_DAYS` | ağ ve veri ayarları (genelde dokunma) |

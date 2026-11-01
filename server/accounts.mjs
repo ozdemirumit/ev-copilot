@@ -20,7 +20,24 @@ const HISTORY_KINDS = new Set(['trips', 'charges']);
 const MAX_REC = 6000; // kayıt başına bayt
 const MAX_RECS = 20000; // kullanıcı ve tür başına kayıt
 
-export function createAccounts({ env, store, send, json, readJson, caps, onDelete = () => {}, costs = null }) {
+import { validEmail } from './mailer.mjs';
+
+/** Davet e-postasının metni (Türkçe + İngilizce). */
+function inviteMail(link, rec) {
+  const until = new Date(rec.expiresAt).toLocaleDateString('tr-TR');
+  return [
+    'Merhaba,', '',
+    'EV Co-Pilot uygulamasına davet edildin.', '',
+    `1) Bu linke dokun: ${link}`,
+    '2) Açılan sayfada Android uygulamasını ya da web uygulamasını seç, "Google ile giriş yap"a bas.',
+    `3) Giriş için bu e-postanın Google hesabını kullan${rec.email ? ' (' + rec.email + ')' : ''}.`, '',
+    `Davet ${until} tarihine kadar geçerli ve tek kullanımlıktır.${rec.premiumDays ? ` İlk girişinle birlikte ${rec.premiumDays} gün Premium hediye.` : ''}`, '',
+    '---',
+    'Hello, you have been invited to EV Co-Pilot. Open the link above and sign in with the Google account this email was sent to.',
+  ].join('\n');
+}
+
+export function createAccounts({ env, store, send, json, readJson, caps, onDelete = () => {}, costs = null, mailer = null }) {
   const { data } = store;
   const PUBLIC_URL = String(env.PUBLIC_URL || '').replace(/\/+$/, '');
   const APP_URL = env.APP_URL || 'https://ozdemirumit.github.io/ev-copilot/';
@@ -82,8 +99,10 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
       if (!inviteCode) return { error: 'invite_required' };
       const st = inviteState(inv);
       if (st !== 'ok') return { error: 'invite_' + st };
+      if (inv.email && inv.email !== String(email).toLowerCase()) return { error: 'invite_email' }; // davet belirli bir e-postaya yazılmışsa yalnızca o Google hesabı kullanabilir
       inv.usedBy = 'pending';
       u = { id: 'u_' + rnd(9), provider, sub, email, name, admin: false, disabled: false, createdAt: Date.now(), lastLogin: Date.now() };
+      if (inv.premiumDays) u.premiumUntil = Date.now() + inv.premiumDays * 86400e3; // davetle gelen Premium süresi ilk girişte başlar
       inv.usedBy = u.id;
       inv.usedAt = Date.now();
     } else {
@@ -110,6 +129,7 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
     invite_invalid: ['Davet geçersiz', 'Bu davet kodu tanınmadı. Yeni bir davet iste. (Invalid invitation.)'],
     invite_used: ['Davet kullanılmış', 'Bu davet daha önce kullanılmış. Yeni bir davet iste. (Invitation already used.)'],
     invite_expired: ['Davetin süresi dolmuş', 'Yeni bir davet iste. (Invitation expired.)'],
+    invite_email: ['Davet başka bir hesap için', 'Bu davet belirli bir e-posta adresine yazılmış. Davetin gönderildiği Google hesabıyla giriş yap. (This invitation is for a different Google account.)'],
     invite_revoked: ['Davet iptal edilmiş', 'Yeni bir davet iste. (Invitation revoked.)'],
     disabled: ['Hesap kapalı', 'Bu hesap yönetici tarafından kapatılmış. (Account disabled.)'],
     google: ['Giriş tamamlanamadı', 'Google girişi başarısız oldu. Uygulamaya dönüp tekrar dene. (Google sign-in failed.)'],
@@ -288,7 +308,10 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
         const u = Object.values(data.users).find((x) => (b.userId && x.id === b.userId) || (b.email && String(x.email).toLowerCase() === String(b.email).toLowerCase()));
         if (!u) { json(res, 404, { error: 'kullanıcı yok' }); return true; }
         const days = Math.min(3650, Math.max(0, Number(b.days) || 0));
-        u.premiumUntil = days ? Math.max(Date.now(), u.premiumUntil || 0) + days * 86400e3 : null;
+        if (b.until != null) { // kesin bitiş tarihi (ms ya da ISO); geçmiş/geçersizse Premium kaldırılır
+          const t = typeof b.until === 'number' ? b.until : Date.parse(b.until);
+          u.premiumUntil = Number.isFinite(t) && t > Date.now() ? Math.min(t, Date.now() + 3650 * 86400e3) : null;
+        } else u.premiumUntil = days ? Math.max(Date.now(), u.premiumUntil || 0) + days * 86400e3 : null;
         store.save();
         json(res, 200, { ok: true, email: u.email, premiumUntil: u.premiumUntil });
         return true;
@@ -297,14 +320,29 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
         const b = (await readJson(req, 2000)) || {};
         const code = rnd(9);
         const days = Math.min(90, Math.max(1, Number(b.days) || 7));
-        const rec = { id: 'i_' + rnd(6), hash: sha(code), label: String(b.label || '').slice(0, 60), createdAt: Date.now(), expiresAt: Date.now() + days * 86400e3, usedBy: null, revoked: false };
+        const email = b.email ? String(b.email).trim().toLowerCase() : '';
+        if (email && !validEmail(email)) { json(res, 400, { error: 'geçersiz e-posta' }); return true; }
+        const premiumDays = Math.min(3650, Math.max(0, Math.round(Number(b.premiumDays) || 0)));
+        const rec = { id: 'i_' + rnd(6), hash: sha(code), label: String(b.label || '').slice(0, 60), email: email || null, premiumDays: premiumDays || 0, createdAt: Date.now(), expiresAt: Date.now() + days * 86400e3, usedBy: null, revoked: false };
         data.invites[rec.id] = rec;
         store.save();
-        json(res, 200, { id: rec.id, code, link: PUBLIC_URL ? `${PUBLIC_URL}/i/${code}` : null, expiresAt: rec.expiresAt });
+        const link = PUBLIC_URL ? `${PUBLIC_URL}/i/${code}` : null;
+        let emailed = false;
+        let emailError = null;
+        if (email && b.send && link) {
+          if (!mailer) emailError = 'E-posta gönderimi ayarlı değil (SMTP_USER/SMTP_PASS)';
+          else {
+            try {
+              await mailer.send({ to: email, subject: 'EV Co-Pilot daveti', text: inviteMail(link, rec) });
+              emailed = true;
+            } catch (err) { emailError = String(err.message).slice(0, 160); console.error('davet e-postası:', emailError); }
+          }
+        }
+        json(res, 200, { id: rec.id, code, link, expiresAt: rec.expiresAt, email: rec.email, premiumDays: rec.premiumDays, emailed, emailError });
         return true;
       }
       if (p === '/admin/invites' && req.method === 'GET') {
-        json(res, 200, { invites: Object.values(data.invites).map((i) => ({ id: i.id, label: i.label, state: inviteState(i), createdAt: i.createdAt, expiresAt: i.expiresAt, usedBy: i.usedBy })) });
+        json(res, 200, { invites: Object.values(data.invites).map((i) => ({ id: i.id, label: i.label, email: i.email || null, premiumDays: i.premiumDays || 0, state: inviteState(i), createdAt: i.createdAt, expiresAt: i.expiresAt, usedBy: i.usedBy })) });
         return true;
       }
       const di = /^\/admin\/invites\/(i_[A-Za-z0-9_-]+)$/.exec(p);

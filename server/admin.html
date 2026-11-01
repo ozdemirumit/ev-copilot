@@ -143,7 +143,7 @@ function drawSum(root) {
   const on = (b) => chip(b ? 'açık' : 'kapalı', b ? 'ok' : 'warn');
   root.append(table(['Ayar', 'Durum'], [
     ['Google ile giriş', on(s.configured.googleLogin)], ['Mapbox anahtarı', on(s.configured.mapbox)], ['OpenChargeMap anahtarı', on(s.configured.ocm)],
-    ['Google Places anahtarı', on(s.configured.googlePlaces)], ['Premium zorunlu (kapalıysa herkes Premium)', on(s.configured.premiumRequired)],
+    ['Google Places anahtarı', on(s.configured.googlePlaces)], ['E-posta gönderimi (SMTP)', on(s.configured.smtp)], ['Premium zorunlu (kapalıysa herkes Premium)', on(s.configured.premiumRequired)],
     ['Genel adres', s.server.publicUrl || '–'], ['Çalışma süresi', dur(s.server.uptimeSec)], ['Bellek', s.server.memMb + ' MB'], ['Node', s.server.node],
   ]));
   root.append(el('p', 'mut', 'Anahtar değerleri burada gösterilmez; yalnızca tanımlı olup olmadığı görünür.'));
@@ -171,6 +171,14 @@ function drawUsers(root) {
     if (!u.admin) {
       const add = (d) => { const b = el('button', 'sm', '+' + d + ' gün'); b.onclick = () => act(() => api('/admin/premium', 'POST', { userId: u.id, days: d }), 'Premium eklendi'); return b; };
       a.append(add(30), add(90), add(365));
+      const dn = el('input'); dn.type = 'number'; dn.min = 1; dn.max = 3650; dn.placeholder = 'gün'; dn.style.cssText = 'width:64px;padding:3px 6px';
+      const dg = el('button', 'sm', 'Ekle'); dg.title = 'Girilen gün kadar Premium ekler (mevcut süre varsa üstüne)';
+      dg.onclick = () => { const d = Number(dn.value); if (!(d >= 1)) return toast('Gün sayısı gir'); act(() => api('/admin/premium', 'POST', { userId: u.id, days: Math.min(3650, Math.round(d)) }), d + ' gün Premium eklendi'); };
+      const dt = el('input'); dt.type = 'date'; dt.style.cssText = 'padding:3px 6px'; dt.title = 'Premium bitiş tarihi (o günün sonuna kadar)';
+      if (u.premiumUntil > Date.now()) dt.value = new Date(u.premiumUntil).toISOString().slice(0, 10);
+      const ds = el('button', 'sm', 'Tarih ayarla'); ds.title = 'Premium bitiş tarihini kesin olarak ayarlar';
+      ds.onclick = () => { if (!dt.value) return toast('Tarih seç'); const t = new Date(dt.value + 'T23:59:59').getTime(); act(() => api('/admin/premium', 'POST', { userId: u.id, until: t }), t > Date.now() ? 'Premium bitiş tarihi ayarlandı' : 'Geçmiş tarih: Premium kaldırıldı'); };
+      a.append(dn, dg, dt, ds);
       if (u.premiumUntil > Date.now()) { const r = el('button', 'sm bad', 'Premium kaldır'); r.onclick = () => confirm(u.email + ' için Premium kaldırılsın mı?') && act(() => api('/admin/premium', 'POST', { userId: u.id, days: 0 }), 'Premium kaldırıldı'); a.append(r); }
     }
     const t = el('button', 'sm ' + (u.disabled ? '' : 'bad'), u.disabled ? 'Aç' : 'Kapat');
@@ -183,30 +191,54 @@ function drawUsers(root) {
 
 function drawInv(root) {
   root.replaceChildren();
-  const bar = el('div', 'row');
-  const lab = el('input'); lab.placeholder = 'Etiket (ör. kişinin adı)'; lab.maxLength = 60;
-  const days = el('input'); days.type = 'number'; days.min = 1; days.max = 90; days.value = 7; days.style.width = '80px';
-  const mk = el('button', 'pri', 'Davet linki üret');
+  const NL = String.fromCharCode(10);
+  const smtp = !!D.sum?.configured?.smtp;
+  const form = el('div', 'card'); form.style.marginBottom = '12px';
+  const input = (type, ph, w) => { const x = el('input'); x.type = type; if (ph) x.placeholder = ph; if (w) x.style.width = w; return x; };
+  const mail = input('email', 'Davet edilecek e-posta (Gmail, isteğe bağlı)'); mail.style.minWidth = '260px'; mail.autocomplete = 'off';
+  const lab = input('text', 'Etiket (ör. kişinin adı)'); lab.maxLength = 60;
+  const days = input('number', '', '80px'); days.min = 1; days.max = 90; days.value = 7;
+  const pdays = input('number', '', '80px'); pdays.min = 0; pdays.max = 3650; pdays.value = 0;
+  const sendCb = input('checkbox'); sendCb.checked = smtp;
+  const sendLbl = el('label', 'mut'); sendLbl.append(sendCb, ' E-postayı sunucudan gönder'); sendLbl.style.display = smtp ? '' : 'none';
+  const mk = el('button', 'pri', 'Davet üret');
+  const r1 = el('div', 'row'); r1.append(mail, lab);
+  const r2 = el('div', 'row'); r2.append(el('span', 'mut', 'geçerlilik (gün):'), days, el('span', 'mut', 'hediye Premium (gün, ilk girişte başlar):'), pdays);
+  const r3 = el('div', 'row'); r3.append(sendLbl, mk);
+  form.append(r1, r2, r3);
+  if (!smtp) form.append(el('div', 'mut', 'Sunucudan e-posta göndermek için server\\.env içine SMTP_USER (Gmail adresin) ve SMTP_PASS (Google uygulama şifresi) yaz ve sunucuyu yeniden başlat. O zamana kadar davet üretince "E-posta uygulamamla gönder" düğmesi çıkar.'));
   const out = el('div', 'card hidden');
   mk.onclick = async () => {
     try {
-      const r = await api('/admin/invites', 'POST', { label: lab.value, days: Number(days.value) || 7 });
-      out.classList.remove('hidden'); out.replaceChildren(el('div', 'mut', 'Bu linki kişiye gönder (tek kullanımlık, ' + fmtDate(r.expiresAt) + ' tarihine kadar):'));
-      const link = r.link || r.code; const c = el('code', '', link);
+      const em = mail.value.trim();
+      const r = await api('/admin/invites', 'POST', { label: lab.value || em, email: em || undefined, days: Number(days.value) || 7, premiumDays: Number(pdays.value) || 0, send: !!(em && smtp && sendCb.checked) });
+      const link = r.link || r.code;
+      out.classList.remove('hidden');
+      out.replaceChildren(el('div', 'mut', 'Tek kullanımlık link, ' + fmtDate(r.expiresAt) + ' tarihine kadar geçerli' + (r.email ? ', yalnızca ' + r.email + ' hesabıyla kullanılabilir' : '') + (r.premiumDays ? ', ' + r.premiumDays + ' gün Premium hediye' : '') + ':'));
+      out.append(el('code', '', link), ' ');
       const cp = el('button', 'sm', 'Kopyala'); cp.onclick = () => navigator.clipboard?.writeText(link).then(() => toast('Kopyalandı'), () => toast('Kopyalanamadı'));
-      out.append(c, ' ', cp); await load(); tab = 'inv'; $('t-inv').prepend(out);
+      out.append(cp);
+      if (r.emailed) out.append(el('div', '', '✔ E-posta gönderildi: ' + r.email));
+      else if (r.email) {
+        if (r.emailError) out.append(el('div', 'chip bad', r.emailError));
+        const body = 'Merhaba,' + NL + NL + 'EV Co-Pilot uygulamasına davet edildin. Bu linke dokun ve Google ile giriş yap (' + r.email + ' hesabıyla):' + NL + link + NL + NL + 'Davet ' + fmtDate(r.expiresAt) + ' tarihine kadar geçerli.' + (r.premiumDays ? ' İlk girişinle ' + r.premiumDays + ' gün Premium hediye.' : '');
+        const a = el('a', 'sm'); a.textContent = '✉ E-posta uygulamamla gönder'; a.href = 'mailto:' + encodeURIComponent(r.email) + '?subject=' + encodeURIComponent('EV Co-Pilot daveti') + '&body=' + encodeURIComponent(body);
+        a.style.cssText = 'display:inline-block;margin-top:8px;padding:3px 10px;border:1px solid var(--line);border-radius:8px;color:inherit;text-decoration:none';
+        out.append(el('div'), a);
+      }
+      mail.value = ''; lab.value = '';
+      await load(); tab = 'inv'; $('t-inv').prepend(out);
     } catch (e) { toast(e.message); }
   };
-  bar.append(lab, el('span', 'mut', 'geçerlilik (gün):'), days, mk);
-  root.append(bar, out);
+  root.append(form, out);
   const names = new Map(D.users.map((u) => [u.id, u.email]));
   const rows = D.inv.sort((a, b) => b.createdAt - a.createdAt).map((i) => {
     const st = { open: ['açık', 'ok'], used: ['kullanıldı', ''], expired: ['süresi doldu', 'warn'], revoked: ['iptal', 'bad'] }[i.state] || [i.state, ''];
     const a = el('div', 'acts');
     if (i.state === 'open') { const r = el('button', 'sm bad', 'İptal et'); r.onclick = () => confirm('Davet iptal edilsin mi?') && act(() => api('/admin/invites/' + i.id, 'DELETE'), 'Davet iptal edildi'); a.append(r); }
-    return [i.label || '–', chip(st[0], st[1]), fmtDT(i.createdAt), fmtDate(i.expiresAt), names.get(i.usedBy) || (i.usedBy ? i.usedBy : '–'), a];
+    return [i.label || '–', i.email || 'herkes', i.premiumDays ? i.premiumDays + ' gün' : '–', chip(st[0], st[1]), fmtDT(i.createdAt), fmtDate(i.expiresAt), names.get(i.usedBy) || (i.usedBy ? i.usedBy : '–'), a];
   });
-  root.append(table(['Etiket', 'Durum', 'Oluşturma', 'Son geçerlilik', 'Kullanan', 'İşlem'], rows));
+  root.append(table(['Etiket', 'E-posta', 'Premium', 'Durum', 'Oluşturma', 'Son geçerlilik', 'Kullanan', 'İşlem'], rows));
 }
 
 function drawCost(root) {
