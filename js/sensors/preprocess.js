@@ -14,8 +14,9 @@ export function roiToVideoRect(video, stage, roi) {
   const sw = hidden ? 160 : stage.clientWidth;
   const sh = hidden ? 100 : stage.clientHeight;
   const scale = Math.max(sw / vw, sh / vh);
-  const visW = sw / scale;
-  const visH = sh / scale;
+  const dz = Number(video.dataset?.dz) || 1; // dijital yakınlaştırma: kutuda görünen alan ortadan küçülür
+  const visW = sw / scale / dz;
+  const visH = sh / scale / dz;
   const offX = (vw - visW) / 2;
   const offY = (vh - visH) / 2;
   return {

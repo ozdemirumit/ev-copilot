@@ -1,7 +1,7 @@
 import { getState, patch, subscribe } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { persistCamera } from './roiBox.js';
-import { startCamera, stopCamera } from '../sensors/camera.js';
+import { startCamera, stopCamera, zoomRange, setZoom } from '../sensors/camera.js';
 import { startOcr, stopOcr, calibrateSoc, startPreview, stopPreview } from '../sensors/ocr.js';
 import { toast } from './toast.js';
 
@@ -21,6 +21,23 @@ export function initCameraPanel() {
   const contrast = $('ocr-contrast');
   const threshold = $('ocr-threshold');
 
+  // Yakınlaştırma: donanım zoom'u varsa o, yoksa dijital. Seçim hatırlanır.
+  const zoom = $('cam-zoom');
+  const zoomOut = $('cam-zoom-out');
+  const paintZoom = () => { zoomOut.textContent = Number(zoom.value).toFixed(1) + '×'; };
+  async function applyZoom() {
+    paintZoom();
+    try { await setZoom(video, Number(zoom.value)); } catch (err) { toast('Yakınlaştırma uygulanamadı: ' + (err.message || err.name)); }
+  }
+  async function setupZoom() {
+    const r = zoomRange();
+    zoom.min = r.min; zoom.max = r.max; zoom.step = r.step;
+    zoom.value = Math.min(r.max, Math.max(r.min, load('camZoom', 1)));
+    $('cam-zoom-kind').textContent = r.hardware ? 'kamera zoom\'u' : 'dijital (netlik azalır)';
+    await applyZoom();
+  }
+  zoom.addEventListener('input', () => { save('camZoom', Number(zoom.value)); applyZoom(); });
+
   camBtn.addEventListener('click', async () => {
     if (getState('system').camera) {
       stopOcr();
@@ -31,6 +48,7 @@ export function initCameraPanel() {
     }
     try {
       await startCamera(video);
+      await setupZoom();
       patch('system', { camera: true });
       startPreview(video, stage, $('ocr-preview'));
     } catch (err) {
@@ -51,6 +69,7 @@ export function initCameraPanel() {
     camBtn.textContent = s.camera ? '⏹ Kamerayı Durdur' : '📷 Kamerayı Başlat';
     $('cam-empty').classList.toggle('hidden', s.camera);
     ocrBtn.disabled = !s.camera;
+    zoom.disabled = !s.camera;
     ocrBtn.textContent = s.ocr ? '⏹ OCR Durdur' : '🔍 OCR Başlat';
     ocrBtn.classList.toggle('sel', s.ocr);
   });

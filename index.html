@@ -240,6 +240,12 @@
       <button class="btn" id="btn-ocr" type="button" style="flex:1" disabled>🔍 OCR Başlat</button>
     </div>
 
+    <div class="slider-row">
+      <label for="cam-zoom">Yakınlaştırma <span class="small muted" id="cam-zoom-kind"></span></label>
+      <output id="cam-zoom-out">1.0×</output>
+      <input type="range" id="cam-zoom" min="1" max="4" step="0.1" value="1" disabled>
+    </div>
+
     <div class="row between">
       <label for="ocr-auto">Açılışta kamerayı ve OCR'ı otomatik başlat</label>
       <label class="switch"><input type="checkbox" id="ocr-auto"><i></i></label>

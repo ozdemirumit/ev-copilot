@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.43.0';
+self.APP_VERSION = '0.44.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.44.0', date: '2026-11-01',
+    notes: [
+      'Kamera sekmesine yakınlaştırma (zoom) sürgüsü eklendi. Telefon kamerası zoom veriyorsa donanım zoom\'u kullanılır (görüntü bozulmaz), vermiyorsa 1-4× dijital zoom (görüntü büyür, netlik azalır). OCR okuma kutusu zoom\'a göre doğru eşlenir; seçim hatırlanır.',
+    ],
+  },
   {
     v: '0.43.0', date: '2026-11-01',
     notes: [
