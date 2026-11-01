@@ -22,12 +22,22 @@ export function initShell() {
   paintSat();
 
   $('fab-route').addEventListener('click', () => (mapApi.hasRoute() ? mapApi.overview() : toast('Önce bir rota planla')));
-  $('fab-me').addEventListener('click', () => {
+  // Haritayı bana ortala: konum varsa hemen, yoksa GPS'i açıp ilk konumda ortalar
+  let wantCenter = false;
+  const centerMe = () => {
     const e = effective();
-    if (e.lat == null) return toast('Konum yok: üstteki 📍 ile GPS\'i aç (veya Test Modu)', 4000);
-    mapApi.follow(e.lat, e.lon, 15, true);
+    if (e.lat == null) return false;
+    mapApi.follow(e.lat, e.lon, 16, true);
     mapApi.recenter?.();
+    return true;
+  };
+  $('fab-me').addEventListener('click', () => {
+    if (centerMe()) return;
+    wantCenter = true;
+    toast('Konum aranıyor…', 4000);
+    if (getState('live').gps === 'off') $('btn-gps').click(); // GPS kapalıysa aç (izin sorusu çıkar)
   });
+  subscribe('live', () => { if (wantCenter && centerMe()) wantCenter = false; });
 
   // Navigasyon düğmesi: plan hazırsa görünür
   const navBtn = $('fab-nav');

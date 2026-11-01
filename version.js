@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.51.2';
+self.APP_VERSION = '0.51.3';
 self.APP_CHANGELOG = [
+  {
+    v: '0.51.3', date: '2026-11-01',
+    notes: [
+      'Haritadaki düğme çubuğunda uydu düğmesinin hemen altına "Haritayı bana ortala" düğmesi (mavi nişan simgesi) taşındı. Konum varsa haritayı sana ortalar ve yakınlaştırır, navigasyondayken takibe döner. Konum yoksa GPS\'i açar ve ilk konum gelince kendiliğinden ortalar. Tüm rotayı göster düğmesi onun altına geçti.',
+    ],
+  },
   {
     v: '0.51.2', date: '2026-11-01',
     notes: [

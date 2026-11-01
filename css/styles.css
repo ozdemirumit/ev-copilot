@@ -478,3 +478,6 @@ body.sheet-open .socbar { display: none; }
 /* Kayıtlı yer çipleri her ekranda tek satır: eşit genişlik, uzun ad kısalır */
 .place-chips { flex-wrap: nowrap; gap: 5px; }
 .chip { flex: 1 1 0; min-width: 0; padding: 7px 3px; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+
+.fabs button svg { display: block; margin: auto; }
+#fab-me { color: var(--info); }
