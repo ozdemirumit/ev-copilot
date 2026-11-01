@@ -33,7 +33,7 @@ export function createAppFiles({ dir, send }) {
       + `<ol><li>İndirince dosyayı aç. Android "bu kaynaktan yüklemeye izin ver" derse izin ver, sonra <b>Yükle</b>'ye dokun. <small>(Open the file; allow installs from this source; tap Install.)</small></li>`
       + `<li>Play Protect uyarı verirse "Yine de yükle" de. Uygulama kendi imzalı sürümümüzdür. <small>(If Play Protect warns, choose Install anyway.)</small></li>`
       + `<li>Uygulamayı aç, <b>Daha Fazla › Hesap › Google ile giriş</b>. Giriş için davet linkine de ihtiyacın var; sana gönderilen linke bir kez dokun. <small>(Open the app, then More › Account › Sign in with Google. You need an invite link.)</small></li></ol>`
-      + `<p><small>Güncelleme: yeni sürüm çıkınca bu sayfadan tekrar indirip üstüne kurabilirsin; ayarların ve hesabın korunur.</small></p></main></body></html>`, HEAD);
+      + `<p><small>Güncelleme: uygulama arayüzü kendiliğinden güncellenir. Bu sayfadan yeniden kurmak yalnızca Android sürümü değiştiğinde (izin ya da eklenti) gerekir; hesabın ve ayarların korunur. İlk açılış internet ister, sonrası internetsiz de açılır.</small></p></main></body></html>`, HEAD);
   }
 
   /** true dönerse yanıt verildi. */

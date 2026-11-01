@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EV Co-Pilot</title>
+<style>
+  body{font:16px system-ui,sans-serif;background:#0b0f14;color:#e8eef5;margin:0;padding:24px;display:grid;place-items:center;min-height:100vh;text-align:center}
+  main{max-width:360px}h1{font-size:22px;margin:0 0 8px}p{color:#a9b6c6;line-height:1.5;margin:8px 0}
+  button{margin-top:18px;padding:14px 22px;border:0;border-radius:12px;background:#2ee6a6;color:#04281c;font:700 16px system-ui,sans-serif}
+</style>
+</head>
+<body>
+<main>
+  <h1>🔌 EV Co-Pilot</h1>
+  <p>Uygulama açılamadı. İlk açılışta internet gerekir; sonraki açılışlar internetsiz de çalışır.</p>
+  <p>The app could not open. The first launch needs internet; later launches work offline too.</p>
+  <button id="retry" type="button">Tekrar dene / Retry</button>
+</main>
+<script>
+  document.getElementById('retry').addEventListener('click', function () { location.replace('https://ozdemirumit.github.io/ev-copilot/'); });
+</script>
+</body>
+</html>

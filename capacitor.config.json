@@ -3,7 +3,9 @@
   "appName": "EV Co-Pilot",
   "webDir": "www",
   "server": {
-    "androidScheme": "https"
+    "url": "https://ozdemirumit.github.io/ev-copilot/",
+    "androidScheme": "https",
+    "errorPath": "offline.html"
   },
   "android": {
     "allowMixedContent": false

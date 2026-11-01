@@ -10,16 +10,17 @@ Web uygulaması olduğu gibi bir Android paketinin içine konur (`npm run sync` 
    - Gradle senkronu Java sürümü hatası verirse: **File > Settings > Build, Execution, Deployment > Build Tools > Gradle > Gradle JDK > Download JDK > 21**.
 4. Telefonda **Ayarlar > Telefon hakkında** içinde yapı numarasına 7 kez dokun (geliştirici modu), sonra **Geliştirici seçenekleri > USB hata ayıklama** aç. Telefonu USB ile bağla, Android Studio'da cihazı seçip ▶ ile çalıştır.
 
-## Web kodu değişince
-```bash
-npm run sync
-```
-sonra Android Studio'da yeniden ▶. Web sürümü (GitHub Pages) kendiliğinden güncellenir, APK'daki kopya güncellenmez.
+## Uygulama canlı siteyi yükler (v0.62 sonrası)
+`capacitor.config.json` içindeki `server.url` APK'yı küçük bir kabuk yapar: arayüz her açılışta `https://ozdemirumit.github.io/ev-copilot/` adresinden gelir. Yani **web kodu değişince APK'yı yenilemek gerekmez**: `git push` yeter, uygulamalar kendiliğinden güncellenir (service worker önce ağı dener, sonra önbelleği kullanır).
+- **İnternetsiz:** ilk açılış internet ister (service worker dosyaları önbelleğe alır); sonraki açılışlar internetsiz de açılır (GPS, kamera, pil tahmini, önceden planlanmış rotada navigasyon). Harita karoları, yeni rota, arama ve istasyonlar internet ister. İlk açılış başarısız olursa yerel `offline.html` sayfası ("Tekrar dene") gösterilir.
+- **APK'yı yenilemek gereken tek durum:** Android tarafı değişince (izin, eklenti, `capacitor.config.json`, `AndroidManifest.xml`). `npm.cmd run apk` derler ve sunucuya koyar.
+- Uygulamanın kökeni artık web sürümüyle aynıdır (`https://ozdemirumit.github.io`): tarayıcıdaki ayarlar APK'da da görünür.
+- Giriş (Google) sistem tarayıcısında açılır, davet `evcopilot://invite` ile uygulamaya gelir.
 
 ## APK dosyası
 **Build > Build Bundle(s) / APK(s) > Build APK(s)**. Çıktı: `android/app/build/outputs/apk/debug/app-debug.apk`. Telefona atıp "bilinmeyen kaynaktan kur" izniyle yüklenir (kişisel kullanım). Play Store'a koymak için imzalı sürüm (`.aab`) gerekir; imzalama anahtarını (keystore) GitHub'a koyma, yedeğini güvenli yerde tut.
 
 ## Notlar
-- Uygulama içinde adres `https://localhost` olur: tarayıcıdaki ayarlar (OpenChargeMap, Mapbox anahtarı, kayıtlı rota) burada ayrı başlar, anahtarları yeniden yaz. Mapbox anahtarında URL kısıtı varsa `https://localhost` da eklenmeli.
+- Eski gömülü sürümde adres `https://localhost` idi; o kurulumlardaki yerel ayarlar yeni sürümde görünmez, hesapla giriş yapınca senkron her şeyi geri getirir.
 - Ekran kapalıyken GPS için ek bir eklenti (arka plan konumu) gerekir, ilk pakette yok.
 - İzinler `android/app/src/main/AndroidManifest.xml` içinde: konum, kamera, ekranı açık tut.
