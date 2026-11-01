@@ -26,7 +26,7 @@ import { initSync } from './account/sync.js';
 import { initHistorySync } from './account/historySync.js';
 import { initCharging } from './physics/charging.js';
 import { initRoadWarnings } from './nav/roadWarnings.js';
-import { refreshCaps } from './net/proxy.js';
+import { watchCaps } from './net/proxy.js';
 import { initDimmer } from './ui/dimmer.js';
 import { initSocInput } from './ui/socInput.js';
 import { initSocBar } from './ui/socBar.js';
@@ -106,7 +106,7 @@ initSync();
 initHistorySync();
 initCharging();
 initRoadWarnings();
-refreshCaps(); // sunucu özellikleri (Mapbox/OpenChargeMap sunucuda mı) bu oturum için tazelenir
+watchCaps(); // sunucu özellikleri ve hesap planı (Premium) açılışta ve uygulamaya dönünce tazelenir
 initDimmer();
 initSocInput();
 initSocBar();

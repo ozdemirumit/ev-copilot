@@ -2,6 +2,7 @@
 import { currentUser, deleteAccount, isSignedIn, pendingInvite, setPendingInvite, signOut, startGoogleSignIn } from '../account/auth.js';
 import { syncNow, syncState } from '../account/sync.js';
 import { toast } from './toast.js';
+import { getPlan, refreshCaps } from '../net/proxy.js';
 import { locale, tr } from '../i18n/index.js';
 
 const $ = (id) => document.getElementById(id);
@@ -25,6 +26,11 @@ export function initAccountPanel() {
       if (!invite.value) invite.value = pendingInvite();
       return;
     }
+    const pl = getPlan();
+    const box = $('acc-plan');
+    const part = (t) => Object.assign(document.createElement('span'), { textContent: t });
+    box.replaceChildren(part('Plan:'), ' ', part(pl?.premium ? 'Premium' : 'Ücretsiz'),
+      ...(pl?.premium && pl.until && !user?.admin ? [' · ', part(tr('{0} tarihine kadar').replace('{0}', new Date(pl.until).toLocaleDateString(locale())))] : []));
     $('acc-name').textContent = user?.name || '';
     $('acc-email').textContent = user?.email || '';
     $('acc-sync-line').textContent = syncState.busy ? tr('Eşitleniyor…')
@@ -34,6 +40,7 @@ export function initAccountPanel() {
   }
   document.addEventListener('account-changed', paint);
   document.addEventListener('sync-changed', paint);
+  document.addEventListener('plan-changed', paint);
 
   $('acc-google').addEventListener('click', () => {
     if (waiting) return;
@@ -50,7 +57,7 @@ export function initAccountPanel() {
       .finally(() => { waiting = false; $('acc-google').disabled = false; link.classList.add('hidden'); paint(); });
   });
 
-  $('acc-sync-now').addEventListener('click', () => syncNow());
+  $('acc-sync-now').addEventListener('click', () => { syncNow(); refreshCaps(); });
   $('acc-signout').addEventListener('click', async () => { await signOut(); toast('Çıkış yapıldı'); });
   $('acc-delete').addEventListener('click', async () => {
     if (!confirm('Hesabın ve sunucudaki tüm verilerin (ayarlar, yolculuk ve şarj geçmişi) silinecek. Bu geri alınamaz. Devam edilsin mi?')) return;

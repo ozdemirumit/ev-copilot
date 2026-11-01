@@ -132,4 +132,9 @@ export default {
   "Ek ücret var (oturum başı ya da süre)": "Ισχύουν πρόσθετες χρεώσεις (ανά συνεδρία ή χρόνο)",
   "{0} dk önce": "πριν από {0} λεπτά",
   "eski bilgi": "παλιά πληροφορία",
+  "Plan:": "Πακέτο:",
+  "Ücretsiz": "Δωρεάν",
+  "Premium": "Premium",
+  "{0} tarihine kadar": "έως {0}",
+  "Canlı doluluk ve kWh fiyatı Premium üyelere özeldir.": "Η ζωντανή διαθεσιμότητα και η τιμή ανά kWh είναι για μέλη Premium.",
 };

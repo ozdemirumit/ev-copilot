@@ -132,4 +132,9 @@ export default {
   "Ek ücret var (oturum başı ya da süre)": "Има допълнителни такси (за сесия или за време)",
   "{0} dk önce": "преди {0} мин",
   "eski bilgi": "стара информация",
+  "Plan:": "План:",
+  "Ücretsiz": "Безплатен",
+  "Premium": "Premium",
+  "{0} tarihine kadar": "до {0}",
+  "Canlı doluluk ve kWh fiyatı Premium üyelere özeldir.": "Наличността на живо и цената на kWh са за Premium членове.",
 };

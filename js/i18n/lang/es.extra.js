@@ -132,4 +132,9 @@ export default {
   "Ek ücret var (oturum başı ya da süre)": "Hay cargos adicionales (por sesión o por tiempo)",
   "{0} dk önce": "hace {0} min",
   "eski bilgi": "información antigua",
+  "Plan:": "Plan:",
+  "Ücretsiz": "Gratis",
+  "Premium": "Premium",
+  "{0} tarihine kadar": "hasta el {0}",
+  "Canlı doluluk ve kWh fiyatı Premium üyelere özeldir.": "La disponibilidad en vivo y el precio por kWh son exclusivos de los miembros Premium.",
 };

@@ -132,4 +132,9 @@ export default {
   "Ek ücret var (oturum başı ya da süre)": "Zusätzliche Gebühren (pro Ladevorgang oder Zeit)",
   "{0} dk önce": "vor {0} Min.",
   "eski bilgi": "veraltete Info",
+  "Plan:": "Tarif:",
+  "Ücretsiz": "Kostenlos",
+  "Premium": "Premium",
+  "{0} tarihine kadar": "bis {0}",
+  "Canlı doluluk ve kWh fiyatı Premium üyelere özeldir.": "Live-Belegung und kWh-Preis sind Premium-Mitgliedern vorbehalten.",
 };

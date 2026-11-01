@@ -4,6 +4,7 @@ import { save } from '../utils/storage.js';
 import { stationGaps } from '../routing/planner.js';
 import { slotEl, livePrice } from '../routing/slots.js';
 import { mapApi } from './mapView.js';
+import { proxyHas } from '../net/proxy.js';
 
 const showMap = () => document.querySelector('.bottomnav [data-tab="map"]')?.click();
 
@@ -37,6 +38,7 @@ export function initRoutePanel() {
       : `Süre ${hm(i.driveMin)} (trafiksiz, canlı trafik yok) · ortalama hız ${Math.round(i.avgFreeKmh)} km/s`;
   };
   subscribe('route', paintTraffic);
+  document.addEventListener('plan-changed', () => paint());
   paintTraffic();
 
   const list = $('plan-list');
@@ -53,6 +55,7 @@ export function initRoutePanel() {
     $('plan-mode-label').textContent = MODE_LABEL[p.mode];
     list.replaceChildren();
     gm.classList.toggle('hidden', p.status !== 'ready');
+    $('premium-hint').classList.toggle('hidden', !(p.status === 'ready' && proxyHas('occupancyLocked')));
     sm.classList.toggle('hidden', p.status !== 'ready' || !p.stops.some((s) => s.km > here - 0.3));
 
     const busy = p.status === 'loading';

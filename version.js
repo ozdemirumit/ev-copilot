@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.66.0';
+self.APP_VERSION = '0.67.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.67.0', date: '2026-11-01',
+    notes: [
+      'Premium üyelik altyapısı: canlı istasyon doluluğu ve canlı kWh fiyatı yalnızca Premium hesaplara açılır. Ücretsiz hesapta Rota sayfasında Canlı doluluk ve kWh fiyatı Premium üyelere özeldir ipucu çıkar; Daha Fazla > Hesap kartında Plan: Ücretsiz ya da Plan: Premium (bitiş tarihi) görünür. Yönetici hesapları her zaman Premium sayılır.',
+      'Yönetici için: node server/premium.mjs ornek@gmail.com 30 komutu 30 gün Premium verir (süre varsa üstüne eklenir), 0 kaldırır. Sunucuda PREMIUM_REQUIRED=0 yazılırsa herkes Premium sayılır (deneme). Ödeme sağlayıcısı henüz bağlı değil; abonelik webhook u aynı yetkilendirmeyi kullanacak.',
+    ],
+  },
   {
     v: '0.66.0', date: '2026-11-01',
     notes: [

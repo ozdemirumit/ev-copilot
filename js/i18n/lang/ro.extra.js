@@ -132,4 +132,9 @@ export default {
   "Ek ücret var (oturum başı ya da süre)": "Taxe suplimentare (per sesiune sau per timp)",
   "{0} dk önce": "acum {0} min",
   "eski bilgi": "informație veche",
+  "Plan:": "Plan:",
+  "Ücretsiz": "Gratuit",
+  "Premium": "Premium",
+  "{0} tarihine kadar": "până la {0}",
+  "Canlı doluluk ve kWh fiyatı Premium üyelere özeldir.": "Disponibilitatea în timp real și prețul pe kWh sunt rezervate membrilor Premium.",
 };

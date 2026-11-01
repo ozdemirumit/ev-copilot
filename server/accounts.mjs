@@ -33,7 +33,10 @@ export function createAccounts({ env, store, send, json, readJson, caps }) {
   const googleOn = !!(G_ID && G_SECRET && PUBLIC_URL);
 
   // ---------- oturum ----------
-  const publicUser = (u) => ({ id: u.id, email: u.email, name: u.name, admin: !!u.admin });
+  // Premium: yönetici hesapları ve premiumUntil süresi dolmamış kullanıcılar. PREMIUM_REQUIRED=0 ise herkes premium sayılır (deneme/beta).
+  const PREMIUM_ON = env.PREMIUM_REQUIRED !== '0';
+  const isPremium = (u) => !PREMIUM_ON || !!u.admin || (u.premiumUntil || 0) > Date.now();
+  const publicUser = (u) => ({ id: u.id, email: u.email, name: u.name, admin: !!u.admin, premium: isPremium(u), premiumUntil: u.premiumUntil || null });
   function makeSession(uid) {
     const token = rnd(32);
     const mine = Object.entries(data.sessions).filter(([, s]) => s.uid === uid).sort((a, b) => a[1].createdAt - b[1].createdAt);
@@ -278,6 +281,17 @@ export function createAccounts({ env, store, send, json, readJson, caps }) {
         setTimeout(() => process.exit(0), 300);
         return true;
       }
+      // Premium ver/kaldır: { email | userId, days } (days: 0 ya da yoksa kaldırır; mevcut süre varsa üstüne eklenir)
+      if (p === '/admin/premium' && req.method === 'POST') {
+        const b = (await readJson(req, 2000)) || {};
+        const u = Object.values(data.users).find((x) => (b.userId && x.id === b.userId) || (b.email && String(x.email).toLowerCase() === String(b.email).toLowerCase()));
+        if (!u) { json(res, 404, { error: 'kullanıcı yok' }); return true; }
+        const days = Math.min(3650, Math.max(0, Number(b.days) || 0));
+        u.premiumUntil = days ? Math.max(Date.now(), u.premiumUntil || 0) + days * 86400e3 : null;
+        store.save();
+        json(res, 200, { ok: true, email: u.email, premiumUntil: u.premiumUntil });
+        return true;
+      }
       if (p === '/admin/invites' && req.method === 'POST') {
         const b = (await readJson(req, 2000)) || {};
         const code = rnd(9);
@@ -295,7 +309,7 @@ export function createAccounts({ env, store, send, json, readJson, caps }) {
       const di = /^\/admin\/invites\/(i_[A-Za-z0-9_-]+)$/.exec(p);
       if (di && req.method === 'DELETE') { if (data.invites[di[1]]) data.invites[di[1]].revoked = true; store.save(); json(res, 200, { ok: true }); return true; }
       if (p === '/admin/users' && req.method === 'GET') {
-        json(res, 200, { users: Object.values(data.users).map((u) => ({ id: u.id, email: u.email, name: u.name, admin: u.admin, disabled: u.disabled, createdAt: u.createdAt, lastLogin: u.lastLogin, bytes: usedBytes(u.id), trips: Object.keys(data.history?.[u.id]?.trips || {}).length, charges: Object.keys(data.history?.[u.id]?.charges || {}).length })) });
+        json(res, 200, { users: Object.values(data.users).map((u) => ({ id: u.id, email: u.email, name: u.name, admin: u.admin, disabled: u.disabled, createdAt: u.createdAt, lastLogin: u.lastLogin, premiumUntil: u.premiumUntil || null, bytes: usedBytes(u.id), trips: Object.keys(data.history?.[u.id]?.trips || {}).length, charges: Object.keys(data.history?.[u.id]?.charges || {}).length })) });
         return true;
       }
       const du = /^\/admin\/users\/(u_[A-Za-z0-9_-]+)\/(disable|enable)$/.exec(p);
@@ -312,5 +326,5 @@ export function createAccounts({ env, store, send, json, readJson, caps }) {
     return false;
   }
 
-  return { handlePublic, handleAuthed, userFromRequest, hasCredentials, googleOn, ADMINS };
+  return { handlePublic, handleAuthed, userFromRequest, hasCredentials, googleOn, ADMINS, isPremium };
 }

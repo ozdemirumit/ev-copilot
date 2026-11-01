@@ -254,6 +254,7 @@ async function overpass(req, res, url, id) {
 
 // ---------- Doluluk ve canlı fiyat ----------
 async function occupancyRoute(req, res, id) {
+  if (id.kind === 'user' && !accounts.isPremium(id.user)) return json(res, 402, { error: 'premium_required' }); // canlı doluluk ve fiyat yalnızca Premium üyelere
   const b = await readJson(req, 4000);
   if (!b || !Array.isArray(b.stations) || b.stations.length < 1 || b.stations.length > 6) return json(res, 400, { error: 'geçersiz gövde' });
   const stations = b.stations.map((s) => ({ id: String(s.id).slice(0, 40), lat: Number(s.lat), lon: Number(s.lon), dc: !!s.dc }))

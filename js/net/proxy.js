@@ -9,12 +9,14 @@ export const proxyBase = () => (String(load('proxyUrl', '') || '').trim() || DEF
 export const proxyCode = () => String(load('proxyCode', '') || '').trim();
 export const getSession = () => { const s = load('session', null); return s?.token ? s : null; };
 export const setSession = (s) => { save('session', s); document.dispatchEvent(new Event('account-changed')); };
-let caps = load('proxyCaps', null); // sunucunun bildirdiği özellikler: { mapbox, ocm, overpass }
+let caps = load('proxyCaps', null); // sunucunun bildirdiği özellikler: { mapbox, ocm, overpass, occupancy (kullanıcı Premium ise), occupancyLocked (sunucuda var ama Premium değil) }
+let plan = load('proxyPlan', null); // hesap planı: { premium, until }
 
 const hasCreds = () => !!(getSession() || proxyCode());
 
 /** Sunucu kullanılabilir mi ve istenen özelliği (mapbox | ocm | overpass) sağlıyor mu. */
 export const proxyHas = (what) => !!(hasCreds() && caps?.[what]);
+export const getPlan = () => (getSession() ? plan : null);
 
 export function proxyFetch(path, init = {}) {
   const headers = new Headers(init.headers || {});
@@ -45,14 +47,27 @@ export async function refreshCaps() {
     if (!res.ok) throw new Error(`Sunucu HTTP ${res.status}`);
     const j = await res.json();
     const c = sess ? j.caps : j;
-    caps = { mapbox: !!c?.mapbox, ocm: !!c?.ocm, overpass: !!c?.overpass, occupancy: !!c?.occupancy };
+    const prem = !sess || !!j.user?.premium; // Premium özellikler yalnızca Premium (ya da yönetici) hesapta açılır
+    caps = { mapbox: !!c?.mapbox, ocm: !!c?.ocm, overpass: !!c?.overpass, occupancy: !!c?.occupancy && prem, occupancyLocked: !!c?.occupancy && !prem };
+    plan = sess ? { premium: !!j.user?.premium, until: j.user?.premiumUntil || null } : null;
     save('proxyCaps', caps);
+    save('proxyPlan', plan);
+    document.dispatchEvent(new Event('plan-changed'));
     return { ok: true, text: '', caps, user: j.user || null };
   } catch (err) {
     caps = null;
     save('proxyCaps', null);
     return { ok: false, text: err.message === 'Erişim kodu reddedildi' ? err.message : 'Sunucuya ulaşılamadı', caps: null };
   }
+}
+
+/** Hesap planı ve sunucu özelliklerini açılışta, uygulamaya dönünce (en çok 5 dakikada bir) ve her 30 dakikada tazele. */
+export function watchCaps() {
+  let last = 0;
+  const run = () => { if (Date.now() - last > 5 * 60e3) { last = Date.now(); refreshCaps(); } };
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) run(); });
+  setInterval(run, 30 * 60e3);
+  run();
 }
 
 /** Gelişmiş ayar: sunucu adresi ve yönetici kodu kaydedilir ve sunucu sınanır. Dönüş: { ok, text, caps }. */
