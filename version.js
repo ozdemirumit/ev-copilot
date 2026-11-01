@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.55.1';
+self.APP_VERSION = '0.56.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.56.0', date: '2026-11-01',
+    notes: [
+      'Rota planlamada başlangıç varsayılan olarak Konumum (araç konumu) gelir, varış boş kalır. Konum 100 m değişince başlangıç güncellenir; kendi başlangıcını seçince (arama, haritadan, çip) güncelleme durur. Temizle yine Konumum a döner. Başlangıç ve varış kutusuna dokununca içi silinir; bir şey seçmeden bırakırsan eski metin geri gelir. Konumumu başlangıç yap ve Temizle artık çerçeveli düğme görünümünde.',
+      'Menzil sekmesindeki geçmiş kartına Yolculuklar listesi eklendi (en yeni üstte): her yolculuk için tarih, mesafe (km), sürüş süresi, ortalama hız, harcanan enerji (kWh), kWh/100 km, pil düşüşü ve ölçüm sayısı. Veriler yalnızca kameradan okunan pil düşüşü olan (ölçülen) kısımlardır.',
+    ],
+  },
   {
     v: '0.55.1', date: '2026-11-01',
     notes: [

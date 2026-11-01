@@ -79,8 +79,8 @@
         <button class="btn" id="pick-end" type="button" title="Haritadan seç">🗺️ Haritadan</button>
       </div>
       <div class="row wrap">
-        <button class="btn ghost" id="btn-mylocation" type="button">🎯 Konumumu başlangıç yap</button>
-        <button class="btn ghost" id="btn-clear-route" type="button">Temizle</button>
+        <button class="btn" id="btn-mylocation" type="button">🎯 Konumumu başlangıç yap</button>
+        <button class="btn" id="btn-clear-route" type="button">🧹 Temizle</button>
       </div>
       <div class="slider-row">
         <label for="cur-soc">Mevcut pil (şarj durumu)</label>
@@ -200,6 +200,8 @@
         <dt>Planda kullanılan düzeltme k</dt><dd id="h-k">—</dd>
       </dl>
       <p class="small muted" id="h-rel" style="margin:0"></p>
+      <h3 style="margin:6px 0 0">Yolculuklar (en yeni üstte)</h3>
+      <div id="h-trips" class="trip-list"></div>
       <div id="h-chart" class="hchart" role="img" aria-label="Tüketim ve hız grafiği"></div>
       <p class="small muted" style="margin:0" id="h-legend"></p>
       <table class="optable">

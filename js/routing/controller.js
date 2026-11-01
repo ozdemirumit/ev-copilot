@@ -304,11 +304,11 @@ export async function restoreTrip() {
   if (!t || t.v !== 1) return false;
   if (Date.now() - t.at > TRIP_MAX_AGE_MS) { kvDel(TRIP_KEY); return false; }
   const r = getState('route');
-  if (getState('plan').status !== 'none' || r.start || r.end) return false; // kullanıcı bu arada kendi rotasına başladı
+  if (getState('plan').status !== 'none' || (r.start && !r.start.auto) || r.end) return false; // kullanıcı bu arada kendi rotasına başladı (otomatik Konumum başlangıcı sayılmaz)
   raw = t.raw;
   cacheKey = t.cacheKey ?? null;
   startSoc = effective().soc ?? t.startSoc;
-  mapApi.setPoint('start', t.start, { fit: false });
+  mapApi.setPoint('start', { ...t.start, auto: false }, { fit: false }); // kayıtlı başlangıç sabit: konum değişince kaymasın
   mapApi.setPoint('end', t.end, { fit: false });
   patch('route', { trafficInfo: t.trafficInfo, cruise: t.cruise, traffic: t.traffic });
   mapApi.drawRoute(t.route.coords, { fit: true });

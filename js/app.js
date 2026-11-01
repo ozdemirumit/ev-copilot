@@ -20,6 +20,7 @@ import { initPlaces } from './ui/places.js';
 import { initDimmer } from './ui/dimmer.js';
 import { initSocInput } from './ui/socInput.js';
 import { initSocBar } from './ui/socBar.js';
+import { initDefaultStart } from './ui/defaultStart.js';
 import { initSocEstimate } from './physics/socEstimate.js';
 import { initMap } from './ui/mapView.js';
 import { initRoiBox } from './ui/roiBox.js';
@@ -88,6 +89,7 @@ initPlaces();
 initDimmer();
 initSocInput();
 initSocBar();
+initDefaultStart();
 initSocEstimate();
 
 if ('serviceWorker' in navigator) {

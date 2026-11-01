@@ -495,3 +495,8 @@ body.sheet-open .socbar { display: none; }
 
 /* Pencere sağ üst kapat (X): içerik kayarken de görünür kalır */
 .dlg-x { position: sticky; top: 0; float: right; margin: -4px -4px 0 8px; z-index: 2; }
+
+/* Yolculuk listesi (Menzil sekmesi, geçmiş kartı) */
+.trip-list { display: flex; flex-direction: column; gap: 6px; }
+.trip { display: grid; gap: 1px; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; font-size: 13px; }
+.trip b { font-size: 13px; }
