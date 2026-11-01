@@ -64,6 +64,9 @@ export function initVersionInfo() {
   $('btn-version').textContent = 'v' + APP_VERSION;
   $('about-version').textContent = 'v' + APP_VERSION;
   $('ver-line').textContent = tr('Sürüm v') + APP_VERSION;
+  // Hangi kaynaktan çalıştığımızı göster (sorun giderme): APK canlı siteyi yüklüyorsa adres github.io, eski gömülü APK'da localhost olur
+  const native = !!globalThis.Capacitor?.isNativePlatform?.();
+  $('ver-env').textContent = `${native ? 'APK' : 'web'} · ${location.host}`;
 
   const renderLog = (log) => {
     const list = $('changelog');

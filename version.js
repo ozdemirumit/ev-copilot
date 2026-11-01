@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.63.0';
+self.APP_VERSION = '0.64.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.64.0', date: '2026-11-01',
+    notes: [
+      'Daha Fazla > Sürüm kartına çalışma kaynağı satırı eklendi: APK ise APK, tarayıcıysa web ve adres (ör. APK · ozdemirumit.github.io). Güncelle düğmesi yenilenmiyorsa bu satır sebebi gösterir: localhost yazıyorsa eski gömülü APK çalışıyordur ve kendi kendine güncellenemez, APK yeniden kurulmalı.',
+    ],
+  },
   {
     v: '0.63.0', date: '2026-11-01',
     notes: [
