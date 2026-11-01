@@ -101,7 +101,16 @@ const once = (k, fn) => {
 };
 
 // ---------- kullanıcı başına günlük kota (Mapbox faturasını ve ortak Overpass'i korur) ----------
-const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 120) };
+const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 40) };
+const GOOGLE_TOTAL = Number(env.GOOGLE_DAILY_TOTAL || 150); // tüm kullanıcılar için günlük Google çağrısı tavanı (fatura üst sınırı)
+let gToday = { d: '', n: 0 };
+function googleAllowed(id) {
+  const d = new Date().toISOString().slice(0, 10);
+  if (gToday.d !== d) gToday = { d, n: 0 };
+  if (gToday.n >= GOOGLE_TOTAL || overQuota(id, 'google')) return false;
+  gToday.n++;
+  return true;
+}
 const usage = new Map();
 const today = () => new Date().toISOString().slice(0, 10);
 /** Hesaplı (yönetici olmayan) kullanıcının günlük hakkı bittiyse true. Eski erişim kodu ve yönetici sınırsızdır. */
@@ -251,7 +260,7 @@ async function occupancyRoute(req, res, id) {
     .filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lon) && Math.abs(s.lat) <= 90 && Math.abs(s.lon) <= 180);
   if (!stations.length) return json(res, 400, { error: 'geçersiz istasyon' });
   if (overQuota(id, 'occupancy')) return json(res, 429, { error: 'günlük doluluk hakkı doldu' }, { 'Retry-After': '3600' });
-  const google = GOOGLE_PLACES ? { key: GOOGLE_PLACES, allow: () => !overQuota(id, 'google') } : null;
+  const google = GOOGLE_PLACES ? { key: GOOGLE_PLACES, allow: () => googleAllowed(id) } : null;
   json(res, 200, { results: await lookupAll(stations, { google }) });
 }
 
