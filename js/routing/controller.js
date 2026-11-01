@@ -1,6 +1,6 @@
 import { getState, patch, subscribe, effective } from '../state.js';
 import { load, save } from '../utils/storage.js';
-import { kvGet, kvSet, kvDel } from '../utils/idb.js';
+import { kvDel } from '../utils/idb.js';
 import { fetchRoute, fetchChargers, fetchElevations, fetchWeather } from '../providers/index.js';
 import { reprice, reproject } from './chargerSource.js';
 import { planRoute, rankStations } from './planner.js';
@@ -11,6 +11,7 @@ import { kForSpeed, relFactor, overall } from '../physics/history.js';
 import { PHYSICS } from '../config.js';
 import { mapApi } from '../ui/mapView.js';
 import { toast } from '../ui/toast.js';
+import { rememberDest } from '../ui/recentDest.js';
 import { projectSteps } from '../nav/steps.js';
 
 const WX_STEP_KM = 50;
@@ -103,7 +104,6 @@ export async function refetchStations() {
     await loadStations(raw.pts, plan.profile);
     const p = getState('plan');
     applyPlan(computePlan({ fromKm: p.fromKm ?? 0, soc: p.fromSoc ?? startSoc }));
-    saveTrip();
   } catch (err) {
     console.error(err);
     patch('plan', { status: 'error', text: err.message });
@@ -191,7 +191,7 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
       await loadStations(pts, profile);
     }
     applyPlan(computePlan(), { startSoc });
-    saveTrip();
+    rememberDest(end);
     return true;
   } catch (err) {
     console.error(err);
@@ -233,7 +233,6 @@ async function enrichRoute(pts, speeds, planId) {
     patch('plan', { profile: buildFromRaw(), wxInfo: { source: wxRes?.source ?? null, fallbackReason: wxRes?.fallbackReason ?? null, error: wxError } });
     const pl = getState('plan');
     applyPlan(computePlan({ fromKm: pl.fromKm ?? 0, soc: pl.fromSoc ?? startSoc }));
-    saveTrip();
   } catch (err) {
     console.warn('Yeniden rota verisi tamamlanamadı:', err.message);
   }
@@ -281,52 +280,11 @@ function refresh() {
   applyPlan(computePlan({ fromKm: plan.fromKm ?? 0, soc: plan.fromSoc ?? startSoc }));
 }
 
-// ---------- Kayıtlı yolculuk: planlanan rota cihazda saklanır, internetsiz açılışta geri yüklenir ----------
-const TRIP_KEY = 'trip';
-const TRIP_MAX_AGE_MS = 36 * 3600e3;
-
-/** Son başarılı planı (rota, adımlar, istasyonlar, profil verisi) IndexedDB'ye yaz. Profil işlev içerdiği için kaydedilmez, açılışta yeniden kurulur. */
-function saveTrip() {
-  const pl = getState('plan');
-  const r = getState('route');
-  if (!raw || !pl.route || !pl.profile || !r.start || !r.end) return;
-  kvSet(TRIP_KEY, {
-    v: 1, at: Date.now(), startSoc, cacheKey,
-    start: r.start, end: r.end, route: pl.route, raw,
-    forceFirstId: pl.forceFirstId ?? null, stations: pl.stations, stationInfo: pl.stationInfo, wxInfo: pl.wxInfo,
-    trafficInfo: r.trafficInfo, cruise: r.cruise, traffic: r.traffic,
-  });
-}
-
-/** Kayıtlı yolculuğu geri yükle (açılışta, henüz plan/nokta yoksa; en çok 36 saatlik). Dönüş: yüklendiyse true. */
-export async function restoreTrip() {
-  const t = await kvGet(TRIP_KEY);
-  if (!t || t.v !== 1) return false;
-  if (Date.now() - t.at > TRIP_MAX_AGE_MS) { kvDel(TRIP_KEY); return false; }
-  const r = getState('route');
-  if (getState('plan').status !== 'none' || (r.start && !r.start.auto) || r.end) return false; // kullanıcı bu arada kendi rotasına başladı (otomatik Konumum başlangıcı sayılmaz)
-  raw = t.raw;
-  cacheKey = t.cacheKey ?? null;
-  startSoc = effective().soc ?? t.startSoc;
-  mapApi.setPoint('start', { ...t.start, auto: false }, { fit: false }); // kayıtlı başlangıç sabit: konum değişince kaymasın
-  mapApi.setPoint('end', t.end, { fit: false });
-  patch('route', { trafficInfo: t.trafficInfo, cruise: t.cruise, traffic: t.traffic });
-  mapApi.drawRoute(t.route.coords, { fit: true });
-  sig = routeSig();
-  const profile = buildFromRaw();
-  patch('plan', {
-    route: t.route, profile, steps: projectSteps(t.route.steps, profile), planId: Date.now(), wxInfo: t.wxInfo,
-    forceFirstId: t.forceFirstId, lastStopKm: null, stations: t.stations, stationInfo: t.stationInfo,
-  });
-  applyPlan(computePlan(), { startSoc });
-  const ageH = (Date.now() - t.at) / 3600e3;
-  toast(`Kayıtlı rota yüklendi (${ageH < 1 ? 'az önce' : Math.round(ageH) + ' saat önce'} planlandı)${ageH >= 3 ? ': internet varsa yeniden planla' : ''}`, 6000);
-  return true;
-}
+// Eski rota açılışta geri yüklenmez; önceki varışlar ui/recentDest.js içinde "Son hedefler" olarak tutulur.
+const TRIP_KEY = 'trip'; // eski sürümlerin kaydı: açılışta silinir
 
 export function initRouteController() {
-  document.getElementById('btn-clear-route').addEventListener('click', () => kvDel(TRIP_KEY)); // rota temizlenince kayıt da silinir
-  restoreTrip(); // beklemeden: harita hazır olunca çizimler uygulanır
+  kvDel(TRIP_KEY); // eski sürümlerin kayıtlı rotası
   document.getElementById('btn-plan').addEventListener('click', () => planTrip());
   let lastMode = getState('plan').mode;
   subscribe('plan', (p) => {

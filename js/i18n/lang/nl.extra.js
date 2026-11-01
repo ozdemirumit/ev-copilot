@@ -76,4 +76,8 @@ export default {
   "Sunucu erişim kodu geçersiz": "Toegangscode van de server ongeldig",
   "Sunucuda Mapbox anahtarı yok": "Geen Mapbox-sleutel op de server",
   "Ara sunucuya ulaşılamadı": "Proxyserver niet bereikbaar",
+  "Son hedefler": "Recente bestemmingen",
+  "🧹 Listeyi temizle": "🧹 Lijst wissen",
+  "Varış yap": "Instellen als bestemming",
+  "Listeden sil": "Uit lijst verwijderen",
 };

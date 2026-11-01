@@ -76,4 +76,8 @@ export default {
   "Sunucu erişim kodu geçersiz": "Server access code is invalid",
   "Sunucuda Mapbox anahtarı yok": "No Mapbox key on the server",
   "Ara sunucuya ulaşılamadı": "Could not reach the proxy server",
+  "Son hedefler": "Recent destinations",
+  "🧹 Listeyi temizle": "🧹 Clear list",
+  "Varış yap": "Set as destination",
+  "Listeden sil": "Remove from list",
 };

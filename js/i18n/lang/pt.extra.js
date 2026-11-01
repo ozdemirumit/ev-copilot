@@ -76,4 +76,8 @@ export default {
   "Sunucu erişim kodu geçersiz": "Código de acesso do servidor inválido",
   "Sunucuda Mapbox anahtarı yok": "Não há chave Mapbox no servidor",
   "Ara sunucuya ulaşılamadı": "Não foi possível contactar o servidor proxy",
+  "Son hedefler": "Destinos recentes",
+  "🧹 Listeyi temizle": "🧹 Limpar lista",
+  "Varış yap": "Definir como destino",
+  "Listeden sil": "Remover da lista",
 };

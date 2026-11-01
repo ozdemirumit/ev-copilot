@@ -76,4 +76,8 @@ export default {
   "Sunucu erişim kodu geçersiz": "Μη έγκυρος κωδικός πρόσβασης διακομιστή",
   "Sunucuda Mapbox anahtarı yok": "Δεν υπάρχει κλειδί Mapbox στον διακομιστή",
   "Ara sunucuya ulaşılamadı": "Δεν ήταν δυνατή η επικοινωνία με τον διακομιστή proxy",
+  "Son hedefler": "Πρόσφατοι προορισμοί",
+  "🧹 Listeyi temizle": "🧹 Εκκαθάριση λίστας",
+  "Varış yap": "Ορισμός ως προορισμού",
+  "Listeden sil": "Αφαίρεση από τη λίστα",
 };

@@ -398,6 +398,10 @@ body.navmode .fabs { bottom: calc(var(--nav-h) + var(--safe-b) + 92px); }
 .place-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card-2); color: var(--text); font-size: 13px; font-weight: 600; }
 .chip.empty { border-style: dashed; color: var(--muted); }
+.recent-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.recent-chip { display: inline-flex; align-items: center; max-width: 100%; border: 1px solid var(--line); border-radius: 999px; background: var(--card-2); overflow: hidden; }
+.recent-chip .chip { border: 0; background: none; flex: 0 1 auto; min-width: 0; max-width: 220px; padding: 7px 4px 7px 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; }
+.recent-chip .chip-x { border: 0; background: none; color: var(--muted); font-size: 16px; line-height: 1; padding: 7px 10px 7px 4px; }
 .chip:active { background: var(--accent-dim); }
 .places-edit summary { cursor: pointer; font-size: 13px; color: var(--muted); padding: 4px 0; }
 .places-edit[open] summary { margin-bottom: 8px; }

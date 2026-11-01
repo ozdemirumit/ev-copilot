@@ -76,4 +76,8 @@ export default {
   "Sunucu erişim kodu geçersiz": "Кодът за достъп до сървъра е невалиден",
   "Sunucuda Mapbox anahtarı yok": "Няма ключ за Mapbox на сървъра",
   "Ara sunucuya ulaşılamadı": "Прокси сървърът не може да бъде достигнат",
+  "Son hedefler": "Скорошни дестинации",
+  "🧹 Listeyi temizle": "🧹 Изчисти списъка",
+  "Varış yap": "Задай като дестинация",
+  "Listeden sil": "Премахни от списъка",
 };

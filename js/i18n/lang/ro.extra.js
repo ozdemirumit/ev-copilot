@@ -76,4 +76,8 @@ export default {
   "Sunucu erişim kodu geçersiz": "Cod de acces al serverului invalid",
   "Sunucuda Mapbox anahtarı yok": "Nu există cheie Mapbox pe server",
   "Ara sunucuya ulaşılamadı": "Serverul proxy nu poate fi contactat",
+  "Son hedefler": "Destinații recente",
+  "🧹 Listeyi temizle": "🧹 Golește lista",
+  "Varış yap": "Setează ca destinație",
+  "Listeden sil": "Elimină din listă",
 };
