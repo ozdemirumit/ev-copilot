@@ -7,7 +7,7 @@ import { planRoute, rankStations } from './planner.js';
 import { resampleRoute, buildProfile } from '../physics/routeProfile.js';
 import { densityFromRatio, speedFactor } from '../physics/traffic.js';
 import { segmentSpeeds } from '../physics/routeSpeed.js';
-import { kForSpeed } from '../physics/history.js';
+import { kForSpeed, relFactor, overall } from '../physics/history.js';
 import { PHYSICS } from '../config.js';
 import { mapApi } from '../ui/mapView.js';
 import { toast } from '../ui/toast.js';
@@ -22,12 +22,13 @@ let timer = null;
 
 const routeSig = () => {
   const r = getState('route');
-  return [r.cruise, r.traffic, r.minArrivalSoc, r.consAdj, r.chargerMin, r.maxChargeTo, r.minStopAdd, r.tolerance, r.allowSlow].join('|');
+  return [r.cruise, r.traffic, r.minArrivalSoc, r.consAdj, r.chargerMin, r.maxChargeTo, r.minStopAdd, r.tolerance, r.allowSlow, getState('hist').at].join('|'); // hist.at: yeni sürüş ölçümü hız düzeltmesini değiştirir
 };
 
 function buildFromRaw() {
   const r = getState('route');
-  return buildProfile({ ...raw, cruise: r.cruise, traffic: r.traffic }); // raw.speeds = rota adımlarından dilim hızları
+  const refV = planK().refV; // planın k'sının dayandığı referans (hız ya da tüm geçmiş): dilimler ona göre hıza bağlı düzeltilir
+  return buildProfile({ ...raw, cruise: r.cruise, traffic: r.traffic, speedRel: (v) => relFactor(v, refV) }); // raw.speeds = rota adımlarından dilim hızları
 }
 
 /**
@@ -41,9 +42,13 @@ export function planK() {
   const h = kForSpeed(v);
   const hist = h && h.km >= 40 ? Math.min(1.6, Math.max(0.7, h.kBase / PHYSICS.consScale)) : null;
   const live = eng.measuredKm != null ? eng.k : null;
-  if (hist != null && live != null) return { k: 0.5 * hist + 0.5 * live, src: `geçmiş (${Math.round(h.km)} km) + canlı`, v };
-  if (hist != null) return { k: hist, src: `geçmiş ölçüm (~${Math.round(v)} km/s civarı, ${Math.round(h.km)} km)`, v };
-  return { k: eng.k, src: eng.k !== 1 ? 'canlı kalibrasyon' : 'kalibre değil (model varsayımı)', v };
+  // refV: dilim hız düzeltmelerinin referansı (null = tüm geçmişin ortalaması). Bu hızda ölçüm yoksa ama geçmiş varsa ortalama kullanılır.
+  const all = hist == null ? overall() : null;
+  const histAll = all && all.km >= 40 ? Math.min(1.6, Math.max(0.7, all.kBase / PHYSICS.consScale)) : null;
+  if (hist != null && live != null) return { k: 0.5 * hist + 0.5 * live, src: `geçmiş (${Math.round(h.km)} km) + canlı`, v, refV: v };
+  if (hist != null) return { k: hist, src: `geçmiş ölçüm (~${Math.round(v)} km/s civarı, ${Math.round(h.km)} km)`, v, refV: v };
+  if (histAll != null) return { k: live != null ? 0.5 * histAll + 0.5 * live : histAll, src: `geçmiş ortalama (${Math.round(all.km)} km) + hıza göre düzeltme`, v, refV: null };
+  return { k: eng.k, src: eng.k !== 1 ? 'canlı kalibrasyon' : 'kalibre değil (model varsayımı)', v, refV: null };
 }
 
 /** Mevcut profil/istasyonlarla planı (yeniden) hesapla. fromKm/soc verilirse o konumdan (dinamik yeniden planlama). */
@@ -278,7 +283,7 @@ export function initRouteController() {
   subscribe('plan', (p) => {
     if (p.mode !== lastMode) { lastMode = p.mode; refresh(); }
   });
-  subscribe('route', () => {
+  subscribe(['route', 'hist'], () => {
     if (routeSig() === sig) return;
     clearTimeout(timer);
     timer = setTimeout(refresh, 400);

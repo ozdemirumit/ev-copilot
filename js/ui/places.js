@@ -9,9 +9,9 @@ const KEY = 'places';
 const SLOTS = [
   { id: 'home', icon: '🏠', name: 'Ev', fixed: true },
   { id: 'work', icon: '💼', name: 'İş', fixed: true },
-  { id: 'fav1', icon: '⭐', name: 'Favori 1' },
-  { id: 'fav2', icon: '⭐', name: 'Favori 2' },
-  { id: 'fav3', icon: '⭐', name: 'Favori 3' },
+  { id: 'fav1', icon: '⭐', name: 'F1' },
+  { id: 'fav2', icon: '⭐', name: 'F2' },
+  { id: 'fav3', icon: '⭐', name: 'F3' },
 ];
 
 const $ = (id) => document.getElementById(id);

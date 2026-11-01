@@ -2,8 +2,17 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.50.0';
+self.APP_VERSION = '0.51.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.51.0', date: '2026-11-01',
+    notes: [
+      'Tüketim hıza göre öğrenilir: sürüşte pil yüzdesi düştükçe kaydedilen ölçümlerden (zaten tutuluyordu) her hız için "ölçülen / model" oranı çıkarılır ve plan, rotanın HER diliminde o dilimin hızına uygun düzeltmeyi uygular (eskiden tek hız için tek düzeltme vardı). Şehir içi ve otoyol parçaları ayrı ayrı doğru enerjiyle hesaplanır; eco-hız tavsiyesi de bu düzeltmeyi kullanır.',
+      'Bir hızda en az 25 km ölçüm yoksa o hıza düzeltme uygulanmaz; az veride düzeltme yumuşatılır (80 km\'de tam güven). Referans, planın k değeridir: o hızda ölçüm yoksa tüm geçmişin ortalaması referans alınır. Yeni ölçüm gelince plan kendiliğinden yeniden hesaplanır.',
+      'Menzil sekmesindeki sürüş geçmişi kartında "Hız düzeltmesi: 50 / 70 / 90 / 110 / 130 km/s ×…" satırı eklendi. Elle girilen (tahmini) pil ölçüme katılmaz, yalnızca kameranın gerçek okumaları.',
+      'Favori yer çipleri F1, F2, F3 olarak yazılır.',
+    ],
+  },
   {
     v: '0.50.0', date: '2026-11-01',
     notes: [

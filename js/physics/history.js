@@ -78,6 +78,7 @@ export function feed({ dKm, dt, moving, modelStepKwh, soc, temp, headwind, grade
       grade: +(((snap.gSum - anchor.gSum) / dist) * 100).toFixed(1),
     });
     if (recs.length > MAX_RECORDS) recs = recs.slice(-MAX_RECORDS);
+    relCache = new Map();
     save(KEY, recs);
     notify();
   }
@@ -88,6 +89,7 @@ export const records = () => recs;
 
 export function clearHistory() {
   recs = [];
+  relCache = new Map();
   anchor = null;
   remove(KEY);
   notify();
@@ -106,6 +108,41 @@ export function kForSpeed(v) {
   }
   const w = rs.reduce((a, r) => a + r.dist, 0);
   return w > 0 ? { kBase: rs.reduce((a, r) => a + r.kBase * r.dist, 0) / w, km: w } : null;
+}
+
+const REL_MIN_KM = 25; // iki hızda da bu kadar ölçüm yoksa hız düzeltmesi uygulanmaz
+const REL_FULL_KM = 80; // bu kadar ölçümde düzeltme tam güvenle uygulanır (altında oransal yumuşatılır)
+let relCache = new Map();
+
+/** Tüm geçmişin mesafe ağırlıklı ortalama ölçülen/model oranı (aykırılar atılır) ve dayandığı mesafe; veri yoksa null. */
+export function overall() {
+  let rs = recs;
+  if (rs.length >= 4) {
+    const sorted = rs.map((r) => r.kBase).sort((x, y) => x - y);
+    const med = sorted[Math.floor(sorted.length / 2)];
+    rs = rs.filter((r) => r.kBase >= med * 0.6 && r.kBase <= med * 1.4);
+  }
+  const w = rs.reduce((a, r) => a + r.dist, 0);
+  return w > 0 ? { kBase: rs.reduce((a, r) => a + r.kBase * r.dist, 0) / w, km: w } : null;
+}
+
+/**
+ * Hıza bağlı göreli tüketim çarpanı: v hızındaki ölçülen/model oranının referanstakine (planın k'sının dayandığı hız; null ise tüm geçmiş ortalaması) oranı.
+ * Planın k'sı referans hızı zaten düzelttiği için bu çarpan referansta 1'dir; dilimlerin gerçek hızı farklıysa (şehir içi, otoyol)
+ * enerji o hızda gerçekte ölçülen sapmaya göre ayarlanır. Veri azsa 1'e doğru yumuşatılır; [0.75, 1.4] ile sınırlı.
+ */
+export function relFactor(v, vRef) {
+  const key = `${Math.round(v / 3)}|${vRef == null ? 'o' : Math.round(vRef / 3)}`; // 3 km/s'lik kovalar: hesap önbelleğe alınır
+  if (relCache.has(key)) return relCache.get(key);
+  const a = kForSpeed(v);
+  const b = vRef == null ? overall() : kForSpeed(vRef); // vRef yoksa: tüm geçmişin ortalaması referanstır
+  let f = 1;
+  if (a && b && a.km >= REL_MIN_KM && b.km >= REL_MIN_KM && b.kBase > 0) {
+    const w = Math.min(1, Math.min(a.km, b.km) / REL_FULL_KM);
+    f = 1 + (Math.min(1.4, Math.max(0.75, a.kBase / b.kBase)) - 1) * w;
+  }
+  relCache.set(key, f);
+  return f;
 }
 
 /** Hız bandı başına ortalama tüketim (mesafe ağırlıklı) ve k. */

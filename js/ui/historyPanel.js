@@ -1,6 +1,6 @@
 // Menzil sekmesi: yolculuk özeti, tüketim/hız grafiği, hız bandı tablosu ve planda kullanılan k.
 import { getState, subscribe } from '../state.js';
-import { records, byBand, summary, clearHistory } from '../physics/history.js';
+import { records, byBand, summary, clearHistory, relFactor } from '../physics/history.js';
 
 const $ = (id) => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
@@ -50,6 +50,14 @@ function paint() {
   $('h-all').textContent = fmt(s.all) + (s.all ? ` (${s.all.n} ölçüm)` : '');
   const ki = getState('plan').kInfo;
   $('h-k').textContent = ki ? `${ki.k.toFixed(2)} — ${ki.src}` : '—';
+  const rel = $('h-rel');
+  if (rel) {
+    const refV = ki?.refV ?? null;
+    const parts = [50, 70, 90, 110, 130].map((v) => ({ v, f: relFactor(v, refV) }));
+    rel.textContent = parts.some((p) => Math.abs(p.f - 1) > 0.005)
+      ? `Hız düzeltmesi (${refV == null ? 'geçmiş ortalamaya' : Math.round(refV) + ' km/s\'e'} göre): ` + parts.map((p) => `${p.v} km/s ×${p.f.toFixed(2)}`).join(' · ')
+      : 'Hız düzeltmesi: yeterli ölçüm birikince (her hızda ≥ 25 km) burada görünür.';
+  }
   drawChart(rs.slice(-CHART_N));
 
   const body = $('h-bands');

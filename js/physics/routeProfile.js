@@ -33,7 +33,7 @@ export function resampleRoute(coords, stepKm = STEP_KM) {
  *  pts: resampleRoute çıktısı · elevations: pts ile aynı uzunlukta (m) veya null
  *  wx: [{ km, temp, rain, windSpeed, windDir }] · cruise: km/h · traffic: 0..100
  */
-export function buildProfile({ pts, elevations, wx, cruise, traffic, elevSource = null, speeds = null }) {
+export function buildProfile({ pts, elevations, wx, cruise, traffic, elevSource = null, speeds = null, speedRel = null }) {
   const segs = [];
   for (let i = 0; i < pts.length - 1; i++) {
     const a = pts[i];
@@ -64,7 +64,8 @@ export function buildProfile({ pts, elevations, wx, cruise, traffic, elevSource 
     const vEff = Math.max(5, vf * tfac);
     const p = batteryPowerKw({ v: vEff, grade: seg.grade, headwind: seg.headwind, temp: seg.temp, rain: seg.rain });
     const h = seg.dKm / vEff;
-    return { kwh: p * h * stopGoOverhead(dens), h, p };
+    const rel = speedRel && p > 0 ? speedRel(vEff) : 1; // hıza göre öğrenilmiş göreli düzeltme (yalnızca harcamaya; rejenerasyona değil)
+    return { kwh: p * h * stopGoOverhead(dens) * rel, h, p };
   };
 
   // Varsayılan seyir hızında kümülatif diziler
