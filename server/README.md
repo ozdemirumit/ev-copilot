@@ -71,3 +71,27 @@ npm run apk
 Bu komut web dosyalarını `android/` içine eşitler, Gradle ile debug APK derler ve `server/public/ev-copilot.apk` + `app.json` dosyalarını yazar. Sunucuyu yeniden başlatmak gerekmez; sayfa hemen yeni sürümü sunar. Gerekenler: Android Studio (SDK ve JDK 21). APK repoya girmez (`server/public/` gitignore'da).
 
 Sınırlar: bir adresten saatte en çok 20 indirme. APK debug imzalıdır, kendi kullanımın içindir; Play Store için imzalı `.aab` ayrıca hazırlanır. Kullanıcılar APK'yı yeni sürümde üstüne kurarak güncelleyebilir; ayarları ve hesapları korunur.
+
+## Windows hizmeti olarak çalıştırma (durmasın, kendi başına açılsın)
+Normal kullanıcı betikleri (`start.ps1`, Başlangıç kısayolları) oturum açılmadan çalışmaz ve oturum kapanınca ya da araç oturumları bitince durabilir. Kalıcı çözüm Windows hizmetidir: bilgisayar açılınca, kimse oturum açmadan başlar, çökerse 5 saniyede yeniden başlar, güncelleme sonrası yeniden başlatmada kendiliğinden gelir.
+
+**Kurulan bileşenler (`server\service\`):**
+| Ad | Ne yapar |
+|---|---|
+| `EVCoPilotProxy` (hizmet) | `node proxy.mjs`: hesaplar, anahtarlar, `/app`; 127.0.0.1:8787 |
+| `EVCoPilotCaddy` (hizmet) | HTTPS ve sertifika yenileme; :443 |
+| `EVCoPilotBackup` (görev) | her gün 03:30 `db.json` yedeği, son 14 tutulur (`C:\ProgramData\EVCoPilotackup`) |
+| `EVCoPilotWatchdog` (görev) | 5 dakikada bir sağlık denetimi; yanıt vermeyen hizmeti yeniden başlatır |
+
+**Güvenlik tasarımı:** hizmetler `NT AUTHORITY\LocalService` (düşük yetkili) hesabıyla çalışır; yalnızca `server\` (okuma), `server\data` ve `C:\ProgramData\EVCoPilot` (yazma) klasörlerine erişir. `server\.env` yalnızca SYSTEM, yöneticiler, senin hesabın ve LocalService tarafından okunabilir. Güvenlik duvarında yalnızca `caddy.exe` için gelen TCP 443 açılır. Sarmalayıcı: NSSM (winget ile `NSSM.NSSM`; node ve caddy Windows hizmet protokolünü bilmediği için gerekir).
+
+**Kurulum (yönetici PowerShell):**
+```
+powershell -ExecutionPolicy Bypass -File "D:\AI-Codes\Claude Code\MBRP\server\service\install-services.ps1" -DryRun
+powershell -ExecutionPolicy Bypass -File "D:\AI-Codes\Claude Code\MBRP\server\service\install-services.ps1"
+```
+İlki hiçbir şeyi değiştirmeden ne yapılacağını yazar. İkincisi NSSM'i kurar, eski kullanıcı döngülerini kapatır, Caddy'yi ve Caddyfile'ı `C:\ProgramData\EVCoPilot\caddy` altına kopyalar (sertifikalar da taşınır), hizmetleri ve görevleri kurar, prizdeyken uykuyu kapatır, başlatır ve doğrular. Sunucuda kısa kesinti olur.
+
+**Günlük işler:** durum `server\service\status.ps1` (normal PowerShell), kaldırmak `uninstall-services.ps1` (yönetici). Yeniden başlatmak: `Restart-Service EVCoPilotProxy` (yönetici). Günlükler `C:\ProgramData\EVCoPilot\logs` içinde (5 MB'ta döner). Google/Mapbox anahtarlarını `.env`'de değiştirince yalnızca proxy'yi yeniden başlat. `npm run apk` sunucuyu yeniden başlatmayı gerektirmez.
+
+**Hâlâ bilgisayara bağlı olanlar (yazılım çözemez):** elektrik ve internet kesintisi (UPS önerilir), Windows güncellemesinin zorunlu yeniden başlatması (hizmetler kendiliğinden gelir), router'da bilgisayarın yerel adresinin sabitlenmesi (DHCP rezervasyonu) ve 443 yönlendirmesi, BIOS'ta "elektrik gelince aç" ayarı. Yedekleri başka bir diske/bilgisayara da kopyalamak için `install-services.ps1 -BackupDir "E:\EVCoPilotYedek"` kullan.
