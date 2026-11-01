@@ -492,3 +492,6 @@ body.sheet-open .socbar { display: none; }
 .socbar-range small { font-size: 9px; color: var(--muted); }
 .socbar-srcline { display: flex; align-items: center; justify-content: center; line-height: 1; }
 .socbar-srcline .ind { width: 8px; height: 8px; margin-right: 3px; }
+
+/* Pencere sağ üst kapat (X): içerik kayarken de görünür kalır */
+.dlg-x { position: sticky; top: 0; float: right; margin: -4px -4px 0 8px; z-index: 2; }

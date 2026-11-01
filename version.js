@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.55.0';
+self.APP_VERSION = '0.55.1';
 self.APP_CHANGELOG = [
+  {
+    v: '0.55.1', date: '2026-11-01',
+    notes: [
+      'Sürüm notları penceresi sağ üstteki X ile de kapatılır (içerik kayarken de görünür kalır).',
+    ],
+  },
   {
     v: '0.55.0', date: '2026-11-01',
     notes: [

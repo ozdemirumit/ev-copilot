@@ -119,6 +119,7 @@ export function initVersionInfo() {
   $('btn-notes').addEventListener('click', openNotes);
   $('ver-notes').addEventListener('click', openNotes);
   $('about-close').addEventListener('click', () => dlg.close());
+  $('about-x').addEventListener('click', () => dlg.close());
 
   // Açılışta, her 20 dakikada ve uygulamaya dönülünce yeni sürüm var mı bak
   setTimeout(check, 3000);
