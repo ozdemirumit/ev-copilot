@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.53.1';
+self.APP_VERSION = '0.54.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.54.0', date: '2026-11-01',
+    notes: [
+      'Pil yüzdesi navigasyonda kendiliğinden düşmesi düzeltildi. Nedenleri: (1) kamera okurken pil çubuğuna yanlışlıkla dokunmak değeri değiştiriyor ve tahmin moduna sokuyordu: artık kamera pili canlı okurken elle ayar kapalı (çubuk ve Rota sürgüsü), çubuk yalnızca başparmağın yakınından tutulunca hareket eder; (2) tahmin ile kamera okuması arasında durum gidip gelebiliyordu (okumaya "lastOkAt" ile bakılıyordu, tahmin onu da güncelliyordu): artık yalnızca gerçek kamera okumasını sayan ayrı bir alan kullanılıyor; (3) kamera çalışırken 90 sn okuyamayınca tahmine geçiliyordu: artık kamera çalışıyorsa 3 dk, kapalıysa 1 dk sonra, ve o zamana kadar son okunan değer sabit kalır.',
+      'Menzil artık rotaya göre hesaplanır: planlı rotadaki araç konumundan, önümüzdeki yolun enerji profiline (eğim, hız, rüzgâr, trafik, öğrenilmiş hız düzeltmesi) göre minimum varış pili eşiğine kadar gidilebilecek mesafe; enerji varışa yetiyorsa varışa kalan yol artı kalan enerjiyle düz tüketimle devam eder. Rota yoksa anlık tüketimle. Sol pil çubuğundaki ve Menzil sekmesindeki değer budur.',
+      'Yeniden rota: rota, adımlar ve plan hemen kurulur (yaklaşık 1 sn); rakım ve hava arkadan gelip planı sessizce günceller (eskiden hepsi beklenirdi, navigasyon birkaç saniye "Rota hesaplanıyor"da kalırdı). Harita hesaplama sürerken de aracı takip eder ve yeni rota gelince zorla araca ortalanıp yakınlaştırılır.',
+    ],
+  },
   {
     v: '0.53.1', date: '2026-11-01',
     notes: [

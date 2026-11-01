@@ -2,7 +2,7 @@
 // yoldan geçer (canlı pil + OCR filtresinin referansı), bu yüzden HUD, plan ve navigasyon aynı değeri kullanır.
 // Sürgü bırakılınca açık plan yeniden hesaplanır (ağ çağrısı yok).
 import { getState, patch, subscribe, effective } from '../state.js';
-import { setManual } from '../physics/socEstimate.js';
+import { setManual, isOnline } from '../physics/socEstimate.js';
 import { setStartSoc } from '../routing/controller.js';
 
 const $ = (id) => document.getElementById(id);
@@ -18,10 +18,12 @@ export function initSocInput() {
     const v = e.soc;
     if (!dragging && v != null) slider.value = Math.round(v);
     out.textContent = v == null ? '—' : '%' + Math.round(dragging ? Number(slider.value) : v);
-    const ocrOk = getState('system').ocr && getState('ocr').status === 'ok';
+    const online = e.source !== 'sim' && isOnline();
+    slider.disabled = online; // kamera canlı okuyorsa elle değiştirme gereksiz (ve yanlışlıkla bozmasın)
+    const ocrOk = online;
     note.textContent = e.source === 'sim' ? 'Test Modu: pil Test sekmesindeki değerdir.'
       : v == null ? 'Pil bilinmiyor: plan %80 varsayar. Sürgüyle gir.'
-        : ocrOk ? 'Kamera okuyor: okunan değer geçerli. Elle girersen bir sonraki okuma bunu geçersiz kılar.'
+        : ocrOk ? 'Pil kameradan canlı okunuyor: elle ayar gerekmez (kamera durursa sürgü açılır).'
           : getState('engine').socSrc === 'manual' ? 'Elle girildi: yol alındıkça tüketim modeliyle düşer, kamera okuyunca düzelir.'
             : 'Son okunan değer.';
   };

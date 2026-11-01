@@ -59,11 +59,17 @@ function tick() {
   const plan = getState('plan');
   const e = effective();
 
-  if (plan.status === 'loading') return paint('🧭', '', 'Rota hesaplanıyor…', '', '');
+  if (plan.status === 'loading') {
+    paint('🧭', '', 'Rota hesaplanıyor…', '', '');
+    if (e.lat != null) mapApi.follow(e.lat, e.lon, null, false, getState('nav').headingUp && (e.speed ?? 0) > 5 ? e.heading : null); // hesaplama sürerken araç ekrandan çıkmasın
+    return;
+  }
   if (!plan.profile || !plan.steps?.length) return paint('🧭', '', 'Önce Rotayı Planla', '', '', true);
   if (plan.planId !== planId || !track) {
     planId = plan.planId; said = new Set(); offSince = 0; trackKm = null;
     track = plan.route?.coords ? buildTrack(plan.route.coords) : null;
+    zoomNow = null; // yeni rota (yeniden rota dahil): harita zorla araca ortalanır ve zoom yeniden ayarlanır
+    mapApi.recenter?.();
   }
   if (!track || e.lat == null) return paint('📍', '', 'Konum bekleniyor…', '', 'GPS kapalıysa üstteki 📍 düğmesine dokun', true);
 

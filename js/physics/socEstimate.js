@@ -6,14 +6,15 @@ import { getState, patch, subscribe } from '../state.js';
 import { VEHICLE } from '../config.js';
 import { releaseSoc } from '../sensors/ocr.js';
 
-const FALLBACK_MS = 90_000; // OCR bu kadar süredir okuyamıyorsa tahmine geç
+const FALLBACK_MS = 180_000; // kamera çalışıyor ama bu kadar süredir okuyamıyorsa tahmine geç (kısa kesintilerde son değer korunur)
+const IDLE_FALLBACK_MS = 60_000; // kamera/OCR kapalıysa son okumadan bu kadar sonra tahmine geç
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const r1 = (v) => Math.round(v * 10) / 10;
 
 let est = null; // tahmin/elle değer (ondalıklı)
 let mode = 'none'; // 'ocr' | 'manual' | 'none'
 let ocrAt = 0;
-let seenOk = 0;
+let seenRead = 0;
 let beat = 0;
 
 function setMode(m) {
@@ -54,15 +55,16 @@ export function consume(kwh) {
 export function initSocEstimate() {
   subscribe('ocr', () => {
     const o = getState('ocr');
-    if (o.status === 'ok' && o.accepted != null && o.lastOkAt !== seenOk) { // gerçek kamera okuması: her zaman öncelikli
-      seenOk = o.lastOkAt;
+    if (o.readAt && o.readAt !== seenRead && o.accepted != null) { // gerçek kamera okuması: her zaman öncelikli (tahminin lastOkAt güncellemesi buraya sayılmaz)
+      seenRead = o.readAt;
       ocrAt = Date.now();
       est = o.accepted;
       setMode('ocr');
     }
   });
   setInterval(() => {
-    if (mode === 'ocr' && Date.now() - ocrAt > FALLBACK_MS && getState('live').soc != null && !getState('sim').enabled) {
+    const limit = getState('system').ocr ? FALLBACK_MS : IDLE_FALLBACK_MS;
+    if (mode === 'ocr' && Date.now() - ocrAt > limit && getState('live').soc != null && !getState('sim').enabled) {
       est = getState('live').soc;
       setMode('manual'); // kamera okumuyor: son değerden tahmin
     }

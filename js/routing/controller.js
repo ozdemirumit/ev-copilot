@@ -142,6 +142,23 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
     mapApi.drawRoute(rt.coords, { fit: !from, traffic: rt.trafficSpans || null });
     if (from) mapApi.setPoint('start', from, { fit: false });
 
+    if (from) {
+      // Yeniden rota (navigasyon): rota, adımlar ve plan hemen kurulur; rakım ve hava arkadan gelir. Navigasyon beklemeden devam eder.
+      raw = { pts, elevations: null, elevSource: null, speeds: speeds.segs, wx: [] };
+      sig = routeSig();
+      const quick = buildFromRaw();
+      const cur = getState('plan');
+      const keptQ = reproject([...cur.stations, ...extra.filter((x) => !cur.stations.some((s) => s.id === x.id))], quick);
+      patch('plan', { route: rt, profile: quick, steps: projectSteps(rt.steps, quick), planId: Date.now(), wxInfo: { source: null, fallbackReason: null, error: null }, forceFirstId: via?.id ?? null, lastStopKm: null, stations: keptQ, stationInfo: cur.stationInfo, text: '' });
+      if (!keptQ.length) {
+        cacheKey = [start, end].map((p) => `${p.lat.toFixed(2)},${p.lon.toFixed(2)}`).join('>');
+        await loadStations(pts, quick);
+      }
+      applyPlan(computePlan(), { startSoc });
+      enrichRoute(pts, speeds, getState('plan').planId); // beklenmez
+      return true;
+    }
+
     patch('plan', { text: 'Rakım ve hava durumu alınıyor…' });
     // Hava noktaları ve geçiş saatleri: dilim hızlarından hesaplanan gerçek varış süresiyle
     const wxIdx = pts.map((_, i) => i).filter((i) => i % (WX_STEP_KM / 2) === 0);
@@ -187,6 +204,38 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
       toast('Plan hatası: ' + err.message, 4000);
     }
     return false;
+  }
+}
+
+/** Yeniden rotanın rakım ve hava verisi (arka plan): gelince profil yenilenir ve plan ağsız yeniden hesaplanır. */
+async function enrichRoute(pts, speeds, planId) {
+  try {
+    const wxIdx = pts.map((_, i) => i).filter((i) => i % (WX_STEP_KM / 2) === 0);
+    if (wxIdx.at(-1) !== pts.length - 1) wxIdx.push(pts.length - 1);
+    const wxPts = wxIdx.map((i) => pts[i]);
+    const t0 = Date.now();
+    let wxError = null;
+    const [elev, wxRes] = await Promise.all([
+      fetchElevations(pts).catch(() => null),
+      fetchWeather(wxIdx.map((i) => ({ lat: pts[i].lat, lon: pts[i].lon, t: t0 + speeds.cumH[i] * 3600e3 }))).catch((err) => { wxError = err.message; return null; }),
+    ]);
+    if (getState('plan').planId !== planId) return; // araya yeni bir rota girdi
+    if (!elev) toast('Rakım alınamadı: rota düz kabul edildi');
+    if (!wxRes) toast('Hava durumu alınamadı: rüzgar/yağış yok sayıldı');
+    raw = {
+      pts,
+      elevations: elev?.elevations ?? null,
+      elevSource: elev?.source ?? null,
+      speeds: speeds.segs,
+      wx: wxRes ? wxRes.map((w, i) => ({ km: wxPts[i].km, ...w })) : [],
+    };
+    sig = routeSig();
+    patch('plan', { profile: buildFromRaw(), wxInfo: { source: wxRes?.source ?? null, fallbackReason: wxRes?.fallbackReason ?? null, error: wxError } });
+    const pl = getState('plan');
+    applyPlan(computePlan({ fromKm: pl.fromKm ?? 0, soc: pl.fromSoc ?? startSoc }));
+    saveTrip();
+  } catch (err) {
+    console.warn('Yeniden rota verisi tamamlanamadı:', err.message);
   }
 }
 

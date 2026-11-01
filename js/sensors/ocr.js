@@ -104,7 +104,7 @@ async function tick(video, stage) {
         } else {
           const res = socFilter.accept(value, Date.now());
           if (res.ok) {
-            patch('ocr', { raw: value, accepted: res.value, status: 'ok', lastOkAt: Date.now() });
+            patch('ocr', { raw: value, accepted: res.value, status: 'ok', lastOkAt: Date.now(), readAt: Date.now() }); // readAt: yalnızca gerçek kamera okuması (tahmin/elle girişte değişmez)
             patch('live', { soc: res.value });
           } else {
             patch('ocr', { raw: value, status: 'rejected' }); // son geçerli değer korunur

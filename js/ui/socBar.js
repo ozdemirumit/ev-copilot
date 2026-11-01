@@ -3,6 +3,7 @@
 import { getState, patch, subscribe, effective } from '../state.js';
 import { VEHICLE } from '../config.js';
 import { setManual, isOnline } from '../physics/socEstimate.js';
+import { toast } from './toast.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -42,6 +43,17 @@ export function initSocBar() {
     bar.classList.toggle('low', v != null && v < getState('nav').lowSoc);
   };
 
+  let lastToast = 0;
+  const blocked = () => {
+    if (getState('sim').enabled || !isOnline()) return false;
+    if (Date.now() - lastToast > 8000) { lastToast = Date.now(); toast('Pil kameradan canlı okunuyor: elle ayar gerekmez'); }
+    return true;
+  };
+  const thumbY = () => {
+    const r = track.getBoundingClientRect();
+    const v = effective().soc;
+    return r.bottom - (r.height * Math.min(100, Math.max(0, v ?? 0))) / 100;
+  };
   const setFromY = (clientY) => {
     const r = track.getBoundingClientRect();
     const v = Math.round(Math.min(100, Math.max(0, ((r.bottom - clientY) / r.height) * 100)));
@@ -50,6 +62,8 @@ export function initSocBar() {
   };
 
   track.addEventListener('pointerdown', (e) => {
+    if (blocked()) return;
+    if (Math.abs(e.clientY - thumbY()) > 44) return; // yanlışlıkla dokunuş (avuç, parmak) pili değiştirmesin: yalnızca başparmak yakınından
     drag = true;
     track.setPointerCapture(e.pointerId);
     setFromY(e.clientY);
@@ -61,6 +75,7 @@ export function initSocBar() {
     const step = e.key === 'ArrowUp' ? 1 : e.key === 'ArrowDown' ? -1 : 0;
     if (!step) return;
     e.preventDefault();
+    if (blocked()) return;
     const cur = effective().soc ?? 50;
     const v = Math.min(100, Math.max(0, Math.round(cur) + step));
     if (getState('sim').enabled) patch('sim', { soc: v }); else setManual(v);

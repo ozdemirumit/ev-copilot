@@ -122,6 +122,24 @@ function tick() {
     est = kwhPer100({ v: vRef, ...cond }) * k * overhead;
   }
   const usable = e.soc == null ? null : (Math.max(0, e.soc - route.minArrivalSoc) / 100) * VEHICLE.batteryNetKwh;
+  // Menzil: rota planlıysa ve araç rotadaysa önümüzdeki yolun gerçek enerji profiline göre (eğim, hız, rüzgâr, trafik dilim dilim);
+  // enerji varışa yetiyorsa varışa kalan yol + artan enerjiyle düz tüketimle devam. Rota yoksa anlık tüketimle.
+  let rangeKm = usable == null ? null : (usable / est) * 100;
+  if (usable != null && prof && routeKm != null && offKm != null && offKm <= 3 && prof.totalKm - routeKm > 0.5) {
+    const kp = plan.kInfo?.k ?? k;
+    const toEnd = prof.energyBetween(routeKm, prof.totalKm, kp);
+    if (toEnd <= usable) {
+      rangeKm = (prof.totalKm - routeKm) + ((usable - toEnd) / est) * 100;
+    } else {
+      let lo = routeKm;
+      let hi = prof.totalKm;
+      for (let i = 0; i < 24; i++) {
+        const mid = (lo + hi) / 2;
+        if (prof.energyBetween(routeKm, mid, kp) <= usable) lo = mid; else hi = mid;
+      }
+      rangeKm = lo - routeKm;
+    }
+  }
 
   // Rüzgar (anlık koşul)
   let netWind = null;
@@ -146,7 +164,7 @@ function tick() {
     measuredKm: st?.distKm ?? null,
     kwh100Est: est,
     powerKw: speed > 0 ? modelKw * k : null, // anlık güç tahmini (model × k)
-    rangeKm: usable == null ? null : (usable / est) * 100,
+    rangeKm,
     netWind, aeroPct, traffic,
   });
 
