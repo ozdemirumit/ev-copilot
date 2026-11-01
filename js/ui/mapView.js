@@ -37,6 +37,7 @@ function stationPin(s, { planned = false, num = 0, focus = false } = {}) {
   d.innerHTML = `<svg viewBox="0 0 36 46" aria-hidden="true"><path d="${PIN_PATH}"/></svg>`;
   d.append(el('b', '', kind === 'ac' ? 'AC' : 'DC'));
   if (num) d.append(el('i', '', String(num)));
+  d.addEventListener('click', (ev) => { ev.stopPropagation(); mapApi.onStation?.(s); }); // istasyon kartı (ui/stationCard.js)
   return d;
 }
 

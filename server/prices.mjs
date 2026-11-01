@@ -42,5 +42,10 @@ export function createPriceBook(store) {
     }
     return best;
   }
-  return { report, nearest };
+  /** Bir kullanıcının bildirimlerini sil (hesap silme). */
+  function forget(userId) {
+    for (const e of Object.values(data())) e.reports = e.reports.filter((r) => r.by !== userId);
+    store.save();
+  }
+  return { report, nearest, forget };
 }

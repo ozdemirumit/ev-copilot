@@ -2,6 +2,7 @@
 // (count, availableCount, outOfServiceCount, availabilityLastUpdateTime). Bilgi yalnızca bazı ağlar için vardır.
 
 export const FRESH_MS = 15 * 60e3; // planlamada doluluk bu kadar tazeyse dikkate alınır
+const COMMUNITY_FULL_MS = 20 * 60e3; // "Dolu" bildirimi bu kadar süre planı etkiler
 const sum = (a, f) => a.reduce((t, x) => t + (f(x) || 0), 0);
 
 /**
@@ -25,10 +26,14 @@ export function slotsOf(ev, dcTypes) {
   };
 }
 
-/** 'unknown' | 'out' (tamamı arızalı) | 'full' (boş yuva yok) | 'free' */
+/** 'unknown' | 'out' (tamamı arızalı) | 'full' (boş yuva yok) | 'free'. Resmî sayı yoksa taze "Dolu" topluluk bildirimi 'full' sayılır. */
 export function slotKind(s) {
   const sl = s.slots;
-  if (!sl || sl.available == null) return 'unknown';
+  if (!sl) return 'unknown';
+  if (sl.available == null) {
+    const r = sl.community?.report;
+    return r?.status === 'full' && Date.now() - r.at < COMMUNITY_FULL_MS ? 'full' : 'unknown';
+  }
   if (sl.out >= sl.total) return 'out';
   if (sl.available <= 0) return 'full';
   return 'free';
@@ -39,18 +44,30 @@ export function slotKind(s) {
  * kalıplarını bozmasın, her parça kendi anahtarıyla çevrilir). Bilinmiyorsa null.
  */
 export function slotEl(s, lead = ' · ') {
-  const k = slotKind(s);
-  if (k === 'unknown') return null;
   const sl = s.slots;
-  const t = sl.at ?? sl.checked;
-  const age = t ? Math.max(0, Math.round((Date.now() - t) / 60e3)) : null;
-  const status = k === 'out' ? '⚫ arızalı' : k === 'full' ? `🔴 dolu (0/${sl.total})` : `🟢 ${sl.available}/${sl.total} boş`;
-  const when = age == null ? null : age < 1 ? 'şimdi' : age < 90 ? `${age} dk önce` : 'eski bilgi';
+  if (!sl) return null;
+  const k = slotKind(s);
   const span = (txt) => Object.assign(document.createElement('span'), { textContent: txt });
+  const ago = (t) => { const m = Math.max(0, Math.round((Date.now() - t) / 60e3)); return m < 1 ? 'şimdi' : m < 90 ? `${m} dk önce` : 'eski bilgi'; };
   const wrap = document.createElement('span');
-  wrap.append(lead, span(status));
-  if (when) wrap.append(' · ', span(when));
-  return wrap;
+  let first = true;
+  const add = (node) => { wrap.append(first ? lead : ' · ', node); first = false; };
+  if (sl.available != null) { // resmî ya da operatör verisi: sayılar
+    const status = k === 'out' ? '⚫ arızalı' : k === 'full' ? `🔴 dolu (0/${sl.total})` : `🟢 ${sl.available}/${sl.total} boş`;
+    const t = sl.at ?? sl.checked;
+    const c = document.createElement('span');
+    c.append(span(status));
+    if (t) c.append(' · ', span(ago(t)));
+    add(c);
+  }
+  const cm = sl.community; // topluluk (resmî veri olmayan yerler): şu an şarj edenler ve son Dolu/Boş bildirimi
+  if (cm?.busy > 0) add(span(`👥 ${cm.busy} araç şarj ediyor`));
+  if (cm?.report) {
+    const c = document.createElement('span');
+    c.append(span(cm.report.status === 'full' ? '🔴 Dolu bildirildi' : '🟢 Boş bildirildi'), ' · ', span(ago(cm.report.at)));
+    add(c);
+  }
+  return first ? null : wrap;
 }
 
 /** Canlı kWh fiyatı: { text: "€0.42/kWh (canlı)", extra: ek ücret (oturum/süre) var mı } ya da null. */

@@ -143,5 +143,18 @@
  "Geçerli bir fiyat gir",
  "Teşekkürler: fiyat kaydedildi",
  "Fiyat gönderilemedi",
- "Fiyat bildirildi"
+ "Fiyat bildirildi",
+ "Konum izni kapalı: Android Ayarlar > Uygulamalar > EV Co-Pilot > İzinler > Konum",
+ "Konum alınamadı: açık alanda tekrar dene",
+ "👥 {0} araç şarj ediyor",
+ "🔴 Dolu bildirildi",
+ "🟢 Boş bildirildi",
+ "Şarj durumumu toplulukla paylaş (anonim; yalnızca herkese açık istasyonlarda)",
+ "Canlı bilgi alınıyor…",
+ "Canlı doluluk için hesapla giriş yap",
+ "Bu istasyon için canlı doluluk verisi yok",
+ "🔴 Dolu",
+ "🟢 Boş",
+ "Teşekkürler: bildirildi",
+ "Bildirim gönderilemedi"
 ]

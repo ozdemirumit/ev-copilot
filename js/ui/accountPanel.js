@@ -2,6 +2,7 @@
 import { currentUser, deleteAccount, isSignedIn, pendingInvite, setPendingInvite, signOut, startGoogleSignIn } from '../account/auth.js';
 import { syncNow, syncState } from '../account/sync.js';
 import { toast } from './toast.js';
+import { sharingOn, setSharing } from '../account/community.js';
 import { getPlan, refreshCaps } from '../net/proxy.js';
 import { locale, tr } from '../i18n/index.js';
 
@@ -38,6 +39,8 @@ export function initAccountPanel() {
         : syncState.at ? tr('Son eşitleme:') + ' ' + new Date(syncState.at).toLocaleString(locale(), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
           : tr('Henüz eşitlenmedi');
   }
+  $('acc-share').checked = sharingOn();
+  $('acc-share').addEventListener('change', () => setSharing($('acc-share').checked));
   document.addEventListener('account-changed', paint);
   document.addEventListener('sync-changed', paint);
   document.addEventListener('plan-changed', paint);

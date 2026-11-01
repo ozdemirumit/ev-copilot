@@ -15,7 +15,7 @@ export async function fetchAvailability(stations, max = 2, soc = null) {
     for (const [id, r] of Object.entries(results || {})) {
       if (!r) continue; // veri yok: istasyon bilinmiyor kalır
       // total/available null olabilir (yalnızca fiyat biliniyor): istasyon doluluk bakımından "bilinmiyor" kalır, fiyat gösterilir
-      out.set(id, { total: r.total, available: r.available, out: r.out ?? 0, at: r.at, checked: Date.now(), src: r.src, price: r.price || null });
+      out.set(id, { total: r.total, available: r.available, out: r.out ?? 0, at: r.at, checked: Date.now(), src: r.src, price: r.price || null, community: r.community || null });
     }
   } catch (err) {
     console.warn('Doluluk alınamadı:', err.message);

@@ -539,6 +539,10 @@
         <div><b id="acc-name"></b><div class="small muted" id="acc-email"></div></div>
         <div class="small muted" id="acc-sync-line"></div>
         <div class="small muted" id="acc-plan"></div>
+        <div class="row between">
+          <label for="acc-share">Şarj durumumu toplulukla paylaş (anonim; yalnızca herkese açık istasyonlarda)</label>
+          <label class="switch"><input type="checkbox" id="acc-share" checked><i></i></label>
+        </div>
         <div class="row wrap">
           <button class="btn" id="acc-sync-now" type="button">🔄 Şimdi eşitle</button>
           <button class="btn" id="acc-signout" type="button">Çıkış yap</button>
@@ -708,6 +712,8 @@
   <div class="dim-warn" id="dim-warn"></div>
   <div class="dim-hint">Uyandırmak için dokun</div>
 </div>
+
+<div class="station-card hidden" id="station-card" role="dialog" aria-label="İstasyon"></div>
 
 <div class="dock">
   <nav class="bottomnav" aria-label="Ana gezinme">

@@ -5,6 +5,8 @@ import { mapApi } from './mapView.js';
 import { showTab } from './tabs.js';
 import { startNav, stopNav } from '../nav/navigator.js';
 import { toast } from './toast.js';
+import { save } from '../utils/storage.js';
+import { startGps, stopGps, locateOnce } from '../sensors/gps.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -31,11 +33,21 @@ export function initShell() {
     mapApi.recenter?.();
     return true;
   };
-  $('fab-me').addEventListener('click', () => {
+  $('fab-me').addEventListener('click', async () => {
     if (centerMe()) return;
     wantCenter = true;
     toast('Konum aranıyor…', 4000);
-    if (getState('live').gps === 'off') $('btn-gps').click(); // GPS kapalıysa aç (izin sorusu çıkar)
+    const g = getState('live').gps;
+    if (g === 'off' || g === 'error' || g === 'denied') { // kapalı ya da hatalıysa (yeniden) başlat; izin sorusu bu dokunuşta çıkar
+      if (g !== 'off') stopGps();
+      try { startGps(); save('gpsOn', true); } catch (err) { toast(err.message); }
+    }
+    try {
+      await locateOnce(); // hızlı ilk konum; gelince abonelik haritayı ortalar. Hata nedeni kullanıcıya söylenir
+    } catch (err) {
+      wantCenter = false;
+      toast(err?.code === 1 ? 'Konum izni kapalı: Android Ayarlar > Uygulamalar > EV Co-Pilot > İzinler > Konum' : 'Konum alınamadı: açık alanda tekrar dene', 7000);
+    }
   });
   subscribe('live', () => { if (wantCenter && centerMe()) wantCenter = false; });
 

@@ -193,6 +193,9 @@ export async function lookupAll(stations, opts = {}) {
     if (!v && opts.google?.key && googleWanted(st, opts.soc) && opts.google.allow()) {
       try { v = await googleLookup(st, opts.google.key, opts); noteGoogle(st, !!v); } catch (err) { console.error('doluluk (Google):', err.message); }
     }
+    // Topluluk: şu an şarj eden kullanıcılar ve son Dolu/Boş bildirimi (resmî veri olmayan yerlerde asıl kaynak)
+    const cm = opts.community?.summary(st);
+    if (cm) v = v ? { ...v, community: cm } : { src: 'community', total: null, available: null, out: null, at: null, price: null, community: cm };
     // Fiyat defteri: canlı fiyat yoksa kullanıcıların bildirdiği son bilinen fiyat
     const b = opts.book?.nearest(st);
     if (b && !(v?.price)) {

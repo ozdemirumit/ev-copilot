@@ -20,7 +20,7 @@ const HISTORY_KINDS = new Set(['trips', 'charges']);
 const MAX_REC = 6000; // kayıt başına bayt
 const MAX_RECS = 20000; // kullanıcı ve tür başına kayıt
 
-export function createAccounts({ env, store, send, json, readJson, caps }) {
+export function createAccounts({ env, store, send, json, readJson, caps, onDelete = () => {} }) {
   const { data } = store;
   const PUBLIC_URL = String(env.PUBLIC_URL || '').replace(/\/+$/, '');
   const APP_URL = env.APP_URL || 'https://ozdemirumit.github.io/ev-copilot/';
@@ -224,6 +224,7 @@ export function createAccounts({ env, store, send, json, readJson, caps }) {
         delete data.users[uid];
         delete data.docs[uid];
         if (data.history) delete data.history[uid];
+        onDelete(uid); // fiyat ve topluluk bildirimleri de silinir
         for (const [h, s] of Object.entries(data.sessions)) if (s.uid === uid) delete data.sessions[h];
         store.save();
         json(res, 200, { ok: true });

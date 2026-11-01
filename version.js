@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.68.0';
+self.APP_VERSION = '0.69.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.69.0', date: '2026-11-01',
+    notes: [
+      'Harita istasyon kartı: haritada bir istasyon iğnesine dokununca kart açılır: ad, operatör, güç, tahmini fiyat, canlı ya da bildirilen kWh fiyatı, canlı doluluk, şu an şarj edenler ve son Dolu/Boş bildirimi. Kartta Git, Haritalar, Dolu, Boş ve Fiyat bildir düğmeleri var (bildirimler için hesapla giriş gerekir; canlı doluluk ve fiyat Premium).',
+      'Topluluk doluluğu (resmi veri olmayan yerler, ör. Türkiye): şarj etmeye başlayınca ve bitirince bilinen herkese açık istasyonda anonim olarak bildirilir (ev ya da iş gibi kayıtsız yerler paylaşılmaz); Hesap kartındaki anahtardan kapatılır. Aynı yerde taze bir Dolu bildirimi varsa plan o durağa bekleme süresi ekler. Hesap silinince bildirimlerin de silinir.',
+      'Konumum düğmesi düzeltildi: konum yoksa ya da izin reddedildiyse artık konum izni sorusunu dokunuşta açar, hata nedenini söyler (izin kapalıysa Android Ayarlar yolunu gösterir) ve ilk konum gelince haritayı ortalar.',
+    ],
+  },
   {
     v: '0.68.0', date: '2026-11-01',
     notes: [

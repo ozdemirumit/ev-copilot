@@ -6,6 +6,7 @@ import { effective, getState } from '../state.js';
 import { VEHICLE } from '../config.js';
 import { isOnline } from './socEstimate.js';
 import { haversineKm } from '../utils/geo.js';
+import { sharePresence } from '../account/community.js';
 
 const MAX_LOCAL = 300;
 const MIN_RISE = 3; // puan: bundan az yükselme şarj sayılmaz
@@ -44,6 +45,7 @@ function finish(now) {
   const s = sess;
   sess = null;
   base = null;
+  if (s.shared) sharePresence('stop', s.shared); // topluluğa: bu istasyon boşaldı
   const rise = s.soc1 - s.soc0;
   const min = (s.tEnd - s.t0) / 60e3;
   if (rise < MIN_RISE || min < MIN_MIN) return;
@@ -77,6 +79,8 @@ function tick() {
   if (!base || e.soc < base.soc) { base = { soc: e.soc, t: now }; return; }
   if (e.soc - base.soc >= 2) { // durağan ve pil yükseldi: oturum başladı
     sess = { soc0: base.soc, soc1: e.soc, t0: base.t, tLast: now, tEnd: now, lat: e.lat, lon: e.lon };
+    const st = nearestStation(e.lat, e.lon); // yalnızca bilinen herkese açık istasyonda paylaşılır (ev/iş paylaşılmaz)
+    if (st) { sess.shared = { lat: st.lat, lon: st.lon }; sharePresence('start', sess.shared); }
   }
 }
 

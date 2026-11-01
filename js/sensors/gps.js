@@ -60,6 +60,14 @@ export function startGps() {
   });
 }
 
+/** Tek seferlik hızlı konum (izin sorusunu dokunuşta tetikler); başarıda canlı konum güncellenir. Hata: GeolocationPositionError. */
+export function locateOnce() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(Object.assign(new Error('desteklenmiyor'), { code: 0 }));
+    navigator.geolocation.getCurrentPosition((p) => { onPosition(p); resolve(); }, reject, { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
+  });
+}
+
 export function stopGps() {
   if (watchId != null) navigator.geolocation.clearWatch(watchId);
   watchId = null;

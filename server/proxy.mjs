@@ -15,6 +15,7 @@ import { createAccounts } from './accounts.mjs';
 import { createAppFiles } from './appfiles.mjs';
 import { lookupAll } from './occupancy.mjs';
 import { createPriceBook } from './prices.mjs';
+import { createCommunity } from './community.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -102,7 +103,7 @@ const once = (k, fn) => {
 };
 
 // ---------- kullanıcı başına günlük kota (Mapbox faturasını ve ortak Overpass'i korur) ----------
-const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 40), price: 20 };
+const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 40), price: 20, presence: 60, status: 30 };
 const GOOGLE_TOTAL = Number(env.GOOGLE_DAILY_TOTAL || 150); // tüm kullanıcılar için günlük Google çağrısı tavanı (fatura üst sınırı)
 let gToday = { d: '', n: 0 };
 function googleAllowed(id) {
@@ -264,7 +265,16 @@ async function occupancyRoute(req, res, id) {
   if (overQuota(id, 'occupancy')) return json(res, 429, { error: 'günlük doluluk hakkı doldu' }, { 'Retry-After': '3600' });
   const google = GOOGLE_PLACES ? { key: GOOGLE_PLACES, allow: () => googleAllowed(id) } : null;
   const soc = Number.isFinite(Number(b.soc)) ? Number(b.soc) : null; // pil %: Google (ücretli) yalnızca düşük pilde sorulur
-  json(res, 200, { results: await lookupAll(stations, { google, soc, book: priceBook }) });
+  json(res, 200, { results: await lookupAll(stations, { google, soc, book: priceBook, community }) });
+}
+
+// Topluluk: şarj başladı/bitti (varlık) ve Dolu/Boş bildirimi. Okumak Premium (/v1/occupancy), katkı vermek her hesaba açık.
+async function communityRoute(req, res, id, kind) {
+  if (id.kind !== 'user') return json(res, 403, { error: 'hesap gerekli' });
+  if (overQuota(id, kind)) return json(res, 429, { error: 'günlük bildirim hakkı doldu' }, { 'Retry-After': '3600' });
+  const b = await readJson(req, 1000);
+  const r = b ? (kind === 'presence' ? community.presence(id.user.id, b) : community.report(id.user.id, b)) : { error: 'geçersiz gövde' };
+  json(res, r.ok ? 200 : r.error === 'çok sık' ? 429 : 400, r);
 }
 
 // Kullanıcı fiyat bildirimi: şarj sonrası ödenen tutar / kWh (kendi fiyat defterimiz)
@@ -285,7 +295,8 @@ const clientIp = (req) => {
 
 const store = openStore(env.DATA_DIR || join(here, 'data'));
 const priceBook = createPriceBook(store);
-const accounts = createAccounts({ env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, ocm: !!OCM, overpass: true, occupancy: true }) });
+const community = createCommunity(store);
+const accounts = createAccounts({ onDelete: (uid) => { priceBook.forget(uid); community.forget(uid); }, env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, ocm: !!OCM, overpass: true, occupancy: true }) });
 
 const appFiles = createAppFiles({ dir: join(here, 'public'), send });
 
@@ -335,6 +346,8 @@ const server = http.createServer(async (req, res) => {
     if (p === '/overpass') return await overpass(req, res, url, id);
     if (p === '/v1/occupancy' && req.method === 'POST') return await occupancyRoute(req, res, id);
     if (p === '/v1/price' && req.method === 'POST') return await priceRoute(req, res, id);
+    if (p === '/v1/presence' && req.method === 'POST') return await communityRoute(req, res, id, 'presence');
+    if (p === '/v1/status' && req.method === 'POST') return await communityRoute(req, res, id, 'status');
     if (await accounts.handleAuthed(req, res, url, id)) return;
     return json(res, 404, { error: 'yol yok' });
   } catch (err) {

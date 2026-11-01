@@ -374,7 +374,12 @@ body.dimmed { background: #000; }
 body.navmode .fabs { bottom: calc(var(--nav-h) + var(--safe-b) + 92px); }
 
 /* Harita iğneleri: damla biçimi, AC mavi / DC turuncu / ≥150 kW mor; planlanan durak büyük, amber halkalı, sıra numaralı */
-.spin { position: relative; width: 34px; height: 44px; filter: drop-shadow(0 2px 4px #0009); transition: transform .15s; transform-origin: 50% 100%; transform: scale(.82); }
+.station-card { position: fixed; z-index: 45; left: 12px; right: 12px; bottom: calc(var(--safe-b) + 98px); max-width: 460px; margin: 0 auto; padding: 12px 14px; display: grid; gap: 6px; background: rgba(22, 31, 43, .94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, .14); border-radius: 18px; box-shadow: 0 8px 28px #000b; }
+.station-card .sc-title { font-size: 16px; }
+.station-card .sc-price, .station-card .live-price { font-weight: 600; font-variant-numeric: tabular-nums; }
+.station-card .sheet-x { position: static; }
+@media (min-width: 900px) { .station-card { left: 12px; right: auto; margin: 0; width: 440px; } }
+.spin { cursor: pointer; position: relative; width: 34px; height: 44px; filter: drop-shadow(0 2px 4px #0009); transition: transform .15s; transform-origin: 50% 100%; transform: scale(.82); }
 .spin svg { width: 100%; height: 100%; display: block; }
 .spin path { fill: #3f95f0; stroke: #fff; stroke-width: 2; }
 .spin.dc path { fill: #ff8f2b; }

@@ -110,6 +110,9 @@ function goTo(s, { auto = false } = {}) {
   }
 }
 
+/** Harita istasyon kartından: istasyona git (liste dışı istasyonlar için de). */
+export const goToStation = (s) => goTo(s);
+
 const mapsUrl = (s) => `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`;
 
 function cell(tag, cls, text) {

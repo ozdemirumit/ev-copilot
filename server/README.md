@@ -126,3 +126,10 @@ Canlı doluluk ve canlı kWh fiyatı (`POST /v1/occupancy`) yalnızca Premium he
 - **Google yalnızca pil < %25 iken** sorulur (`GOOGLE_SOC_BELOW`, varsayılan 25); uygulama pil yüzdesini isteğe ekler. NDW (Hollanda) ücretsiz olduğu için pilden bağımsız çalışır.
 - **Bölge öğrenmesi:** Google bir bölgede (≈ 11 km) üst üste 3 kez EV verisi vermezse o bölge 7 gün atlanır. **Ölçüm (Kasım 2026):** Ankara, İstanbul, İzmir'de Google 30 istasyonu listeledi (ZES, Eşarj, Trugo, Tesla...) ama hiçbirinde soket sayısı/doluluk (`evChargeOptions`) yoktu; bu nedenle Türkiye'de Google'dan canlı doluluk beklenmemeli. Google Places EV **fiyatı** hiç döndürmez.
 - **Fiyat defteri (`server/prices.mjs`, `data/db.json` içinde `prices`):** `POST /v1/price` (hesaplı kullanıcı, günde 20 bildirim) `{ lat, lon, kwh, currency }`. Konum ~100 m hücreye ayrılır; son 5 bildirimin (90 günden yeni) medyanı döner, `src: 'user'`. `/v1/occupancy` yanıtında canlı fiyat yoksa bu eklenir; doluluk de yoksa yalnızca fiyat döner. Uygulamada: Menzil sekmesi > Şarj oturumları > **Fiyat bildir**.
+
+## Topluluk doluluğu (`server/community.mjs`)
+Resmî canlı veri olmayan yerlerde (Türkiye) doluluğu kullanıcılar oluşturur. Konum ~100 m hücrelere ayrılır, komşu hücreler birlikte okunur.
+- **Varlık:** `POST /v1/presence { lat, lon, state: 'start'|'stop' }` — uygulama, şarj oturumu algılandığında ve bittiğinde yalnızca eşleşen bilinen herkese açık istasyon konumuyla gönderir (ev/iş gibi kayıtsız yerler gönderilmez; Hesap kartından kapatılır). "Bitti" gelmezse kayıt 3 saatte düşer.
+- **Dolu / Boş:** `POST /v1/status { lat, lon, status: 'full'|'free' }`; aynı kullanıcı aynı hücreye 10 dakikada bir, günde 30 bildirim. Bildirim 60 dakika geçerlidir; taze "Dolu" planda o durağa bekleme süresi ekler (20 dk).
+- **Okuma:** `/v1/occupancy` yanıtında `community: { busy, report: { status, at } }` (Premium). Kullanıcı kimlikleri dışarı verilmez; hesap silinince fiyat ve topluluk bildirimleri de silinir.
+- Yazmak her hesaba açık, okumak Premium.
