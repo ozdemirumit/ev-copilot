@@ -58,5 +58,22 @@
  "OCR: manuel",
  "OCR: hata",
  "Kapat:",
- "📍 Durakları haritada göster"
+ "📍 Durakları haritada göster",
+ "Ara sunucu adresi (isteğe bağlı)",
+ "Ara sunucu erişim kodu",
+ "Adres boşsa uygulama servislere doğrudan gider. Sunucu varsa Mapbox, OpenChargeMap ve Overpass istekleri ondan geçer; anahtarlar sunucuda durur ve bu telefona yazılmaz.",
+ "Adres https:// ile başlamalı",
+ "Önce erişim kodunu gir",
+ "Ara sunucu kapalı: uygulama servislere doğrudan gider.",
+ "✅ Sunucu çalışıyor",
+ "Mapbox: sunucuda",
+ "Mapbox: sunucuda yok",
+ "OpenChargeMap: sunucuda",
+ "OpenChargeMap: sunucuda yok",
+ "Overpass: ortak önbellek",
+ "Erişim kodu reddedildi",
+ "Sunucuya ulaşılamadı",
+ "Sunucu erişim kodu geçersiz",
+ "Sunucuda Mapbox anahtarı yok",
+ "Ara sunucuya ulaşılamadı"
 ]

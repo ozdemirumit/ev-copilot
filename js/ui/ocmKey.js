@@ -5,6 +5,8 @@ import { MB_VALID } from '../mapbox/api.js';
 import { testMapbox } from '../mapbox/test.js';
 import { toast } from './toast.js';
 import { cacheStats, clearCache } from '../utils/cache.js';
+import { testProxy } from '../net/proxy.js';
+import { tr } from '../i18n/index.js';
 
 const $ = (id) => document.getElementById(id);
 const VALID = /^[A-Za-z0-9-]{16,64}$/;
@@ -52,6 +54,28 @@ export function initOcmKey() {
       p.textContent = `${r.ok ? '✅' : '⚠️'} ${r.name}: ${r.text}`;
       return p;
     }));
+  });
+
+  // Ara sunucu (isteğe bağlı): adres ve erişim kodu bu telefonda saklanır, anahtarlar sunucuda kalır
+  const pUrl = $('proxy-url');
+  const pCode = $('proxy-code');
+  const pOut = $('proxy-out');
+  pUrl.value = load('proxyUrl', '');
+  pCode.value = load('proxyCode', '');
+  $('proxy-test').addEventListener('click', async () => {
+    const u = pUrl.value.trim();
+    if (u && !/^https:\/\//i.test(u)) return toast('Adres https:// ile başlamalı');
+    if (u && !pCode.value.trim()) return toast('Önce erişim kodunu gir');
+    pOut.textContent = 'Sınanıyor…';
+    const r = await testProxy(u, pCode.value);
+    if (!u) pOut.textContent = 'Ara sunucu kapalı: uygulama servislere doğrudan gider.';
+    else if (!r.ok) pOut.textContent = `⚠️ ${tr(r.text)}`;
+    else pOut.replaceChildren(...[
+      '✅ Sunucu çalışıyor',
+      r.caps.mapbox ? 'Mapbox: sunucuda' : 'Mapbox: sunucuda yok',
+      r.caps.ocm ? 'OpenChargeMap: sunucuda' : 'OpenChargeMap: sunucuda yok',
+      'Overpass: ortak önbellek',
+    ].map((t) => Object.assign(document.createElement('div'), { textContent: t })));
   });
 
   // Önbellek durumu: isabet = sunucuya gidilmeyen çağrı

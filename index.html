@@ -595,6 +595,16 @@
         <button class="btn primary" id="mb-test" type="button">✔️ Kaydet ve sına</button>
       </div>
       <div class="small muted" id="mb-out">Anahtar yalnızca bu telefonda saklanır. Ücretsiz aylık kotalar dolarsa Mapbox ücretlendirebilir (mapbox.com/pricing); anahtarı Mapbox hesabında URL ve kapsam (Directions, Search) ile kısıtla.</div>
+      <label class="field">Ara sunucu adresi (isteğe bağlı)
+        <input type="url" id="proxy-url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://">
+      </label>
+      <label class="field">Ara sunucu erişim kodu
+        <input type="text" id="proxy-code" autocomplete="off" autocapitalize="off" spellcheck="false">
+      </label>
+      <div class="row wrap">
+        <button class="btn primary" id="proxy-test" type="button">✔️ Kaydet ve sına</button>
+      </div>
+      <div class="small muted" id="proxy-out">Adres boşsa uygulama servislere doğrudan gider. Sunucu varsa Mapbox, OpenChargeMap ve Overpass istekleri ondan geçer; anahtarlar sunucuda durur ve bu telefona yazılmaz.</div>
       <div class="row between">
         <span class="small muted" id="cache-info"></span>
         <button class="btn ghost sm" id="cache-clear" type="button">🧹 Önbelleği temizle</button>

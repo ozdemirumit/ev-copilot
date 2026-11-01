@@ -1,8 +1,9 @@
 // Mapbox REST çağrıları (isteğe bağlı: anahtar girilirse trafikli rota, trafik uyarısı ve istasyon araması Mapbox'tan gelir).
 // Anahtar yalnızca bu cihazın LocalStorage'ında durur (`mbKey`); herkese açık "pk." anahtarı olmalı, gizli "sk." anahtarı kabul edilmez.
 import { load } from '../utils/storage.js';
+import { proxyBase, proxyFetch, proxyHas } from '../net/proxy.js';
 
-export const mapboxKey = () => load('mbKey', '');
+export const mapboxKey = () => (proxyHas('mapbox') ? 'proxy' : load('mbKey', '')); // ara sunucuda anahtar varsa o kullanılır (anahtar telefona yazılmaz)
 export const MB_VALID = /^pk\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}$/;
 
 export class MapboxError extends Error {
@@ -18,18 +19,26 @@ export class MapboxError extends Error {
 export async function mbfetch(path, params = {}, { timeoutMs = 25000 } = {}) {
   const key = mapboxKey();
   if (!key) throw new MapboxError('Mapbox anahtarı yok', { fatal: true });
-  const url = new URL('https://api.mapbox.com' + path);
-  for (const [k, v] of Object.entries(params)) if (v != null) url.searchParams.set(k, String(v));
-  url.searchParams.set('access_token', key);
+  const viaProxy = proxyHas('mapbox');
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (v != null) q.set(k, String(v));
   let res;
   try {
-    res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+    if (viaProxy) {
+      res = await proxyFetch(`/mapbox${path}?${q}`, { signal: AbortSignal.timeout(timeoutMs) }); // anahtarı sunucu ekler
+    } else {
+      q.set('access_token', key);
+      res = await fetch(`https://api.mapbox.com${path}?${q}`, { signal: AbortSignal.timeout(timeoutMs) });
+    }
   } catch (err) {
-    throw new MapboxError(err.name === 'TimeoutError' ? 'Mapbox yanıt vermedi (zaman aşımı)' : "Mapbox'a ulaşılamadı (internet?)");
+    const msg = err.name === 'TimeoutError' ? 'Mapbox yanıt vermedi (zaman aşımı)' : "Mapbox'a ulaşılamadı (internet?)";
+    throw new MapboxError(viaProxy ? 'Ara sunucuya ulaşılamadı' : msg, { fatal: viaProxy }); // sunucu yanıt vermezse Mapbox'sız (Valhalla/Overpass) sürer
   }
   if (res.ok) return res.json();
   let msg = '';
   try { msg = (await res.json()).message || ''; } catch { /* gövde yok */ }
+  if (viaProxy && res.status === 401) throw new MapboxError('Sunucu erişim kodu geçersiz', { fatal: true, status: 401 });
+  if (viaProxy && res.status === 501) throw new MapboxError('Sunucuda Mapbox anahtarı yok', { fatal: true, status: 501 });
   if (res.status === 401) throw new MapboxError('Mapbox anahtarı geçersiz veya süresi dolmuş', { fatal: true, status: 401 });
   if (res.status === 403) throw new MapboxError('Mapbox erişimi reddetti: anahtarın kapsamını (Directions, Search) veya URL kısıtını kontrol et', { fatal: true, status: 403 });
   if (res.status === 429) {

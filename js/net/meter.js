@@ -1,4 +1,5 @@
 import { load, save } from '../utils/storage.js';
+import { proxyBase } from './proxy.js';
 
 /**
  * Veri kullanımı sayacı (uygulama düzeyinde, TAHMİNİ). Operatör faturası TLS/TCP/DNS yükü nedeniyle
@@ -39,6 +40,8 @@ export function categoryOf(url) {
     const u = new URL(url, location.href);
     host = u.hostname;
     if (u.origin === location.origin) return 'app';
+    const pb = proxyBase();
+    if (pb && url.startsWith(pb)) return 'services'; // ara sunucu üzerinden giden servis çağrıları
   } catch {
     return 'other';
   }

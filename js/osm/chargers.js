@@ -5,6 +5,7 @@ import { PLANNER } from '../config.js';
 import { classify } from '../routing/operators.js';
 import { haversineKm } from '../utils/geo.js';
 import { load } from '../utils/storage.js';
+import { proxyFetch, proxyHas } from '../net/proxy.js';
 import { cached, cacheGet, cacheSet, TTL } from '../utils/cache.js';
 import { candidate, customRaw, dedupe, finalize, priced, summarize } from '../routing/chargerSource.js';
 import { mapboxKey } from '../mapbox/api.js';
@@ -24,7 +25,7 @@ const AC_SOCKETS = ['type2', 'type2_cable', 'type1', 'type3'];
 const TESLA_SOCKETS = ['tesla_supercharger', 'tesla_destination', 'tesla_supercharger_ccs', 'nacs'];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-export const ocmKey = () => load('ocmKey', '');
+export const ocmKey = () => (proxyHas('ocm') ? 'proxy' : load('ocmKey', '')); // ara sunucuda anahtar varsa o kullanılır
 
 /** "50 kW", "350 kW;90 kW", "22000", "7,4 kW" → en büyük kW (bilinmiyorsa null). Birimsiz ve >1000 ise watt sayılır. */
 export function parseKw(v) {
@@ -96,6 +97,15 @@ const DEAD_MS = 10 * 60e3;
 
 /** Overpass sorgusu; sunucular sırayla denenir. Dönüş: öğe dizisi. Hepsi ulaşılamazsa `unreachable: true` işaretli hata fırlatır. */
 async function overpass(query) {
+  if (proxyHas('overpass')) { // ara sunucu: ortak önbellek ve sıralı istek; ulaşılamazsa halka açık sunuculara düşülür
+    try {
+      const res = await proxyFetch('/overpass', { method: 'POST', body: new URLSearchParams({ data: query }), signal: AbortSignal.timeout(60000) });
+      if (res.ok) {
+        const j = await res.json();
+        if (!(j.remark && /runtime error|timed out|out of memory/i.test(j.remark) && !(j.elements || []).length)) return j.elements || [];
+      }
+    } catch { /* sunucuya ulaşılamadı: doğrudan dene */ }
+  }
   const now = Date.now();
   const alive = OVERPASS.filter((u) => (deadUntil.get(u) ?? 0) < now);
   let lastErr = null;
@@ -148,10 +158,12 @@ function parseOverpass(elements) {
 }
 
 async function ocmQuery(lat, lon, km, key) {
-  const url = `https://api.openchargemap.io/v3/poi/?output=json&compact=true&verbose=false&maxresults=250&distanceunit=KM&distance=${km}`
-    + `&latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&key=${encodeURIComponent(key)}`; // anahtar sorguda: basit GET (ön istek yok)
-  const res = await fetch(url, { signal: AbortSignal.timeout(30000) });
-  if (!res.ok) throw new Error(res.status === 401 || res.status === 403 ? 'OpenChargeMap anahtarı reddedildi' : `OpenChargeMap HTTP ${res.status}`);
+  const q = `output=json&compact=true&verbose=false&maxresults=250&distanceunit=KM&distance=${km}&latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}`;
+  const viaProxy = proxyHas('ocm');
+  const res = viaProxy
+    ? await proxyFetch(`/ocm/poi?${q}`, { signal: AbortSignal.timeout(30000) }) // anahtarı sunucu ekler
+    : await fetch(`https://api.openchargemap.io/v3/poi/?${q}&key=${encodeURIComponent(key)}`, { signal: AbortSignal.timeout(30000) }); // anahtar sorguda: basit GET (ön istek yok)
+  if (!res.ok) throw new Error(viaProxy && res.status === 401 ? 'Sunucu erişim kodu geçersiz' : res.status === 401 || res.status === 403 ? 'OpenChargeMap anahtarı reddedildi' : `OpenChargeMap HTTP ${res.status}`);
   const list = await res.json();
   const drop = {};
   return { out: list.map((p) => fromOcm(p, drop)).filter(Boolean), raw: list.length, drop };

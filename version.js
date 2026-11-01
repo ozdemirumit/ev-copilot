@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.58.0';
+self.APP_VERSION = '0.59.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.59.0', date: '2026-11-01',
+    notes: [
+      'İsteğe bağlı ara sunucu: Daha Fazla > Veri kaynakları bölümüne Ara sunucu adresi ve Erişim kodu eklendi. Adres girilirse Mapbox, OpenChargeMap ve Overpass istekleri sunucudan geçer; Mapbox ve OpenChargeMap anahtarları sunucuda durur, telefona yazılmaz. Sunucu Overpass ve arama yanıtlarını ortak önbelleğe alır, Overpass isteklerini sıraya koyar. Adres boşsa uygulama eskisi gibi servislere doğrudan gider; sunucuya ulaşılamazsa Overpass doğrudan, Mapbox yerine Valhalla ve Overpass kullanılır.',
+      'Sunucu kodu server klasöründe (Node 18+, bağımlılık yok): erişim kodu, istek sınırı, yanlış koda engel, izinli kökenler, yalnızca sabit yollar. Kurulum, Windows görev betiği ve Cloudflare Tunnel, Tailscale Funnel ya da Caddy ile internete açma adımları server/README.md içinde. Gerçek anahtarlar yalnızca server/.env içinde durur ve repoya girmez.',
+    ],
+  },
   {
     v: '0.58.0', date: '2026-11-01',
     notes: [
