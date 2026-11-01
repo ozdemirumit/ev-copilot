@@ -272,6 +272,12 @@ export function createAccounts({ env, store, send, json, readJson, caps }) {
     }
     // yönetici: eski erişim kodu ya da yönetici hesabı
     if (id.admin && p.startsWith('/admin/')) {
+      if (p === '/admin/restart' && req.method === 'POST') { // sunucu kodunu güncelledikten sonra: süreç kapanır, Windows hizmeti (NSSM) 5 sn içinde yeniden başlatır
+        store.flush();
+        json(res, 200, { ok: true, note: 'yeniden başlıyor' });
+        setTimeout(() => process.exit(0), 300);
+        return true;
+      }
       if (p === '/admin/invites' && req.method === 'POST') {
         const b = (await readJson(req, 2000)) || {};
         const code = rnd(9);

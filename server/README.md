@@ -95,3 +95,15 @@ powershell -ExecutionPolicy Bypass -File "D:\AI-Codes\Claude Code\MBRP\server\se
 **Günlük işler:** durum `server\service\status.ps1` (normal PowerShell), kaldırmak `uninstall-services.ps1` (yönetici). Yeniden başlatmak: `Restart-Service EVCoPilotProxy` (yönetici). Günlükler `C:\ProgramData\EVCoPilot\logs` içinde (5 MB'ta döner). Google/Mapbox anahtarlarını `.env`'de değiştirince yalnızca proxy'yi yeniden başlat. `npm run apk` sunucuyu yeniden başlatmayı gerektirmez.
 
 **Hâlâ bilgisayara bağlı olanlar (yazılım çözemez):** elektrik ve internet kesintisi (UPS önerilir), Windows güncellemesinin zorunlu yeniden başlatması (hizmetler kendiliğinden gelir), router'da bilgisayarın yerel adresinin sabitlenmesi (DHCP rezervasyonu) ve 443 yönlendirmesi, BIOS'ta "elektrik gelince aç" ayarı. Yedekleri başka bir diske/bilgisayara da kopyalamak için `install-services.ps1 -BackupDir "E:\EVCoPilotYedek"` kullan.
+
+## Güncelleme: neyi nasıl yayınlarız
+| Değişen | Ne yapılır | Kullanıcıya etkisi |
+|---|---|---|
+| **Web uygulaması** (arayüz, hesaplamalar, çeviriler; `index.html`, `js/`, `css/`) | `git push` (GitHub Pages kendiliğinden yayınlar, ~1-2 dk) | Tarayıcı/PWA kullananlarda açılışta "Güncelle" rozeti çıkar. APK'da gömülü kopya olduğu için APK'yı yenilemek gerekir (aşağıdaki satır). |
+| **Android APK** (web kodu ya da Android izinleri/eklentileri değişti) | `npm.cmd run apk` → APK `server\public` içine konur | Kullanıcılar `https://evcopilot.duckdns.org/app` adresinden indirip üstüne kurar; hesapları ve ayarları korunur. |
+| **Sunucu kodu** (`server\*.mjs`) | `node serverestart.mjs` (yönetici gerekmez) | Hizmet süreci kapanır, NSSM 5 sn içinde yeni kodla açar. Kullanıcılar birkaç saniye bağlantı hatası görebilir. |
+| **Sunucu ayarı** (`server\.env`: anahtarlar, Google, kotalar) | `node serverestart.mjs` | Aynı. |
+| **Caddyfile** | `C:\ProgramData\EVCoPilot\caddy\Caddyfile` dosyasını güncelle (repodaki kopya yalnızca ilk kurulumda taşınır), sonra yönetici PowerShell'de `Restart-Service EVCoPilotCaddy` | HTTPS kısa kesilir. |
+| **Hizmet tanımı** (`server\service\install-services.ps1`) | Yönetici PowerShell'de betiği tekrar çalıştır (yeniden kurar, veriyi silmez) | Kısa kesinti. |
+
+Sunucu kodu bu çalışma kopyasından (`D:\AI-Codes\Claude Code\MBRP\server`) çalıştığı için `git pull` ya da kopyalama gerekmez: dosya değişince yeniden başlatmak yeter. Sırayla tam yayın: `git push` (web) → `npm.cmd run apk` (APK) → `node serverestart.mjs` (sunucu).
