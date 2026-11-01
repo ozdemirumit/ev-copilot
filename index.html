@@ -131,6 +131,15 @@
         <label for="nav-headingup">Harita gidiş yönüne dönsün (yön yukarı, 3D)</label>
         <label class="switch"><input type="checkbox" id="nav-headingup" checked><i></i></label>
       </div>
+      <div class="row between">
+        <label for="dim-auto">Navigasyonda ekranı otomatik karart (telefon pili)</label>
+        <label class="switch"><input type="checkbox" id="dim-auto" checked><i></i></label>
+      </div>
+      <div class="slider-row">
+        <label for="dim-delay">Dokunulmazsa kararma süresi</label>
+        <output id="dim-delay-out">45 sn</output>
+        <input type="range" id="dim-delay" min="15" max="180" step="5" value="45">
+      </div>
       <div class="slider-row">
         <label for="low-soc">Düşük pil uyarısı (yakın istasyon öner)</label>
         <output id="low-soc-out">%20</output>
@@ -566,6 +575,7 @@
     <button type="button" id="fab-sat" aria-pressed="false" aria-label="Uydu görüntüsü" title="Uydu görüntüsü">🛰️</button>
     <button type="button" id="fab-route" aria-label="Tüm rotayı göster" title="Tüm rotayı göster">⛶</button>
     <button type="button" id="fab-me" aria-label="Konumuma git" title="Konumuma git">🎯</button>
+    <button type="button" id="fab-dim" class="hidden" aria-label="Ekranı karart (pil tasarrufu)" title="Ekranı karart (pil tasarrufu)">🌙</button>
     <button type="button" id="fab-nav" class="hidden" aria-label="Navigasyonu başlat" title="Navigasyonu başlat">🧭</button>
   </div>
   <button class="rota-btn" id="fab-plan" type="button" data-tab="route"><span aria-hidden="true">🛣️</span> Rota</button>
@@ -581,6 +591,16 @@
       <button type="button" id="nh-recenter" class="hidden" aria-label="Aracı ortala">🎯</button>
     </div>
   </div>
+</div>
+
+<div class="dimmer hidden" id="dimmer" role="button" tabindex="0" aria-label="Ekranı uyandırmak için dokun">
+  <div class="dim-arrow" id="dim-arrow" aria-hidden="true"></div>
+  <div class="dim-dist" id="dim-dist"></div>
+  <div class="dim-text" id="dim-text"></div>
+  <div class="dim-speed"><b id="dim-speed">--</b> km/h</div>
+  <div class="dim-eta" id="dim-eta"></div>
+  <div class="dim-warn" id="dim-warn"></div>
+  <div class="dim-hint">Uyandırmak için dokun</div>
 </div>
 
 <div class="dock">

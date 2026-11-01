@@ -17,6 +17,7 @@ import { initDataUsage } from './ui/dataUsage.js';
 import { initTabs } from './ui/tabs.js';
 import { initShell } from './ui/shell.js';
 import { initPlaces } from './ui/places.js';
+import { initDimmer } from './ui/dimmer.js';
 import { initMap } from './ui/mapView.js';
 import { initRoiBox } from './ui/roiBox.js';
 import { initCameraPanel } from './ui/cameraPanel.js';
@@ -81,6 +82,7 @@ initSimulator();
 initTabs();
 initShell();
 initPlaces();
+initDimmer();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => { /* file:// vb. */ });

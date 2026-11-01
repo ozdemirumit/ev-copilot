@@ -11,7 +11,15 @@ const FIELDS = { batteryNetKwh: 'veh-bat', massKg: 'veh-mass', cd: 'veh-cd', fro
 export function initVehiclePanel() {
   // ---- Araç: değişince sayfa yenilenir (modüller batarya vb. değerleri başlangıçta okur)
   const sel = $('veh-select');
-  VEHICLES.forEach((v) => sel.append(new Option(v.name, v.id)));
+  // Marka gruplarıyla listele (Togg ve Özel araç grupsuz, başta/sonda)
+  const groups = new Map();
+  VEHICLES.forEach((v) => {
+    if (!v.group) return sel.append(new Option(v.name, v.id));
+    if (!groups.has(v.group)) { const g = document.createElement('optgroup'); g.label = v.group; groups.set(v.group, g); sel.append(g); }
+    groups.get(v.group).append(new Option(v.name, v.id));
+  });
+  const customOpt = [...sel.options].find((o) => o.value === 'custom');
+  if (customOpt) sel.append(customOpt); // Özel araç en sonda
   sel.value = VEHICLE.id;
 
   const fill = (spec) => Object.entries(FIELDS).forEach(([k, id]) => { $(id).value = spec[k]; });

@@ -1,10 +1,12 @@
 // Araç sabitleri ve varsayılanlar.
 import { load } from './utils/storage.js';
+import { CATALOG } from './vehicleCatalog.js';
 
 // Hazır araçlar. Değerler TAHMİNDİR (üretici verisi değil); "Özel araç" ile her biri düzeltilebilir.
 export const VEHICLES = [
   { id: 'togg-v2-lr', name: 'Togg T10X V2 Uzun Menzil', batteryNetKwh: 88.5, massKg: 2150, cd: 0.29, frontalAreaM2: 2.55, maxDcKw: 180 },
   { id: 'togg-v2-sr', name: 'Togg T10X V2 Standart Menzil (tahmini)', batteryNetKwh: 52.4, massKg: 1950, cd: 0.29, frontalAreaM2: 2.55, maxDcKw: 150 },
+  ...CATALOG, // diğer markalar (vehicleCatalog.js, hepsi tahmini)
   { id: 'custom', name: 'Özel araç', batteryNetKwh: 88.5, massKg: 2150, cd: 0.29, frontalAreaM2: 2.55, maxDcKw: 180 },
 ];
 
@@ -58,6 +60,7 @@ export const ABRP = {
 
 export const OCR = {
   intervalMs: 5000,
+  idleIntervalMs: 15000, // pil değeri 3 okumadır değişmediyse bu aralıkla oku (telefon pili)
   maxJumpPct: 2, // 5 sn'de bundan fazla değişen pil okuması reddedilir
   maxJumpKmh: 40, // ekran hızı için
 };

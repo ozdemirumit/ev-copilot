@@ -368,6 +368,7 @@ body.sheet-open .mapui { display: none; }
 .pickbar { position: absolute; left: 12px; right: 12px; top: calc(var(--hud-h, 72px) + 4px); display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 14px; background: #10261e; border: 1px solid var(--accent); color: var(--accent); font-weight: 600; }
 .navhud { left: 10px; right: 10px; bottom: calc(var(--nav-h) + var(--safe-b) + 10px); }
 body.navmode .rota-btn { display: none; }
+body.dimmed { background: #000; }
 body.navmode .fabs { bottom: calc(var(--nav-h) + var(--safe-b) + 92px); }
 
 /* Harita iğneleri: damla biçimi, AC mavi / DC turuncu / ≥150 kW mor; planlanan durak büyük, amber halkalı, sıra numaralı */
@@ -403,3 +404,52 @@ body.navmode .fabs { bottom: calc(var(--nav-h) + var(--safe-b) + 92px); }
 .place-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .place-head input { flex: 1; padding: 6px 8px; }
 .place-icon { font-size: 18px; }
+
+/* Karartma modu: tam siyah (OLED'de ışık harcamaz), silik gri yazı */
+.dimmer { position: fixed; inset: 0; z-index: 90; background: #000; color: #5b6878; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; text-align: center; }
+.dim-arrow { font-size: 96px; line-height: 1; color: #6f7f93; }
+.dim-dist { font-size: 56px; font-weight: 700; font-variant-numeric: tabular-nums; color: #6f7f93; }
+.dim-text { font-size: 20px; color: #5b6878; }
+.dim-speed { font-size: 22px; margin-top: 14px; }
+.dim-speed b { font-size: 48px; color: #6f7f93; font-variant-numeric: tabular-nums; }
+.dim-eta { font-size: 16px; }
+.dim-warn { font-size: 15px; color: #8a6a2c; min-height: 20px; }
+.dim-hint { font-size: 12px; margin-top: 18px; color: #3d4754; }
+
+/* Masaüstü / geniş ekran: sayfa sol yan panel olur, harita sağda açık kalır (Google Haritalar masaüstü gibi) */
+@media (min-width: 900px) and (min-height: 480px) {
+  main { left: 12px; right: auto; width: 440px; transform: none; }
+  .dock { left: 12px; right: auto; width: 440px; max-width: none; transform: none; }
+  body.sheet-open .mapui { display: block; }
+  body.sheet-open .rota-btn { display: none; }
+  body.sheet-open .navhud { left: 468px; }
+  body.sheet-open .pickbar { left: 468px; }
+  #banners { max-width: 440px; }
+  .badges { max-width: 440px; }
+}
+
+/* Kısa ekran (yatay telefon, küçük pencere): üst çubuk ve alt çubuk küçülür, rozetler gizlenir; yeterince genişse sayfa sol panel olur */
+@media (max-height: 520px) {
+  :root { --nav-h: 62px; }
+  .badges { display: none; }
+  .topbar { padding-top: calc(4px + var(--safe-t)); padding-bottom: 4px; }
+  .hud-item b { font-size: 20px; }
+  .dock { bottom: calc(var(--safe-b) + 8px); }
+  .bottomnav { height: 48px; border-radius: 24px; padding: 3px; }
+  .bottomnav button span { font-size: 16px; }
+  .searchbtn { width: 48px; height: 48px; font-size: 19px; }
+  .rota-btn { height: 44px; padding: 0 18px; font-size: 15px; bottom: calc(var(--nav-h) + var(--safe-b) + 8px); }
+  .fabs { bottom: calc(var(--nav-h) + var(--safe-b) + 8px); padding: 3px; }
+  .fabs button { width: 40px; height: 40px; font-size: 18px; }
+  .navhud { bottom: calc(var(--nav-h) + var(--safe-b) + 6px); padding: 4px 10px; }
+  .nh-cell b { font-size: 20px; }
+  body.navmode .fabs { bottom: calc(var(--nav-h) + var(--safe-b) + 70px); }
+}
+@media (max-height: 520px) and (min-width: 640px) {
+  main { left: 8px; right: auto; width: 400px; transform: none; }
+  .dock { left: 8px; right: auto; width: 400px; max-width: none; transform: none; }
+  body.sheet-open .mapui { display: block; }
+  body.sheet-open .rota-btn { display: none; }
+  body.sheet-open .navhud, body.sheet-open .pickbar { left: 420px; }
+  #banners { max-width: 400px; }
+}

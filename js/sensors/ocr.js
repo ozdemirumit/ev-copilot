@@ -20,6 +20,8 @@ const speedFilter = createFilter({ maxJump: OCR.maxJumpKmh, max: 250, resyncCoun
 const work = document.createElement('canvas'); // OCR'a giden görüntü; önizleme tuvalinden ayrı
 
 let workerPromise = null;
+let stableN = 0; // art arda aynı pil değeri okuma sayısı
+let lastSeen = null;
 let running = false;
 let timer = null;
 let previewTimer = null;
@@ -130,7 +132,11 @@ async function tick(video, stage) {
       console.warn('OCR hatası:', err);
     }
   }
-  if (running) timer = setTimeout(() => tick(video, stage), Math.max(250, OCR.intervalMs - (Date.now() - t0)));
+  const acc = getState('ocr').accepted;
+  stableN = acc != null && acc === lastSeen ? stableN + 1 : 0;
+  lastSeen = acc;
+  const every = stableN >= 3 ? OCR.idleIntervalMs : OCR.intervalMs; // değer oturduysa seyrek oku, değişince hemen sıklaş
+  if (running) timer = setTimeout(() => tick(video, stage), Math.max(250, every - (Date.now() - t0)));
 }
 
 export async function startOcr(video, stage) {

@@ -2,8 +2,18 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.46.0';
+self.APP_VERSION = '0.47.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.47.0', date: '2026-11-01',
+    notes: [
+      'Telefon pili: navigasyonda belli süre dokunulmazsa ekran tam siyaha döner (OLED\'de ışık harcamaz); yalnızca dönüş oku, mesafe, hız ve varış silik renkle görünür, harita çizimi durur. Dokununca uyanır. Sağdaki 🌙 düğmesi hemen karartır; süre ve açma/kapama Navigasyon kartında (varsayılan 45 sn). Telefonun parlaklığı web uygulamasından ayarlanamaz, LCD ekranlarda kazanç sınırlıdır.',
+      'Akıllı OCR: pil değeri art arda 3 okumadır değişmediyse 5 sn yerine 15 sn aralıkla okunur, değişince hemen sıklaşır. Araç durunca harita her saniye yeniden çizilmez.',
+      'Araç kataloğu: Hyundai Ioniq 5 (63/77/84 kWh), Ioniq 6, Kona, Kia EV6/EV9/Niro, Tesla Model 3/Y, BYD, MG, Renault, Peugeot/Citroën/Fiat, VW grubu, BMW/Mini/Mercedes, Volvo/Polestar, Nissan, Ford ve diğerleri eklendi (toplam 49 seçenek, markaya göre gruplu). TÜM DEĞERLER TAHMİNDİR, doğrulanmadı: Araç ve tüketim bölümünden her değer düzeltilebilir.',
+      'Geniş ekran (web/masaüstü): sayfalar sol yan panel olarak açılır, harita sağda görünür kalır; uyarılar sola toplanır.',
+      'Kısa ekran (yatay telefon, küçük pencere): üst ve alt çubuk küçülür, durum rozetleri gizlenir, sayfa sol panel olur; sayfa alanı 200 px yerine 260 px+ olur. Dik telefonlarda (320-412 px genişlik) taşma taraması yapıldı: yatay taşma yok.',
+    ],
+  },
   {
     v: '0.46.0', date: '2026-11-01',
     notes: [

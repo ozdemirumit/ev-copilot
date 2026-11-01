@@ -12,6 +12,7 @@ export const mapApi = {
   setSatellite() {}, isSatellite: () => false, hasRoute: () => false, cancelPick() {}, pickBar() {}, // initMap doldurur (pickBar'ı ui/shell.js)
   snap: () => null, // navigator.js: konumu rotaya yapıştırır
   drawPlaces() {}, // ui/places.js kayıtlı yerleri çizer
+  pause() {}, // ui/dimmer.js: karartmada harita çizimini durdurur
 };
 
 let boot = async () => {};
@@ -64,7 +65,7 @@ export function initMap() {
         note(''); // uyarı katmanı kalksın: harita boş bir kapta kurulur
         adapter = await createMapLibreMap(mapEl);
         adapter.onClick(onMapClick);
-        adapter.onDragStart(() => { lastDrag = Date.now(); });
+        adapter.onDragStart(() => { lastDrag = Date.now(); lastFollow = null; });
         queue.splice(0).forEach((fn) => fn());
         readyHooks.forEach((fn) => fn());
       } catch (err) {
@@ -192,8 +193,11 @@ export function initMap() {
    * Araç takibi. heading verilirse (navigasyon) harita gidiş yönüne döner (yön-yukarı): dönüş her güncellemede farkın ~%60'ı
    * kadar yumuşatılır. Navigasyonda merkez, aracın biraz İLERİSİNE konur: araç ekranın alt kısmında, yol önü geniş görünür.
    */
+  let paused = false;
+  mapApi.pause = (p) => { paused = p; if (!p) mapApi.recenter(); }; // karartma bitince araca dön
+  let lastFollow = null; // son uygulanan konum/dönüş: değişmediyse harita yeniden çizilmez (pil)
   mapApi.follow = (lat, lon, zoom = null, force = false, heading = null) => {
-    if (!adapter || (!force && Date.now() - lastDrag < 15000)) return;
+    if (!adapter || paused || (!force && Date.now() - lastDrag < 15000)) return;
     if (zoom != null) zoomNow = zoom;
     let turn = null;
     if (heading != null && headingUp) {
@@ -208,6 +212,11 @@ export function initMap() {
       const h = (lastHeading * Math.PI) / 180;
       center = { lat: lat + (d * Math.cos(h)) / 111320, lon: lon + (d * Math.sin(h)) / (111320 * Math.cos((lat * Math.PI) / 180)) };
     }
+    const lf = lastFollow;
+    const still = lf && zoom == null && turn == null && !force
+      && Math.abs(center.lat - lf.lat) * 111320 < 2 && Math.abs(center.lon - lf.lon) * 111320 * Math.cos((lat * Math.PI) / 180) < 2;
+    if (still) return; // araç durmuş: harita aynı kalır
+    lastFollow = { lat: center.lat, lon: center.lon };
     adapter.moveTo({ center, zoom, heading: turn }, true);
   };
   /** Navigasyon görünümü: açıkken eğik (3D); up=true ise yön-yukarı, değilse kuzey-yukarı. Kapanınca düz kuzey-yukarı harita. */
@@ -224,7 +233,7 @@ export function initMap() {
   /** Kullanıcı haritayı kaydırdı mı (takip duraklatıldı)? */
   mapApi.dragged = () => Date.now() - lastDrag < 15000;
   /** Takibe hemen dön (navigasyon görünümüne geri). */
-  mapApi.recenter = () => { lastDrag = 0; mapApi.navView(navOn, headingUp); };
+  mapApi.recenter = () => { lastDrag = 0; lastFollow = null; mapApi.navView(navOn, headingUp); };
   /** Genel görünüm: tüm rota ekrana sığar (düz, kuzey-yukarı); 15 sn sonra veya Ortala ile takibe dönülür. */
   mapApi.overview = () => {
     if (!adapter || !routeCoords) return;
