@@ -6,7 +6,8 @@
   "scripts": {
     "build:web": "node scripts/copy-www.mjs",
     "sync": "npm run build:web && cap sync android",
-    "open": "cap open android"
+    "open": "cap open android",
+    "check": "node scripts/check.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.0",

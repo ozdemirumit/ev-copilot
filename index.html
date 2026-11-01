@@ -33,6 +33,7 @@
   <span class="badge" id="bd-abrp">ABRP: pasif</span>
   <span class="badge test hidden" id="bd-sim">TEST MODU</span>
   <button class="badge install hidden" id="btn-install" type="button">📲 Uygulamayı yükle</button>
+    <button class="badge install hidden" id="btn-update" type="button">⬆ Güncelle</button>
   <button class="badge data" id="btn-data" type="button" title="Veri kullanımı">📶 —</button>
 </div>
 <div id="banners">
@@ -492,6 +493,17 @@
 
   <!-- ===== DAHA FAZLA ===== -->
   <section class="tab" id="tab-more" data-title="Daha fazla">
+    <div class="card stack" id="version-card">
+      <div>
+        <b id="ver-line">Sürüm</b>
+        <div class="small muted" id="ver-latest">Yayındaki sürüm denetlenmedi</div>
+      </div>
+      <div class="row wrap">
+        <button class="btn" id="ver-check" type="button">🔄 Güncellemeyi denetle</button>
+        <button class="btn primary hidden" id="ver-update" type="button">⬆ Güncelle</button>
+        <button class="btn ghost" id="ver-notes" type="button">📝 Sürüm notları</button>
+      </div>
+    </div>
     <div class="menu">
       <button class="menu-item" type="button" data-tab="range"><span>⚡</span><b>Menzil</b><small>Menzil, hava, tüketim</small></button>
       <button class="menu-item" type="button" data-tab="camera"><span>📷</span><b>Kamera</b><small>Göstergeden pil okuma</small></button>
@@ -681,6 +693,8 @@
 
 <dialog id="about-dialog" class="qr-dialog dlg" aria-labelledby="about-title">
   <h2 id="about-title">Sürüm notları · <span id="about-version"></span></h2>
+  <p class="small muted" id="about-latest" style="margin:0 0 8px"></p>
+  <button class="btn primary hidden" id="about-update" type="button" style="width:100%;margin-bottom:8px">⬆ Güncelle</button>
   <div id="changelog" class="changelog"></div>
   <button class="btn" id="about-close" type="button" style="margin-top:12px;width:100%">Kapat</button>
 </dialog>

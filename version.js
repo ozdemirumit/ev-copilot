@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.54.0';
+self.APP_VERSION = '0.54.1';
 self.APP_CHANGELOG = [
+  {
+    v: '0.54.1', date: '2026-11-01',
+    notes: [
+      'ÖNEMLİ DÜZELTME: v0.52.0 ve sonrasında sürüm dosyası (version.js) içinde kaçışsız bir kesme işareti vardı. Dosya çalışmadığı için sürüm numarası görünmüyordu, ⓘ sürüm notları boştu ve service worker bu dosyayı yükleyemediği için uygulama güncellenmiyordu. Düzeltildi; yayından önce çalışan bir denetim betiği eklendi (npm run check: version.js, sürüm numarası ve tüm .js dosyalarının söz dizimi).',
+      'Güncelleme: açılışta, her 20 dakikada ve uygulamaya dönünce yayındaki sürüm denetlenir; yeni sürüm varsa üstte "Güncelle" rozeti çıkar. Daha Fazla sayfasına Sürüm kartı eklendi (sürüm, yayındaki sürüm, Güncellemeyi denetle, Güncelle, Sürüm notları). ⓘ penceresi çalışan sürüm eskiyse bile yayındaki en son notları gösterir. Güncelle düğmesi service worker ve uygulama önbelleğini yenileyip sayfayı yeniden açar.',
+      'Navigasyon artık rota planının başından değil, bulunduğun konumdan hedefe doğru başlar: araç planlanan rotanın üzerinde değilse (150 m den uzaksa) başlatırken önce konumundan yeni rota kurulur, durak planı yeni rotaya aktarılır. Rotanın üzerindeyken plan aynen kalır. İstasyona git de bulunduğun konumdan kurulur (zaten böyleydi).',
+    ],
+  },
   {
     v: '0.54.0', date: '2026-11-01',
     notes: [
@@ -21,7 +29,7 @@ self.APP_CHANGELOG = [
   {
     v: '0.53.0', date: '2026-11-01',
     notes: [
-      'Navigasyon ekranında şarjla tahmini menzil (km): sol pil çubuğunun altında mavi rakam. Mevcut pilden, Rota sekmesindeki minimum varış pili eşiğine kadar gidilebilecek mesafe (Menzil sekmesindeki değerle aynı); %0'a kadar menzil masaüstünde üzerine gelince ipucu olarak görünür. Karartma modunda da görünür.',
+      'Navigasyon ekranında şarjla tahmini menzil (km): sol pil çubuğunun altında mavi rakam. Mevcut pilden, Rota sekmesindeki minimum varış pili eşiğine kadar gidilebilecek mesafe (Menzil sekmesindeki değerle aynı); %0\'a kadar menzil masaüstünde üzerine gelince ipucu olarak görünür. Karartma modunda da görünür.',
       'Pil çevrimiçi göstergesi: yeşil nokta + "canlı" = pil kameradan canlı okunuyor (son 45 sn içinde). Kırmızı nokta = okuma yok: "tahmin" (elle girilmiş, yolda modelle düşüyor) ya da "eski" (kamera okuması 45 sn\'den eski). Mavi = Test Modu. Gösterge hem sol pil çubuğunda hem alttaki "% pil" kutusunda.',
     ],
   },
@@ -36,7 +44,7 @@ self.APP_CHANGELOG = [
     v: '0.52.0', date: '2026-11-01',
     notes: [
       'Rotada trafik renklendirmesi (Mapbox anahtarı girilince): yavaş kesimler sarı, yoğun kesimler kırmızı, çok yoğun kesimler koyu kırmızı çizilir; rota panelindeki trafik satırı yavaş/yoğun kesimin toplam uzunluğunu da yazar. Anahtar yoksa rota tek renk kalır (ücretsiz kaynaklarda canlı trafik yoktur).',
-      'Not: Haritanın kendisi Mapbox değildir (MapLibre + OpenFreeMap, OpenStreetMap verisi); Mapbox yalnızca anahtar girilince rota, trafik ve istasyon araması için kullanılır. Türkiye'de Mapbox trafik verisinin kapsamı gerçek anahtarla doğrulanmadı.',
+      'Not: Haritanın kendisi Mapbox değildir (MapLibre + OpenFreeMap, OpenStreetMap verisi); Mapbox yalnızca anahtar girilince rota, trafik ve istasyon araması için kullanılır. Türkiye\'de Mapbox trafik verisinin kapsamı gerçek anahtarla doğrulanmadı.',
     ],
   },
   {

@@ -197,8 +197,29 @@ function followMap(e, distM, st, routeHeading) {
   mapApi.follow(e.lat, e.lon, change ? want : null, change, getState('nav').headingUp ? heading : null);
 }
 
-/** Navigasyonu başlat (plan hazırsa). Kullanıcı dokunuşuyla çağrıldığı için sesli yönlendirme tarayıcıda açılır. */
-export function startNav() {
+let starting = false;
+
+/**
+ * Navigasyonu başlat (plan hazırsa). Kullanıcı dokunuşuyla çağrıldığı için sesli yönlendirme tarayıcıda açılır.
+ * Araç planlanan rotanın üzerinde değilse (örneğin plan evden yapılmış, araç başka yerde) önce bulunduğun konumdan hedefe yeni rota
+ * kurulur; navigasyon rota planının başından değil, senin konumundan hedefe doğru başlar.
+ */
+export async function startNav() {
+  if (starting) return;
+  const plan0 = getState('plan');
+  if (!plan0.profile || !plan0.steps?.length) return toast('Önce rotayı planla');
+  try { window.speechSynthesis?.speak(Object.assign(new SpeechSynthesisUtterance(''), { volume: 0 })); } catch { /* ses yok */ } // dokunuş anında ses iznini aç (aşağıdaki beklemeden önce)
+  const e0 = effective();
+  if (e0.lat != null && plan0.route?.coords) {
+    const loc = locate(buildTrack(plan0.route.coords), e0.lat, e0.lon, null);
+    if (loc.offKm > Math.max(0.15, offLimit())) {
+      starting = true;
+      toast('Konumundan hedefe yeni rota kuruluyor…', 4000);
+      try {
+        if (!(await rerouteFromHere())) toast('Yeni rota kurulamadı: önceki planla başlıyor', 4000);
+      } finally { starting = false; }
+    }
+  }
   const plan = getState('plan');
   if (!plan.profile || !plan.steps?.length) return toast('Önce rotayı planla');
   const e = effective();
