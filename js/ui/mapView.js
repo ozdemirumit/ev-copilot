@@ -174,11 +174,12 @@ export function initMap() {
   let nearMarks = [];
   const routeBounds = () => routeCoords.filter((_, i) => i % 20 === 0 || i === routeCoords.length - 1).map((c) => ({ lat: c[1], lon: c[0] }));
   mapApi.hasRoute = () => !!routeCoords;
-  mapApi.drawRoute = (coords, { fit: doFit = true } = {}) => {
+  mapApi.drawRoute = (coords, { fit: doFit = true, traffic = null } = {}) => {
     routeCoords = coords;
     whenMap(() => {
       unmark(routeLine);
       routeLine = adapter.line(coords);
+      adapter.traffic(coords, traffic); // trafik varsa yavaş/yoğun kesimler renkli çizilir (yoksa temizlenir)
       if (doFit && !navOn) fit(routeBounds(), 30); // navigasyondayken yeni rota haritayı uzaklaştırıp yönünü bozmasın
     });
   };

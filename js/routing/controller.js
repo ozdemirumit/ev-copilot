@@ -135,11 +135,11 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
     // Hız rota adımlarından: dilim başına serbest akış hızı (yol limiti/sınıfı) ve trafik çarpanı. Elle ayar yok.
     const speeds = segmentSpeeds(rt, pts);
     patch('route', {
-      trafficInfo: { ratio: rt.trafficRatio, driveMin: rt.durationH * 60, freeMin: (rt.durationH * 60) / rt.trafficRatio, avgFreeKmh: speeds.avgFreeKmh, live: !!rt.live, jamKm: rt.intervals.reduce((a, iv) => a + (iv.to - iv.from), 0) },
+      trafficInfo: { ratio: rt.trafficRatio, driveMin: rt.durationH * 60, freeMin: (rt.durationH * 60) / rt.trafficRatio, avgFreeKmh: speeds.avgFreeKmh, live: !!rt.live, jamKm: rt.intervals.reduce((a, iv) => a + (iv.to - iv.from), 0), slowKm: (rt.trafficSpans || []).reduce((a, s) => a + (s.to - s.from), 0) },
       cruise: Math.round(speeds.avgFreeKmh), // gösterim ve eco-hız üst sınırı için ortalama serbest hız
       traffic: densityFromRatio(rt.trafficRatio), // rota genelinde yoğunluk (planK hız bandı için)
     });
-    mapApi.drawRoute(rt.coords, { fit: !from });
+    mapApi.drawRoute(rt.coords, { fit: !from, traffic: rt.trafficSpans || null });
     if (from) mapApi.setPoint('start', from, { fit: false });
 
     patch('plan', { text: 'Rakım ve hava durumu alınıyor…' });

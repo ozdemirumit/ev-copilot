@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.51.3';
+self.APP_VERSION = '0.52.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.52.0', date: '2026-11-01',
+    notes: [
+      'Rotada trafik renklendirmesi (Mapbox anahtarı girilince): yavaş kesimler sarı, yoğun kesimler kırmızı, çok yoğun kesimler koyu kırmızı çizilir; rota panelindeki trafik satırı yavaş/yoğun kesimin toplam uzunluğunu da yazar. Anahtar yoksa rota tek renk kalır (ücretsiz kaynaklarda canlı trafik yoktur).',
+      'Not: Haritanın kendisi Mapbox değildir (MapLibre + OpenFreeMap, OpenStreetMap verisi); Mapbox yalnızca anahtar girilince rota, trafik ve istasyon araması için kullanılır. Türkiye'de Mapbox trafik verisinin kapsamı gerçek anahtarla doğrulanmadı.',
+    ],
+  },
   {
     v: '0.51.3', date: '2026-11-01',
     notes: [

@@ -29,7 +29,7 @@ export function initRoutePanel() {
     const i = getState('route').trafficInfo;
     if (!i) return;
     $('traffic-info').textContent = i.live
-      ? `Mapbox canlı trafik: süre ${hm(i.driveMin)}, olağan ${hm(i.freeMin)} (×${i.ratio.toFixed(2)}) · ortalama hız ${Math.round(i.avgFreeKmh)} km/s`
+      ? `Mapbox canlı trafik: süre ${hm(i.driveMin)}, olağan ${hm(i.freeMin)} (×${i.ratio.toFixed(2)}) · ortalama hız ${Math.round(i.avgFreeKmh)} km/s` + (i.slowKm > 0.2 ? ` · haritada sarı: yavaş, kırmızı: yoğun trafik (${i.slowKm.toFixed(0)} km)` : ' · yoğun kesim yok')
       : `Süre ${hm(i.driveMin)} (trafiksiz, canlı trafik yok) · ortalama hız ${Math.round(i.avgFreeKmh)} km/s`;
   };
   subscribe('route', paintTraffic);

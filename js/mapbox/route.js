@@ -54,6 +54,25 @@ function mapSteps(legs) {
   return steps;
 }
 
+/** Mapbox yoğunluk (annotation) dizileri → rotada km aralıkları: [{ from, to, lvl: 'moderate' | 'heavy' | 'severe' }]. Uzunluğa göre eşlenir (koordinat sayısına bağlı değil). */
+export function trafficSpans(legs) {
+  const spans = [];
+  let km = 0;
+  for (const l of legs) {
+    const dist = l.annotation?.distance || [];
+    const cong = l.annotation?.congestion || [];
+    for (let i = 0; i < dist.length; i++) {
+      const from = km;
+      km += (dist[i] || 0) / 1000;
+      const lvl = cong[i];
+      if (lvl !== 'moderate' && lvl !== 'heavy' && lvl !== 'severe') continue;
+      const last = spans.at(-1);
+      if (last && last.lvl === lvl && from - last.to < 0.05) last.to = km; else spans.push({ from, to: km, lvl });
+    }
+  }
+  return spans.filter((s) => s.to - s.from >= 0.15);
+}
+
 const lonlat = (p) => `${p.lon.toFixed(6)},${p.lat.toFixed(6)}`;
 
 /**
@@ -68,7 +87,7 @@ export function fetchRoute(start, end, via = []) {
 async function routeFromMapbox(start, end, via) {
   const coords = [start, ...via, end].map(lonlat).join(';');
   const json = await mbfetch(`/directions/v5/mapbox/driving-traffic/${coords}`, {
-    geometries: 'polyline6', overview: 'full', steps: 'true', roundabout_exits: 'true', alternatives: 'false',
+    geometries: 'polyline6', overview: 'full', steps: 'true', roundabout_exits: 'true', alternatives: 'false', annotations: 'distance,congestion',
   }, { timeoutMs: 40000 });
   const r = json.routes?.[0];
   if (!r?.geometry) throw new Error('Mapbox rota bulamadı');
@@ -79,6 +98,7 @@ async function routeFromMapbox(start, end, via) {
     distanceKm: (r.distance || 0) / 1000,
     durationH: (r.duration || 0) / 3600,
     trafficRatio: typical > 0 ? Math.max(1, r.duration / typical) : 1,
+    trafficSpans: trafficSpans(r.legs || []), // rota çizgisinin renklendirilmesi için (yavaş sarı, yoğun kırmızı)
     live: true,
     steps: mapSteps(r.legs || []),
   };

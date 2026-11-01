@@ -38,7 +38,14 @@ export async function createMapLibreMap(container) {
   // Rota çizgisi: tek kaynak + katman; remove() çizgiyi boşaltır
   const EMPTY = { type: 'FeatureCollection', features: [] };
   map.addSource('route', { type: 'geojson', data: EMPTY });
+  map.addSource('traffic', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
   map.addLayer({ id: 'route-line', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#2ee6a6', 'line-width': 5, 'line-opacity': 0.85 } });
+
+  // Trafik: rota çizgisinin üstünde yavaş (sarı), yoğun (kırmızı), çok yoğun (koyu kırmızı) kesimler
+  map.addLayer({
+    id: 'traffic-line', type: 'line', source: 'traffic', layout: { 'line-join': 'round', 'line-cap': 'butt' },
+    paint: { 'line-color': ['match', ['get', 'lvl'], 'moderate', '#ffb547', 'heavy', '#ff5d6c', 'severe', '#c4001d', '#ffb547'], 'line-width': 6, 'line-opacity': 0.95 },
+  });
 
   // Uydu görüntüsü (Esri World Imagery) + yol ve yer adı katmanları; rota çizgisinin altına, vektör haritanın üstüne konur.
   const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
@@ -75,6 +82,26 @@ export async function createMapLibreMap(container) {
         setContent: (c) => { if (wrap.firstChild !== c) wrap.replaceChildren(c); },
         remove: () => m.remove(),
       };
+    },
+    /** spans: [{ from, to, lvl }] (km). Her aralık, rota koordinatlarından kesilip ayrı çizgi olur. */
+    traffic(coords, spans) {
+      const src = map.getSource('traffic');
+      if (!src) return;
+      if (!spans?.length) return src.setData({ type: 'FeatureCollection', features: [] });
+      const cum = [0];
+      for (let i = 1; i < coords.length; i++) {
+        const dLat = ((coords[i][1] - coords[i - 1][1]) * Math.PI) / 180;
+        const dLon = ((coords[i][0] - coords[i - 1][0]) * Math.PI) / 180;
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos((coords[i - 1][1] * Math.PI) / 180) * Math.cos((coords[i][1] * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+        cum.push(cum[i - 1] + 6371 * 2 * Math.asin(Math.sqrt(a)));
+      }
+      const at = (km) => { let i = 0; while (i < cum.length - 1 && cum[i + 1] < km) i++; return i; };
+      const features = spans.map((s) => {
+        const i0 = at(s.from);
+        const i1 = Math.min(coords.length - 1, at(s.to) + 1);
+        return { type: 'Feature', properties: { lvl: s.lvl }, geometry: { type: 'LineString', coordinates: coords.slice(i0, i1 + 1) } };
+      }).filter((f) => f.geometry.coordinates.length >= 2);
+      src.setData({ type: 'FeatureCollection', features });
     },
     line(coords) {
       map.getSource('route').setData({ type: 'Feature', geometry: { type: 'LineString', coordinates: coords }, properties: {} });
