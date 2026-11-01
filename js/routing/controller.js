@@ -185,6 +185,14 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
   }
 }
 
+/** Mevcut pil elle değişti (Rota sayfası sürgüsü): başlangıç pilini güncelle ve açık planı ağsız yeniden hesapla. */
+export function setStartSoc(soc) {
+  startSoc = soc;
+  const plan = getState('plan');
+  if (!raw || plan.status === 'loading' || plan.fromSoc != null) return; // yeniden rota planı kendi pilini taşır
+  refresh();
+}
+
 /** Navigasyon: rotadan çıkıldı, bulunduğun konumdan varışa yeniden rota kur. Dönüş: yeni rota kuruldu mu (söz). */
 export async function rerouteFromHere() {
   const e = effective();

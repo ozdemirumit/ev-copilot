@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.48.0';
+self.APP_VERSION = '0.49.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.49.0', date: '2026-11-01',
+    notes: [
+      'Rota sayfasına "Mevcut pil" sürgüsü eklendi: kamera/OCR okuması yoksa pil yüzdesi elle girilir. Sürgü bırakılınca açık plan ağsız yeniden hesaplanır (varış pili, şarj durakları); HUD ve navigasyon da bu değeri kullanır. Test Modu açıksa Test sekmesindeki pil değişir.',
+      'Rota sayfasının düzeni: favori çipleri, başlangıç/varış, mevcut pil ve Rotayı Planla düğmesi artık en üstte; özet hemen altında. Yerleri düzenle bölümü sayfanın en altına taşındı.',
+    ],
+  },
   {
     v: '0.48.0', date: '2026-11-01',
     notes: [

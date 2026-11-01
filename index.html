@@ -81,12 +81,19 @@
         <button class="btn ghost" id="btn-mylocation" type="button">🎯 Konumumu başlangıç yap</button>
         <button class="btn ghost" id="btn-clear-route" type="button">Temizle</button>
       </div>
-      <details class="places-edit" id="places-edit">
-        <summary>✎ Yerleri düzenle (Ev, İş, 3 favori)</summary>
-        <div class="stack" id="places-list"></div>
-        <p class="small muted" style="margin:6px 0 0">Çipe dokununca yer, son dokunduğun kutuya (başlangıç ya da varış) yazılır. Yerler yalnızca bu telefonda saklanır.</p>
-      </details>
+      <div class="slider-row">
+        <label for="cur-soc">Mevcut pil (şarj durumu)</label>
+        <output id="cur-soc-out">—</output>
+        <input type="range" id="cur-soc" min="0" max="100" step="1" value="80">
+      </div>
+      <p class="small muted" id="cur-soc-note" style="margin:0"></p>
+      <button class="btn primary" id="btn-plan" type="button">⚡ Rotayı Planla</button>
 
+      <div class="summary">
+        <div><b id="sum-dist">—</b><span>Mesafe (km)</span></div>
+        <div><b id="sum-time">—</b><span>Süre (şarj dahil)</span></div>
+        <div><b id="sum-stops">—</b><span>Şarj durağı</span></div>
+      </div>
       <div class="slider-row">
         <label for="min-arrival">Minimum varış pili eşiği</label>
         <output id="min-arrival-out">%15</output>
@@ -100,13 +107,11 @@
         <label class="switch"><input type="checkbox" id="map-saver"><i></i></label>
       </div>
 
-      <button class="btn primary" id="btn-plan" type="button">⚡ Rotayı Planla</button>
-
-      <div class="summary">
-        <div><b id="sum-dist">—</b><span>Mesafe (km)</span></div>
-        <div><b id="sum-time">—</b><span>Süre (şarj dahil)</span></div>
-        <div><b id="sum-stops">—</b><span>Şarj durağı</span></div>
-      </div>
+      <details class="places-edit" id="places-edit">
+        <summary>✎ Yerleri düzenle (Ev, İş, 3 favori)</summary>
+        <div class="stack" id="places-list"></div>
+        <p class="small muted" style="margin:6px 0 0">Çipe dokununca yer, son dokunduğun kutuya (başlangıç ya da varış) yazılır. Yerler yalnızca bu telefonda saklanır.</p>
+      </details>
     </div>
 
     <div class="card stack" id="plan-card">
