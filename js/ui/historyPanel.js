@@ -2,7 +2,10 @@
 import { locale } from '../i18n/index.js';
 import { getState, subscribe } from '../state.js';
 import { records, byBand, summary, clearHistory, relFactor } from '../physics/history.js';
-import { chargeLog } from '../physics/charging.js';
+import { chargeLog, updateCharge } from '../physics/charging.js';
+import { getSession, proxyFetch } from '../net/proxy.js';
+import { toast } from './toast.js';
+import { tr } from '../i18n/index.js';
 
 const $ = (id) => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
@@ -102,6 +105,24 @@ function paintCharges() {
       Object.assign(document.createElement('b'), { textContent: `${when} · ${where}` }),
       Object.assign(document.createElement('span'), { textContent: `%${c.soc0} → %${c.soc1} · ${c.kwh} kWh · ${c.min} dk · ort. ${c.avgKw} kW` + (c.cost != null ? ` · ${c.cost} TL` : '') }),
     );
+    if (getSession() && c.lat != null) { // hesapla giriş yapılmışsa: kWh fiyatını bildir (fiyat defterine girer)
+      if (c.reported) row.append(Object.assign(document.createElement('span'), { className: 'muted small', textContent: 'Fiyat bildirildi' }));
+      else {
+        const b = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost sm', textContent: '💳 Fiyat bildir' });
+        b.addEventListener('click', async () => {
+          const v = prompt(tr('Bu istasyonun kWh fiyatı (TL)?'));
+          if (v == null) return;
+          const price = Number(String(v).replace(',', '.'));
+          if (!(price > 0.05 && price < 100)) return toast('Geçerli bir fiyat gir');
+          updateCharge(c.id, { price, cost: +(price * c.kwh).toFixed(2), reported: true });
+          try {
+            const r = await proxyFetch('/v1/price', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lat: c.lat, lon: c.lon, kwh: price, currency: 'TRY' }), signal: AbortSignal.timeout(15000) });
+            toast(r.ok ? 'Teşekkürler: fiyat kaydedildi' : 'Fiyat gönderilemedi');
+          } catch { toast('Fiyat gönderilemedi'); }
+        });
+        row.append(b);
+      }
+    }
     box.append(row);
   });
 }

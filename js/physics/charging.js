@@ -20,6 +20,16 @@ let sess = null;
 
 export const chargeLog = () => load('charges', []);
 
+/** Bir şarj kaydını güncelle (ör. kullanıcının bildirdiği fiyat). */
+export function updateCharge(id, part) {
+  const list = chargeLog();
+  const i = list.findIndex((c) => c.id === id);
+  if (i < 0) return;
+  list[i] = { ...list[i], ...part };
+  save('charges', list);
+  document.dispatchEvent(new Event('charges-changed'));
+}
+
 function nearestStation(lat, lon) {
   let best = null;
   let bd = NEAR_KM;

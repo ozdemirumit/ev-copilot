@@ -136,5 +136,12 @@
  "Ücretsiz",
  "Premium",
  "{0} tarihine kadar",
- "Canlı doluluk ve kWh fiyatı Premium üyelere özeldir."
+ "Canlı doluluk ve kWh fiyatı Premium üyelere özeldir.",
+ "{0}/kWh (bildirilen)",
+ "💳 Fiyat bildir",
+ "Bu istasyonun kWh fiyatı (TL)?",
+ "Geçerli bir fiyat gir",
+ "Teşekkürler: fiyat kaydedildi",
+ "Fiyat gönderilemedi",
+ "Fiyat bildirildi"
 ]

@@ -61,7 +61,7 @@ export async function refreshAvailability({ force = false } = {}) {
   availBusy = true;
   lastAvail = Date.now();
   try {
-    const res = await fetchAvailability(next, 2);
+    const res = await fetchAvailability(next, 2, effective().soc); // pil %: sunucu ücretli Google'ı yalnızca düşük pilde sorar
     let worse = null;
     for (const st of plan.stations) {
       if (!res.has(st.id)) continue;

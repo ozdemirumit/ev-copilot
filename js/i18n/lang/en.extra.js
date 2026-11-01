@@ -137,4 +137,11 @@ export default {
   "Premium": "Premium",
   "{0} tarihine kadar": "until {0}",
   "Canlı doluluk ve kWh fiyatı Premium üyelere özeldir.": "Live availability and kWh price are for Premium members.",
+  "{0}/kWh (bildirilen)": "{0}/kWh (reported)",
+  "💳 Fiyat bildir": "💳 Report price",
+  "Bu istasyonun kWh fiyatı (TL)?": "What is this station's price per kWh (TRY)?",
+  "Geçerli bir fiyat gir": "Enter a valid price",
+  "Teşekkürler: fiyat kaydedildi": "Thanks: price saved",
+  "Fiyat gönderilemedi": "Could not send the price",
+  "Fiyat bildirildi": "Price reported",
 };

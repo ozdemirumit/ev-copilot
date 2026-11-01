@@ -137,4 +137,11 @@ export default {
   "Premium": "Premium",
   "{0} tarihine kadar": "έως {0}",
   "Canlı doluluk ve kWh fiyatı Premium üyelere özeldir.": "Η ζωντανή διαθεσιμότητα και η τιμή ανά kWh είναι για μέλη Premium.",
+  "{0}/kWh (bildirilen)": "{0}/kWh (αναφέρθηκε)",
+  "💳 Fiyat bildir": "💳 Αναφορά τιμής",
+  "Bu istasyonun kWh fiyatı (TL)?": "Ποια είναι η τιμή ανά kWh σε αυτόν τον σταθμό (TRY);",
+  "Geçerli bir fiyat gir": "Εισάγετε έγκυρη τιμή",
+  "Teşekkürler: fiyat kaydedildi": "Ευχαριστούμε: η τιμή αποθηκεύτηκε",
+  "Fiyat gönderilemedi": "Δεν ήταν δυνατή η αποστολή της τιμής",
+  "Fiyat bildirildi": "Η τιμή αναφέρθηκε",
 };

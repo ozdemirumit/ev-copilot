@@ -137,4 +137,11 @@ export default {
   "Premium": "Premium",
   "{0} tarihine kadar": "до {0}",
   "Canlı doluluk ve kWh fiyatı Premium üyelere özeldir.": "Наличността на живо и цената на kWh са за Premium членове.",
+  "{0}/kWh (bildirilen)": "{0}/kWh (докладвана)",
+  "💳 Fiyat bildir": "💳 Докладвай цена",
+  "Bu istasyonun kWh fiyatı (TL)?": "Каква е цената на kWh на тази станция (TRY)?",
+  "Geçerli bir fiyat gir": "Въведи валидна цена",
+  "Teşekkürler: fiyat kaydedildi": "Благодаря: цената е запазена",
+  "Fiyat gönderilemedi": "Цената не можа да бъде изпратена",
+  "Fiyat bildirildi": "Цената е докладвана",
 };

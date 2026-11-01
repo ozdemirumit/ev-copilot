@@ -12,6 +12,7 @@ const NL_BOX = { minLat: 50.7, maxLat: 53.7, minLon: 3.2, maxLon: 7.3 };
 const DC_MIN_W = 40000; // DC hızlı şarj sayılan alt güç (W)
 const MATCH_M = 120; // istasyon ile kayıt arası en çok mesafe
 const TARIFF_TTL_MS = 6 * 3600e3;
+const GOOGLE_SOC_BELOW = Number(process.env.GOOGLE_SOC_BELOW || 25); // Google (ücretli) yalnızca pil bu yüzdenin altındayken sorulur
 
 const rad = (d) => (d * Math.PI) / 180;
 export function distM(a, b) {
@@ -125,6 +126,7 @@ export async function ndwLookup(st, { fetchImpl = fetch, at = new Date() } = {})
       if (p && (!price || (p.kwh ?? Infinity) < (price.kwh ?? Infinity))) price = p; // aynı yerde birden çok tarife: en ucuz kWh
     }
   }
+  if (price) price.src = 'ndw';
   return { src: 'ndw', total, available, out: null, at: Date.now(), price }; // last_updated son DEĞİŞİMİ gösterir; veri AFIR gereği 1 dk içinde tazedir → okuma anı
 }
 
@@ -158,6 +160,21 @@ export async function googleLookup(st, key, { fetchImpl = fetch } = {}) {
 // ---------- Birleştirici ----------
 const cache = new Map(); // anahtar → { exp, v }
 const HIT_MS = 90e3;
+
+// Google bir bölgede (≈ 11 km'lik hücre) üst üste 3 kez EV verisi vermediyse (hiç vermemişse) o bölge 7 gün atlanır: Türkiye'de Google istasyonları
+// listeliyor ama soket/doluluk vermiyor (ölçüldü), boşuna ücret ödenmesin.
+const gStats = new Map(); // hücre → { hit, miss, until }
+const tile = (p) => `${p.lat.toFixed(1)},${p.lon.toFixed(1)}`;
+function googleWanted(st, soc) {
+  if (soc == null || soc >= GOOGLE_SOC_BELOW) return false;
+  const g = gStats.get(tile(st));
+  return !(g && g.until > Date.now());
+}
+function noteGoogle(st, got) {
+  const g = gStats.get(tile(st)) || { hit: 0, miss: 0, until: 0 };
+  if (got) { g.hit++; g.miss = 0; } else { g.miss++; if (!g.hit && g.miss >= 3) g.until = Date.now() + 7 * 86400e3; }
+  gStats.set(tile(st), g);
+}
 const MISS_MS = 5 * 60e3; // sonuçsuzluk daha uzun saklanır (boşuna Google ücreti doğmasın)
 
 /**
@@ -173,8 +190,14 @@ export async function lookupAll(stations, opts = {}) {
     try {
       if (inNl(st)) v = await ndwLookup(st, opts);
     } catch (err) { console.error('doluluk (NDW):', err.message); }
-    if (!v && opts.google?.key && opts.google.allow()) {
-      try { v = await googleLookup(st, opts.google.key, opts); } catch (err) { console.error('doluluk (Google):', err.message); }
+    if (!v && opts.google?.key && googleWanted(st, opts.soc) && opts.google.allow()) {
+      try { v = await googleLookup(st, opts.google.key, opts); noteGoogle(st, !!v); } catch (err) { console.error('doluluk (Google):', err.message); }
+    }
+    // Fiyat defteri: canlı fiyat yoksa kullanıcıların bildirdiği son bilinen fiyat
+    const b = opts.book?.nearest(st);
+    if (b && !(v?.price)) {
+      const price = { currency: b.currency, kwh: b.kwh, flat: null, hour: null, parkingHour: null, src: 'user', n: b.n, at: b.at };
+      v = v ? { ...v, price } : { src: 'book', total: null, available: null, out: null, at: null, price };
     }
     cache.set(key, { exp: Date.now() + (v ? HIT_MS : MISS_MS), v });
     if (cache.size > 2000) cache.delete(cache.keys().next().value);

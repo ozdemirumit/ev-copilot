@@ -58,7 +58,8 @@ export function livePrice(s) {
   const p = s.slots?.price;
   if (!p || p.kwh == null) return null;
   const sym = p.currency === 'EUR' ? '€' : p.currency === 'TRY' ? '₺' : `${p.currency} `;
-  return { text: `${sym}${p.kwh.toFixed(2)}/kWh (canlı)`, extra: !!(p.flat || p.hour || p.parkingHour) };
+  const how = p.src === 'user' ? 'bildirilen' : 'canlı'; // NDW/OCPI canlı; kullanıcı bildirimi (fiyat defteri) son bilinen
+  return { text: `${sym}${p.kwh.toFixed(2)}/kWh (${how})`, extra: !!(p.flat || p.hour || p.parkingHour) };
 }
 
 /** Planlama için doluluk bilgisi yeterince taze mi? */

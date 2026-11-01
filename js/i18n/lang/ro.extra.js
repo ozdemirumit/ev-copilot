@@ -137,4 +137,11 @@ export default {
   "Premium": "Premium",
   "{0} tarihine kadar": "până la {0}",
   "Canlı doluluk ve kWh fiyatı Premium üyelere özeldir.": "Disponibilitatea în timp real și prețul pe kWh sunt rezervate membrilor Premium.",
+  "{0}/kWh (bildirilen)": "{0}/kWh (raportat)",
+  "💳 Fiyat bildir": "💳 Raportează prețul",
+  "Bu istasyonun kWh fiyatı (TL)?": "Care este prețul pe kWh la această stație (TRY)?",
+  "Geçerli bir fiyat gir": "Introdu un preț valid",
+  "Teşekkürler: fiyat kaydedildi": "Mulțumim: prețul a fost salvat",
+  "Fiyat gönderilemedi": "Prețul nu a putut fi trimis",
+  "Fiyat bildirildi": "Preț raportat",
 };

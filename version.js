@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.67.0';
+self.APP_VERSION = '0.68.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.68.0', date: '2026-11-01',
+    notes: [
+      'Fiyat defteri: kullanıcıların bildirdiği kWh fiyatları sunucuda tutulur. Menzil sekmesindeki Şarj oturumları listesinde (hesapla girişte) her oturumda Fiyat bildir düğmesi var: o istasyonun kWh fiyatını yazarsın, oturumun maliyeti buna göre güncellenir ve fiyat defterine girer. Aynı yerin (yaklaşık 100 m) son 5 bildiriminin medyanı, canlı fiyat kaynağı olmayan istasyonlarda planda kWh fiyatı (bildirilen) olarak gösterilir. Aynı kişi aynı yer için günde bir kez bildirebilir.',
+      'Google doluluk sorguları yalnızca pil yüzde 25 altındayken yapılır; Hollanda (NDW) ücretsiz olduğu için her zaman çalışır. Ölçüm: Ankara, İstanbul ve İzmir de 30 istasyonda Google soket sayısı ve doluluk vermedi. Google bir bölgede üst üste 3 kez veri vermezse o bölge 7 gün atlanır; böylece ücretli çağrı boşa gitmez.',
+    ],
+  },
   {
     v: '0.67.0', date: '2026-11-01',
     notes: [
