@@ -44,6 +44,11 @@ export function initAccountPanel() {
   document.addEventListener('account-changed', paint);
   document.addEventListener('sync-changed', paint);
   document.addEventListener('plan-changed', paint);
+  // Premium (ve yönetici) hesapta uygulama adı kırmızı; plan açılışta yerel kayıttan, sonra sunucudan gelir
+  const paintBrand = () => $('brand').classList.toggle('premium', !!getPlan()?.premium);
+  document.addEventListener('plan-changed', paintBrand);
+  document.addEventListener('account-changed', paintBrand);
+  paintBrand();
 
   $('acc-google').addEventListener('click', () => {
     if (waiting) return;

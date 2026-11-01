@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.69.0';
+self.APP_VERSION = '0.70.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.70.0', date: '2026-11-01',
+    notes: [
+      'Premium hesapta üst çubuktaki uygulama adı (EV Co-Pilot) kırmızı görünür; ücretsiz hesapta yeşil kalır. Yönetici hesapları da Premium sayıldığı için kırmızıdır. Plan açılışta yerel kayıttan okunur, sonra sunucuyla doğrulanır.',
+    ],
+  },
   {
     v: '0.69.0', date: '2026-11-01',
     notes: [
