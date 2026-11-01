@@ -116,4 +116,6 @@ export default {
   "Hesap verileri alındı, yenileniyor…": "Odebrano dane konta, odświeżanie…",
   "%{0} → %{1} · {2} kWh · {3} dk · ort. {4} kW": "{0}% → {1}% · {2} kWh · {3} min · śr. {4} kW",
   "%{0} → %{1} · {2} kWh · {3} dk · ort. {4} kW · {5} TL": "{0}% → {1}% · {2} kWh · {3} min · śr. {4} kW · {5} TL",
+  "Favoriler": "Ulubione",
+  "Henüz son hedef yok": "Brak ostatnich celów",
 };

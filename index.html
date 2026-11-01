@@ -114,11 +114,7 @@
         <label class="switch"><input type="checkbox" id="map-saver"><i></i></label>
       </div>
 
-      <details class="places-edit" id="places-edit">
-        <summary>✎ Yerleri düzenle (Ev, İş, 3 favori)</summary>
-        <div class="stack" id="places-list"></div>
-        <p class="small muted" style="margin:6px 0 0">Çipe dokununca yer, son dokunduğun kutuya (başlangıç ya da varış) yazılır. Yerler yalnızca bu telefonda saklanır.</p>
-      </details>
+      <button class="btn ghost" type="button" data-tab="favs">✎ Yerleri düzenle (Ev, İş, 3 favori)</button>
     </div>
 
     <div class="card stack" id="plan-card">
@@ -499,6 +495,19 @@
     </div>
   </section>
 
+  <!-- ===== FAVORİLER ===== -->
+  <section class="tab" id="tab-favs" data-title="Favoriler">
+    <div class="card stack" id="favs-places-card">
+      <h2>Kayıtlı yerler</h2>
+      <p class="small muted" style="margin:0">Çipe dokununca yer, son dokunduğun kutuya (başlangıç ya da varış) yazılır. Yerler yalnızca bu telefonda saklanır.</p>
+      <div class="stack" id="places-list"></div>
+    </div>
+    <div class="card stack" id="favs-recent-card">
+      <h2>Son hedefler</h2>
+      <div class="stack" id="recent-dest-tab"></div>
+    </div>
+  </section>
+
   <!-- ===== DAHA FAZLA ===== -->
   <section class="tab" id="tab-more" data-title="Daha fazla">
     <div class="card stack" id="lang-card">
@@ -693,6 +702,7 @@
   <nav class="bottomnav" aria-label="Ana gezinme">
     <button type="button" data-tab="stations"><span>🔌</span>İstasyonlar<i class="nbadge hidden" id="badge-stations"></i></button>
     <button type="button" data-tab="map" class="active"><span>🗺️</span>Harita</button>
+    <button type="button" data-tab="favs"><span>⭐</span>Favoriler</button>
     <button type="button" data-tab="more"><span>⋯</span>Daha Fazla</button>
   </nav>
   <button type="button" class="searchbtn" id="fab-search" aria-label="Varış ara" title="Varış ara">🔍</button>

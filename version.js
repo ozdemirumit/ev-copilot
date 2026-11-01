@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.62.0';
+self.APP_VERSION = '0.63.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.63.0', date: '2026-11-01',
+    notes: [
+      'Favoriler artık ayrı bir sekme: alt çubukta yıldızlı Favoriler düğmesi. İçinde iki kart var, ikisi de başlığın yanındaki + ve − ile açılıp kapanır (seçimin hatırlanır): Kayıtlı yerler (Ev, İş, F1-F3 ve kaydetme düğmeleri; eskiden Rota sayfasının en altındaydı) ve Son hedefler (tüm liste, tek tek silme, listeyi temizle).',
+      'Rota sayfasında yer çipleri ve Son hedefler çipleri hızlı seçim için yerinde kaldı; Yerleri düzenle düğmesi Favoriler sekmesini açar. Kayıtlı olmayan bir çipe dokunmak da Favoriler sekmesini açar.',
+    ],
+  },
   {
     v: '0.62.0', date: '2026-11-01',
     notes: [

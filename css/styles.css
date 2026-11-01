@@ -353,9 +353,10 @@ body.sheet-open main { display: block; }
 .dock { position: fixed; z-index: 40; left: 12px; right: 12px; bottom: calc(var(--safe-b) + 22px); display: flex; align-items: center; justify-content: space-between; gap: 10px; pointer-events: none; }
 .dock > * { pointer-events: auto; }
 .searchbtn { flex: none; width: 62px; height: 62px; border-radius: 50%; font-size: 23px; background: rgba(22, 31, 43, .8); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, .12); box-shadow: 0 6px 24px #000a; }
-.bottomnav { flex: 1; max-width: 420px; height: 62px; padding: 5px; gap: 4px; display: grid; grid-template-columns: repeat(3, 1fr); background: rgba(22, 31, 43, .8); backdrop-filter: blur(16px) saturate(1.4); -webkit-backdrop-filter: blur(16px) saturate(1.4); border: 1px solid rgba(255, 255, 255, .12); border-radius: 31px; box-shadow: 0 6px 24px #000a; }
+.bottomnav { flex: 1; max-width: 420px; height: 62px; padding: 5px; gap: 4px; display: grid; grid-template-columns: repeat(4, 1fr); background: rgba(22, 31, 43, .8); backdrop-filter: blur(16px) saturate(1.4); -webkit-backdrop-filter: blur(16px) saturate(1.4); border: 1px solid rgba(255, 255, 255, .12); border-radius: 31px; box-shadow: 0 6px 24px #000a; }
 .bottomnav button { position: relative; border-radius: 26px; font-size: 10.5px; }
 .bottomnav button.active { background: rgba(46, 230, 166, .16); color: var(--accent); }
+@media (max-width: 360px) { .bottomnav button { font-size: 9.5px; min-width: 0; white-space: nowrap; } } /* 4 düğme: dar ekranda (ör. Yunanca/Bulgarca etiketler) taşmasın */
 .nbadge { position: absolute; top: 2px; left: 50%; margin-left: 8px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #ff4d4f; color: #fff; font: 700 11px/18px system-ui, sans-serif; font-style: normal; text-align: center; }
 
 /* Harita üstü kontroller */

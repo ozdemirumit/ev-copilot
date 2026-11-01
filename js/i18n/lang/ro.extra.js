@@ -116,4 +116,6 @@ export default {
   "Hesap verileri alındı, yenileniyor…": "Datele contului au fost primite, se reîncarcă…",
   "%{0} → %{1} · {2} kWh · {3} dk · ort. {4} kW": "{0}% → {1}% · {2} kWh · {3} min · medie {4} kW",
   "%{0} → %{1} · {2} kWh · {3} dk · ort. {4} kW · {5} TL": "{0}% → {1}% · {2} kWh · {3} min · medie {4} kW · {5} TL",
+  "Favoriler": "Favorite",
+  "Henüz son hedef yok": "Încă nu există destinații recente",
 };

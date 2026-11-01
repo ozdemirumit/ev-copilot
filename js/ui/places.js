@@ -4,6 +4,7 @@ import { getState, effective } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { mapApi } from './mapView.js';
 import { toast } from './toast.js';
+import { showTab } from './tabs.js';
 import { tr } from '../i18n/index.js';
 
 const KEY = 'places';
@@ -29,7 +30,6 @@ function el(tag, cls, text) {
 export function initPlaces() {
   const chips = $('place-chips');
   const list = $('places-list');
-  const details = $('places-edit');
   let lastField = 'end'; // çipe dokununca doldurulacak kutu: son odaklanılan (varsayılan varış)
   $('route-start').addEventListener('focusin', () => { lastField = 'start'; });
   $('route-end').addEventListener('focusin', () => { lastField = 'end'; });
@@ -50,11 +50,7 @@ export function initPlaces() {
       b.title = p?.lat == null ? 'Kayıtlı değil: Yerleri düzenle\'den ekle' : `${lastField === 'start' ? 'Başlangıç' : 'Varış'} yap`;
       b.addEventListener('click', () => {
         const cur = read()[slot.id];
-        if (cur?.lat == null) {
-          details.open = true;
-          details.scrollIntoView({ block: 'center', behavior: 'smooth' });
-          return toast(`${slot.name} kayıtlı değil: aşağıdan ekle`);
-        }
+        if (cur?.lat == null) return showTab('favs'); // kayıtlı değil: Favoriler sekmesinde kaydedilir
         mapApi.setPoint(lastField, { lat: cur.lat, lon: cur.lon, label: nameOf(slot, cur) }, { zoom: true });
       });
       return b;

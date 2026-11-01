@@ -20,15 +20,17 @@ export function rememberDest(p) {
 }
 
 export function initRecentDest() {
-  const box = document.getElementById('recent-dest');
+  const boxes = [document.getElementById('recent-dest'), document.getElementById('recent-dest-tab')].filter(Boolean);
   const el = (tag, cls, text) => Object.assign(document.createElement(tag), { className: cls || '', textContent: text ?? '' });
 
-  function render() {
-    const list = read();
-    box.classList.toggle('hidden', !list.length);
-    if (!list.length) return box.replaceChildren();
+  function fill(box, list, showEmpty) {
+    if (!showEmpty) box.classList.toggle('hidden', !list.length); // Rota sayfasında liste boşken hiç görünmez
+    if (!list.length) {
+      box.replaceChildren(...(showEmpty ? [el('div', 'empty small muted', 'Henüz son hedef yok')] : []));
+      return;
+    }
     const head = el('div', 'row between');
-    head.append(el('span', 'small muted', 'Son hedefler'));
+    head.append(el('span', 'small muted', showEmpty ? '' : 'Son hedefler')); // Favoriler sekmesinde başlık kartın kendi başlığı
     const clear = el('button', 'btn ghost sm', '🧹 Listeyi temizle');
     clear.type = 'button';
     clear.addEventListener('click', () => { save(KEY, []); render(); });
@@ -47,7 +49,13 @@ export function initRecentDest() {
       wrap.append(b, x);
       chips.append(wrap);
     });
-    box.replaceChildren(head, chips);
+    box.replaceChildren(...(showEmpty ? [] : [head]), chips);
+    if (showEmpty) box.append(head);
+  }
+
+  function render() {
+    const list = read();
+    boxes.forEach((box) => fill(box, list, box.id === 'recent-dest-tab'));
   }
   document.addEventListener('recent-dest', render);
   render();

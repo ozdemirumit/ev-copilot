@@ -115,5 +115,7 @@
  "Hesabın ve sunucudaki tüm verilerin (ayarlar, yolculuk ve şarj geçmişi) silinecek. Bu geri alınamaz. Devam edilsin mi?",
  "Hesap verileri alındı, yenileniyor…",
  "%{0} → %{1} · {2} kWh · {3} dk · ort. {4} kW",
- "%{0} → %{1} · {2} kWh · {3} dk · ort. {4} kW · {5} TL"
+ "%{0} → %{1} · {2} kWh · {3} dk · ort. {4} kW · {5} TL",
+ "Favoriler",
+ "Henüz son hedef yok"
 ]

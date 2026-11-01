@@ -116,4 +116,6 @@ export default {
   "Hesap verileri alındı, yenileniyor…": "Données du compte reçues, rechargement…",
   "%{0} → %{1} · {2} kWh · {3} dk · ort. {4} kW": "{0} % → {1} % · {2} kWh · {3} min · moy. {4} kW",
   "%{0} → %{1} · {2} kWh · {3} dk · ort. {4} kW · {5} TL": "{0} % → {1} % · {2} kWh · {3} min · moy. {4} kW · {5} TL",
+  "Favoriler": "Favoris",
+  "Henüz son hedef yok": "Aucune destination récente",
 };
