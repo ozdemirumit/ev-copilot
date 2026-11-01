@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.72.0';
+self.APP_VERSION = '0.72.1';
 self.APP_CHANGELOG = [
+  {
+    v: '0.72.1', date: '2026-11-01',
+    notes: [
+      'Google doluluk verisi Google kurallarına uygun gösterilir: Google kaynaklı doluluk satırının sonunda Google Maps etiketi çıkar, harita iğnesi kartında Google verisi gösterilmez (yalnızca listelerde), sunucu Google sonuçlarını saklamaz. Google Places EV kWh fiyatı vermediği için fiyat NDW, kullanıcı bildirimleri ve işletmeci tablosundan gelmeye devam eder.',
+    ],
+  },
   {
     v: '0.72.0', date: '2026-11-01',
     notes: [

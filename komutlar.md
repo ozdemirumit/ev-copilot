@@ -68,7 +68,7 @@ Değiştirince `node server\restart.mjs`. Şablon: `server\.env.example`.
 | `MAPBOX_TOKEN`, `OCM_KEY` | trafikli rota/istasyon araması ve OpenChargeMap (yalnızca sunucuda) |
 | `GOOGLE_PLACES_KEY` | **boş bırak** (Türkiye'de veri vermiyor, Google kuralları Google dışı haritayla kullanımı kısıtlıyor) |
 | `PREMIUM_REQUIRED` | `0` yazarsan herkes Premium sayılır |
-| `GOOGLE_COST_PER_CALL_USD` | Google çağrı başına tahmini maliyet (varsayılan `0.035`); maliyet kayıtlarında kullanılır |
+| `GOOGLE_COST_PER_CALL_USD` | Google çağrı başına tahmini maliyet (varsayılan `0.04`); maliyet kayıtlarında kullanılır |
 | `MAPBOX_DAILY_PER_USER`, `OCCUPANCY_DAILY_PER_USER`, `GOOGLE_DAILY_PER_USER`, `GOOGLE_DAILY_TOTAL`, `GOOGLE_SOC_BELOW` | günlük kotalar ve eşikler |
 | `TRUST_PROXY=1`, `HOST`, `PORT`, `ALLOW_ORIGINS`, `DATA_DIR`, `SESSION_DAYS` | ağ ve veri ayarları (genelde dokunma) |
 

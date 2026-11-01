@@ -160,5 +160,6 @@
  "Doluluk kontrol ediliyor…",
  "{0} dolu istasyon elendi",
  "Hepsi dolu görünüyor; en yakınlar listelendi",
- "Varsayılan fiyatlar 01.11.2026 liste tarifesidir (üyelik indirimi yok): tablodaki fiyat DC hızlı şarj içindir, AC (yavaş) istasyonlarda işletmecinin AC tarifesi kullanılır. Kendi tarifen farklıysa düzenle."
+ "Varsayılan fiyatlar 01.11.2026 liste tarifesidir (üyelik indirimi yok): tablodaki fiyat DC hızlı şarj içindir, AC (yavaş) istasyonlarda işletmecinin AC tarifesi kullanılır. Kendi tarifen farklıysa düzenle.",
+ "Google doluluk verisi harita ekranında gösterilemez; İstasyonlar listesinde görünür"
 ]

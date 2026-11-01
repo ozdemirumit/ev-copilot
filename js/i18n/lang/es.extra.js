@@ -161,4 +161,5 @@ export default {
   "{0} dolu istasyon elendi": "{0} estaciones llenas descartadas",
   "Hepsi dolu görünüyor; en yakınlar listelendi": "Todas parecen llenas; se muestran las más cercanas igualmente",
   "Varsayılan fiyatlar 01.11.2026 liste tarifesidir (üyelik indirimi yok): tablodaki fiyat DC hızlı şarj içindir, AC (yavaş) istasyonlarda işletmecinin AC tarifesi kullanılır. Kendi tarifen farklıysa düzenle.": "Los precios por defecto son las tarifas de lista a 01/11/2026 (sin descuentos de suscripción): el precio de la tabla es para carga rápida DC; las estaciones AC lentas usan la tarifa AC del operador. Edítalo si tu tarifa es distinta.",
+  "Google doluluk verisi harita ekranında gösterilemez; İstasyonlar listesinde görünür": "Los datos de disponibilidad de Google no pueden mostrarse en el mapa; consulta la lista de estaciones",
 };

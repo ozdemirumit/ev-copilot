@@ -34,6 +34,7 @@ function paintLive(box, s, state) {
   if (state === 'loading') return note('Canlı bilgi alınıyor…');
   if (state === 'login') return note('Canlı doluluk için hesapla giriş yap');
   if (state === 'locked') return note('Canlı doluluk ve kWh fiyatı Premium üyelere özeldir.');
+  if (s.slots?.src === 'google') return note('Google doluluk verisi harita ekranında gösterilemez; İstasyonlar listesinde görünür'); // Places kuralı: Google verisi Google Maps dışındaki haritada gösterilmez
   const node = slotEl(s, '');
   const lp = livePrice(s);
   if (node) { const d = el('div', 'live-slots'); d.append(node); box.append(d); }

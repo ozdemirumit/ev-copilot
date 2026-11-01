@@ -161,4 +161,5 @@ export default {
   "{0} dolu istasyon elendi": "{0} stații ocupate excluse",
   "Hepsi dolu görünüyor; en yakınlar listelendi": "Toate par ocupate; le afișez totuși pe cele mai apropiate",
   "Varsayılan fiyatlar 01.11.2026 liste tarifesidir (üyelik indirimi yok): tablodaki fiyat DC hızlı şarj içindir, AC (yavaş) istasyonlarda işletmecinin AC tarifesi kullanılır. Kendi tarifen farklıysa düzenle.": "Prețurile implicite sunt tarifele de listă la 01.11.2026 (fără reduceri de abonament): prețul din tabel este pentru încărcarea rapidă DC; stațiile AC lente folosesc tariful AC al operatorului. Modifică-l dacă tariful tău diferă.",
+  "Google doluluk verisi harita ekranında gösterilemez; İstasyonlar listesinde görünür": "Datele de disponibilitate Google nu pot fi afișate pe hartă; vezi lista stațiilor",
 };

@@ -161,4 +161,5 @@ export default {
   "{0} dolu istasyon elendi": "Εξαιρέθηκαν {0} γεμάτοι σταθμοί",
   "Hepsi dolu görünüyor; en yakınlar listelendi": "Όλοι φαίνονται γεμάτοι· εμφανίζονται οι κοντινότεροι ούτως ή άλλως",
   "Varsayılan fiyatlar 01.11.2026 liste tarifesidir (üyelik indirimi yok): tablodaki fiyat DC hızlı şarj içindir, AC (yavaş) istasyonlarda işletmecinin AC tarifesi kullanılır. Kendi tarifen farklıysa düzenle.": "Οι προεπιλεγμένες τιμές είναι τα τιμολόγια καταλόγου της 01/11/2026 (χωρίς εκπτώσεις συνδρομής): η τιμή του πίνακα αφορά τη γρήγορη φόρτιση DC· οι αργοί σταθμοί AC χρησιμοποιούν το τιμολόγιο AC του φορέα. Αλλάξτε την αν το δικό σας τιμολόγιο διαφέρει.",
+  "Google doluluk verisi harita ekranında gösterilemez; İstasyonlar listesinde görünür": "Τα δεδομένα διαθεσιμότητας της Google δεν μπορούν να εμφανιστούν στον χάρτη· δείτε τη λίστα σταθμών",
 };

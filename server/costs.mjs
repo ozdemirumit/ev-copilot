@@ -1,12 +1,12 @@
 // Kullanıcı başına ücretli dış çağrı kaydı (şimdilik Google Places): gün gün çağrı sayısı ve tahmini maliyet (USD). db.json içinde kalıcıdır
-// (günlük yedeklere girer). Birim fiyat GOOGLE_COST_PER_CALL_USD ile ayarlanır (varsayılan 0.035: Places Nearby Search, Enterprise katmanı
-// ~35 USD / 1000 çağrı; Google fiyatı değiştirirse .env'den güncelle, geçmiş kayıtlar çağrı sayısından yeniden hesaplanır).
+// (günlük yedeklere girer). Birim fiyat GOOGLE_COST_PER_CALL_USD ile ayarlanır (varsayılan 0.04: Places Nearby Search, EV alanı Enterprise + Atmosphere
+// katmanında ~40 USD / 1000 çağrı, ayda ilk 1000 çağrı ücretsiz; Google fiyatı değiştirirse .env'den güncelle, geçmiş kayıtlar çağrı sayısından yeniden hesaplanır).
 // Hesap silinince kişiye bağlı kayıt silinir, toplamlar anonim "_silinen" kovasına eklenir (maliyet geçmişi bozulmasın).
 const KEEP_DAYS = 400;
 const day = () => new Date().toISOString().slice(0, 10);
 
 export function createCosts(store, env = {}) {
-  const unit = Number(env.GOOGLE_COST_PER_CALL_USD) > 0 ? Number(env.GOOGLE_COST_PER_CALL_USD) : 0.035;
+  const unit = Number(env.GOOGLE_COST_PER_CALL_USD) > 0 ? Number(env.GOOGLE_COST_PER_CALL_USD) : 0.04;
   const book = () => (store.data.costs ||= {}); // anahtar (kullanıcı id'si ya da 'code') → { total: {google}, days: { 'YYYY-AA-GG': {google} } }
 
   /** Bir ücretli çağrı kaydet. who: kullanıcı kimliği (id nesnesi). */
