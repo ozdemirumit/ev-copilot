@@ -3,6 +3,7 @@ import { DEFAULT_SIM } from '../config.js';
 import { save } from '../utils/storage.js';
 import { resetSimPosition } from '../sim/simulator.js';
 import { toast } from './toast.js';
+import { startNav, stopNav } from '../nav/navigator.js';
 
 const SLIDER_KEYS = ['speed', 'soc', 'grade', 'heading', 'windSpeed', 'windDir', 'rain', 'traffic', 'temp'];
 
@@ -52,12 +53,19 @@ export function initTestPanel() {
     })
   );
 
-  toggle.addEventListener('change', () => patch('sim', { enabled: toggle.checked, play: toggle.checked ? getState('sim').play : false }));
+  let navByTest = false; // navigasyonu Test Modu açtıysa, Test Modu kapanınca o da kapanır
+  toggle.addEventListener('change', () => {
+    patch('sim', { enabled: toggle.checked, play: toggle.checked ? getState('sim').play : false });
+    if (!toggle.checked && navByTest) { navByTest = false; if (getState('nav').active) stopNav(); }
+  });
 
   play.addEventListener('click', () => {
     const sim = getState('sim');
     if (!sim.enabled) return toast('Önce Test Modu\'nu aç');
-    patch('sim', { play: !sim.play });
+    const starting = !sim.play; // patch aynı nesneyi günceller: önceki değer burada saklanır
+    patch('sim', { play: starting });
+    // Oynatınca gerçek navigasyon gibi başlar: navigasyon ekranı, yönlendirme, ses ve rota takibi (plan varsa; yoksa uyarı çıkar)
+    if (starting && !getState('nav').active) { navByTest = true; startNav(); }
   });
   scale.addEventListener('change', () => { patch('sim', { timeScale: Number(scale.value) || 10 }); persist(); });
   $('sim-reset-pos').addEventListener('click', resetSimPosition);

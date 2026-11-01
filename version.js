@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.61.0';
+self.APP_VERSION = '0.62.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.62.0', date: '2026-11-01',
+    notes: [
+      'Test Modu: Test sekmesinde Oynat a basınca gerçek navigasyon gibi başlar: navigasyon ekranı açılır, yönlendirme kartı, hız ve varış çubuğu, pil çubuğu ve sesli yönlendirme çalışır. Önce rota planlanmış olmalı; yoksa Önce rotayı planla uyarısı çıkar. Test Modunu kapatınca testle açılan navigasyon da kapanır.',
+    ],
+  },
   {
     v: '0.61.0', date: '2026-11-01',
     notes: [
