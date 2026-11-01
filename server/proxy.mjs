@@ -12,6 +12,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openStore } from './store.mjs';
 import { createAccounts } from './accounts.mjs';
+import { createAppFiles } from './appfiles.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -250,6 +251,8 @@ const clientIp = (req) => {
 const store = openStore(env.DATA_DIR || join(here, 'data'));
 const accounts = createAccounts({ env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, ocm: !!OCM, overpass: true }) });
 
+const appFiles = createAppFiles({ dir: join(here, 'public'), send });
+
 const server = http.createServer(async (req, res) => {
   const t0 = Date.now();
   const ip = clientIp(req);
@@ -275,6 +278,10 @@ const server = http.createServer(async (req, res) => {
     if (blocked(ip)) return json(res, 429, { error: 'çok fazla yanlış kod, sonra dene' }, { 'Retry-After': '600' });
     // kimlik gerektirmeyen yollar: giriş akışı, davet sayfası, yapılandırma
     const pp = url.pathname;
+    if (pp === '/app' || pp.startsWith('/app/')) { // Android kurulum sayfası ve APK (herkese açık)
+      if (limited(ip)) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
+      if (appFiles.handle(req, res, url, ip)) return;
+    }
     if (pp === '/v1/config' || pp === '/v1/auth/poll' || pp.startsWith('/auth/') || pp.startsWith('/i/')) {
       if (limited(ip)) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
       if (await accounts.handlePublic(req, res, url, ip)) return;

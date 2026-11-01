@@ -60,3 +60,14 @@ Telefonda hiçbir anahtar yazılmaz. Kullanıcı davet linkine dokunur, Google i
 - Kullanıcı başına günlük kota: Mapbox 400, OpenChargeMap 200, Overpass 300 (`.env` ile değişir); yönetici ve yönetici kodu sınırsız.
 
 **Gizlilik:** sunucu e-posta, ad, ayarlar, konum içeren yolculuk ve şarj geçmişi saklar. Google Play için gizlilik politikası ve hesap silme (uygulamada "Hesabı sil") gerekir.
+
+## Android uygulamasını internetten kurdurmak
+Sunucu kurulum sayfasını ve APK'yı kendisi sunar: **`https://evcopilot.duckdns.org/app`** (herkese açık; telefon tarayıcısında açılır, APK'yı indirir, kurulum adımları sayfada yazar). Davet sayfasında (`/i/KOD`) da "Android uygulamasını indir" düğmesi vardır; yani kişiye tek bir davet linki göndermek yeter.
+
+**Yayınlamak (yeni sürüm çıkınca):**
+```
+npm run apk
+```
+Bu komut web dosyalarını `android/` içine eşitler, Gradle ile debug APK derler ve `server/public/ev-copilot.apk` + `app.json` dosyalarını yazar. Sunucuyu yeniden başlatmak gerekmez; sayfa hemen yeni sürümü sunar. Gerekenler: Android Studio (SDK ve JDK 21). APK repoya girmez (`server/public/` gitignore'da).
+
+Sınırlar: bir adresten saatte en çok 20 indirme. APK debug imzalıdır, kendi kullanımın içindir; Play Store için imzalı `.aab` ayrıca hazırlanır. Kullanıcılar APK'yı yeni sürümde üstüne kurarak güncelleyebilir; ayarları ve hesapları korunur.

@@ -192,7 +192,9 @@ export function createAccounts({ env, store, send, json, readJson, caps }) {
         + `<style>body{font:16px system-ui,sans-serif;background:#0b0f14;color:#e8eef5;display:grid;place-items:center;min-height:100vh;margin:0;padding:24px;text-align:center}main{max-width:420px}h1{font-size:22px}p{color:#a9b6c6;line-height:1.5}.btn{display:block;margin:10px 0;padding:14px 18px;border-radius:12px;background:#1b2530;border:1px solid #2c3a49;color:#2ee6a6;text-decoration:none;font-weight:600}</style></head>`
         + `<body><main><h1>🔌 EV Co-Pilot daveti</h1><p>Davet edildin. Uygulamayı aç ve Google ile giriş yap. (You have been invited.)</p>`
         + `<a class="btn" href="evcopilot://invite?code=${code}">📱 Android uygulamasında aç</a>`
-        + `<a class="btn" href="${APP_URL}?invite=${code}">🌐 Web uygulamasında aç</a></main></body></html>`,
+        + `<a class="btn" href="${APP_URL}?invite=${code}">🌐 Web uygulamasında aç</a>`
+        + (PUBLIC_URL ? `<a class="btn" href="${PUBLIC_URL}/app">📥 Android uygulamasını indir (kurulu değilse)</a>` : '')
+        + `</main></body></html>`,
       { 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'", 'Referrer-Policy': 'no-referrer' });
       return true;
     }
