@@ -68,9 +68,9 @@ export function attachSearch(input, list, onPick) {
 
     show([], 'Aranıyor…');
     try {
-      const results = await searchPlaces(q, token);
+      const results = await searchPlaces(q, token, null, (more) => { if (mine === ctrl) show(more, more.length ? '' : 'Sonuç bulunamadı'); }); // ikinci kaynak (Türkçe adlar) gelince liste yenilenir
       if (mine !== ctrl) return;
-      show(results, results.length ? '' : 'Sonuç bulunamadı');
+      show(results, results.length ? '' : 'Aranıyor…');
     } catch (err) {
       if (mine === ctrl) show([], err.message || 'Arama başarısız (internet?)');
     }

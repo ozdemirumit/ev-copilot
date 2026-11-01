@@ -18,7 +18,7 @@
 <!-- ===== Üst çubuk: canlı HUD (haritanın üstünde yüzer) ===== -->
 <div class="hudtop" id="hudtop">
 <header class="topbar">
-  <div class="brand" id="brand" role="button" tabindex="0" title="Dokun: uygulamayı yenile">EV Co-Pilot<small>Togg T10X V2 LR · <button class="ver" id="btn-version" type="button" title="Dokun: uygulamayı yenile">v…</button> <button class="ver" id="btn-notes" type="button" title="Sürüm notları" aria-label="Sürüm notları">ⓘ</button></small></div>
+  <div class="brand" id="brand" role="button" tabindex="0" title="Dokun: uygulamayı yenile">EV Co-Pilot<small><span id="veh-name">Togg T10X V2 LR</span> · <button class="ver" id="btn-version" type="button" title="Dokun: uygulamayı yenile">v…</button> <button class="ver" id="btn-notes" type="button" title="Sürüm notları" aria-label="Sürüm notları">ⓘ</button></small></div>
   <div class="hud" aria-live="off">
     <div class="hud-item soc"><b id="hud-soc">--</b><span>%</span></div>
     <div class="hud-item"><b id="hud-speed">--</b><span>km/h</span></div>
@@ -492,8 +492,15 @@
     </div>
     <div class="card stack" id="vehicle-card" data-collapsed="1">
       <h2>Araç ve tüketim</h2>
-      <label class="field">Araç
-        <select id="veh-select"></select>
+      <p class="small muted" id="veh-saved" style="margin:0"></p>
+      <label class="field">Marka
+        <select id="veh-brand"></select>
+      </label>
+      <label class="field">Model
+        <select id="veh-model"></select>
+      </label>
+      <label class="field">Pil / versiyon
+        <select id="veh-pack"></select>
       </label>
       <div class="grid2">
         <label class="field">Batarya (net kWh)<input type="number" inputmode="decimal" id="veh-bat" step="0.1" min="10" max="250"></label>
@@ -502,7 +509,7 @@
         <label class="field">Ön alan (m²)<input type="number" inputmode="decimal" id="veh-area" step="0.05" min="1.5" max="4"></label>
         <label class="field">En çok DC şarj (kW)<input type="number" inputmode="numeric" id="veh-dc" step="10" min="20" max="400"></label>
       </div>
-      <button class="btn" id="veh-apply" type="button">Aracı uygula (sayfa yenilenir)</button>
+      <button class="btn primary" id="veh-apply" type="button">Kaydet ve uygula (sayfa yenilenir)</button>
 
       <p class="small muted" id="cons-info" style="margin:6px 0 0"></p>
       <label class="field">Tüketimim (kWh/100 km, seyir hızında, düz yolda)

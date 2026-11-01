@@ -9,28 +9,65 @@ const FIELDS = { batteryNetKwh: 'veh-bat', massKg: 'veh-mass', cd: 'veh-cd', fro
 
 /** Araç seçimi/özel değerler, tüketim düzeltmesi ve plan payları (varış/şarj hedefi). */
 export function initVehiclePanel() {
-  // ---- Araç: değişince sayfa yenilenir (modüller batarya vb. değerleri başlangıçta okur)
-  const sel = $('veh-select');
-  // Marka gruplarıyla listele (Togg ve Özel araç grupsuz, başta/sonda)
-  const groups = new Map();
-  VEHICLES.forEach((v) => {
-    if (!v.group) return sel.append(new Option(v.name, v.id));
-    if (!groups.has(v.group)) { const g = document.createElement('optgroup'); g.label = v.group; groups.set(v.group, g); sel.append(g); }
-    groups.get(v.group).append(new Option(v.name, v.id));
-  });
-  const customOpt = [...sel.options].find((o) => o.value === 'custom');
-  if (customOpt) sel.append(customOpt); // Özel araç en sonda
-  sel.value = VEHICLE.id;
+  // ---- Araç: Marka › Model › Pil seçilir, "Kaydet ve uygula" ile saklanır; değişince sayfa yenilenir (modüller batarya vb. değerleri başlangıçta okur)
+  const brandSel = $('veh-brand');
+  const modelSel = $('veh-model');
+  const packSel = $('veh-pack');
+  const uniq = (arr) => [...new Set(arr)];
+  const byId = (id) => VEHICLES.find((v) => v.id === id);
+  const cur = byId(VEHICLE.id) || byId('custom');
+  let selectedId = cur.id;
 
   const fill = (spec) => Object.entries(FIELDS).forEach(([k, id]) => { $(id).value = spec[k]; });
-  fill(VEHICLE);
+  const setOptions = (sel, items, value) => {
+    sel.replaceChildren(...items.map((t) => new Option(t, t)));
+    sel.value = value;
+  };
+  const pickPack = () => {
+    const v = VEHICLES.find((x) => x.brand === brandSel.value && x.model === modelSel.value && x.pack === packSel.value);
+    if (!v) return;
+    selectedId = v.id;
+    fill(v);
+  };
+  const fillPacks = (keep) => {
+    const packs = VEHICLES.filter((x) => x.brand === brandSel.value && x.model === modelSel.value).map((x) => x.pack);
+    setOptions(packSel, packs, keep && packs.includes(keep) ? keep : packs[0]);
+    pickPack();
+  };
+  const fillModels = (keep) => {
+    const models = uniq(VEHICLES.filter((x) => x.brand === brandSel.value).map((x) => x.model));
+    setOptions(modelSel, models, keep && models.includes(keep) ? keep : models[0]);
+    fillPacks();
+  };
+  setOptions(brandSel, uniq(VEHICLES.map((x) => x.brand)), cur.brand);
+  setOptions(modelSel, uniq(VEHICLES.filter((x) => x.brand === cur.brand).map((x) => x.model)), cur.model);
+  setOptions(packSel, VEHICLES.filter((x) => x.brand === cur.brand && x.model === cur.model).map((x) => x.pack), cur.pack);
+  fill(VEHICLE); // kayıtlı (düzenlenmiş olabilir) değerler
+  brandSel.addEventListener('change', () => fillModels());
+  modelSel.addEventListener('change', () => fillPacks());
+  packSel.addEventListener('change', pickPack);
 
-  sel.addEventListener('change', () => fill(VEHICLES.find((v) => v.id === sel.value)));
-  // Bir değeri elle değiştirmek hazır aracı "Özel araç" yapar
-  Object.values(FIELDS).forEach((id) => $(id).addEventListener('input', () => { sel.value = 'custom'; }));
+  const paintSaved = () => {
+    const name = VEHICLE.name || cur.name;
+    $('veh-saved').textContent = `Kayıtlı araç: ${name}`;
+    const el = $('veh-name');
+    if (el) el.textContent = cur.id === 'custom' ? 'Özel araç' : `${cur.brand} ${cur.model}`;
+  };
+  paintSaved();
+
+  // Bir değeri elle değiştirmek hazır aracı "Özel araç" yapar (alanlardaki değerlere dokunulmaz)
+  const custom = byId('custom');
+  Object.values(FIELDS).forEach((id) => $(id).addEventListener('input', () => {
+    if (selectedId === 'custom') return;
+    selectedId = 'custom';
+    setOptions(brandSel, uniq(VEHICLES.map((x) => x.brand)), custom.brand);
+    setOptions(modelSel, [custom.model], custom.model);
+    setOptions(packSel, [custom.pack], custom.pack);
+  }));
 
   $('veh-apply').addEventListener('click', () => {
-    const spec = { name: VEHICLES.find((v) => v.id === sel.value).name };
+    const base = byId(selectedId);
+    const spec = { name: selectedId === 'custom' ? `Özel araç (${$('veh-bat').value} kWh)` : base.name };
     for (const [k, id] of Object.entries(FIELDS)) {
       const n = Number($(id).value);
       if (!(n > 0)) return toast('Araç değerleri geçersiz');
@@ -38,7 +75,7 @@ export function initVehiclePanel() {
     }
     const busy = getState('system').ocr || getState('plan').status === 'ready';
     if (busy && !confirm('Araç değişince sayfa yenilenir; aktif plan ve OCR sıfırlanır. Devam edilsin mi?')) return;
-    save('vehicle', { id: sel.value, spec });
+    save('vehicle', { id: selectedId, spec });
     remove('kCal'); // önceki araca ait öğrenilmiş tüketim düzeltmesi geçersiz
     location.reload();
   });

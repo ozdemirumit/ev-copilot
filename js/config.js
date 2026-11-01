@@ -1,18 +1,17 @@
 // Araç sabitleri ve varsayılanlar.
 import { load } from './utils/storage.js';
-import { CATALOG } from './vehicleCatalog.js';
+import { CATALOG, LEGACY_IDS } from './vehicleCatalog.js';
 
 // Hazır araçlar. Değerler TAHMİNDİR (üretici verisi değil); "Özel araç" ile her biri düzeltilebilir.
 export const VEHICLES = [
-  { id: 'togg-v2-lr', name: 'Togg T10X V2 Uzun Menzil', batteryNetKwh: 88.5, massKg: 2150, cd: 0.29, frontalAreaM2: 2.55, maxDcKw: 180 },
-  { id: 'togg-v2-sr', name: 'Togg T10X V2 Standart Menzil (tahmini)', batteryNetKwh: 52.4, massKg: 1950, cd: 0.29, frontalAreaM2: 2.55, maxDcKw: 150 },
-  ...CATALOG, // diğer markalar (vehicleCatalog.js, hepsi tahmini)
-  { id: 'custom', name: 'Özel araç', batteryNetKwh: 88.5, massKg: 2150, cd: 0.29, frontalAreaM2: 2.55, maxDcKw: 180 },
+  ...CATALOG, // marka › model › pil (vehicleCatalog.js; Togg ilk sırada, diğerleri tahmini)
+  { id: 'custom', brand: 'Özel araç', model: 'Özel', pack: 'Elle girilen değerler', name: 'Özel araç', batteryNetKwh: 88.5, massKg: 2150, cd: 0.29, frontalAreaM2: 2.55, maxDcKw: 180 },
 ];
 
 // Seçili araç LocalStorage'dan başlangıçta okunur (araç değişince sayfa yenilenir; modüller bataryayı sabit olarak yakalar).
 const savedVehicle = load('vehicle', null);
-export const VEHICLE = { ...VEHICLES[0], ...(savedVehicle?.spec || {}), id: savedVehicle?.id || VEHICLES[0].id };
+const savedId = LEGACY_IDS[savedVehicle?.id] || savedVehicle?.id;
+export const VEHICLE = { ...VEHICLES[0], ...(savedVehicle?.spec || {}), id: VEHICLES.some((v) => v.id === savedId) ? savedId : savedVehicle ? 'custom' : VEHICLES[0].id };
 
 // Fizik katsayıları TAHMİNDİR (üretici verisi değil). rangeEngine ölçülen tüketimle bir düzeltme çarpanı (k) öğrenir.
 export const PHYSICS = {

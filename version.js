@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.47.0';
+self.APP_VERSION = '0.48.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.48.0', date: '2026-11-01',
+    notes: [
+      'Araç seçimi Marka > Model > Pil/versiyon sırasıyla yapılır (Araç ve tüketim bölümü), "Kaydet ve uygula" ile telefona kaydedilir. Seçili araç üst başlıkta ve "Kayıtlı araç" satırında görünür. Bir değeri elle değiştirince araç "Özel araç" olur. Eski kayıtlı Togg seçimleri otomatik eşlenir. Katalog değerleri tahmindir, düzeltilebilir.',
+      'Yer arama Türkçe adlarla da çalışır: "Selanik", "Münih" gibi Türkçe yazılmış yabancı şehir adları artık bulunur (Photon\'a ek olarak Nominatim; yazma durduktan bir saniye sonra eklenir, kullanım politikası gereği saniyede en çok 1 istek).',
+    ],
+  },
   {
     v: '0.47.0', date: '2026-11-01',
     notes: [
