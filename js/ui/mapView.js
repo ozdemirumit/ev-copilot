@@ -282,6 +282,24 @@ export function initMap() {
     fit(routeBounds(), 30);
   };
 
+  /** Bir yeri haritada göster (araç takibi 15 sn bu görünümü bozmaz). */
+  mapApi.showAt = (lat, lon, zoom = 14) => {
+    if (!adapter) return;
+    lastDrag = Date.now();
+    lastFollow = null;
+    lastHeading = 0;
+    adapter.moveTo({ center: { lat, lon }, zoom, tilt: 0, heading: 0 }, false);
+  };
+  /** Noktaların tümü ekrana sığar (durakları birlikte görmek için). */
+  mapApi.fitPoints = (points) => {
+    if (!adapter || !points.length) return;
+    lastDrag = Date.now();
+    lastFollow = null;
+    lastHeading = 0;
+    adapter.moveTo({ tilt: 0, heading: 0 });
+    fit(points, 60);
+  };
+
   const dotEl = (color, size, ring = '#0b0f14') => {
     const d = el('div', 'dot');
     Object.assign(d.style, { width: size + 'px', height: size + 'px', background: color, borderColor: ring });

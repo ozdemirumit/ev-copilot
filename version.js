@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.57.0';
+self.APP_VERSION = '0.58.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.58.0', date: '2026-11-01',
+    notes: [
+      'Rota sayfasındaki Şarj planında her durağın altına Haritada düğmesi eklendi: dokununca sayfa kapanır ve harita o istasyona gider. Planın altındaki Durakları haritada göster düğmesi kalan tüm durakları ekrana sığdırır. Haritaya gidince araç takibi 15 saniye görünümü bozmaz.',
+    ],
+  },
   {
     v: '0.57.0', date: '2026-11-01',
     notes: [

@@ -58,4 +58,5 @@ export default {
   "OCR: manuel": "OCR: ręcznie",
   "OCR: hata": "OCR: błąd",
   "Kapat:": "Zwiń:",
+  "📍 Durakları haritada göster": "📍 Pokaż postoje na mapie",
 };

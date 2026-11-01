@@ -58,4 +58,5 @@ export default {
   "OCR: manuel": "OCR: manual",
   "OCR: hata": "OCR: eroare",
   "Kapat:": "Restrânge:",
+  "📍 Durakları haritada göster": "📍 Arată opririle pe hartă",
 };

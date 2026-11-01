@@ -58,4 +58,5 @@ export default {
   "OCR: manuel": "OCR: manual",
   "OCR: hata": "OCR: erro",
   "Kapat:": "Recolher:",
+  "📍 Durakları haritada göster": "📍 Mostrar as paragens no mapa",
 };

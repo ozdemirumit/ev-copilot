@@ -58,4 +58,5 @@ export default {
   "OCR: manuel": "OCR: ръчно",
   "OCR: hata": "OCR: грешка",
   "Kapat:": "Свий:",
+  "📍 Durakları haritada göster": "📍 Покажи спирките на картата",
 };

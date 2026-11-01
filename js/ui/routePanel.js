@@ -3,6 +3,9 @@ import { getState, patch, subscribe } from '../state.js';
 import { save } from '../utils/storage.js';
 import { stationGaps } from '../routing/planner.js';
 import { slotLabel } from '../routing/slots.js';
+import { mapApi } from './mapView.js';
+
+const showMap = () => document.querySelector('.bottomnav [data-tab="map"]')?.click();
 
 const $ = (id) => document.getElementById(id);
 const MODE_LABEL = { fast: 'En Hızlı', cheap: 'En Ekonomik', opt: 'Optimum' };
@@ -39,6 +42,7 @@ export function initRoutePanel() {
   const list = $('plan-list');
   const status = $('plan-status');
   const gm = $('btn-gmaps');
+  const sm = $('btn-stops-map');
 
   /** Araç rotada nerede: canlı konum, yoksa planın başlangıcı. Geçilen duraklar/istasyonlar bu km'ye göre elenir. */
   const curKm = progressKm;
@@ -49,6 +53,7 @@ export function initRoutePanel() {
     $('plan-mode-label').textContent = MODE_LABEL[p.mode];
     list.replaceChildren();
     gm.classList.toggle('hidden', p.status !== 'ready');
+    sm.classList.toggle('hidden', p.status !== 'ready' || !p.stops.some((s) => s.km > here - 0.3));
 
     const busy = p.status === 'loading';
     $('btn-plan').disabled = busy;
@@ -88,7 +93,9 @@ export function initRoutePanel() {
             + (s.station.offKm > 0.3 ? ` · sapma ${s.station.offKm.toFixed(1)} km` : '')
             + (slotLabel(s.station) ? ` · ${slotLabel(s.station)}` : ''),
         });
-        row.append(num, title, right, meta);
+        const show = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost sm show', textContent: '📍 Haritada' });
+        show.addEventListener('click', () => { showMap(); mapApi.showAt(s.station.lat, s.station.lon, 14); });
+        row.append(num, title, right, meta, show);
         list.append(row);
       });
     } else if (p.status !== 'loading') {
@@ -136,6 +143,13 @@ export function initRoutePanel() {
     });
   }
 
+  sm.addEventListener('click', () => {
+    const p = getState('plan');
+    const here = curKm();
+    const pts = p.stops.filter((s) => s.km > here - 0.3).map((s) => ({ lat: s.station.lat, lon: s.station.lon }));
+    showMap();
+    mapApi.fitPoints(pts);
+  });
   gm.addEventListener('click', () => {
     const { start, end } = getState('route');
     const p = getState('plan');

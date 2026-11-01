@@ -58,4 +58,5 @@ export default {
   "OCR: manuel": "OCR: manuale",
   "OCR: hata": "OCR: errore",
   "Kapat:": "Comprimi:",
+  "📍 Durakları haritada göster": "📍 Mostra le soste sulla mappa",
 };

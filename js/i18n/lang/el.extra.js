@@ -58,4 +58,5 @@ export default {
   "OCR: manuel": "OCR: χειροκίνητο",
   "OCR: hata": "OCR: σφάλμα",
   "Kapat:": "Σύμπτυξη:",
+  "📍 Durakları haritada göster": "📍 Εμφάνιση στάσεων στον χάρτη",
 };

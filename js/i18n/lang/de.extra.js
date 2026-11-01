@@ -58,4 +58,5 @@ export default {
   "OCR: manuel": "OCR: manuell",
   "OCR: hata": "OCR: Fehler",
   "Kapat:": "Einklappen:",
+  "📍 Durakları haritada göster": "📍 Stopps auf der Karte zeigen",
 };
