@@ -22,8 +22,9 @@ export async function createMapLibreMap(container) {
   const ml = await loadMapLibre();
   const map = new ml.Map({
     container, style: STYLE, center: [35.0, 39.0], zoom: 6 - ZOOM_OFFSET, maxPitch: 60,
-    attributionControl: { compact: true }, // "© OpenStreetMap" atfı (ODbL) zorunlu
+    attributionControl: false, // "© OpenStreetMap" atfı (ODbL) zorunlu
   });
+  map.addControl(new ml.AttributionControl({ compact: true }), 'bottom-left'); // OSM atfı (ODbL) zorunlu; alt çubuğun altında durur
   await new Promise((resolve, reject) => {
     const t = setTimeout(() => reject(new Error('Harita yüklenemedi (internet?)')), 25000);
     map.once('load', () => { clearTimeout(t); resolve(); });
@@ -39,8 +40,30 @@ export async function createMapLibreMap(container) {
   map.addSource('route', { type: 'geojson', data: EMPTY });
   map.addLayer({ id: 'route-line', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#2ee6a6', 'line-width': 5, 'line-opacity': 0.85 } });
 
+  // Uydu görüntüsü (Esri World Imagery) + yol ve yer adı katmanları; rota çizgisinin altına, vektör haritanın üstüne konur.
+  const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
+  const SAT_LAYERS = [
+    ['sat', 'World_Imagery/MapServer/tile', 'Tiles © Esri — Esri, Maxar, Earthstar Geographics ve GIS Kullanıcı Topluluğu'],
+    ['sat-roads', 'Reference/World_Transportation/MapServer/tile', ''],
+    ['sat-places', 'Reference/World_Boundaries_and_Places/MapServer/tile', ''],
+  ];
+  let satReady = false;
+  const ensureSat = () => {
+    if (satReady) return;
+    satReady = true;
+    for (const [id, path, attribution] of SAT_LAYERS) {
+      map.addSource(id, { type: 'raster', tiles: [`${ESRI}${path}/{z}/{y}/{x}`], tileSize: 256, maxzoom: 18, attribution });
+      map.addLayer({ id, type: 'raster', source: id, layout: { visibility: 'none' } }, 'route-line');
+    }
+  };
+
   return {
     name: 'osm',
+    setSatellite(on) {
+      if (!on && !satReady) return;
+      ensureSat();
+      for (const [id] of SAT_LAYERS) map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
+    },
     marker(pos, content, title = '') {
       // MapLibre, verdiği elemanın transform'unu kendisi yönetir: içeriği (kendi transform'u olan nokta/ok) bir sarmalayıcıya koy.
       const wrap = document.createElement('div');

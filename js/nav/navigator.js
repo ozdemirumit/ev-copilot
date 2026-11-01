@@ -175,12 +175,11 @@ export function startNav() {
   said = new Set();
   planId = plan.planId;
   patch('nav', { active: true });
-  document.querySelector('.bottomnav [data-tab="route"]')?.click();
+  document.querySelector('.bottomnav [data-tab="map"]')?.click();
   zoomNow = 16; zoomAt = Date.now(); speedAvg = e.speed ?? 0;
   const up = getState('nav').headingUp;
   mapApi.navView(true, up);
   if (e.lat != null) mapApi.follow(e.lat, e.lon, 16, true, up ? (track ? headingAt(track, trackKm ?? 0) : (e.speed ?? 0) > 5 ? e.heading : null) : null);
-  document.querySelector('main').scrollTop = 0;
   speak('Navigasyon başladı.', { key: 'navstart', cooldownMs: 0, interrupt: true });
   tick();
 }
@@ -224,15 +223,8 @@ export function initNavigator() {
     save('lowSoc', Number(low.value));
   });
 
-  // Navigasyon modunda harita görünür alanı doldurur (üstteki bannerlar dahil kalan yükseklik); alt menü sabit kalır.
-  const main = document.querySelector('main');
-  const mapEl = $('map');
-  const sizeMap = () => {
-    const on = getState('nav').active;
-    document.body.classList.toggle('navmode', on);
-    mapEl.style.height = on ? Math.max(260, main.clientHeight - 24) + 'px' : '';
-  };
-  new ResizeObserver(sizeMap).observe(main);
+  // Navigasyon modu: harita zaten tam ekran; yalnızca düzen sınıfı (Rota düğmesi gizlenir, kontroller yükselir)
+  const sizeMap = () => document.body.classList.toggle('navmode', getState('nav').active);
   subscribe('nav', () => { paintBtn(); sizeMap(); tick(); });
 
   // Harita yönü: gidiş yönü yukarı (3D) ya da kuzey yukarı

@@ -12,7 +12,11 @@
 </head>
 <body>
 
-<!-- ===== Üst çubuk: canlı HUD ===== -->
+<!-- ===== Harita sahnesi: tam ekran arka plan ===== -->
+<div class="stage"><div id="map" role="application" aria-label="Harita"></div></div>
+
+<!-- ===== Üst çubuk: canlı HUD (haritanın üstünde yüzer) ===== -->
+<div class="hudtop" id="hudtop">
 <header class="topbar">
   <div class="brand" id="brand" role="button" tabindex="0" title="Dokun: uygulamayı yenile">EV Co-Pilot<small>Togg T10X V2 LR · <button class="ver" id="btn-version" type="button" title="Dokun: uygulamayı yenile">v…</button> <button class="ver" id="btn-notes" type="button" title="Sürüm notları" aria-label="Sürüm notları">ⓘ</button></small></div>
   <div class="hud" aria-live="off">
@@ -50,51 +54,12 @@
   <button class="btn ghost sm" id="near-alert-close" type="button" aria-label="Uyarıyı kapat (10 dk)">✕</button>
 </div>
 </div>
+</div>
 
 <main>
 
   <!-- ===== 1) ROTA ===== -->
-  <section class="tab active" id="tab-route" data-title="Rota">
-    <div class="mapwrap">
-      <div id="map" role="application" aria-label="Rota haritası"></div>
-      <div class="navhud hidden" id="navhud">
-        <div class="nh-cell"><b id="nh-speed">0</b><small>km/s</small></div>
-        <div class="limit-sign hidden" id="nh-limit" title="Yol hız limiti"></div>
-        <div class="nh-cell nh-main"><b id="nh-eta">--:--</b><small id="nh-rem">—</small></div>
-        <div class="nh-cell"><b id="nh-soc">--</b><small>% pil</small></div>
-        <div class="nh-btns">
-          <button type="button" id="nh-limitbtn" aria-label="Yol hız limiti kontrolünü aç/kapat" title="Yol hız limiti kontrolü (ücretli)">🚧</button>
-          <button type="button" id="nh-voice" aria-label="Sesli yönlendirme aç/kapat">🔊</button>
-          <button type="button" id="nh-overview" aria-label="Rotanın tamamını göster">⛶</button>
-          <button type="button" id="nh-recenter" class="hidden" aria-label="Aracı ortala">🎯</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card stack" id="ocm-card">
-      <h2 style="margin:0">🗺️ Veri kaynakları</h2>
-      <p class="small muted" style="margin:0">Hepsi ücretsiz açık servis (OpenStreetMap verisi, © OpenStreetMap katkıcıları): harita OpenFreeMap, rota ve rakım Valhalla, yer arama Photon, istasyonlar Overpass, hava Open-Meteo, yol hız limiti OSM. Canlı trafik, kaza/kamera ve istasyon doluluğu yoktur; süreler trafiksiz hesaplanır. İsteğe bağlı Mapbox anahtarı girersen rota canlı trafikli olur, trafik uyarısı gelir ve istasyonlar Mapbox'tan aranır (Overpass'ten çok daha hızlı).</p>
-      <label class="field">OpenChargeMap anahtarı (isteğe bağlı: istasyon kapsamını artırır)
-        <input type="text" id="ocm-key" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="openchargemap.org/site/develop/api">
-      </label>
-      <div class="row wrap">
-        <button class="btn ghost" id="btn-ocm-scan" type="button">📷 Kamerayla oku</button>
-        <button class="btn primary" id="ocm-test" type="button">✔️ Kaydet ve sına</button>
-      </div>
-      <div class="small muted" id="ocm-out">Anahtar yalnızca bu telefonda saklanır.</div>
-      <label class="field">Mapbox anahtarı (isteğe bağlı: canlı trafikli rota ve hızlı istasyon araması; herkese açık "pk." anahtarı)
-        <input type="text" id="mb-key" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="pk. ile başlar (account.mapbox.com)">
-      </label>
-      <div class="row wrap">
-        <button class="btn primary" id="mb-test" type="button">✔️ Kaydet ve sına</button>
-      </div>
-      <div class="small muted" id="mb-out">Anahtar yalnızca bu telefonda saklanır. Ücretsiz aylık kotalar dolarsa Mapbox ücretlendirebilir (mapbox.com/pricing); anahtarı Mapbox hesabında URL ve kapsam (Directions, Search) ile kısıtla.</div>
-      <div class="row between">
-        <span class="small muted" id="cache-info"></span>
-        <button class="btn ghost sm" id="cache-clear" type="button">🧹 Önbelleği temizle</button>
-      </div>
-    </div>
-
+  <section class="tab" id="tab-route" data-title="Rota">
     <div class="card stack">
       <h2>Rota</h2>
       <div class="row">
@@ -136,56 +101,6 @@
         <div><b id="sum-time">—</b><span>Süre (şarj dahil)</span></div>
         <div><b id="sum-stops">—</b><span>Şarj durağı</span></div>
       </div>
-    </div>
-
-    <div class="card stack" id="vehicle-card" data-collapsed="1">
-      <h2>Araç ve tüketim</h2>
-      <label class="field">Araç
-        <select id="veh-select"></select>
-      </label>
-      <div class="grid2">
-        <label class="field">Batarya (net kWh)<input type="number" inputmode="decimal" id="veh-bat" step="0.1" min="10" max="250"></label>
-        <label class="field">Ağırlık (kg)<input type="number" inputmode="numeric" id="veh-mass" step="10" min="600" max="4000"></label>
-        <label class="field">Sürtünme katsayısı (Cd)<input type="number" inputmode="decimal" id="veh-cd" step="0.01" min="0.15" max="0.5"></label>
-        <label class="field">Ön alan (m²)<input type="number" inputmode="decimal" id="veh-area" step="0.05" min="1.5" max="4"></label>
-        <label class="field">En çok DC şarj (kW)<input type="number" inputmode="numeric" id="veh-dc" step="10" min="20" max="400"></label>
-      </div>
-      <button class="btn" id="veh-apply" type="button">Aracı uygula (sayfa yenilenir)</button>
-
-      <p class="small muted" id="cons-info" style="margin:6px 0 0"></p>
-      <label class="field">Tüketimim (kWh/100 km, seyir hızında, düz yolda)
-        <input type="number" inputmode="decimal" id="cons-target" step="0.1" min="8" max="45" placeholder="model tahmini">
-      </label>
-      <div class="slider-row">
-        <label for="cons-adj">Tüketim düzeltmesi</label>
-        <output id="cons-adj-out">%0</output>
-        <input type="range" id="cons-adj" min="-30" max="100" step="1" value="0">
-      </div>
-      <div class="slider-row">
-        <label for="charger-min">Şarj istasyonuna giriş pili (en az)</label>
-        <output id="charger-min-out">%10</output>
-        <input type="range" id="charger-min" min="5" max="50" step="1" value="10">
-      </div>
-      <div class="slider-row">
-        <label for="max-charge">Şarj hedefi, istasyondan çıkış (en fazla)</label>
-        <output id="max-charge-out">%90</output>
-        <input type="range" id="max-charge" min="50" max="100" step="5" value="90">
-      </div>
-      <div class="slider-row">
-        <label for="min-add">Durakta en az eklenecek pil</label>
-        <output id="min-add-out">%15</output>
-        <input type="range" id="min-add" min="0" max="40" step="1" value="15">
-      </div>
-      <div class="slider-row">
-        <label for="tolerance">Eşik toleransı (± puan)</label>
-        <output id="tolerance-out">±3</output>
-        <input type="range" id="tolerance" min="0" max="8" step="1" value="3">
-      </div>
-      <div class="row between">
-        <label for="allow-slow">Yavaş AC / türü belirsiz istasyonlar da yedek olsun</label>
-        <label class="switch"><input type="checkbox" id="allow-slow" checked><i></i></label>
-      </div>
-      <p class="small muted" style="margin:0">Tüketimi fizik modeli tahmin eder; gerçek değeri yazarsan ya da düzeltme verirsen plan ve menzil buna göre değişir. Giriş pili: istasyona en az bu pille varılır (yükselirse daha erken ve daha çok durak). Şarj hedefi: durakta bu seviyeyi geçmez; plan daha az gerekiyorsa daha az şarj eder. En az eklenecek pil: 6 puanlık anlamsız molaları engeller. Tolerans: giriş/varış eşiğinin ± bu kadar altına inmek yasak değil ama cezalıdır (eşikte ani sıçrama olmaz).</p>
     </div>
 
     <div class="card stack" id="plan-card">
@@ -370,7 +285,7 @@
   </section>
 
   <!-- ===== 4) İSTASYONLAR ===== -->
-  <section class="tab" id="tab-stations" data-title="İstasyon">
+  <section class="tab" id="tab-stations" data-title="İstasyonlar">
     <div class="card stack" id="near-card">
       <h2 style="margin:0">📍 Yakınımdaki istasyonlar</h2>
       <div class="row">
@@ -536,16 +451,124 @@
     </div>
   </section>
 
+  <!-- ===== DAHA FAZLA ===== -->
+  <section class="tab" id="tab-more" data-title="Daha fazla">
+    <div class="menu">
+      <button class="menu-item" type="button" data-tab="range"><span>⚡</span><b>Menzil</b><small>Menzil, hava, tüketim</small></button>
+      <button class="menu-item" type="button" data-tab="camera"><span>📷</span><b>Kamera</b><small>Göstergeden pil okuma</small></button>
+      <button class="menu-item" type="button" data-tab="abrp"><span>📡</span><b>ABRP</b><small>Canlı telemetri köprüsü</small></button>
+      <button class="menu-item" type="button" data-tab="test"><span>🧪</span><b>Test</b><small>Test modu, simülasyon</small></button>
+    </div>
+    <div class="card stack" id="vehicle-card" data-collapsed="1">
+      <h2>Araç ve tüketim</h2>
+      <label class="field">Araç
+        <select id="veh-select"></select>
+      </label>
+      <div class="grid2">
+        <label class="field">Batarya (net kWh)<input type="number" inputmode="decimal" id="veh-bat" step="0.1" min="10" max="250"></label>
+        <label class="field">Ağırlık (kg)<input type="number" inputmode="numeric" id="veh-mass" step="10" min="600" max="4000"></label>
+        <label class="field">Sürtünme katsayısı (Cd)<input type="number" inputmode="decimal" id="veh-cd" step="0.01" min="0.15" max="0.5"></label>
+        <label class="field">Ön alan (m²)<input type="number" inputmode="decimal" id="veh-area" step="0.05" min="1.5" max="4"></label>
+        <label class="field">En çok DC şarj (kW)<input type="number" inputmode="numeric" id="veh-dc" step="10" min="20" max="400"></label>
+      </div>
+      <button class="btn" id="veh-apply" type="button">Aracı uygula (sayfa yenilenir)</button>
+
+      <p class="small muted" id="cons-info" style="margin:6px 0 0"></p>
+      <label class="field">Tüketimim (kWh/100 km, seyir hızında, düz yolda)
+        <input type="number" inputmode="decimal" id="cons-target" step="0.1" min="8" max="45" placeholder="model tahmini">
+      </label>
+      <div class="slider-row">
+        <label for="cons-adj">Tüketim düzeltmesi</label>
+        <output id="cons-adj-out">%0</output>
+        <input type="range" id="cons-adj" min="-30" max="100" step="1" value="0">
+      </div>
+      <div class="slider-row">
+        <label for="charger-min">Şarj istasyonuna giriş pili (en az)</label>
+        <output id="charger-min-out">%10</output>
+        <input type="range" id="charger-min" min="5" max="50" step="1" value="10">
+      </div>
+      <div class="slider-row">
+        <label for="max-charge">Şarj hedefi, istasyondan çıkış (en fazla)</label>
+        <output id="max-charge-out">%90</output>
+        <input type="range" id="max-charge" min="50" max="100" step="5" value="90">
+      </div>
+      <div class="slider-row">
+        <label for="min-add">Durakta en az eklenecek pil</label>
+        <output id="min-add-out">%15</output>
+        <input type="range" id="min-add" min="0" max="40" step="1" value="15">
+      </div>
+      <div class="slider-row">
+        <label for="tolerance">Eşik toleransı (± puan)</label>
+        <output id="tolerance-out">±3</output>
+        <input type="range" id="tolerance" min="0" max="8" step="1" value="3">
+      </div>
+      <div class="row between">
+        <label for="allow-slow">Yavaş AC / türü belirsiz istasyonlar da yedek olsun</label>
+        <label class="switch"><input type="checkbox" id="allow-slow" checked><i></i></label>
+      </div>
+      <p class="small muted" style="margin:0">Tüketimi fizik modeli tahmin eder; gerçek değeri yazarsan ya da düzeltme verirsen plan ve menzil buna göre değişir. Giriş pili: istasyona en az bu pille varılır (yükselirse daha erken ve daha çok durak). Şarj hedefi: durakta bu seviyeyi geçmez; plan daha az gerekiyorsa daha az şarj eder. En az eklenecek pil: 6 puanlık anlamsız molaları engeller. Tolerans: giriş/varış eşiğinin ± bu kadar altına inmek yasak değil ama cezalıdır (eşikte ani sıçrama olmaz).</p>
+    </div>
+
+    <div class="card stack" id="ocm-card">
+      <h2 style="margin:0">🗺️ Veri kaynakları</h2>
+      <p class="small muted" style="margin:0">Hepsi ücretsiz açık servis (OpenStreetMap verisi, © OpenStreetMap katkıcıları): harita OpenFreeMap, rota ve rakım Valhalla, yer arama Photon, istasyonlar Overpass, hava Open-Meteo, yol hız limiti OSM. Canlı trafik, kaza/kamera ve istasyon doluluğu yoktur; süreler trafiksiz hesaplanır. İsteğe bağlı Mapbox anahtarı girersen rota canlı trafikli olur, trafik uyarısı gelir ve istasyonlar Mapbox'tan aranır (Overpass'ten çok daha hızlı).</p>
+      <label class="field">OpenChargeMap anahtarı (isteğe bağlı: istasyon kapsamını artırır)
+        <input type="text" id="ocm-key" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="openchargemap.org/site/develop/api">
+      </label>
+      <div class="row wrap">
+        <button class="btn ghost" id="btn-ocm-scan" type="button">📷 Kamerayla oku</button>
+        <button class="btn primary" id="ocm-test" type="button">✔️ Kaydet ve sına</button>
+      </div>
+      <div class="small muted" id="ocm-out">Anahtar yalnızca bu telefonda saklanır.</div>
+      <label class="field">Mapbox anahtarı (isteğe bağlı: canlı trafikli rota ve hızlı istasyon araması; herkese açık "pk." anahtarı)
+        <input type="text" id="mb-key" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="pk. ile başlar (account.mapbox.com)">
+      </label>
+      <div class="row wrap">
+        <button class="btn primary" id="mb-test" type="button">✔️ Kaydet ve sına</button>
+      </div>
+      <div class="small muted" id="mb-out">Anahtar yalnızca bu telefonda saklanır. Ücretsiz aylık kotalar dolarsa Mapbox ücretlendirebilir (mapbox.com/pricing); anahtarı Mapbox hesabında URL ve kapsam (Directions, Search) ile kısıtla.</div>
+      <div class="row between">
+        <span class="small muted" id="cache-info"></span>
+        <button class="btn ghost sm" id="cache-clear" type="button">🧹 Önbelleği temizle</button>
+      </div>
+    </div>
+
+  </section>
+
 </main>
 
-<nav class="bottomnav" aria-label="Ana gezinme">
-  <button type="button" data-tab="route" class="active"><span>🗺️</span>Rota</button>
-  <button type="button" data-tab="range"><span>⚡</span>Menzil</button>
-  <button type="button" data-tab="camera"><span>📷</span>Kamera</button>
-  <button type="button" data-tab="stations"><span>🔌</span>İstasyon</button>
-  <button type="button" data-tab="abrp"><span>📡</span>ABRP</button>
-  <button type="button" data-tab="test"><span>🧪</span>Test</button>
-</nav>
+<!-- ===== Harita üstü kontroller (sayfa açıkken gizlenir) ===== -->
+<div class="mapui" id="mapui">
+  <div class="pickbar hidden" id="pickbar" role="status"><span id="pick-text"></span><button class="btn sm" id="pick-cancel" type="button">İptal</button></div>
+  <div class="fabs" id="fabs">
+    <button type="button" id="fab-sat" aria-pressed="false" aria-label="Uydu görüntüsü" title="Uydu görüntüsü">🛰️</button>
+    <button type="button" id="fab-route" aria-label="Tüm rotayı göster" title="Tüm rotayı göster">⛶</button>
+    <button type="button" id="fab-me" aria-label="Konumuma git" title="Konumuma git">🎯</button>
+    <button type="button" id="fab-nav" class="hidden" aria-label="Navigasyonu başlat" title="Navigasyonu başlat">🧭</button>
+  </div>
+  <button class="rota-btn" id="fab-plan" type="button" data-tab="route"><span aria-hidden="true">🛣️</span> Rota</button>
+  <div class="navhud hidden" id="navhud">
+    <div class="nh-cell"><b id="nh-speed">0</b><small>km/s</small></div>
+    <div class="limit-sign hidden" id="nh-limit" title="Yol hız limiti"></div>
+    <div class="nh-cell nh-main"><b id="nh-eta">--:--</b><small id="nh-rem">—</small></div>
+    <div class="nh-cell"><b id="nh-soc">--</b><small>% pil</small></div>
+    <div class="nh-btns">
+      <button type="button" id="nh-limitbtn" aria-label="Yol hız limiti kontrolünü aç/kapat" title="Yol hız limiti kontrolü (ücretli)">🚧</button>
+      <button type="button" id="nh-voice" aria-label="Sesli yönlendirme aç/kapat">🔊</button>
+      <button type="button" id="nh-overview" aria-label="Rotanın tamamını göster">⛶</button>
+      <button type="button" id="nh-recenter" class="hidden" aria-label="Aracı ortala">🎯</button>
+    </div>
+  </div>
+</div>
+
+<div class="dock">
+  <nav class="bottomnav" aria-label="Ana gezinme">
+    <button type="button" data-tab="stations"><span>🔌</span>İstasyonlar<i class="nbadge hidden" id="badge-stations"></i></button>
+    <button type="button" data-tab="map" class="active"><span>🗺️</span>Harita</button>
+    <button type="button" data-tab="more"><span>⋯</span>Daha Fazla</button>
+  </nav>
+  <button type="button" class="searchbtn" id="fab-search" aria-label="Varış ara" title="Varış ara">🔍</button>
+</div>
 
 <dialog id="qr-dialog" class="qr-dialog" aria-labelledby="qr-title">
   <h2 id="qr-title">Token oku</h2>

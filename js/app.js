@@ -15,6 +15,7 @@ import { installMeter } from './net/meter.js';
 import { initVersionInfo } from './ui/versionInfo.js';
 import { initDataUsage } from './ui/dataUsage.js';
 import { initTabs } from './ui/tabs.js';
+import { initShell } from './ui/shell.js';
 import { initMap } from './ui/mapView.js';
 import { initRoiBox } from './ui/roiBox.js';
 import { initCameraPanel } from './ui/cameraPanel.js';
@@ -77,6 +78,7 @@ initAdvisor();
 initTelemetry();
 initSimulator();
 initTabs();
+initShell();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => { /* file:// vb. */ });

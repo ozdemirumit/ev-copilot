@@ -4,9 +4,13 @@ import { toast } from './toast.js';
 import { attachSearch } from './placeSearch.js';
 import { reverseLabel } from '../providers/index.js';
 import { createMapLibreMap } from './maps/maplibre.js';
+import { showTab } from './tabs.js';
 
 /** Harita çizim API'si; initMap() çağrılınca dolar (routing/controller.js, nav/* kullanır). Harita henüz yüklenmediyse çizimler sıraya alınır. */
-export const mapApi = { drawRoute() {}, drawStations() {}, drawNearby() {}, setPoint() {}, follow() {}, navView() {} };
+export const mapApi = {
+  drawRoute() {}, drawStations() {}, drawNearby() {}, setPoint() {}, follow() {}, navView() {},
+  setSatellite() {}, isSatellite: () => false, hasRoute: () => false, cancelPick() {}, pickBar() {}, // initMap doldurur (pickBar'ı ui/shell.js)
+};
 
 let boot = async () => {};
 
@@ -19,6 +23,18 @@ function el(tag, cls, text) {
   return d;
 }
 const pinEl = (kind, label) => { const d = el('div', 'pin ' + kind); d.append(el('b', '', label)); return d; };
+
+/** İstasyon iğnesi: damla biçimi, güce göre renk (AC mavi, DC turuncu, ≥150 kW mor). num: planlanan durak sırası. */
+const PIN_PATH = 'M18 45C18 45 3 28 3 17A15 15 0 0 1 33 17C33 28 18 45 18 45Z';
+function stationPin(s, { planned = false, num = 0, focus = false } = {}) {
+  const kw = s.kw || 0;
+  const kind = kw >= 150 ? 'hpc' : kw >= 50 ? 'dc' : 'ac';
+  const d = el('div', `spin ${kind}${planned ? ' planned' : ''}${focus ? ' focus' : ''}`);
+  d.innerHTML = `<svg viewBox="0 0 36 46" aria-hidden="true"><path d="${PIN_PATH}"/></svg>`;
+  d.append(el('b', '', kind === 'ac' ? 'AC' : 'DC'));
+  if (num) d.append(el('i', '', String(num)));
+  return d;
+}
 
 /**
  * Harita: MapLibre GL JS + OpenFreeMap vektör karoları (maps/maplibre.js bağdaştırıcısı, koyu şema, OpenStreetMap verisi).
@@ -64,6 +80,11 @@ export function initMap() {
     if (!saver.checked) boot().then(() => adapter?.resize());
   });
 
+  let sat = load('sat', false);
+  mapApi.isSatellite = () => sat;
+  mapApi.setSatellite = (on) => { sat = !!on; save('sat', sat); whenMap(() => adapter.setSatellite(sat)); };
+  readyHooks.push(() => adapter.setSatellite(sat));
+
   const marker = (pos, content, title = '') => adapter.marker(pos, content, title);
   const unmark = (m) => m?.remove();
   const fit = (points, pad) => adapter.fit(points, pad);
@@ -83,8 +104,10 @@ export function initMap() {
     pickMode = mode;
     Object.entries(pickBtns).forEach(([k, b]) => b.classList.toggle('sel', k === mode));
     adapter?.cursor(mode ? 'crosshair' : null);
-    if (mode) toast(mode === 'start' ? 'Başlangıç için haritaya dokun' : 'Varış için haritaya dokun');
+    mapApi.pickBar(mode);
+    if (mode) showTab('map'); // sayfa kapanır, harita görünür
   }
+  mapApi.cancelPick = () => { setPickMode(null); showTab('route'); };
 
   const inputFor = (kind) => (kind === 'start' ? startInput : endInput);
 
@@ -117,6 +140,7 @@ export function initMap() {
       if (label && getState('route')[kind] === pt) { pt.label = label; inputFor(kind).value = label; }
     });
     setPickMode(kind === 'start' ? 'end' : null); // başlangıçtan sonra otomatik varışa geç
+    if (kind === 'end') showTab('route'); // iki nokta da seçildi: plan sayfasına dön
   }
 
   pickBtns.start.addEventListener('click', () => setPickMode(pickMode === 'start' ? null : 'start'));
@@ -146,6 +170,7 @@ export function initMap() {
   let stationMarks = [];
   let nearMarks = [];
   const routeBounds = () => routeCoords.filter((_, i) => i % 20 === 0 || i === routeCoords.length - 1).map((c) => ({ lat: c[1], lon: c[0] }));
+  mapApi.hasRoute = () => !!routeCoords;
   mapApi.drawRoute = (coords, { fit: doFit = true } = {}) => {
     routeCoords = coords;
     whenMap(() => {
@@ -216,18 +241,14 @@ export function initMap() {
   mapApi.drawNearby = (list, focusId = null) => whenMap(() => {
     nearMarks.forEach(unmark);
     nearMarks = list.map((s) => {
-      const on = s.id === focusId;
-      return marker(s, dotEl('#b48cff', on ? 18 : 12, on ? '#fff' : '#0b0f14'), `${s.name} · ${s.kw} kW · ${s.price.toFixed(2)} TL/kWh`);
+      return marker(s, stationPin(s, { focus: s.id === focusId }), `${s.name} · ${s.kw} kW · ${s.price.toFixed(2)} TL/kWh`);
     });
   });
 
   mapApi.drawStations = (stations, stops) => whenMap(() => {
     stationMarks.forEach(unmark);
-    const inPlan = new Set(stops.map((s) => s.station.id));
-    stationMarks = stations.map((s) => {
-      const planned = inPlan.has(s.id);
-      return marker(s, dotEl(planned ? '#ffb547' : '#5aa9ff', planned ? 18 : 11), `${s.name} · ${s.kw} kW`);
-    });
+    const order = new Map(stops.map((s, i) => [s.station.id, i + 1]));
+    stationMarks = stations.map((s) => marker(s, stationPin(s, { planned: order.has(s.id), num: order.get(s.id) || 0 }), `${s.name} · ${s.kw} kW`));
   });
 
   // Minimum varış pili eşiği
@@ -263,7 +284,7 @@ export function initMap() {
 
   // Gizli sekmede boyut 0 olur; görününce yeniden hesapla.
   document.addEventListener('tabchange', (e) => {
-    if (e.detail === 'route' && adapter) setTimeout(() => adapter.resize(), 50);
+    if (e.detail === 'map' && adapter) setTimeout(() => adapter.resize(), 50);
   });
 
   boot();

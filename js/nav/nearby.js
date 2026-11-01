@@ -90,7 +90,7 @@ function goTo(s, { auto = false } = {}) {
   const start = { lat: e.lat, lon: e.lon, label: 'Konumum' };
   const dest = getState('route').end;
   mapApi.setPoint('start', start, { fit: false });
-  document.querySelector('.bottomnav [data-tab="route"]')?.click();
+  document.querySelector('.bottomnav [data-tab="map"]')?.click();
   const keep = dest && getState('plan').profile && haversineKm(dest, s) > 1;
   if (!keep) mapApi.setPoint('end', { lat: s.lat, lon: s.lon, label: s.name });
   const done = () => { if (getState('plan').steps?.length) startNav(); };
@@ -163,7 +163,7 @@ function render() {
     gm.rel = 'noopener';
     const show = cell('button', 'btn ghost sm', '📍 Haritada');
     show.type = 'button';
-    show.addEventListener('click', () => { focusId = s.id; mapApi.follow(s.lat, s.lon, 14, true); document.querySelector('.bottomnav [data-tab="route"]')?.click(); render(); });
+    show.addEventListener('click', () => { focusId = s.id; mapApi.follow(s.lat, s.lon, 14, true); document.querySelector('.bottomnav [data-tab="map"]')?.click(); render(); });
     acts.append(go, gm, show);
     left.append(meta1, meta2, acts);
     row.append(left);

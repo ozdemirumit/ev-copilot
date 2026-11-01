@@ -2,8 +2,17 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.41.0';
+self.APP_VERSION = '0.42.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.42.0', date: '2026-11-01',
+    notes: [
+      'Yeni arayüz: harita tam ekran arka plan. Altta yüzen hap çubuk (İstasyonlar, Harita, Daha Fazla), solda büyük Rota düğmesi, sağda düğme çubuğu (uydu, tüm rota, konumum, navigasyon) ve arama düğmesi. Sekmeler haritanın üstünde sayfa olarak açılır; ✕ ya da açık sayfanın düğmesine tekrar dokunmak haritaya döner.',
+      'Menzil, Kamera, ABRP ve Test sayfaları Daha Fazla altına, Araç ve tüketim ile Veri kaynakları da oraya taşındı. İstasyonlar düğmesinde plandaki şarj durağı sayısı görünür.',
+      'İstasyon işaretleri damla iğne oldu: AC mavi, DC turuncu, 150 kW ve üstü mor; planlanan duraklar büyük, amber halkalı ve sıra numaralı. Haritadan seçerken sayfa kapanıp üstte yönerge çubuğu çıkar.',
+      'Uydu görüntüsü eklendi (Esri World Imagery, yol ve yer adlarıyla): sağdaki 🛰️ düğmesi, tercih hatırlanır. Navigasyonda hız/ETA çubuğu alt çubuğun üstünde durur.',
+    ],
+  },
   {
     v: '0.41.0', date: '2026-11-01',
     notes: [
