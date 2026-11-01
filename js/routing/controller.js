@@ -123,7 +123,7 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
 
   try {
     patch('plan', { status: 'loading', text: 'Rota alınıyor…', stops: [], totals: null, ranking: [], fromKm: 0, fromSoc: null });
-    patch('sim', { routeKm: 0, lat: null, lon: null, play: false }); // simüle araç yeni rotanın başına
+    patch('sim', { routeKm: 0, lat: from?.lat ?? null, lon: from?.lon ?? null, play: false }); // simüle araç yeni rotanın başına (yeniden rotada bulunduğu yere)
     const rt = await fetchRoute(start, end, via ? [via] : []);
     if (rt.note) toast(rt.note, 7000);
     const pts = resampleRoute(rt.coords);
@@ -170,6 +170,7 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
     }
     applyPlan(computePlan(), { startSoc });
     saveTrip();
+    return true;
   } catch (err) {
     console.error(err);
     if (prev.profile && prev.status !== 'loading') {
@@ -180,15 +181,15 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
       patch('plan', { status: 'error', text: err.message });
       toast('Plan hatası: ' + err.message, 4000);
     }
+    return false;
   }
 }
 
-/** Navigasyon: rotadan çıkıldı, bulunduğun konumdan varışa yeniden rota kur. */
-export function rerouteFromHere() {
+/** Navigasyon: rotadan çıkıldı, bulunduğun konumdan varışa yeniden rota kur. Dönüş: yeni rota kuruldu mu (söz). */
+export async function rerouteFromHere() {
   const e = effective();
   if (e.lat == null || getState('plan').status === 'loading') return false;
-  planTrip({ lat: e.lat, lon: e.lon, label: 'Konumum' });
-  return true;
+  return planTrip({ lat: e.lat, lon: e.lon, label: 'Konumum' });
 }
 
 /** İstasyon fiyat/kW tablosu değişti: ağ çağrısı olmadan yeniden fiyatla ve planla. */

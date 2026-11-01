@@ -12,13 +12,16 @@ import { buildTrack, locate, headingAt } from './track.js';
 const $ = (id) => document.getElementById(id);
 const TIERS_M = [120, 500, 2000]; // dönüşe bu kadar kala konuş (küçükten büyüğe)
 const OFF_ROUTE_KM = 0.35;
-const OFF_ROUTE_MS = 12000;
-const REROUTE_COOLDOWN_MS = 90000;
+const FAR_OFF_KM = 1; // bu kadar uzaktaysan (yanlış otoyol çıkışı vb.) beklemeden hemen yeni rota
+const OFF_ROUTE_MS = 8000;
+const REROUTE_COOLDOWN_MS = 45000; // başarılı yeni rotadan sonra bir daha hemen sapma kontrolü yapma
+const RETRY_MS = 12000; // yeni rota alınamadıysa (internet yok vb.) bu kadar sonra tekrar dene
 
 let said = new Set();
 let planId = null;
 let offSince = 0;
 let lastReroute = 0;
+let rerouting = false;
 let track = null;
 let trackKm = null; // son bilinen iz konumu (arama penceresi için)
 
@@ -56,14 +59,21 @@ function tick() {
   const km = loc.km;
   if (loc.offKm <= OFF_ROUTE_KM) trackKm = km;
 
-  // Rotadan çıkış: kısa sapmalar (park, şerit) sayılmaz; 12 sn sürerse bulunduğun yerden yeni rota
+  // Rotadan çıkış: kısa sapmalar (park, şerit) sayılmaz; 8 sn sürerse (1 km'den uzaktaysan hemen) bulunduğun yerden yeni rota.
+  // GPS hızı yoksa (null) hareket ediyor sayılır: hız okunamayınca yeniden rota hiç kurulmaz olmasın.
   if (loc.offKm > OFF_ROUTE_KM) {
     offSince ||= Date.now();
-    paint('⚠️', fmtDist(loc.offKm * 1000), 'Rotadan çıktınız', 'Yeni rota hesaplanıyor…', '', true);
-    if ((e.speed ?? 0) > 5 && Date.now() - offSince > OFF_ROUTE_MS && Date.now() - lastReroute > REROUTE_COOLDOWN_MS) {
+    const moving = e.speed == null || e.speed > 5;
+    const waited = Date.now() - offSince > OFF_ROUTE_MS || loc.offKm > FAR_OFF_KM;
+    if (!rerouting) paint('⚠️', fmtDist(loc.offKm * 1000), 'Rotadan çıktınız', 'Yeni rota hesaplanıyor…', '', true);
+    if (moving && waited && !rerouting && Date.now() - lastReroute > REROUTE_COOLDOWN_MS) {
       lastReroute = Date.now();
+      rerouting = true;
       speak('Rota yeniden hesaplanıyor.', { key: 'reroute', cooldownMs: 0, interrupt: true });
-      rerouteFromHere();
+      Promise.resolve(rerouteFromHere()).then((ok) => {
+        if (ok) speak('Yeni rota hazır.', { key: 'rerouted', cooldownMs: 0 });
+        else lastReroute = Date.now() - REROUTE_COOLDOWN_MS + RETRY_MS; // başarısız: kısa süre sonra tekrar
+      }).catch(() => { lastReroute = Date.now() - REROUTE_COOLDOWN_MS + RETRY_MS; }).finally(() => { rerouting = false; });
     }
     return;
   }

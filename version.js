@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.42.0';
+self.APP_VERSION = '0.42.1';
 self.APP_CHANGELOG = [
+  {
+    v: '0.42.1', date: '2026-11-01',
+    notes: [
+      'Yeniden rota düzeltildi: rotadan çıkınca bulunduğun yerden varışa yeni rota kurulur. Sapma 8 sn sürünce (1 km\'den uzaktaysan hemen) başlar; GPS hızı okunamazsa da çalışır (eskiden hız bilgisi yoksa hiç kurulmuyordu). Yeni rota alınamazsa (internet yok) 12 sn sonra tekrar dener; kurulunca "Yeni rota hazır" der.',
+      'Test Modu: yeniden rotada simüle araç rotanın başına değil bulunduğu yere konur.',
+    ],
+  },
   {
     v: '0.42.0', date: '2026-11-01',
     notes: [
