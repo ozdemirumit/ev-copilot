@@ -133,11 +133,17 @@ export function createAccounts({ env, store, send, json, readJson, caps }) {
         body: new URLSearchParams({ code, client_id: G_ID, client_secret: G_SECRET, redirect_uri: `${PUBLIC_URL}/auth/google/callback`, grant_type: 'authorization_code' }),
         signal: AbortSignal.timeout(15000),
       });
-      if (!r.ok) return fail('google');
+      if (!r.ok) {
+        let why = '';
+        try { const e = await r.json(); why = `${e.error || ''} ${e.error_description || ''}`.trim(); } catch { /* gövde yok */ }
+        console.error(`google: belirteç isteği reddedildi HTTP ${r.status} ${why}`); // neden günlüğe yazılır (anahtarlar yazılmaz): invalid_client = kimlik/gizli yanlış, redirect_uri_mismatch = yönlendirme adresi farklı
+        return fail('google');
+      }
       idt = decodeJwt((await r.json()).id_token); // Google'ın belirteç uç noktasından TLS ile doğrudan geldi: imza ayrıca doğrulanmaz (OIDC Core 3.1.3.7)
-    } catch { return fail('google'); }
+    } catch (err) { console.error('google: belirteç isteği başarısız:', err?.message || err); return fail('google'); }
     const aud = Array.isArray(idt?.aud) ? idt.aud : [idt?.aud];
-    if (!idt || !/^(https:\/\/)?accounts\.google\.com$/.test(idt.iss) || !aud.includes(G_ID) || !(idt.exp * 1000 > Date.now()) || !idt.sub || !idt.email || idt.email_verified === false) return fail('google');
+    const checks = { iss: !!idt && /^(https:\/\/)?accounts\.google\.com$/.test(idt.iss), aud: aud.includes(G_ID), exp: !!idt && idt.exp * 1000 > Date.now(), sub: !!idt?.sub, email: !!idt?.email, verified: idt?.email_verified !== false };
+    if (!idt || Object.values(checks).some((v) => !v)) { console.error('google: kimlik belirteci doğrulanamadı', JSON.stringify(checks)); return fail('google'); }
     const out = signIn('google', String(idt.sub), String(idt.email), String(idt.name || idt.email).slice(0, 80), p.invite);
     if (out.error) return fail(out.error);
     p.result = { status: 'ok', session: makeSession(out.user.id), user: publicUser(out.user) };
