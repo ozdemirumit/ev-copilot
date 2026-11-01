@@ -193,8 +193,7 @@ function render() {
     );
     const meta2 = cell('div', 'meta', `~${fmtKm(s.roadKm)} km yol`
       + (s.arrive != null ? ` · varışta %${Math.max(0, s.arrive).toFixed(0)}` : '')
-      + ` · %${CHARGE_TO}'e ≈ ${Math.round(s.minutes)} dk, ${s.cost.toFixed(0)} TL`
-      + (slotKind(s) !== 'unknown' ? '' : ' · doluluk bilgisi yok'));
+      + ` · %${CHARGE_TO}'e ≈ ${Math.round(s.minutes)} dk, ${s.cost.toFixed(0)} TL`); // doluluk verisi yalnızca gelen istasyonda gösterilir (altta slotEl)
     const slotNode = slotEl(s);
     if (slotNode) meta2.append(slotNode);
     const lp = livePrice(s);

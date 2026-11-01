@@ -30,9 +30,11 @@ function btn(text, fn, cls = 'btn ghost sm') {
 
 function paintLive(box, s, state) {
   box.replaceChildren();
+  box.classList.remove('hidden');
   const note = (t) => box.append(el('div', 'small muted', t));
   if (state === 'loading') return note('Canlı bilgi alınıyor…');
   if (state === 'login') return note('Canlı doluluk için hesapla giriş yap');
+  if (state === 'none') return box.classList.add('hidden');
   if (state === 'locked') return note('Canlı doluluk ve kWh fiyatı Premium üyelere özeldir.');
   if (s.slots?.src === 'google') return note('Google doluluk verisi harita ekranında gösterilemez; İstasyonlar listesinde görünür'); // Places kuralı: Google verisi Google Maps dışındaki haritada gösterilmez
   const node = slotEl(s, '');
@@ -40,7 +42,7 @@ function paintLive(box, s, state) {
   if (node) { const d = el('div', 'live-slots'); d.append(node); box.append(d); }
   if (lp) box.append(el('div', 'live-price', lp.text));
   if (lp?.extra) box.append(el('div', 'small muted', 'Ek ücret var (oturum başı ya da süre)'));
-  if (!node && !lp) note('Bu istasyon için canlı doluluk verisi yok');
+  if (!node && !lp) box.classList.add('hidden'); // veri gelmeyen istasyonda canlı doluluk bölümü hiç gösterilmez
 }
 
 async function load(s, box) {

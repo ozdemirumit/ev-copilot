@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.72.4';
+self.APP_VERSION = '0.72.5';
 self.APP_CHANGELOG = [
+  {
+    v: '0.72.5', date: '2026-11-01',
+    notes: [
+      'Doluluk bilgisi yalnızca verisi gelen istasyonda gösterilir: Yakınımdaki istasyonlar listesindeki doluluk bilgisi yok yazısı ve harita istasyon kartındaki veri yok satırı kaldırıldı; veri gelmeyen istasyonda doluluk bölümü hiç çıkmaz. Veri kaynakları değişmedi (Premium: Google Places, Hollanda NDW, topluluk).',
+    ],
+  },
   {
     v: '0.72.4', date: '2026-11-01',
     notes: [
