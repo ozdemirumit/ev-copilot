@@ -8,6 +8,7 @@ import { rerouteFromHere } from '../routing/controller.js';
 import { speak } from '../advisor/voice.js';
 import { instruction, fmtDist, spoken, isMinor } from './steps.js';
 import { buildTrack, locate, headingAt, pointAtKm } from './track.js';
+import { bearing } from '../utils/geo.js';
 
 const $ = (id) => document.getElementById(id);
 const TIERS_M = [120, 500, 2000]; // dönüşe bu kadar kala konuş (küçükten büyüğe)
@@ -25,6 +26,29 @@ let lastReroute = 0;
 let rerouting = false;
 let track = null;
 let trackKm = null; // son bilinen iz konumu (arama penceresi için)
+
+// Akıcı hareket: GPS saniyede bir gelir; araç, son ölçümden hızla rotada kare kare ilerletilir (sabit hız tahmini), yeni ölçüm gelince
+// gösterilen konum ona yumuşakça yaklaşır. Kamera yönü, hemen önündeki ~4 m yoldan alınır (görünen tüm rotadan değil).
+let anchor = null; // { km, t, v (km/sn) } son rota üstü ölçüm
+let disp = null; // gösterilen rota km'si
+let lastCam = 0;
+const FRAME_MS = 33; // ~30 kare/sn: pil için sınır
+const AHEAD_KM = 0.004; // yön için bakılan mesafe: 4 m
+let lastHdg = 0;
+const gliding = () => !!anchor && performance.now() - anchor.t < 4000;
+
+function frame(ts) {
+  requestAnimationFrame(frame);
+  if (ts - lastCam < FRAME_MS) return;
+  if (!anchor || !track || document.hidden || document.body.classList.contains('dimmed') || !getState('nav').active) { disp = null; return; }
+  lastCam = ts;
+  const age = Math.min(3, (performance.now() - anchor.t) / 1000); // GPS kesilirse en çok 3 sn ileri tahmin
+  const target = anchor.km + anchor.v * age;
+  disp = disp == null || Math.abs(target - disp) > 0.12 ? target : disp + (target - disp) * 0.2;
+  const p = pointAtKm(track, disp);
+  if (disp < track.totalKm - AHEAD_KM - 0.001) lastHdg = bearing(p, pointAtKm(track, disp + AHEAD_KM));
+  mapApi.cam(p.lat, p.lon, getState('nav').headingUp ? lastHdg : null, zoomNow);
+}
 
 /** Rota sapma/yapışma payı (km): GPS doğruluğunun 2,5 katı, en az 70 m, en çok 200 m. */
 const offLimit = () => Math.min(OFF_MAX_KM, Math.max(OFF_BASE_KM, (2.5 * (getState('live').acc || 0)) / 1000));
@@ -82,6 +106,7 @@ function tick() {
   // Rotadan çıkış: kısa sapmalar (park, şerit) sayılmaz; 8 sn sürerse (1 km'den uzaktaysan hemen) bulunduğun yerden yeni rota.
   // GPS hızı yoksa (null) hareket ediyor sayılır: hız okunamayınca yeniden rota hiç kurulmaz olmasın.
   if (loc.offKm > lim) {
+    anchor = null; // rotada değil: kare kare ilerletme durur, harita ham konumu izler
     offSince ||= Date.now();
     const moving = e.speed == null || e.speed > 5;
     const waited = Date.now() - offSince > OFF_ROUTE_MS || loc.offKm > FAR_OFF_KM;
@@ -152,6 +177,7 @@ function tick() {
 
   // Harita: hıza göre zoom (yavaş = yakın), kavşağa 250 m kala en yakın zoom; sürerken yön-yukarı
   const onRoute = loc.offKm <= lim;
+  anchor = onRoute ? { km, t: performance.now(), v: (e.speed ?? 0) / 3600 } : null;
   const at = onRoute ? pointAtKm(track, km) : null; // imleç ve kamera yola yapışık konumu izler
   followMap(at ? { ...e, lat: at.lat, lon: at.lon } : e, distM, st, onRoute ? headingAt(track, km) : null);
 }
@@ -192,6 +218,7 @@ function followMap(e, distM, st, routeHeading) {
   // Kavşak zoom'u hemen; hız kaynaklı değişim en fazla 8 sn'de bir (titreşmesin)
   const change = want !== zoomNow && (junction || now - zoomAt > 8000);
   if (change) { zoomNow = want; zoomAt = now; }
+  if (gliding()) return; // kamerayı kare döngüsü (frame) sürer; burada yalnızca zoom hedefi (zoomNow) güncellenir
   // Dönüş yönü rotanın gidiş yönünden alınır (GPS yönü olmasa da çalışır); rota dışındaysa GPS yönü
   const heading = routeHeading ?? ((e.speed ?? 0) > 5 ? e.heading : null);
   mapApi.follow(e.lat, e.lon, change ? want : null, change, getState('nav').headingUp ? heading : null);
@@ -309,4 +336,5 @@ export function initNavigator() {
   });
   paintBtn();
   setInterval(tick, 1000);
+  requestAnimationFrame(frame);
 }

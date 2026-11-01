@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.54.1';
+self.APP_VERSION = '0.55.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.55.0', date: '2026-11-01',
+    notes: [
+      'Navigasyonda akıcı hareket: GPS saniyede bir geldiği için harita ve araç saniyede bir adım atıyordu. Artık araç, son ölçümden hızıyla rota üzerinde kare kare (yaklaşık 30 kare/sn) ilerletilir, yeni GPS ölçümü gelince gösterilen konum ona yumuşakça yaklaşır; harita aracın biraz ilerisine kilitli kalır. Denemede 50 km/s hızda kamera adımı yaklaşık 0,8 m (eskiden saniyede 14 m).',
+      'Yön-yukarı döndürme, görünen rotaya ve 150 m ilerideki noktaya göre değil, hemen önündeki yaklaşık 4 m yola göre yapılır; dönüş ve zoom üstel olarak yumuşatılır (kare başına en çok yarım derece). Rota dışındayken, hesaplama sürerken ve haritayı kaydırdığında eski davranış (15 sn kaydırma beklemesi) aynen kalır. Karartma modunda ve uygulama arka plandayken kare döngüsü durur.',
+    ],
+  },
   {
     v: '0.54.1', date: '2026-11-01',
     notes: [

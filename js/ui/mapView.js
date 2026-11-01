@@ -12,6 +12,7 @@ export const mapApi = {
   setSatellite() {}, isSatellite: () => false, hasRoute: () => false, cancelPick() {}, pickBar() {}, // initMap doldurur (pickBar'ı ui/shell.js)
   snap: () => null, // navigator.js: konumu rotaya yapıştırır
   drawPlaces() {}, // ui/places.js kayıtlı yerleri çizer
+  cam() {}, // nav/navigator.js: her karede araç + kamera (akıcı navigasyon)
   pause() {}, // ui/dimmer.js: karartmada harita çizimini durdurur
 };
 
@@ -197,8 +198,13 @@ export function initMap() {
   let paused = false;
   mapApi.pause = (p) => { paused = p; if (!p) mapApi.recenter(); }; // karartma bitince araca dön
   let lastFollow = null; // son uygulanan konum/dönüş: değişmediyse harita yeniden çizilmez (pil)
+  let glideAt = 0; // son kare kamera zamanı: sürerken updateMe konumu ezmesin
+  let zoomCur = null;
+  let bearCur = null;
   mapApi.follow = (lat, lon, zoom = null, force = false, heading = null) => {
     if (!adapter || paused || (!force && Date.now() - lastDrag < 15000)) return;
+    bearCur = null;
+    zoomCur = null; // kare kamera bir sonraki karede haritanın gerçek değerinden devam eder
     if (zoom != null) zoomNow = zoom;
     let turn = null;
     if (heading != null && headingUp) {
@@ -234,7 +240,39 @@ export function initMap() {
   /** Kullanıcı haritayı kaydırdı mı (takip duraklatıldı)? */
   mapApi.dragged = () => Date.now() - lastDrag < 15000;
   /** Takibe hemen dön (navigasyon görünümüne geri). */
-  mapApi.recenter = () => { lastDrag = 0; lastFollow = null; mapApi.navView(navOn, headingUp); };
+  mapApi.recenter = () => { lastDrag = 0; lastFollow = null; bearCur = null; zoomCur = null; mapApi.navView(navOn, headingUp); };
+
+  /**
+   * Akıcı navigasyon: her karede (navigator.js) araç rotadaki gösterilen konumda, kamera ona kilitli. Dönüş (yön-yukarı) ve zoom
+   * üstel olarak yumuşatılır; kamera aracın biraz ilerisine bakar (araç ekranın alt kısmında). Kullanıcı haritayı kaydırdıysa 15 sn
+   * yalnızca araç işareti hareket eder.
+   */
+  mapApi.cam = (lat, lon, heading, zoom) => {
+    if (!adapter || paused) return;
+    glideAt = performance.now();
+    const color = effective().source === 'sim' ? '#5aa9ff' : '#2ee6a6';
+    meArrow ??= el('div', 'me-arrow');
+    meArrow.style.borderBottomColor = color;
+    meArrow.style.transform = `translateY(50%) rotate(${headingUp ? 0 : heading ?? 0}deg)`;
+    if (!me) me = marker({ lat, lon }, meArrow, 'Konumum');
+    else { me.setPosition({ lat, lon }); me.setContent(meArrow); }
+    if (Date.now() - lastDrag < 15000) return;
+    if (zoom != null) zoomCur = zoomCur == null || Math.abs(zoom - zoomCur) > 3 ? zoom : zoomCur + (zoom - zoomCur) * 0.07;
+    if (heading != null && headingUp) {
+      const cur = bearCur ?? (adapter.bearing() + 360) % 360;
+      const d = ((heading - cur + 540) % 360) - 180;
+      bearCur = (cur + d * 0.14 + 360) % 360;
+    }
+    const z = zoomCur ?? zoomNow;
+    let center = { lat, lon };
+    if (navOn && headingUp && bearCur != null) {
+      const mpp = (156543.03 * Math.cos((lat * Math.PI) / 180)) / 2 ** z; // metre/piksel
+      const d = mapEl.clientHeight * 0.22 * mpp;
+      const h = (bearCur * Math.PI) / 180;
+      center = { lat: lat + (d * Math.cos(h)) / 111320, lon: lon + (d * Math.sin(h)) / (111320 * Math.cos((lat * Math.PI) / 180)) };
+    }
+    adapter.moveTo({ center, zoom: z, heading: headingUp ? bearCur : null }, false);
+  };
   /** Genel görünüm: tüm rota ekrana sığar (düz, kuzey-yukarı); 15 sn sonra veya Ortala ile takibe dönülür. */
   mapApi.overview = () => {
     if (!adapter || !routeCoords) return;
@@ -286,6 +324,7 @@ export function initMap() {
   let meDot = null;
   let meArrow = null;
   function updateMe() {
+    if (performance.now() - glideAt < 500) return; // kare kamera aracı zaten yerleştiriyor
     const e = effective();
     if (!adapter || e.lat == null || e.lon == null) return;
     const color = e.source === 'sim' ? '#5aa9ff' : '#2ee6a6';
