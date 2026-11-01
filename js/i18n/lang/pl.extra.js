@@ -162,4 +162,7 @@ export default {
   "Hepsi dolu görünüyor; en yakınlar listelendi": "Wszystkie wyglądają na zajęte; mimo to pokazuję najbliższe",
   "Varsayılan fiyatlar 01.11.2026 liste tarifesidir (üyelik indirimi yok): tablodaki fiyat DC hızlı şarj içindir, AC (yavaş) istasyonlarda işletmecinin AC tarifesi kullanılır. Kendi tarifen farklıysa düzenle.": "Domyślne ceny to taryfy cennikowe z 01.11.2026 (bez rabatów abonamentowych): cena w tabeli dotyczy szybkiego ładowania DC; wolne stacje AC używają taryfy AC operatora. Zmień ją, jeśli Twoja taryfa jest inna.",
   "Google doluluk verisi harita ekranında gösterilemez; İstasyonlar listesinde görünür": "Dane o dostępności z Google nie mogą być wyświetlane na ekranie mapy; zobacz listę stacji",
+  "🗺️ Veri ve önbellek": "🗺️ Dane i pamięć podręczna",
+  "Harita OpenFreeMap, rota ve rakım Valhalla, yer arama Photon, istasyonlar Overpass ve OpenChargeMap, hava Open-Meteo, yol hız limiti OpenStreetMap kaynaklıdır (© OpenStreetMap katkıcıları). Hesapla giriş yapınca trafikli rota, hızlı istasyon araması ve Premium canlı doluluk ve fiyat sunucu üzerinden gelir; anahtar girmen gerekmez.": "Mapa: OpenFreeMap, trasa i wysokość: Valhalla, wyszukiwanie miejsc: Photon, stacje: Overpass i OpenChargeMap, pogoda: Open-Meteo, limity prędkości: OpenStreetMap (© współtwórcy OpenStreetMap). Po zalogowaniu trasa z ruchem, szybkie wyszukiwanie stacji oraz dostępność i ceny na żywo w Premium przychodzą przez serwer; nie musisz wpisywać kluczy.",
+  "Kendi anahtarlarım (isteğe bağlı)": "Moje własne klucze (opcjonalnie)",
 };

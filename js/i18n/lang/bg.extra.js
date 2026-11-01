@@ -162,4 +162,7 @@ export default {
   "Hepsi dolu görünüyor; en yakınlar listelendi": "Всички изглеждат заети; показани са най-близките въпреки това",
   "Varsayılan fiyatlar 01.11.2026 liste tarifesidir (üyelik indirimi yok): tablodaki fiyat DC hızlı şarj içindir, AC (yavaş) istasyonlarda işletmecinin AC tarifesi kullanılır. Kendi tarifen farklıysa düzenle.": "Цените по подразбиране са ценовите листи към 01.11.2026 (без отстъпки за абонамент): цената в таблицата е за бързо DC зареждане; бавните AC станции използват AC тарифата на оператора. Променете я, ако вашата тарифа е различна.",
   "Google doluluk verisi harita ekranında gösterilemez; İstasyonlar listesinde görünür": "Данните за заетост от Google не могат да се показват на картата; вижте списъка със станции",
+  "🗺️ Veri ve önbellek": "🗺️ Данни и кеш",
+  "Harita OpenFreeMap, rota ve rakım Valhalla, yer arama Photon, istasyonlar Overpass ve OpenChargeMap, hava Open-Meteo, yol hız limiti OpenStreetMap kaynaklıdır (© OpenStreetMap katkıcıları). Hesapla giriş yapınca trafikli rota, hızlı istasyon araması ve Premium canlı doluluk ve fiyat sunucu üzerinden gelir; anahtar girmen gerekmez.": "Карта: OpenFreeMap, маршрут и надморска височина: Valhalla, търсене на места: Photon, станции: Overpass и OpenChargeMap, времето: Open-Meteo, ограничения на скоростта: OpenStreetMap (© сътрудници на OpenStreetMap). След вход маршрутът с трафик, бързото търсене на станции и живата наличност и цени в Premium идват през сървъра; не е нужно да въвеждате ключ.",
+  "Kendi anahtarlarım (isteğe bağlı)": "Моите ключове (по избор)",
 };

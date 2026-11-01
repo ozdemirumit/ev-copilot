@@ -5,13 +5,18 @@ import { MB_VALID } from '../mapbox/api.js';
 import { testMapbox } from '../mapbox/test.js';
 import { toast } from './toast.js';
 import { cacheStats, clearCache } from '../utils/cache.js';
-import { testProxy } from '../net/proxy.js';
+import { testProxy, getSession } from '../net/proxy.js';
 import { tr } from '../i18n/index.js';
 
 const $ = (id) => document.getElementById(id);
 const VALID = /^[A-Za-z0-9-]{16,64}$/;
 
 export function initOcmKey() {
+  // Hesapla girişte anahtarları sunucu sağlar: kullanıcının kendi anahtar bölümü gizlenir (girişsizken ya da yalnızca anahtarla kullananlara açık kalır)
+  const keys = $('own-keys');
+  const paintKeys = () => keys?.classList.toggle('hidden', !!getSession());
+  paintKeys();
+  document.addEventListener('account-changed', paintKeys);
   const input = $('ocm-key');
   const out = $('ocm-out');
   input.value = load('ocmKey', '');

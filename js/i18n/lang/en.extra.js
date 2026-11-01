@@ -162,4 +162,7 @@ export default {
   "Hepsi dolu görünüyor; en yakınlar listelendi": "All look full; showing the nearest anyway",
   "Varsayılan fiyatlar 01.11.2026 liste tarifesidir (üyelik indirimi yok): tablodaki fiyat DC hızlı şarj içindir, AC (yavaş) istasyonlarda işletmecinin AC tarifesi kullanılır. Kendi tarifen farklıysa düzenle.": "Default prices are the list tariffs as of 1 Nov 2026 (no membership discounts): the table price is for DC fast charging; slow AC stations use the operator's AC tariff. Edit it if your own tariff differs.",
   "Google doluluk verisi harita ekranında gösterilemez; İstasyonlar listesinde görünür": "Google availability data can't be shown on the map screen; see the Stations list",
+  "🗺️ Veri ve önbellek": "🗺️ Data and cache",
+  "Harita OpenFreeMap, rota ve rakım Valhalla, yer arama Photon, istasyonlar Overpass ve OpenChargeMap, hava Open-Meteo, yol hız limiti OpenStreetMap kaynaklıdır (© OpenStreetMap katkıcıları). Hesapla giriş yapınca trafikli rota, hızlı istasyon araması ve Premium canlı doluluk ve fiyat sunucu üzerinden gelir; anahtar girmen gerekmez.": "The map is OpenFreeMap, routing and elevation Valhalla, place search Photon, stations Overpass and OpenChargeMap, weather Open-Meteo, speed limits OpenStreetMap (© OpenStreetMap contributors). When you sign in, traffic-aware routing, fast station search and Premium live availability and prices come through the server; you don't need to enter any key.",
+  "Kendi anahtarlarım (isteğe bağlı)": "My own keys (optional)",
 };

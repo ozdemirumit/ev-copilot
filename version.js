@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.72.1';
+self.APP_VERSION = '0.72.2';
 self.APP_CHANGELOG = [
+  {
+    v: '0.72.2', date: '2026-11-01',
+    notes: [
+      'Veri kaynakları kartı sadeleşti: adı Veri ve önbellek oldu; OpenStreetMap atfı, hangi servisin neyi sağladığı ve Önbelleği temizle düğmesi duruyor. OpenChargeMap ve Mapbox anahtar alanları Kendi anahtarlarım (isteğe bağlı) başlıklı kapalı bir bölüme taşındı ve hesapla giriş yapanlarda gizlenir, çünkü anahtarları sunucu sağlıyor. Girişsiz kullanıcılar kendi anahtarını yine girebilir. Eski, yanlış hale gelen canlı trafik ve doluluk yok açıklaması kaldırıldı.',
+    ],
+  },
   {
     v: '0.72.1', date: '2026-11-01',
     notes: [

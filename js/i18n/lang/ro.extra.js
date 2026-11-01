@@ -162,4 +162,7 @@ export default {
   "Hepsi dolu görünüyor; en yakınlar listelendi": "Toate par ocupate; le afișez totuși pe cele mai apropiate",
   "Varsayılan fiyatlar 01.11.2026 liste tarifesidir (üyelik indirimi yok): tablodaki fiyat DC hızlı şarj içindir, AC (yavaş) istasyonlarda işletmecinin AC tarifesi kullanılır. Kendi tarifen farklıysa düzenle.": "Prețurile implicite sunt tarifele de listă la 01.11.2026 (fără reduceri de abonament): prețul din tabel este pentru încărcarea rapidă DC; stațiile AC lente folosesc tariful AC al operatorului. Modifică-l dacă tariful tău diferă.",
   "Google doluluk verisi harita ekranında gösterilemez; İstasyonlar listesinde görünür": "Datele de disponibilitate Google nu pot fi afișate pe hartă; vezi lista stațiilor",
+  "🗺️ Veri ve önbellek": "🗺️ Date și cache",
+  "Harita OpenFreeMap, rota ve rakım Valhalla, yer arama Photon, istasyonlar Overpass ve OpenChargeMap, hava Open-Meteo, yol hız limiti OpenStreetMap kaynaklıdır (© OpenStreetMap katkıcıları). Hesapla giriş yapınca trafikli rota, hızlı istasyon araması ve Premium canlı doluluk ve fiyat sunucu üzerinden gelir; anahtar girmen gerekmez.": "Harta: OpenFreeMap, traseul și altitudinea: Valhalla, căutarea locurilor: Photon, stațiile: Overpass și OpenChargeMap, vremea: Open-Meteo, limitele de viteză: OpenStreetMap (© contribuitorii OpenStreetMap). După autentificare, traseul cu trafic, căutarea rapidă a stațiilor și disponibilitatea și prețurile live Premium vin prin server; nu trebuie să introduci chei.",
+  "Kendi anahtarlarım (isteğe bağlı)": "Cheile mele (opțional)",
 };
