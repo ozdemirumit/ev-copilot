@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.70.0';
+self.APP_VERSION = '0.70.1';
 self.APP_CHANGELOG = [
+  {
+    v: '0.70.1', date: '2026-11-01',
+    notes: [
+      'Konumum düğmesi: GPS açılınca haritanın konuma gitmemesi düzeltildi. Telefonda ilk GPS konumu 10-40 saniye sürebiliyor ve düğme bu bekleme sırasında hata alınca beklemeyi bırakıyordu. Artık önce hızlı kaba konum (şebeke) alınır ve harita hemen oraya gider, GPS gelince hassaslaşır; GPS gecikirse de ilk konum geldiğinde harita yine ortalanır ve yakınlaşır (en çok 90 saniye beklenir). Kaba konumda (1,5 km ve üstü belirsiz) çok yakınlaşmaz.',
+    ],
+  },
   {
     v: '0.70.0', date: '2026-11-01',
     notes: [

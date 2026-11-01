@@ -61,11 +61,12 @@ export function startGps() {
 }
 
 /** Tek seferlik hızlı konum (izin sorusunu dokunuşta tetikler); başarıda canlı konum güncellenir. Hata: GeolocationPositionError. */
-export function locateOnce() {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) return reject(Object.assign(new Error('desteklenmiyor'), { code: 0 }));
-    navigator.geolocation.getCurrentPosition((p) => { onPosition(p); resolve(); }, reject, { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
-  });
+export async function locateOnce() {
+  if (!navigator.geolocation) throw Object.assign(new Error('desteklenmiyor'), { code: 0 });
+  const get = (opts) => new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition((p) => { onPosition(p); resolve(); }, reject, opts));
+  // Önce hızlı kaba konum (şebeke/Wi-Fi, 1-3 sn): harita hemen oraya gider. GPS uydu bulması (soğuk başlangıç) 10-40 sn sürebilir.
+  try { return await get({ enableHighAccuracy: false, timeout: 8000, maximumAge: 120000 }); } catch (err) { if (err?.code === 1) throw err; }
+  return get({ enableHighAccuracy: true, timeout: 20000, maximumAge: 30000 });
 }
 
 export function stopGps() {

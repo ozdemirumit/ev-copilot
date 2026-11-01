@@ -29,14 +29,16 @@ export function initShell() {
   const centerMe = () => {
     const e = effective();
     if (e.lat == null) return false;
-    mapApi.follow(e.lat, e.lon, 16, true);
+    const acc = getState('live').acc; // kaba konumda (şebeke) çok yakınlaşma
+    mapApi.follow(e.lat, e.lon, acc > 1500 ? 13 : acc > 300 ? 15 : 16, true);
     mapApi.recenter?.();
     return true;
   };
   $('fab-me').addEventListener('click', async () => {
     if (centerMe()) return;
     wantCenter = true;
-    toast('Konum aranıyor…', 4000);
+    setTimeout(() => { wantCenter = false; }, 90000); // en çok 90 sn bekle
+    toast('Konum aranıyor… (ilk konum 30 sn sürebilir)', 5000);
     const g = getState('live').gps;
     if (g === 'off' || g === 'error' || g === 'denied') { // kapalı ya da hatalıysa (yeniden) başlat; izin sorusu bu dokunuşta çıkar
       if (g !== 'off') stopGps();
@@ -45,8 +47,12 @@ export function initShell() {
     try {
       await locateOnce(); // hızlı ilk konum; gelince abonelik haritayı ortalar. Hata nedeni kullanıcıya söylenir
     } catch (err) {
-      wantCenter = false;
-      toast(err?.code === 1 ? 'Konum izni kapalı: Android Ayarlar > Uygulamalar > EV Co-Pilot > İzinler > Konum' : 'Konum alınamadı: açık alanda tekrar dene', 7000);
+      if (err?.code === 1) { // izin reddedildi: beklemenin anlamı yok
+        wantCenter = false;
+        toast('Konum izni kapalı: Android Ayarlar > Uygulamalar > EV Co-Pilot > İzinler > Konum', 7000);
+      } else {
+        toast('Konum henüz alınamadı: GPS sinyali bekleniyor (açık alanda dene)', 6000); // GPS izleme sürüyor: ilk konum gelince harita yine ortalanır
+      }
     }
   });
   subscribe('live', () => { if (wantCenter && centerMe()) wantCenter = false; });
