@@ -166,6 +166,11 @@ export function calibrateSoc(value) {
   socFilter.reset(value);
 }
 
+/** Elle/tahmin pil girildi: filtre referansı bırakılır, kamera okuması bir sonraki okumada bu değeri geçersiz kılar. */
+export function releaseSoc() {
+  socFilter.reset(null);
+}
+
 /** Filtre önizlemesi: kullanıcı eşik/kontrastı ayarlarken pil ROI'sinin işlenmiş halini gösterir. */
 export function startPreview(video, stage, canvas) {
   stopPreview();

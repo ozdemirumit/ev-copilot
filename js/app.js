@@ -19,6 +19,8 @@ import { initShell } from './ui/shell.js';
 import { initPlaces } from './ui/places.js';
 import { initDimmer } from './ui/dimmer.js';
 import { initSocInput } from './ui/socInput.js';
+import { initSocBar } from './ui/socBar.js';
+import { initSocEstimate } from './physics/socEstimate.js';
 import { initMap } from './ui/mapView.js';
 import { initRoiBox } from './ui/roiBox.js';
 import { initCameraPanel } from './ui/cameraPanel.js';
@@ -85,6 +87,8 @@ initShell();
 initPlaces();
 initDimmer();
 initSocInput();
+initSocBar();
+initSocEstimate();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => { /* file:// vb. */ });

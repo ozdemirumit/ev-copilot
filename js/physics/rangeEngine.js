@@ -7,6 +7,7 @@ import { createTracker } from './consumption.js';
 import { trafficBreakdown, stopGoOverhead } from './traffic.js';
 import { fetchWeather } from '../providers/index.js';
 import { feed as feedHistory } from './history.js';
+import { isEstimating, consume } from './socEstimate.js';
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const tracker = createTracker();
@@ -87,12 +88,13 @@ function tick() {
   const overhead = stopGoOverhead(cond.traffic ?? 0);
   const modelKw = batteryPowerKw({ v: speed, ...cond });
   tracker.addDistance(dKm, (modelKw * dt * overhead) / 3600);
-  tracker.addSoc(e.soc == null ? null : Math.round(e.soc));
+  const estimating = isEstimating(); // elle girilen pil modelden düşüyor: gerçek ölçüm değil, tüketim öğrenmesine katılmaz
+  tracker.addSoc(e.soc == null || estimating ? null : Math.round(e.soc));
   // Geçmiş: gerçek sürüş ölçümleri kayda alınır (Test Modu'nda değil)
   if (!sim.enabled) {
     feedHistory({
       dKm, dt, moving: speed > 5, modelStepKwh: (modelKw * dt * overhead) / 3600,
-      soc: e.soc == null ? null : Math.round(e.soc), temp: cond.temp ?? 15, headwind: cond.headwind ?? 0, grade: cond.grade ?? 0,
+      soc: e.soc == null || estimating ? null : Math.round(e.soc), temp: cond.temp ?? 15, headwind: cond.headwind ?? 0, grade: cond.grade ?? 0,
     });
   }
 
@@ -105,6 +107,8 @@ function tick() {
       if (!sim.enabled) save('kCal', k);
     }
   }
+
+  if (estimating) consume((modelKw * k * overhead * dt) / 3600); // yol alındıkça elle girilen pil düşer
 
   // Anlık tahmin: bu koşullarda (hız ≥ 20 ise mevcut hız, değilse seyir hızı) kWh/100km
   const vRef = speed >= 20 ? speed : route.cruise;

@@ -2,7 +2,7 @@
 // yoldan geçer (canlı pil + OCR filtresinin referansı), bu yüzden HUD, plan ve navigasyon aynı değeri kullanır.
 // Sürgü bırakılınca açık plan yeniden hesaplanır (ağ çağrısı yok).
 import { getState, patch, subscribe, effective } from '../state.js';
-import { calibrateSoc } from '../sensors/ocr.js';
+import { setManual } from '../physics/socEstimate.js';
 import { setStartSoc } from '../routing/controller.js';
 
 const $ = (id) => document.getElementById(id);
@@ -21,8 +21,9 @@ export function initSocInput() {
     const ocrOk = getState('system').ocr && getState('ocr').status === 'ok';
     note.textContent = e.source === 'sim' ? 'Test Modu: pil Test sekmesindeki değerdir.'
       : v == null ? 'Pil bilinmiyor: plan %80 varsayar. Sürgüyle gir.'
-        : ocrOk ? 'Kamera okuyor; elle girersen okuma bu değerden %2\'den fazla sapınca reddedilir.'
-          : 'Elle girilen / son okunan değer.';
+        : ocrOk ? 'Kamera okuyor: okunan değer geçerli. Elle girersen bir sonraki okuma bunu geçersiz kılar.'
+          : getState('engine').socSrc === 'manual' ? 'Elle girildi: yol alındıkça tüketim modeliyle düşer, kamera okuyunca düzelir.'
+            : 'Son okunan değer.';
   };
 
   slider.addEventListener('input', () => {
@@ -30,11 +31,7 @@ export function initSocInput() {
     const v = Number(slider.value);
     out.textContent = '%' + v;
     if (getState('sim').enabled) patch('sim', { soc: v });
-    else {
-      calibrateSoc(v);
-      patch('live', { soc: v });
-      patch('ocr', { accepted: v, status: 'manual', lastOkAt: Date.now() });
-    }
+    else setManual(v); // yol alındıkça düşer, kamera okuyunca o değer geçerli olur
   });
   slider.addEventListener('change', () => {
     dragging = false;

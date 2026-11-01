@@ -453,3 +453,19 @@ body.navmode .fabs { bottom: calc(var(--nav-h) + var(--safe-b) + 92px); }
   body.sheet-open .navhud, body.sheet-open .pickbar { left: 420px; }
   #banners { max-width: 400px; }
 }
+
+/* Navigasyonda sol kenar: dikey pil sürgüsü (parmakla yukarı/aşağı) */
+.socbar { display: none; position: absolute; left: 10px; top: calc(var(--hud-h, 72px) + 10px); bottom: calc(var(--nav-h) + var(--safe-b) + 84px); width: 46px; padding: 8px 4px; flex-direction: column; align-items: center; gap: 2px; border-radius: 23px; background: rgba(22, 31, 43, .8); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, .12); box-shadow: 0 6px 24px #000a; }
+body.navmode .socbar { display: flex; }
+.socbar b { font-size: 17px; font-variant-numeric: tabular-nums; line-height: 1; }
+.socbar-pct { font-size: 10px; color: var(--muted); line-height: 1; }
+.socbar-track { position: relative; flex: 1; width: 100%; margin: 6px 0; touch-action: none; cursor: ns-resize; }
+.socbar-track::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 8px; margin-left: -4px; border-radius: 4px; background: var(--card-2); }
+.socbar-fill { position: absolute; left: 50%; bottom: 0; width: 8px; margin-left: -4px; border-radius: 4px; background: var(--accent); }
+.socbar[data-src="manual"] .socbar-fill { background: var(--warn); }
+.socbar.low .socbar-fill { background: var(--bad); }
+.socbar-thumb { position: absolute; left: 50%; width: 30px; height: 18px; margin: 0 0 -9px -15px; border-radius: 9px; background: #fff; box-shadow: 0 2px 6px #000a; }
+.socbar small { font-size: 9px; color: var(--muted); line-height: 1; }
+.socbar[data-src="manual"] small { color: var(--warn); }
+body.sheet-open .socbar { display: none; }
+@media (max-height: 520px) { .socbar { bottom: calc(var(--nav-h) + var(--safe-b) + 70px); } }

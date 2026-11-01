@@ -582,6 +582,13 @@
 
 <!-- ===== Harita üstü kontroller (sayfa açıkken gizlenir) ===== -->
 <div class="mapui" id="mapui">
+  <div class="socbar" id="socbar" aria-label="Mevcut pil (elle ayarla)">
+    <b id="socbar-val">--</b><span class="socbar-pct">%</span>
+    <div class="socbar-track" id="socbar-track" role="slider" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Mevcut pil yüzdesi" tabindex="0">
+      <div class="socbar-fill" id="socbar-fill"></div><div class="socbar-thumb" id="socbar-thumb"></div>
+    </div>
+    <small id="socbar-src">—</small>
+  </div>
   <div class="pickbar hidden" id="pickbar" role="status"><span id="pick-text"></span><button class="btn sm" id="pick-cancel" type="button">İptal</button></div>
   <div class="fabs" id="fabs">
     <button type="button" id="fab-sat" aria-pressed="false" aria-label="Uydu görüntüsü" title="Uydu görüntüsü">🛰️</button>

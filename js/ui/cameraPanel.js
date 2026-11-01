@@ -2,7 +2,8 @@ import { getState, patch, subscribe } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { persistCamera } from './roiBox.js';
 import { startCamera, stopCamera, zoomRange, setZoom } from '../sensors/camera.js';
-import { startOcr, stopOcr, calibrateSoc, startPreview, stopPreview } from '../sensors/ocr.js';
+import { startOcr, stopOcr, startPreview, stopPreview } from '../sensors/ocr.js';
+import { setManual } from '../physics/socEstimate.js';
 import { toast } from './toast.js';
 
 const STATUS_TEXT = {
@@ -125,9 +126,7 @@ export function initCameraPanel() {
     if (getState('sim').enabled) return toast('Test Modu açık — pili Test sekmesinden değiştir');
     const cur = getState('live').soc;
     const next = Math.min(100, Math.max(0, (cur ?? 50) + d));
-    calibrateSoc(next);
-    patch('live', { soc: next });
-    patch('ocr', { accepted: next, status: 'manual', lastOkAt: Date.now() });
+    setManual(next); // yol alındıkça düşer, kamera okuyunca o değer geçerli olur
   };
   $('soc-plus').addEventListener('click', () => bump(1));
   $('soc-minus').addEventListener('click', () => bump(-1));

@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.49.0';
+self.APP_VERSION = '0.50.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.50.0', date: '2026-11-01',
+    notes: [
+      'Elle girilen pil artık yolda kendiliğinden düşer: Rota sayfasındaki sürgü, navigasyondaki yeni sürgü ya da kalibrasyon +/- ile pil girilince, araç yol aldıkça tüketim modeline (hız, eğim, hava, öğrenilen düzeltme) göre pil yüzdesi azalır ve plan buna göre güncellenir. Bu tahmin tüketim öğrenmesine katılmaz.',
+      'Kamera okuması her zaman önceliklidir: OCR bir değer okuduğu an elle girilen/tahmini değerin yerine geçer. OCR 90 sn okuyamazsa son değerden tahmine devam edilir.',
+      'Navigasyonda sol kenarda dikey pil sürgüsü: parmakla yukarı/aşağı kaydırarak mevcut pil elle ayarlanır. Altında kaynak görünür (kamera / elle / test), eşik altında kırmızı olur.',
+    ],
+  },
   {
     v: '0.49.0', date: '2026-11-01',
     notes: [
