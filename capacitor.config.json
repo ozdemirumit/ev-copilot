@@ -1,0 +1,11 @@
+{
+  "appId": "com.ozdemirumit.evcopilot",
+  "appName": "EV Co-Pilot",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

@@ -1,1 +1,5 @@
 local-test/
+node_modules/
+/www/
+*.apk
+*.aab
