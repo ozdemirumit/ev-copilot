@@ -7,12 +7,12 @@ import { gunzipSync } from 'node:zlib';
 
 const NDW_BBOX = process.env.NDW_BBOX_URL || 'https://dotnl.ndw.nu/api/rest/geojson/dynamic-road-status/charge-point-data/v1/features';
 const NDW_TARIFFS = process.env.NDW_TARIFFS_URL || 'https://opendata.ndw.nu/charging_point_tariffs_ocpi.json.gz';
-const GOOGLE_BASE = process.env.GOOGLE_PLACES_BASE || 'https://places.googleapis.com';
+const googleBase = () => process.env.GOOGLE_PLACES_BASE || 'https://places.googleapis.com'; // ortam değişkenleri çağrı anında okunur: .env, bu modül yüklendikten sonra işlenir
 const NL_BOX = { minLat: 50.7, maxLat: 53.7, minLon: 3.2, maxLon: 7.3 };
 const DC_MIN_W = 40000; // DC hızlı şarj sayılan alt güç (W)
 const MATCH_M = 120; // istasyon ile kayıt arası en çok mesafe
 const TARIFF_TTL_MS = 6 * 3600e3;
-const GOOGLE_SOC_BELOW = Number(process.env.GOOGLE_SOC_BELOW || 25); // Google (ücretli) yalnızca pil bu yüzdenin altındayken sorulur
+const googleSocBelow = () => Number(process.env.GOOGLE_SOC_BELOW || 25); // Google (ücretli) yalnızca pil bu yüzdenin altındayken sorulur
 
 const rad = (d) => (d * Math.PI) / 180;
 export function distM(a, b) {
@@ -132,7 +132,7 @@ export async function ndwLookup(st, { fetchImpl = fetch, at = new Date() } = {})
 
 // ---------- Adaptör: Google Places (Yeni) ----------
 export async function googleLookup(st, key, { fetchImpl = fetch } = {}) {
-  const res = await fetchImpl(`${GOOGLE_BASE}/v1/places:searchNearby`, {
+  const res = await fetchImpl(`${googleBase()}/v1/places:searchNearby`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': key, 'X-Goog-FieldMask': 'places.displayName,places.location,places.evChargeOptions' },
     body: JSON.stringify({ includedTypes: ['electric_vehicle_charging_station'], maxResultCount: 5, locationRestriction: { circle: { center: { latitude: st.lat, longitude: st.lon }, radius: MATCH_M } } }),
@@ -166,7 +166,7 @@ const HIT_MS = 90e3;
 const gStats = new Map(); // hücre → { hit, miss, until }
 const tile = (p) => `${p.lat.toFixed(1)},${p.lon.toFixed(1)}`;
 function googleWanted(st, soc) {
-  if (soc == null || soc >= GOOGLE_SOC_BELOW) return false;
+  if (soc == null || soc >= googleSocBelow()) return false;
   const g = gStats.get(tile(st));
   return !(g && g.until > Date.now());
 }
