@@ -165,4 +165,6 @@ export default {
   "🗺️ Veri ve önbellek": "🗺️ Dados e cache",
   "Harita OpenFreeMap, rota ve rakım Valhalla, yer arama Photon, istasyonlar Overpass ve OpenChargeMap, hava Open-Meteo, yol hız limiti OpenStreetMap kaynaklıdır (© OpenStreetMap katkıcıları). Hesapla giriş yapınca trafikli rota, hızlı istasyon araması ve Premium canlı doluluk ve fiyat sunucu üzerinden gelir; anahtar girmen gerekmez.": "Mapa: OpenFreeMap, rota e altitude: Valhalla, pesquisa de locais: Photon, estações: Overpass e OpenChargeMap, meteorologia: Open-Meteo, limites de velocidade: OpenStreetMap (© colaboradores do OpenStreetMap). Ao iniciar sessão, a rota com trânsito, a pesquisa rápida de estações e a disponibilidade e os preços em direto Premium chegam pelo servidor; não precisas de introduzir chaves.",
   "Kendi anahtarlarım (isteğe bağlı)": "As minhas chaves (opcional)",
+  "1 km çevre": "Raio de 1 km",
+  "5 km çevre": "Raio de 5 km",
 };

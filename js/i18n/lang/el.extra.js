@@ -165,4 +165,6 @@ export default {
   "🗺️ Veri ve önbellek": "🗺️ Δεδομένα και προσωρινή μνήμη",
   "Harita OpenFreeMap, rota ve rakım Valhalla, yer arama Photon, istasyonlar Overpass ve OpenChargeMap, hava Open-Meteo, yol hız limiti OpenStreetMap kaynaklıdır (© OpenStreetMap katkıcıları). Hesapla giriş yapınca trafikli rota, hızlı istasyon araması ve Premium canlı doluluk ve fiyat sunucu üzerinden gelir; anahtar girmen gerekmez.": "Χάρτης: OpenFreeMap, διαδρομή και υψόμετρο: Valhalla, αναζήτηση τόπων: Photon, σταθμοί: Overpass και OpenChargeMap, καιρός: Open-Meteo, όρια ταχύτητας: OpenStreetMap (© συνεισφέροντες OpenStreetMap). Μετά τη σύνδεση, η διαδρομή με κίνηση, η γρήγορη αναζήτηση σταθμών και η ζωντανή διαθεσιμότητα και οι τιμές Premium έρχονται μέσω του διακομιστή· δεν χρειάζεται να εισαγάγετε κλειδί.",
   "Kendi anahtarlarım (isteğe bağlı)": "Τα δικά μου κλειδιά (προαιρετικά)",
+  "1 km çevre": "Ακτίνα 1 km",
+  "5 km çevre": "Ακτίνα 5 km",
 };
