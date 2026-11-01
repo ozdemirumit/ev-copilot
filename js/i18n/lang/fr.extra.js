@@ -128,4 +128,8 @@ export default {
   "Dik eğim uyarısı": "Alerte de forte pente",
   "Hız kamerası uyarısı (OpenStreetMap; tüm kameraları kapsamaz)": "Alerte radar (OpenStreetMap ; ne couvre pas tous les radars)",
   "1 kilometre": "1 kilomètre",
+  "{0}/kWh (canlı)": "{0}/kWh (en direct)",
+  "Ek ücret var (oturum başı ya da süre)": "Frais supplémentaires (par session ou durée)",
+  "{0} dk önce": "il y a {0} min",
+  "eski bilgi": "info ancienne",
 };

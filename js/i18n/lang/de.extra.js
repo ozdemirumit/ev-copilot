@@ -128,4 +128,8 @@ export default {
   "Dik eğim uyarısı": "Warnung vor starkem Gefälle/Steigung",
   "Hız kamerası uyarısı (OpenStreetMap; tüm kameraları kapsamaz)": "Blitzerwarnung (OpenStreetMap; nicht alle Kameras erfasst)",
   "1 kilometre": "1 Kilometer",
+  "{0}/kWh (canlı)": "{0}/kWh (live)",
+  "Ek ücret var (oturum başı ya da süre)": "Zusätzliche Gebühren (pro Ladevorgang oder Zeit)",
+  "{0} dk önce": "vor {0} Min.",
+  "eski bilgi": "veraltete Info",
 };

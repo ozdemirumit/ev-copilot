@@ -128,4 +128,8 @@ export default {
   "Dik eğim uyarısı": "Предупреждение за стръмен наклон",
   "Hız kamerası uyarısı (OpenStreetMap; tüm kameraları kapsamaz)": "Предупреждение за камери (OpenStreetMap; не покрива всички)",
   "1 kilometre": "1 километър",
+  "{0}/kWh (canlı)": "{0}/kWh (на живо)",
+  "Ek ücret var (oturum başı ya da süre)": "Има допълнителни такси (за сесия или за време)",
+  "{0} dk önce": "преди {0} мин",
+  "eski bilgi": "стара информация",
 };

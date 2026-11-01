@@ -45,7 +45,7 @@ export async function refreshCaps() {
     if (!res.ok) throw new Error(`Sunucu HTTP ${res.status}`);
     const j = await res.json();
     const c = sess ? j.caps : j;
-    caps = { mapbox: !!c?.mapbox, ocm: !!c?.ocm, overpass: !!c?.overpass };
+    caps = { mapbox: !!c?.mapbox, ocm: !!c?.ocm, overpass: !!c?.overpass, occupancy: !!c?.occupancy };
     save('proxyCaps', caps);
     return { ok: true, text: '', caps, user: j.user || null };
   } catch (err) {

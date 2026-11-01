@@ -128,4 +128,8 @@ export default {
   "Dik eğim uyarısı": "Προειδοποίηση απότομης κλίσης",
   "Hız kamerası uyarısı (OpenStreetMap; tüm kameraları kapsamaz)": "Προειδοποίηση κάμερας ταχύτητας (OpenStreetMap· δεν καλύπτει όλες)",
   "1 kilometre": "1 χιλιόμετρο",
+  "{0}/kWh (canlı)": "{0}/kWh (ζωντανά)",
+  "Ek ücret var (oturum başı ya da süre)": "Ισχύουν πρόσθετες χρεώσεις (ανά συνεδρία ή χρόνο)",
+  "{0} dk önce": "πριν από {0} λεπτά",
+  "eski bilgi": "παλιά πληροφορία",
 };

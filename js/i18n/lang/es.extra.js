@@ -128,4 +128,8 @@ export default {
   "Dik eğim uyarısı": "Aviso de pendiente pronunciada",
   "Hız kamerası uyarısı (OpenStreetMap; tüm kameraları kapsamaz)": "Aviso de radar (OpenStreetMap; no cubre todas las cámaras)",
   "1 kilometre": "1 kilómetro",
+  "{0}/kWh (canlı)": "{0}/kWh (en vivo)",
+  "Ek ücret var (oturum başı ya da süre)": "Hay cargos adicionales (por sesión o por tiempo)",
+  "{0} dk önce": "hace {0} min",
+  "eski bilgi": "información antigua",
 };

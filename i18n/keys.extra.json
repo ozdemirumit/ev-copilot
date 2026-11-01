@@ -127,5 +127,9 @@
  "📷 Hız kamerası {0} ileride",
  "Dik eğim uyarısı",
  "Hız kamerası uyarısı (OpenStreetMap; tüm kameraları kapsamaz)",
- "1 kilometre"
+ "1 kilometre",
+ "{0}/kWh (canlı)",
+ "Ek ücret var (oturum başı ya da süre)",
+ "{0} dk önce",
+ "eski bilgi"
 ]

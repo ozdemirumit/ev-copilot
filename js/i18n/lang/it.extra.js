@@ -128,4 +128,8 @@ export default {
   "Dik eğim uyarısı": "Avviso di pendenza ripida",
   "Hız kamerası uyarısı (OpenStreetMap; tüm kameraları kapsamaz)": "Avviso autovelox (OpenStreetMap; non copre tutte le telecamere)",
   "1 kilometre": "1 chilometro",
+  "{0}/kWh (canlı)": "{0}/kWh (in tempo reale)",
+  "Ek ücret var (oturum başı ya da süre)": "Costi aggiuntivi (a sessione o a tempo)",
+  "{0} dk önce": "{0} min fa",
+  "eski bilgi": "info datata",
 };

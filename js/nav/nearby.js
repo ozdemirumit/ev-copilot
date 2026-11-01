@@ -11,7 +11,7 @@ import { planTrip } from '../routing/controller.js';
 import { mapApi } from '../ui/mapView.js';
 import { toast } from '../ui/toast.js';
 import { speak } from '../advisor/voice.js';
-import { slotKind, slotLabel } from '../routing/slots.js';
+import { slotKind, slotEl } from '../routing/slots.js';
 import { startNav } from './navigator.js';
 
 const $ = (id) => document.getElementById(id);
@@ -151,7 +151,9 @@ function render() {
     const meta2 = cell('div', 'meta', `~${fmtKm(s.roadKm)} km yol`
       + (s.arrive != null ? ` · varışta %${Math.max(0, s.arrive).toFixed(0)}` : '')
       + ` · %${CHARGE_TO}'e ≈ ${Math.round(s.minutes)} dk, ${s.cost.toFixed(0)} TL`
-      + (slotLabel(s) ? ` · ${slotLabel(s)}` : ' · doluluk bilgisi yok'));
+      + (slotKind(s) !== 'unknown' ? '' : ' · doluluk bilgisi yok'));
+    const slotNode = slotEl(s);
+    if (slotNode) meta2.append(slotNode);
     const acts = document.createElement('div');
     acts.className = 'row wrap';
     const go = cell('button', 'btn primary sm', '🧭 Git');
@@ -206,7 +208,9 @@ function showAlert(title, stations = []) {
     info.textContent = s.name;
     info.append(cell('small', '', `${fmtKm(s.distKm)} km · ${s.kw} kW · ${s.price.toFixed(2)} TL/kWh`
       + (s.arrive != null ? ` · varışta ~%${Math.max(0, s.arrive).toFixed(0)}` : '') + (s.reachable ? '' : ' · yetmeyebilir')
-      + (slotLabel(s) ? ` · ${slotLabel(s)}` : '')));
+      + ''));
+    const slotNode = slotEl(s);
+    if (slotNode) info.lastElementChild.append(slotNode);
     const go = cell('button', 'btn primary sm', '🧭 Git');
     go.type = 'button';
     go.addEventListener('click', () => goTo(s));

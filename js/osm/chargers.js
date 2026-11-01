@@ -298,6 +298,4 @@ export async function fetchAround(lat, lon, radiusKm, force = false) {
 }
 
 /** Canlı doluluk verisi yok: boş sonuç (istasyonlar "bilinmiyor" görünür). */
-export async function fetchAvailability() {
-  return new Map();
-}
+// Canlı doluluk: routing/occupancyClient.js (ara sunucu)

@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.65.0';
+self.APP_VERSION = '0.66.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.66.0', date: '2026-11-01',
+    notes: [
+      'Canlı istasyon doluluğu ve fiyatı: sunucu (hesapla giriş gerekir) planlı durakların dolu/boş soket sayısını ve kWh fiyatını getirir. Hollanda için NDW DOT-NL açık verisi kullanılır (OCPI 2.2.1 Locations ve Tariffs: soket durumu, tarife elemanları, saat/gün/güç koşulları, KDV dahil kWh fiyatı). Sunucuda Google Places anahtarı varsa diğer ülkelerde (Türkiye dahil) Google doluluğu denenir.',
+      'Planlı duraklarda 🟢 7/16 boş · şimdi gibi doluluk satırı ve €0.46/kWh (canlı) fiyatı görünür; ek ücret (oturum başı ya da süre) varsa belirtilir. Durak dolu ya da arızalı çıkarsa plan güncellenir ve sesli söylenir. Her kullanıcı için günlük sorgu kotası vardır; sonuçlar 90 saniye saklanır.',
+      'Doluluk etiketleri artık ayrı parçalar olarak yazılır: yabancı dillerde uzun satırların çevirisini bozmaz.',
+    ],
+  },
   {
     v: '0.65.0', date: '2026-11-01',
     notes: [

@@ -7,7 +7,8 @@ import { fetchRoute as osmRoute } from '../osm/route.js';
 import { fetchRoute as mapboxRoute, fetchTrafficAhead as mapboxTraffic } from '../mapbox/route.js';
 import { mapboxKey } from '../mapbox/api.js';
 
-export { fetchChargers, fetchAround, fetchAvailability } from '../osm/chargers.js';
+export { fetchChargers, fetchAround } from '../osm/chargers.js';
+export { fetchAvailability } from '../routing/occupancyClient.js';
 export { searchPlaces, resolvePlace, reverseLabel } from '../osm/search.js';
 export { fetchWeather } from '../osm/weather.js';
 export { fetchElevations } from '../osm/elevation.js';

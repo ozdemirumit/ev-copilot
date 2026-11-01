@@ -128,4 +128,8 @@ export default {
   "Dik eğim uyarısı": "Steep grade warning",
   "Hız kamerası uyarısı (OpenStreetMap; tüm kameraları kapsamaz)": "Speed camera warning (OpenStreetMap; does not cover every camera)",
   "1 kilometre": "1 kilometer",
+  "{0}/kWh (canlı)": "{0}/kWh (live)",
+  "Ek ücret var (oturum başı ya da süre)": "Extra fees apply (per session or per time)",
+  "{0} dk önce": "{0} min ago",
+  "eski bilgi": "outdated info",
 };

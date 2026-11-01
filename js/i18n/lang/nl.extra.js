@@ -128,4 +128,8 @@ export default {
   "Dik eğim uyarısı": "Waarschuwing steile helling",
   "Hız kamerası uyarısı (OpenStreetMap; tüm kameraları kapsamaz)": "Flitsmelding (OpenStreetMap; niet alle camera's)",
   "1 kilometre": "1 kilometer",
+  "{0}/kWh (canlı)": "{0}/kWh (live)",
+  "Ek ücret var (oturum başı ya da süre)": "Extra kosten (per sessie of per tijd)",
+  "{0} dk önce": "{0} min geleden",
+  "eski bilgi": "verouderde info",
 };

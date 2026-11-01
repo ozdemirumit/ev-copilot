@@ -34,6 +34,33 @@ export function slotKind(s) {
   return 'free';
 }
 
+/**
+ * Doluluk öğesi: " · 🟢 3/4 boş · 2 dk önce" (kalıp, durum ve yaş AYRI metin düğümleridir: uzun satırın sonuna eklenen metin çeviri
+ * kalıplarını bozmasın, her parça kendi anahtarıyla çevrilir). Bilinmiyorsa null.
+ */
+export function slotEl(s, lead = ' · ') {
+  const k = slotKind(s);
+  if (k === 'unknown') return null;
+  const sl = s.slots;
+  const t = sl.at ?? sl.checked;
+  const age = t ? Math.max(0, Math.round((Date.now() - t) / 60e3)) : null;
+  const status = k === 'out' ? '⚫ arızalı' : k === 'full' ? `🔴 dolu (0/${sl.total})` : `🟢 ${sl.available}/${sl.total} boş`;
+  const when = age == null ? null : age < 1 ? 'şimdi' : age < 90 ? `${age} dk önce` : 'eski bilgi';
+  const span = (txt) => Object.assign(document.createElement('span'), { textContent: txt });
+  const wrap = document.createElement('span');
+  wrap.append(lead, span(status));
+  if (when) wrap.append(' · ', span(when));
+  return wrap;
+}
+
+/** Canlı kWh fiyatı: { text: "€0.42/kWh (canlı)", extra: ek ücret (oturum/süre) var mı } ya da null. */
+export function livePrice(s) {
+  const p = s.slots?.price;
+  if (!p || p.kwh == null) return null;
+  const sym = p.currency === 'EUR' ? '€' : p.currency === 'TRY' ? '₺' : `${p.currency} `;
+  return { text: `${sym}${p.kwh.toFixed(2)}/kWh (canlı)`, extra: !!(p.flat || p.hour || p.parkingHour) };
+}
+
 /** Planlama için doluluk bilgisi yeterince taze mi? */
 export const isFresh = (s) => !!s.slots && Date.now() - (s.slots.checked || 0) < FRESH_MS;
 

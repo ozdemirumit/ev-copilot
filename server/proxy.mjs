@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { openStore } from './store.mjs';
 import { createAccounts } from './accounts.mjs';
 import { createAppFiles } from './appfiles.mjs';
+import { lookupAll } from './occupancy.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -35,6 +36,7 @@ const HOST = env.HOST || '127.0.0.1';
 const CODES = list(env.ACCESS_CODES);
 const MAPBOX = env.MAPBOX_TOKEN || '';
 const OCM = env.OCM_KEY || '';
+const GOOGLE_PLACES = env.GOOGLE_PLACES_KEY || ''; // isteğe bağlı: istasyon doluluğu (NDW'nin kapsamadığı yerler); yalnızca sunucuda durur
 const ORIGINS = new Set(list(env.ALLOW_ORIGINS || 'https://ozdemirumit.github.io,https://localhost,capacitor://localhost,http://localhost'));
 const RATE = Number(env.RATE_PER_MIN || 120);
 const TRUST_PROXY = env.TRUST_PROXY === '1'; // Cloudflare Tunnel arkasında: gerçek istemci adresi CF-Connecting-IP'den okunur
@@ -99,7 +101,7 @@ const once = (k, fn) => {
 };
 
 // ---------- kullanıcı başına günlük kota (Mapbox faturasını ve ortak Overpass'i korur) ----------
-const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300) };
+const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 120) };
 const usage = new Map();
 const today = () => new Date().toISOString().slice(0, 10);
 /** Hesaplı (yönetici olmayan) kullanıcının günlük hakkı bittiyse true. Eski erişim kodu ve yönetici sınırsızdır. */
@@ -120,7 +122,7 @@ async function readJson(req, max) {
 }
 
 // ---------- yardımcılar ----------
-const scrub = (s) => { let t = s; for (const secret of [MAPBOX, OCM]) if (secret) t = t.split(secret).join('***'); return t; };
+const scrub = (s) => { let t = s; for (const secret of [MAPBOX, OCM, GOOGLE_PLACES]) if (secret) t = t.split(secret).join('***'); return t; };
 function send(res, status, body, headers = {}) {
   const buf = Buffer.isBuffer(body) ? body : Buffer.from(typeof body === 'string' ? body : JSON.stringify(body));
   res.writeHead(status, { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...headers, 'Content-Length': buf.length });
@@ -241,6 +243,18 @@ async function overpass(req, res, url, id) {
   reply(res, u, { 'X-Cache': 'miss' });
 }
 
+// ---------- Doluluk ve canlı fiyat ----------
+async function occupancyRoute(req, res, id) {
+  const b = await readJson(req, 4000);
+  if (!b || !Array.isArray(b.stations) || b.stations.length < 1 || b.stations.length > 6) return json(res, 400, { error: 'geçersiz gövde' });
+  const stations = b.stations.map((s) => ({ id: String(s.id).slice(0, 40), lat: Number(s.lat), lon: Number(s.lon), dc: !!s.dc }))
+    .filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lon) && Math.abs(s.lat) <= 90 && Math.abs(s.lon) <= 180);
+  if (!stations.length) return json(res, 400, { error: 'geçersiz istasyon' });
+  if (overQuota(id, 'occupancy')) return json(res, 429, { error: 'günlük doluluk hakkı doldu' }, { 'Retry-After': '3600' });
+  const google = GOOGLE_PLACES ? { key: GOOGLE_PLACES, allow: () => !overQuota(id, 'google') } : null;
+  json(res, 200, { results: await lookupAll(stations, { google }) });
+}
+
 // ---------- sunucu ----------
 const clientIp = (req) => {
   const raw = req.socket.remoteAddress || '?';
@@ -249,7 +263,7 @@ const clientIp = (req) => {
 };
 
 const store = openStore(env.DATA_DIR || join(here, 'data'));
-const accounts = createAccounts({ env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, ocm: !!OCM, overpass: true }) });
+const accounts = createAccounts({ env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, ocm: !!OCM, overpass: true, occupancy: true }) });
 
 const appFiles = createAppFiles({ dir: join(here, 'public'), send });
 
@@ -293,10 +307,11 @@ const server = http.createServer(async (req, res) => {
     if (!id) { if (code || accounts.hasCredentials(req)) noteFail(ip); return json(res, 401, { error: 'giriş gerekli' }); }
     if (limited(id.key)) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
     const p = url.pathname;
-    if (p === '/health') return json(res, 200, { ok: true, mapbox: !!MAPBOX, ocm: !!OCM, overpass: true, v: 2 });
+    if (p === '/health') return json(res, 200, { ok: true, mapbox: !!MAPBOX, ocm: !!OCM, overpass: true, occupancy: true, v: 3 });
     if (p.startsWith('/mapbox/')) return await mapbox(req, res, url, id);
     if (p.startsWith('/ocm/')) return await ocm(req, res, url, id);
     if (p === '/overpass') return await overpass(req, res, url, id);
+    if (p === '/v1/occupancy' && req.method === 'POST') return await occupancyRoute(req, res, id);
     if (await accounts.handleAuthed(req, res, url, id)) return;
     return json(res, 404, { error: 'yol yok' });
   } catch (err) {
@@ -307,5 +322,5 @@ const server = http.createServer(async (req, res) => {
 server.requestTimeout = 120000;
 server.headersTimeout = 15000;
 server.listen(PORT, HOST, () => {
-  console.log(`EV Co-Pilot ara sunucusu ${HOST}:${PORT} · Mapbox ${MAPBOX ? 'var' : 'yok'} · OpenChargeMap ${OCM ? 'var' : 'yok'} · Google girişi ${accounts.googleOn ? 'açık' : 'kapalı'} · ${CODES.length} yönetici kodu`);
+  console.log(`EV Co-Pilot ara sunucusu ${HOST}:${PORT} · Mapbox ${MAPBOX ? 'var' : 'yok'} · OpenChargeMap ${OCM ? 'var' : 'yok'} · Google girişi ${accounts.googleOn ? 'açık' : 'kapalı'} · doluluk: NDW${GOOGLE_PLACES ? ' + Google' : ''} · ${CODES.length} yönetici kodu`);
 });

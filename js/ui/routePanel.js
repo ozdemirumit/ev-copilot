@@ -2,7 +2,7 @@ import { progressKm } from '../routing/progress.js';
 import { getState, patch, subscribe } from '../state.js';
 import { save } from '../utils/storage.js';
 import { stationGaps } from '../routing/planner.js';
-import { slotLabel } from '../routing/slots.js';
+import { slotEl, livePrice } from '../routing/slots.js';
 import { mapApi } from './mapView.js';
 
 const showMap = () => document.querySelector('.bottomnav [data-tab="map"]')?.click();
@@ -91,11 +91,16 @@ export function initRoutePanel() {
           className: 'm',
           textContent: `${Math.max(0, s.km - here).toFixed(0)} km kaldı (${fi > 0 || p.lastStopKm != null ? 'önceki duraktan' : 'yolculuk başından'} ${(s.km - prevKm).toFixed(0)} km) · ${s.station.opName} ${s.station.slow ? 'AC/yavaş ' : ''}${s.station.kw} kW · %${s.arriveSoc.toFixed(0)} → %${s.leaveSoc}`
             + (s.station.offKm > 0.3 ? ` · sapma ${s.station.offKm.toFixed(1)} km` : '')
-            + (slotLabel(s.station) ? ` · ${slotLabel(s.station)}` : ''),
+            ,
         });
         const show = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost sm show', textContent: '📍 Haritada' });
         show.addEventListener('click', () => { showMap(); mapApi.showAt(s.station.lat, s.station.lon, 14); });
-        row.append(num, title, right, meta, show);
+        const slotNode = slotEl(s.station);
+        if (slotNode) meta.append(slotNode);
+        const lp = livePrice(s.station);
+        const price = lp && Object.assign(document.createElement('div'), { className: 'm', textContent: lp.text });
+        const extra = lp?.extra && Object.assign(document.createElement('div'), { className: 'm', textContent: 'Ek ücret var (oturum başı ya da süre)' });
+        row.append(num, title, right, meta, ...[price, extra].filter(Boolean), show);
         list.append(row);
       });
     } else if (p.status !== 'loading') {

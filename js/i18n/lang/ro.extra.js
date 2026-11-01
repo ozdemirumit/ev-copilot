@@ -128,4 +128,8 @@ export default {
   "Dik eğim uyarısı": "Avertizare pantă abruptă",
   "Hız kamerası uyarısı (OpenStreetMap; tüm kameraları kapsamaz)": "Avertizare radar (OpenStreetMap; nu acoperă toate camerele)",
   "1 kilometre": "1 kilometru",
+  "{0}/kWh (canlı)": "{0}/kWh (în timp real)",
+  "Ek ücret var (oturum başı ya da süre)": "Taxe suplimentare (per sesiune sau per timp)",
+  "{0} dk önce": "acum {0} min",
+  "eski bilgi": "informație veche",
 };

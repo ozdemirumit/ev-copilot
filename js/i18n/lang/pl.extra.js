@@ -128,4 +128,8 @@ export default {
   "Dik eğim uyarısı": "Ostrzeżenie o stromym nachyleniu",
   "Hız kamerası uyarısı (OpenStreetMap; tüm kameraları kapsamaz)": "Ostrzeżenie o fotoradarach (OpenStreetMap; nie obejmuje wszystkich)",
   "1 kilometre": "1 kilometr",
+  "{0}/kWh (canlı)": "{0}/kWh (na żywo)",
+  "Ek ücret var (oturum başı ya da süre)": "Dodatkowe opłaty (za sesję lub za czas)",
+  "{0} dk önce": "{0} min temu",
+  "eski bilgi": "stare dane",
 };
