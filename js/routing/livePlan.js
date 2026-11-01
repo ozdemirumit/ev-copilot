@@ -6,6 +6,7 @@ import { replanFrom } from './controller.js';
 import { fetchAvailability } from '../providers/index.js';
 import { slotKind } from './slots.js';
 import { speak } from '../advisor/voice.js';
+import { proxyHas } from '../net/proxy.js';
 
 const BAT = VEHICLE.batteryNetKwh;
 const CHECK_MS = 5000;
@@ -17,7 +18,8 @@ const PASSED_KM = 0.3; // durağı bu kadar geçince "geride kaldı" say
 let lastReplan = 0;
 let lastAvail = 0;
 let availBusy = false;
-const AVAIL_EVERY_MS = 5 * 60e3; // yaklaşan duraklar için canlı doluluk sorgusu aralığı
+const AVAIL_EVERY_MS = 5 * 60e3; // yaklaşan duraklar için canlı doluluk sorgusu aralığı (Premium'da sıklaştırılır, aşağıya bak)
+const AVAIL_LOW_SOC = 20; // pil bunun altındaysa durak sorguları en sıkı ve daha çok durağa yapılır
 const AVAIL_AHEAD_KM = 200;
 
 function check() {
@@ -55,13 +57,19 @@ function check() {
 export async function refreshAvailability({ force = false } = {}) {
   const plan = getState('plan');
   const km = getState('engine').routeKm;
-  if (availBusy || plan.status !== 'ready' || km == null || (!force && Date.now() - lastAvail < AVAIL_EVERY_MS)) return;
-  const next = plan.stops.filter((s) => s.km > km && s.km - km <= AVAIL_AHEAD_KM).slice(0, 2).map((s) => s.station);
+  // Premium: canlı veri daha güncel gelsin (2 dk; pil kritikse 1 dk ve ilk 3 durak). Ücretsizde 5 dk, ilk 2 durak. Sunucu önbelleği 90 sn.
+  const premium = proxyHas('occupancy');
+  const soc = effective().soc;
+  const low = premium && soc != null && soc <= AVAIL_LOW_SOC;
+  const every = !premium ? AVAIL_EVERY_MS : low ? 60e3 : 2 * 60e3;
+  const ahead = low ? 3 : 2;
+  if (availBusy || plan.status !== 'ready' || km == null || (!force && Date.now() - lastAvail < every)) return;
+  const next = plan.stops.filter((s) => s.km > km && s.km - km <= AVAIL_AHEAD_KM).slice(0, ahead).map((s) => s.station);
   if (!next.length) return;
   availBusy = true;
   lastAvail = Date.now();
   try {
-    const res = await fetchAvailability(next, 2, effective().soc); // pil %: sunucu ücretli Google'ı yalnızca düşük pilde sorar
+    const res = await fetchAvailability(next, ahead, soc); // pil %: sunucu ücretli Google'ı yalnızca düşük pilde sorar
     let worse = null;
     for (const st of plan.stations) {
       if (!res.has(st.id)) continue;

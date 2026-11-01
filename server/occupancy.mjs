@@ -191,7 +191,7 @@ export async function lookupAll(stations, opts = {}) {
       if (inNl(st)) v = await ndwLookup(st, opts);
     } catch (err) { console.error('doluluk (NDW):', err.message); }
     if (!v && opts.google?.key && googleWanted(st, opts.soc) && opts.google.allow()) {
-      try { v = await googleLookup(st, opts.google.key, opts); noteGoogle(st, !!v); } catch (err) { console.error('doluluk (Google):', err.message); }
+      try { v = await googleLookup(st, opts.google.key, opts); opts.google.onCall?.(); noteGoogle(st, !!v); } catch (err) { console.error('doluluk (Google):', err.message); }
     }
     // Topluluk: şu an şarj eden kullanıcılar ve son Dolu/Boş bildirimi (resmî veri olmayan yerlerde asıl kaynak)
     const cm = opts.community?.summary(st);

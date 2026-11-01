@@ -157,4 +157,7 @@ export default {
   "🟢 Boş": "🟢 Свободна",
   "Teşekkürler: bildirildi": "Благодаря: докладвано",
   "Bildirim gönderilemedi": "Докладът не можа да бъде изпратен",
+  "Doluluk kontrol ediliyor…": "Проверка на заетостта…",
+  "{0} dolu istasyon elendi": "{0} заети станции са изключени",
+  "Hepsi dolu görünüyor; en yakınlar listelendi": "Всички изглеждат заети; показани са най-близките въпреки това",
 };

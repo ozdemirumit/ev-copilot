@@ -157,4 +157,7 @@ export default {
   "🟢 Boş": "🟢 Free",
   "Teşekkürler: bildirildi": "Thanks: reported",
   "Bildirim gönderilemedi": "Could not send the report",
+  "Doluluk kontrol ediliyor…": "Checking availability…",
+  "{0} dolu istasyon elendi": "{0} full stations excluded",
+  "Hepsi dolu görünüyor; en yakınlar listelendi": "All look full; showing the nearest anyway",
 };

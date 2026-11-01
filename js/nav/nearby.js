@@ -11,7 +11,9 @@ import { planTrip } from '../routing/controller.js';
 import { mapApi } from '../ui/mapView.js';
 import { toast } from '../ui/toast.js';
 import { speak } from '../advisor/voice.js';
-import { slotKind, slotEl } from '../routing/slots.js';
+import { slotKind, slotEl, isFresh, livePrice } from '../routing/slots.js';
+import { fetchAvailability } from '../routing/occupancyClient.js';
+import { proxyHas } from '../net/proxy.js';
 import { startNav } from './navigator.js';
 
 const $ = (id) => document.getElementById(id);
@@ -22,10 +24,17 @@ const REFRESH_MS = 15 * 60e3; // sürüş sırasında otomatik güncelleme aral�
 const REFRESH_KM = 10; // ya da bu kadar yol alınınca
 const LOW_REFRESH_MS = 5 * 60e3;
 const CHARGE_TO = 80;
+const OCC_EVERY_MS = 60e3; // kritik pilde (Premium) aday istasyonların canlı doluluğu bu aralıkla yenilenir (sunucu önbelleği 90 sn)
+const OCC_BATCH = 6; // sunucu bir istekte en çok 6 istasyon alır
 
 let all = []; // son sorgu sonucu (fetchAround)
 let meta = { at: 0, lat: null, lon: null, errors: [], cached: false };
 let busy = false;
+let occBusy = false;
+let occAt = 0;
+let occDone = 0; // son doluluk sorgusunun bittiği an
+let troubleSince = 0; // pil sorunu başladığından beri (sesli öneri, doluluk gelene kadar kısa süre beklesin)
+let elimCount = 0; // son sıralamada doluluğu dolu/arızalı çıktığı için elenen istasyon sayısı
 let focusId = null;
 let radius = load('nearRadius', 25);
 let showAc = load('nearAc', false);
@@ -64,12 +73,43 @@ export async function refreshNearby({ force = false, silent = false } = {}) {
   paintStatus('Yakındaki istasyonlar aranıyor…');
   try {
     const res = await fetchAround(e.lat, e.lon, radius, force);
+    const old = new Map(all.map((x) => [x.id, x.slots]));
     all = res.stations;
+    for (const x of all) if (!x.slots && old.get(x.id)) x.slots = old.get(x.id); // yenilemede doluluk bilgisi kaybolmasın
     meta = { at: Date.now(), lat: e.lat, lon: e.lon, errors: res.errors, cached: res.cached };
   } catch (err) {
     meta = { ...meta, errors: ['Arama başarısız: ' + err.message] };
   } finally {
     busy = false;
+  }
+  render();
+  checkLow();
+  if (proxyHas('occupancy')) refreshOccupancy({ force: true }); // Premium: liste her yenilendiğinde en yakın istasyonların canlı doluluğu ve fiyatı da gelir
+}
+
+/**
+ * Premium: en yakın aday istasyonların (önce ulaşılabilirler) canlı doluluk ve fiyatını sorar. İlk 6 içinde en az 3 boş/bilinmeyen kalmadıysa
+ * sonraki 6 da sorulur. Sonuç `all` üzerindeki istasyonlara yazılır; kritik pilde sıralama dolu olanları eler (rankNearby).
+ */
+async function refreshOccupancy({ force = false, every = OCC_EVERY_MS } = {}) {
+  const e = effective();
+  if (occBusy || e.lat == null || !all.length || !proxyHas('occupancy')) return;
+  if (!force && Date.now() - occAt < every) return;
+  occBusy = true;
+  occAt = Date.now();
+  try {
+    const pool = enrich(all).filter((s) => !s.slow);
+    const order = [...pool.filter((s) => s.reachable), ...pool.filter((s) => !s.reachable)];
+    for (let i = 0; i < 2 * OCC_BATCH && i < order.length; i += OCC_BATCH) {
+      const batch = order.slice(i, i + OCC_BATCH);
+      const res = await fetchAvailability(batch, OCC_BATCH, e.soc);
+      for (const [id, sl] of res) { const src = all.find((x) => x.id === id); if (src) src.slots = sl; }
+      const open = batch.filter((b) => { const k = slotKind(all.find((x) => x.id === b.id) || b); return k !== 'full' && k !== 'out'; }).length;
+      if (open >= 3) break;
+    }
+  } finally {
+    occBusy = false;
+    occDone = Date.now();
   }
   render();
   checkLow();
@@ -157,6 +197,8 @@ function render() {
       + (slotKind(s) !== 'unknown' ? '' : ' · doluluk bilgisi yok'));
     const slotNode = slotEl(s);
     if (slotNode) meta2.append(slotNode);
+    const lp = livePrice(s);
+    if (lp) meta2.append(' · ', cell('span', '', lp.text));
     const acts = document.createElement('div');
     acts.className = 'row wrap';
     const go = cell('button', 'btn primary sm', '🧭 Git');
@@ -191,19 +233,24 @@ function rankNearby() {
     }
     return s.roadKm;
   };
-  const live = pool.filter((s) => slotKind(s) !== 'out'); // tamamen arızalı istasyon önerilmez
+  const premium = proxyHas('occupancy');
+  // tamamen arızalı istasyon önerilmez; Premium'da taze doluluk bilgisi "dolu" diyen istasyon da elenir (hepsi doluysa elenenler geri gelir)
+  const gone = (s) => { const k = slotKind(s); return k === 'out' || (premium && k === 'full' && isFresh(s)); };
+  const live = pool.filter((s) => !gone(s));
   const usablePool = live.length ? live : pool;
+  elimCount = live.length ? pool.length - live.length : 0;
   const ok = usablePool.filter((s) => s.reachable);
   const pen = (s) => (slotKind(s) === 'full' ? 10 : 0); // dolu görünen istasyon ~10 km daha uzak sayılır
   return [...(ok.length ? ok : usablePool)].sort((a, b) => score(a) + pen(a) - (score(b) + pen(b)));
 }
 
 /** Uyarı çubuğu: başlık + (varsa) en yakın 3 istasyon, her biri için Git düğmesi. */
-function showAlert(title, stations = []) {
+function showAlert(title, stations = [], notes = []) {
   const bar = $('near-alert');
   if (!title) { bar.classList.add('hidden'); patch('nav', { alert: null }); return; }
   const body = $('near-alert-body');
   body.replaceChildren(Object.assign(document.createElement('div'), { textContent: title }));
+  notes.forEach((n) => body.append(cell('div', 'small muted', n)));
   stations.forEach((s) => {
     const row = document.createElement('div');
     row.className = 'near-row';
@@ -214,6 +261,8 @@ function showAlert(title, stations = []) {
       + ''));
     const slotNode = slotEl(s);
     if (slotNode) info.lastElementChild.append(slotNode);
+    const lp = livePrice(s);
+    if (lp) info.lastElementChild.append(' · ', cell('span', '', lp.text));
     const go = cell('button', 'btn primary sm', '🧭 Git');
     go.type = 'button';
     go.addEventListener('click', () => goTo(s));
@@ -254,10 +303,13 @@ function checkLow() {
     return;
   }
   if (!inTrouble(e, nav)) {
+    troubleSince = 0;
     if (e.soc > nav.lowSoc + 3) { bands.clear(); if (getState('nav').alert) showAlert(null); }
     return;
   }
+  if (!troubleSince) troubleSince = Date.now();
   if (Date.now() < dismissedUntil) return;
+  refreshOccupancy(); // Premium: kritik pilde aday istasyonların doluluğunu dakikada bir yenile
 
   const soc = Math.round(e.soc);
   if (!all.length) {
@@ -271,7 +323,12 @@ function checkLow() {
   if (!best) { showAlert(`Pil %${soc}: uygun istasyon bulunamadı`); autoSearch(true); return; }
   const planBroken = getState('advisor').level === 'bad';
   const updated = Date.now() - lastAutoVia < 10 * 60e3;
-  showAlert(`Pil %${soc} — en yakın şarj istasyonları:` + (updated ? ' (rota otomatik güncellendi)' : ''), ranked.slice(0, 3));
+  const premium = proxyHas('occupancy');
+  const notes = [];
+  if (premium && occBusy && !occDone) notes.push('Doluluk kontrol ediliyor…');
+  if (premium && elimCount > 0) notes.push(`${elimCount} dolu istasyon elendi`);
+  if (premium && !elimCount && ranked.length && ranked.every((x) => slotKind(x) === 'full')) notes.push('Hepsi dolu görünüyor; en yakınlar listelendi');
+  showAlert(`Pil %${soc} — en yakın şarj istasyonları:` + (updated ? ' (rota otomatik güncellendi)' : ''), ranked.slice(0, 3), notes);
   // Plan sıradaki durağa/varışa ulaşılamıyor diyorsa: navigasyonda rotayı en uygun istasyon üzerinden kendiliğinden güncelle
   if (planBroken && nav.active && getState('route').end && !updated && best.reachable && (best.arrive ?? 99) >= 5
       && getState('plan').stops[0]?.station.id !== best.id && getState('plan').status !== 'loading') {
@@ -281,9 +338,14 @@ function checkLow() {
 
   // Her pil bandında (eşik, 15, 10, 5) bir kez konuş
   const band = [nav.lowSoc, 15, 10, 5].filter((b) => e.soc <= b).sort((a, b) => a - b)[0] ?? nav.lowSoc;
-  if (!bands.has(band)) {
+  const waitOcc = premium && !occDone && Date.now() - troubleSince < 15000; // doluluk cevabı gelsin (en çok 15 sn)
+  if (!bands.has(band) && !waitOcc) {
     bands.add(band);
-    speak(`Pil yüzde ${soc}. En yakın şarj istasyonu ${best.name}, ${fmtKm(best.distKm)} kilometre. ${best.kw} kilovat, kilovat saati ${best.price.toFixed(1).replace('.', ',')} lira.`, { key: 'low' + band, cooldownMs: 0, interrupt: true });
+    const pr = best.slots?.price;
+    const priceTxt = pr?.kwh != null ? `${pr.kwh.toFixed(2).replace('.', ',')} ${pr.currency === 'EUR' ? 'euro' : pr.currency === 'TRY' ? 'lira' : pr.currency}` : `${best.price.toFixed(1).replace('.', ',')} lira`;
+    const free = slotKind(best) === 'free' && best.slots.available != null ? ` ${best.slots.available} boş soket var.` : '';
+    const dropped = premium && elimCount > 0 ? ` ${elimCount} dolu istasyon elendi.` : '';
+    speak(`Pil yüzde ${soc}. En yakın şarj istasyonu ${best.name}, ${fmtKm(best.distKm)} kilometre. ${best.kw} kilovat, kilovat saati ${priceTxt}.${free}${dropped}`, { key: 'low' + band, cooldownMs: 0, interrupt: true });
   }
 }
 
@@ -299,6 +361,7 @@ function watch() {
   const wanted = moving && (all.length || nav.active) || lowNow;
   if (wanted && !busy && (age > (lowNow ? LOW_REFRESH_MS : REFRESH_MS) || moved > REFRESH_KM)) refreshNearby({ silent: true });
   else { if (meta.at) render(); checkLow(); }
+  if (all.length && (lowNow || moving)) refreshOccupancy({ every: lowNow ? OCC_EVERY_MS : 2 * 60e3 }); // Premium: sürerken 2 dk, kritik pilde 1 dk
 }
 
 export function initNearby() {

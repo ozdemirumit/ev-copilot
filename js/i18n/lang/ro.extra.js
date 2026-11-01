@@ -157,4 +157,7 @@ export default {
   "🟢 Boş": "🟢 Liberă",
   "Teşekkürler: bildirildi": "Mulțumim: raportat",
   "Bildirim gönderilemedi": "Raportul nu a putut fi trimis",
+  "Doluluk kontrol ediliyor…": "Se verifică disponibilitatea…",
+  "{0} dolu istasyon elendi": "{0} stații ocupate excluse",
+  "Hepsi dolu görünüyor; en yakınlar listelendi": "Toate par ocupate; le afișez totuși pe cele mai apropiate",
 };

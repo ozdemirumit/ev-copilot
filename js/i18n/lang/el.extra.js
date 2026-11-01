@@ -157,4 +157,7 @@ export default {
   "🟢 Boş": "🟢 Ελεύθερος",
   "Teşekkürler: bildirildi": "Ευχαριστούμε: αναφέρθηκε",
   "Bildirim gönderilemedi": "Δεν ήταν δυνατή η αποστολή της αναφοράς",
+  "Doluluk kontrol ediliyor…": "Έλεγχος διαθεσιμότητας…",
+  "{0} dolu istasyon elendi": "Εξαιρέθηκαν {0} γεμάτοι σταθμοί",
+  "Hepsi dolu görünüyor; en yakınlar listelendi": "Όλοι φαίνονται γεμάτοι· εμφανίζονται οι κοντινότεροι ούτως ή άλλως",
 };

@@ -157,4 +157,7 @@ export default {
   "🟢 Boş": "🟢 Vrij",
   "Teşekkürler: bildirildi": "Bedankt: gemeld",
   "Bildirim gönderilemedi": "Melding kon niet worden verzonden",
+  "Doluluk kontrol ediliyor…": "Beschikbaarheid controleren…",
+  "{0} dolu istasyon elendi": "{0} volle stations uitgesloten",
+  "Hepsi dolu görünüyor; en yakınlar listelendi": "Alles lijkt vol; de dichtstbijzijnde worden toch getoond",
 };

@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>EV Co-Pilot Yönetim</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#17202a;--mut:#5d6b7a;--line:#dde3ea;--acc:#12805c;--accink:#fff;--bad:#c0392b;--warn:#b9770e;--chip:#e8eef4}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1319;--card:#171e26;--ink:#e8eef5;--mut:#93a1b1;--line:#2a3541;--acc:#2fbf8f;--accink:#06251a;--bad:#ff7b6b;--warn:#f0b35a;--chip:#222c37}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+header h1{font-size:17px;margin:0}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+button,input,select{font:inherit;color:inherit}
+button{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:7px 12px;cursor:pointer}
+button:hover{border-color:var(--acc)}
+button.on,button.pri{background:var(--acc);color:var(--accink);border-color:var(--acc);font-weight:600}
+button.bad{color:var(--bad)}
+button.sm{padding:3px 8px;font-size:13px}
+input,select{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:7px 10px;min-width:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.card b{display:block;font-size:24px;line-height:1.2}
+.card span{color:var(--mut);font-size:13px}
+h2{font-size:15px;margin:18px 0 8px}
+.wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:640px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle;font-size:14px}
+th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em;cursor:default}
+tr:last-child td{border-bottom:0}
+td.n,th.n{text-align:right;white-space:nowrap}
+.chip{display:inline-block;padding:1px 8px;border-radius:99px;background:var(--chip);font-size:12px;white-space:nowrap}
+.chip.ok{background:var(--acc);color:var(--accink)}
+.chip.bad{color:var(--bad)}
+.chip.warn{color:var(--warn)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.mut{color:var(--mut)}
+.acts{display:flex;gap:4px;flex-wrap:wrap}
+#login{max-width:340px;margin:12vh auto;display:grid;gap:10px}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:10px;max-width:90vw;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.show{opacity:1}
+code{background:var(--chip);padding:1px 5px;border-radius:5px;word-break:break-all}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div id="login" class="card hidden">
+  <h1 style="font-size:18px;margin:0">🔌 EV Co-Pilot Yönetim</h1>
+  <span class="mut">Yönetici erişim kodunu gir (<code>server\.env</code> içindeki <code>ACCESS_CODES</code> değerlerinden biri). Kod yalnızca bu sekmede tutulur.</span>
+  <input id="code" type="password" autocomplete="off" placeholder="Yönetici kodu">
+  <button class="pri" id="go">Giriş</button>
+  <span id="loginerr" class="chip bad hidden"></span>
+</div>
+
+<div id="app" class="hidden">
+  <header>
+    <h1>🔌 EV Co-Pilot Yönetim</h1>
+    <div class="row" style="margin:0"><span id="stamp" class="mut"></span><button id="refresh" class="sm">↻ Yenile</button><button id="logout" class="sm">Çıkış</button></div>
+  </header>
+  <main>
+    <div class="tabs" id="tabs">
+      <button data-t="sum" class="on">Özet</button><button data-t="users">Kullanıcılar</button><button data-t="inv">Davetler</button><button data-t="cost">Maliyet</button>
+    </div>
+    <section id="t-sum"></section>
+    <section id="t-users" class="hidden"></section>
+    <section id="t-inv" class="hidden"></section>
+    <section id="t-cost" class="hidden"></section>
+  </main>
+</div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+let CODE = '';
+try { CODE = sessionStorage.getItem('adm') || ''; } catch {}
+let D = { sum: null, users: [], inv: [], cost: null };
+let tab = 'sum';
+let q = '';
+
+function toast(t) { const x = $('toast'); x.textContent = t; x.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => x.classList.remove('show'), 2800); }
+
+async function api(path, method = 'GET', body) {
+  const r = await fetch(path, { method, headers: { 'X-Access-Code': CODE, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  if (r.status === 401) { logout(); throw new Error('Kod geçersiz'); }
+  if (r.status === 429) throw new Error('Çok fazla istek ya da yanlış kod, biraz sonra dene');
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || 'Hata ' + r.status);
+  return j;
+}
+
+const fmtDate = (t) => (t ? new Date(t).toLocaleDateString('tr-TR') : '–');
+const fmtDT = (t) => (t ? new Date(t).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' }) : '–');
+const usd = (v) => '$' + (v || 0).toFixed(v > 0 && v < 1 ? 3 : 2);
+const kb = (b) => (b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.round((b || 0) / 1024) + ' KB');
+const ago = (t) => { if (!t) return 'hiç'; const d = (Date.now() - t) / 86400e3; return d < 1 / 24 ? 'şimdi' : d < 1 ? Math.round(d * 24) + ' sa önce' : Math.round(d) + ' gün önce'; };
+const dur = (s) => (s > 86400 ? Math.floor(s / 86400) + ' gün ' : '') + Math.floor((s % 86400) / 3600) + ' sa';
+
+function logout() { CODE = ''; try { sessionStorage.removeItem('adm'); } catch {} show(); }
+function show() { $('login').classList.toggle('hidden', !!CODE); $('app').classList.toggle('hidden', !CODE); }
+
+async function load() {
+  try {
+    const [s, u, i, c] = await Promise.all([api('/admin/summary'), api('/admin/users'), api('/admin/invites'), api('/admin/costs')]);
+    D = { sum: s, users: u.users || [], inv: i.invites || [], cost: c };
+    $('stamp').textContent = new Date().toLocaleTimeString('tr-TR');
+    draw();
+  } catch (e) { toast(e.message); }
+}
+
+function card(big, small) { const c = el('div', 'card'); c.append(el('b', '', big), el('span', '', small)); return c; }
+function table(heads, rows, numCols = []) {
+  const w = el('div', 'wrap'); const t = el('table');
+  const h = el('tr'); heads.forEach((x, i) => h.append(el('th', numCols.includes(i) ? 'n' : '', x)));
+  t.append(h);
+  rows.forEach((r) => { const tr = el('tr'); r.forEach((c, i) => { const td = el('td', numCols.includes(i) ? 'n' : ''); if (c instanceof Node) td.append(c); else td.textContent = c ?? ''; tr.append(td); }); t.append(tr); });
+  if (!rows.length) { const tr = el('tr'); const td = el('td', 'mut', 'Kayıt yok'); td.colSpan = heads.length; tr.append(td); t.append(tr); }
+  w.append(t); return w;
+}
+const chip = (t, cls = '') => el('span', 'chip ' + cls, t);
+
+function drawSum(root) {
+  const s = D.sum; root.replaceChildren();
+  const g = el('div', 'grid');
+  g.append(card(s.users.total, 'kullanıcı'), card(s.users.premium, 'Premium (yönetici dahil)'), card(s.users.active7d, 'son 7 günde giriş yapan'), card(s.users.new7d, 'son 7 günde katılan'), card(s.users.disabled, 'kapalı hesap'));
+  root.append(g);
+  root.append(el('h2', '', 'Davetler'));
+  const gi = el('div', 'grid');
+  gi.append(card(s.invites.open, 'açık'), card(s.invites.used, 'kullanılmış'), card(s.invites.expired, 'süresi dolmuş'), card(s.invites.revoked, 'iptal'));
+  root.append(gi);
+  root.append(el('h2', '', 'Google Places (ücretli)'));
+  const gg = el('div', 'grid');
+  gg.append(card(`${s.google.callsToday} / ${s.google.dailyCap}`, 'bugünkü çağrı / günlük tavan'), card(usd(s.google.usd.today), 'bugün (tahmini)'), card(usd(s.google.usd.month), 'bu ay (tahmini)'), card(usd(s.google.usd.total), 'toplam (tahmini)'));
+  root.append(gg);
+  root.append(el('h2', '', 'Bugünkü istekler (kullanıcı başına kota sayacı)'));
+  const k = Object.entries(s.usageToday).sort();
+  root.append(table(['Tür', 'Adet'], k.map(([a, b]) => [a, b]), [1]));
+  root.append(el('h2', '', 'Yapılandırma ve sunucu'));
+  const on = (b) => chip(b ? 'açık' : 'kapalı', b ? 'ok' : 'warn');
+  root.append(table(['Ayar', 'Durum'], [
+    ['Google ile giriş', on(s.configured.googleLogin)], ['Mapbox anahtarı', on(s.configured.mapbox)], ['OpenChargeMap anahtarı', on(s.configured.ocm)],
+    ['Google Places anahtarı', on(s.configured.googlePlaces)], ['Premium zorunlu (kapalıysa herkes Premium)', on(s.configured.premiumRequired)],
+    ['Genel adres', s.server.publicUrl || '–'], ['Çalışma süresi', dur(s.server.uptimeSec)], ['Bellek', s.server.memMb + ' MB'], ['Node', s.server.node],
+  ]));
+  root.append(el('p', 'mut', 'Anahtar değerleri burada gösterilmez; yalnızca tanımlı olup olmadığı görünür.'));
+}
+
+function plan(u) {
+  if (u.admin) return chip('Yönetici', 'ok');
+  if (u.premiumUntil > Date.now()) return chip('Premium · ' + fmtDate(u.premiumUntil), 'ok');
+  return chip(u.premiumUntil ? 'Ücretsiz (süre bitti)' : 'Ücretsiz');
+}
+async function act(fn, ok) { try { await fn(); toast(ok); await load(); } catch (e) { toast(e.message); } }
+
+function drawUsers(root) {
+  root.replaceChildren();
+  const bar = el('div', 'row');
+  const s = el('input'); s.type = 'search'; s.placeholder = 'Ara: e-posta ya da ad'; s.value = q;
+  s.addEventListener('input', () => { q = s.value; drawUsers(root); const n = $('t-users').querySelector('input'); n.focus(); n.setSelectionRange(q.length, q.length); });
+  bar.append(s, el('span', 'mut', D.users.length + ' kullanıcı'));
+  root.append(bar);
+  const list = D.users.filter((u) => !q || (u.email + ' ' + (u.name || '')).toLowerCase().includes(q.toLowerCase())).sort((a, b) => (b.lastLogin || 0) - (a.lastLogin || 0));
+  const rows = list.map((u) => {
+    const who = el('div'); who.append(el('div', '', u.email || u.id), el('small', 'mut', u.name || ''));
+    const plnode = el('div'); plnode.append(plan(u)); if (u.disabled) plnode.append(' ', chip('KAPALI', 'bad'));
+    const a = el('div', 'acts');
+    if (!u.admin) {
+      const add = (d) => { const b = el('button', 'sm', '+' + d + ' gün'); b.onclick = () => act(() => api('/admin/premium', 'POST', { userId: u.id, days: d }), 'Premium eklendi'); return b; };
+      a.append(add(30), add(90), add(365));
+      if (u.premiumUntil > Date.now()) { const r = el('button', 'sm bad', 'Premium kaldır'); r.onclick = () => confirm(u.email + ' için Premium kaldırılsın mı?') && act(() => api('/admin/premium', 'POST', { userId: u.id, days: 0 }), 'Premium kaldırıldı'); a.append(r); }
+    }
+    const t = el('button', 'sm ' + (u.disabled ? '' : 'bad'), u.disabled ? 'Aç' : 'Kapat');
+    t.onclick = () => (u.disabled || confirm(u.email + ' hesabı kapatılsın mı? (oturumları sonlanır)')) && act(() => api(`/admin/users/${u.id}/${u.disabled ? 'enable' : 'disable'}`, 'POST'), u.disabled ? 'Hesap açıldı' : 'Hesap kapatıldı');
+    a.append(t);
+    return [who, plnode, ago(u.lastLogin), fmtDate(u.createdAt), `${u.trips ?? 0} / ${u.charges ?? 0}`, kb(u.bytes), u.google ? `${usd(u.google.usd.month)} / ${usd(u.google.usd.total)}` : '–', a];
+  });
+  root.append(table(['Kullanıcı', 'Plan', 'Son giriş', 'Kayıt', 'Yolculuk / şarj', 'Veri', 'Google ay / toplam', 'İşlem'], rows, [4, 5, 6]));
+}
+
+function drawInv(root) {
+  root.replaceChildren();
+  const bar = el('div', 'row');
+  const lab = el('input'); lab.placeholder = 'Etiket (ör. kişinin adı)'; lab.maxLength = 60;
+  const days = el('input'); days.type = 'number'; days.min = 1; days.max = 90; days.value = 7; days.style.width = '80px';
+  const mk = el('button', 'pri', 'Davet linki üret');
+  const out = el('div', 'card hidden');
+  mk.onclick = async () => {
+    try {
+      const r = await api('/admin/invites', 'POST', { label: lab.value, days: Number(days.value) || 7 });
+      out.classList.remove('hidden'); out.replaceChildren(el('div', 'mut', 'Bu linki kişiye gönder (tek kullanımlık, ' + fmtDate(r.expiresAt) + ' tarihine kadar):'));
+      const link = r.link || r.code; const c = el('code', '', link);
+      const cp = el('button', 'sm', 'Kopyala'); cp.onclick = () => navigator.clipboard?.writeText(link).then(() => toast('Kopyalandı'), () => toast('Kopyalanamadı'));
+      out.append(c, ' ', cp); await load(); tab = 'inv'; $('t-inv').prepend(out);
+    } catch (e) { toast(e.message); }
+  };
+  bar.append(lab, el('span', 'mut', 'geçerlilik (gün):'), days, mk);
+  root.append(bar, out);
+  const names = new Map(D.users.map((u) => [u.id, u.email]));
+  const rows = D.inv.sort((a, b) => b.createdAt - a.createdAt).map((i) => {
+    const st = { open: ['açık', 'ok'], used: ['kullanıldı', ''], expired: ['süresi doldu', 'warn'], revoked: ['iptal', 'bad'] }[i.state] || [i.state, ''];
+    const a = el('div', 'acts');
+    if (i.state === 'open') { const r = el('button', 'sm bad', 'İptal et'); r.onclick = () => confirm('Davet iptal edilsin mi?') && act(() => api('/admin/invites/' + i.id, 'DELETE'), 'Davet iptal edildi'); a.append(r); }
+    return [i.label || '–', chip(st[0], st[1]), fmtDT(i.createdAt), fmtDate(i.expiresAt), names.get(i.usedBy) || (i.usedBy ? i.usedBy : '–'), a];
+  });
+  root.append(table(['Etiket', 'Durum', 'Oluşturma', 'Son geçerlilik', 'Kullanan', 'İşlem'], rows));
+}
+
+function drawCost(root) {
+  root.replaceChildren();
+  const c = D.cost; const rows = (c.rows || []).sort((a, b) => b.usd.total - a.usd.total);
+  const bar = el('div', 'row');
+  const csv = el('button', 'sm', '⬇ CSV indir');
+  csv.onclick = () => {
+    const lines = [['kullanici', 'bugun_cagri', 'bugun_usd', 'ay_cagri', 'ay_usd', 'toplam_cagri', 'toplam_usd'].join(',')];
+    rows.forEach((r) => lines.push([JSON.stringify(r.email), r.calls.today, r.usd.today, r.calls.month, r.usd.month, r.calls.total, r.usd.total].join(',')));
+    const a = el('a'); a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' })); a.download = 'google-maliyet.csv'; a.click();
+  };
+  bar.append(el('span', 'mut', `Birim fiyat: ${c.unitUsd} USD / çağrı (sunucuda GOOGLE_COST_PER_CALL_USD ile ayarlanır). Tutarlar tahmindir; asıl fatura Google Cloud Billing'dedir.`), csv);
+  root.append(bar);
+  const sum = (f) => rows.reduce((t, r) => t + f(r), 0);
+  const cell = (r, k) => `${r.calls[k]} · ${usd(r.usd[k])}`;
+  const data = rows.map((r) => [r.email, cell(r, 'today'), cell(r, 'month'), cell(r, 'total')]);
+  data.push([el('b', '', 'TOPLAM'), usd(sum((r) => r.usd.today)), usd(sum((r) => r.usd.month)), usd(sum((r) => r.usd.total))]);
+  root.append(table(['Kullanıcı', 'Bugün (çağrı · USD)', 'Bu ay', 'Toplam'], data, [1, 2, 3]));
+}
+
+function draw() {
+  if (!D.sum) return;
+  drawSum($('t-sum')); drawUsers($('t-users')); drawInv($('t-inv')); drawCost($('t-cost'));
+  for (const t of ['sum', 'users', 'inv', 'cost']) $('t-' + t).classList.toggle('hidden', t !== tab);
+}
+
+$('tabs').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  tab = b.dataset.t;
+  document.querySelectorAll('#tabs button').forEach((x) => x.classList.toggle('on', x === b));
+  for (const t of ['sum', 'users', 'inv', 'cost']) $('t-' + t).classList.toggle('hidden', t !== tab);
+});
+$('refresh').onclick = load;
+$('logout').onclick = logout;
+async function login() {
+  const v = $('code').value.trim(); if (!v) return;
+  CODE = v; $('loginerr').classList.add('hidden');
+  try { await api('/admin/summary'); try { sessionStorage.setItem('adm', CODE); } catch {} $('code').value = ''; show(); load(); }
+  catch (e) { CODE = ''; $('loginerr').textContent = e.message; $('loginerr').classList.remove('hidden'); }
+}
+$('go').onclick = login;
+$('code').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+show();
+if (CODE) load();
+setInterval(() => { if (CODE && !document.hidden) load(); }, 60000);
+</script>
+</body>
+</html>

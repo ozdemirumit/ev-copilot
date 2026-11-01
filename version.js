@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.70.1';
+self.APP_VERSION = '0.71.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.71.0', date: '2026-11-01',
+    notes: [
+      'Kritik pilde Premium: pil eşiğin altına inince en yakın DC istasyonların canlı doluluğu ve fiyatı sorulur (dakikada bir yenilenir), tamamen dolu ya da arızalı olanlar önerilerden elenir, kalanların boş soket sayısı, canlı ya da bildirilen kWh fiyatı uyarıda ve listede gösterilir. Kaç istasyonun elendiği yazılır; hepsi doluysa en yakınlar yine listelenir. Sesli uyarı boş soket sayısını ve canlı fiyatı da söyler.',
+      'Premium için canlı veri daha güncel: planlı duraklar 5 yerine 2 dakikada bir sorulur (pil %20 altında dakikada bir ve ilk 3 durak); istasyon listesi her yenilendiğinde ve sürüş sırasında yakındaki istasyonların doluluk ve fiyatı da yenilenir. Doluluk bilgisi liste yenilense de kaybolmaz.',
+    ],
+  },
   {
     v: '0.70.1', date: '2026-11-01',
     notes: [

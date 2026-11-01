@@ -12,6 +12,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openStore } from './store.mjs';
 import { createAccounts } from './accounts.mjs';
+import { createCosts } from './costs.mjs';
 import { createAppFiles } from './appfiles.mjs';
 import { lookupAll } from './occupancy.mjs';
 import { createPriceBook } from './prices.mjs';
@@ -122,6 +123,30 @@ function overQuota(id, kind) {
   const n = (usage.get(k) || 0) + 1;
   usage.set(k, n);
   return n > DAILY[kind];
+}
+/** Yönetim paneli özeti: kullanıcı/davet sayıları, bugünkü çağrılar, Google kotası, Google maliyeti, sunucu durumu. Anahtar değerleri YOK, yalnızca tanımlı mı bilgisi. */
+function adminSummary() {
+  const now = Date.now();
+  const users = Object.values(store.data.users);
+  const byKind = {};
+  for (const [k, n] of usage) { const [, d, kind] = k.split('|'); if (d === today()) byKind[kind] = (byKind[kind] || 0) + n; }
+  const invites = Object.values(store.data.invites || {});
+  const inv = { open: 0, used: 0, expired: 0, revoked: 0 };
+  for (const i of invites) { if (i.revoked) inv.revoked++; else if (i.usedBy) inv.used++; else if (i.expiresAt < now) inv.expired++; else inv.open++; }
+  const keys = costs.keys();
+  const tot = { today: 0, month: 0, total: 0 };
+  for (const k of keys) { const c = costs.summary(k).usd; for (const f of Object.keys(tot)) tot[f] += c[f]; }
+  return {
+    server: { uptimeSec: Math.round(process.uptime()), node: process.version, memMb: Math.round(process.memoryUsage().rss / 1048576), publicUrl: env.PUBLIC_URL || null },
+    users: {
+      total: users.length, premium: users.filter((u) => u.admin || u.premiumUntil > now).length, disabled: users.filter((u) => u.disabled).length,
+      active7d: users.filter((u) => u.lastLogin > now - 7 * 86400e3).length, new7d: users.filter((u) => u.createdAt > now - 7 * 86400e3).length,
+    },
+    invites: inv,
+    configured: { mapbox: !!MAPBOX, ocm: !!OCM, googlePlaces: !!GOOGLE_PLACES, googleLogin: !!accounts.googleOn, premiumRequired: String(env.PREMIUM_REQUIRED ?? '1') !== '0' },
+    usageToday: byKind,
+    google: { callsToday: gToday.d === today() ? gToday.n : 0, dailyCap: GOOGLE_TOTAL, unitUsd: costs.unit, usd: tot },
+  };
 }
 setInterval(() => { const d = today(); for (const k of usage.keys()) if (!k.includes(`|${d}|`)) usage.delete(k); }, 3600e3).unref();
 
@@ -263,7 +288,7 @@ async function occupancyRoute(req, res, id) {
     .filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lon) && Math.abs(s.lat) <= 90 && Math.abs(s.lon) <= 180);
   if (!stations.length) return json(res, 400, { error: 'geçersiz istasyon' });
   if (overQuota(id, 'occupancy')) return json(res, 429, { error: 'günlük doluluk hakkı doldu' }, { 'Retry-After': '3600' });
-  const google = GOOGLE_PLACES ? { key: GOOGLE_PLACES, allow: () => googleAllowed(id) } : null;
+  const google = GOOGLE_PLACES ? { key: GOOGLE_PLACES, allow: () => googleAllowed(id), onCall: () => costs.add(id, 'google') } : null; // her başarılı Google çağrısı kullanıcıya yazılır
   const soc = Number.isFinite(Number(b.soc)) ? Number(b.soc) : null; // pil %: Google (ücretli) yalnızca düşük pilde sorulur
   json(res, 200, { results: await lookupAll(stations, { google, soc, book: priceBook, community }) });
 }
@@ -296,7 +321,8 @@ const clientIp = (req) => {
 const store = openStore(env.DATA_DIR || join(here, 'data'));
 const priceBook = createPriceBook(store);
 const community = createCommunity(store);
-const accounts = createAccounts({ onDelete: (uid) => { priceBook.forget(uid); community.forget(uid); }, env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, ocm: !!OCM, overpass: true, occupancy: true }) });
+const costs = createCosts(store, env);
+const accounts = createAccounts({ onDelete: (uid) => { priceBook.forget(uid); community.forget(uid); costs.forget(uid); }, costs, env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, ocm: !!OCM, overpass: true, occupancy: true }) });
 
 const appFiles = createAppFiles({ dir: join(here, 'public'), send });
 
@@ -329,6 +355,13 @@ const server = http.createServer(async (req, res) => {
       if (limited(ip)) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
       if (appFiles.handle(req, res, url, ip)) return;
     }
+    if (pp === '/yonetim' || pp === '/yonetim/') { // yönetim paneli: statik sayfa (gizli bilgi yok); veriler /admin/* ile yönetici kodu ya da yönetici hesabıyla gelir
+      if (limited(ip)) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
+      let html;
+      try { html = readFileSync(join(here, 'admin.html'), 'utf8'); } catch { return json(res, 404, { error: 'panel dosyası yok' }); }
+      return send(res, 200, html, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff',
+        'Content-Security-Policy': "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'" });
+    }
     if (pp === '/v1/config' || pp === '/v1/auth/poll' || pp.startsWith('/auth/') || pp.startsWith('/i/')) {
       if (limited(ip)) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
       if (await accounts.handlePublic(req, res, url, ip)) return;
@@ -348,6 +381,7 @@ const server = http.createServer(async (req, res) => {
     if (p === '/v1/price' && req.method === 'POST') return await priceRoute(req, res, id);
     if (p === '/v1/presence' && req.method === 'POST') return await communityRoute(req, res, id, 'presence');
     if (p === '/v1/status' && req.method === 'POST') return await communityRoute(req, res, id, 'status');
+    if (p === '/admin/summary' && req.method === 'GET' && id.admin) return json(res, 200, adminSummary());
     if (await accounts.handleAuthed(req, res, url, id)) return;
     return json(res, 404, { error: 'yol yok' });
   } catch (err) {

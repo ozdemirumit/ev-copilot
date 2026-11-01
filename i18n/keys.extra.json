@@ -156,5 +156,8 @@
  "🔴 Dolu",
  "🟢 Boş",
  "Teşekkürler: bildirildi",
- "Bildirim gönderilemedi"
+ "Bildirim gönderilemedi",
+ "Doluluk kontrol ediliyor…",
+ "{0} dolu istasyon elendi",
+ "Hepsi dolu görünüyor; en yakınlar listelendi"
 ]

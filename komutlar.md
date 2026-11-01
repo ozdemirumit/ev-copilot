@@ -40,7 +40,10 @@ node server\invite.mjs "Ali" 7                 # tek kullanımlık davet linki �
 node server\premium.mjs list                   # herkesin planını listeler
 node server\premium.mjs kisi@gmail.com 30      # 30 gün Premium ekler (süre varsa üstüne)
 node server\premium.mjs kisi@gmail.com 0       # Premium'u kaldırır
+node server\premium.mjs costs                  # kullanıcı başına Google maliyeti (bugün / bu ay / toplam, çağrı ve tahmini USD)
 ```
+
+**Yönetim paneli (tarayıcıda):** `https://evcopilot.duckdns.org/yonetim`. Yönetici kodunu (`ACCESS_CODES`'dan biri) girersin; Özet, Kullanıcılar (Premium ver/kaldır, hesabı kapat/aç), Davetler (link üret/iptal) ve Maliyet (kullanıcı başına Google, CSV) sekmeleri vardır. Kod yalnızca o sekmede tutulur, çıkışta silinir.
 
 Davet linkini kişiye gönder; linkte "Android uygulamasını indir" ve "Web'de aç" düğmeleri var. Yönetici hesabı (`ADMIN_EMAILS`) davetsiz girer ve her zaman Premium sayılır.
 
@@ -65,6 +68,7 @@ Değiştirince `node server\restart.mjs`. Şablon: `server\.env.example`.
 | `MAPBOX_TOKEN`, `OCM_KEY` | trafikli rota/istasyon araması ve OpenChargeMap (yalnızca sunucuda) |
 | `GOOGLE_PLACES_KEY` | **boş bırak** (Türkiye'de veri vermiyor, Google kuralları Google dışı haritayla kullanımı kısıtlıyor) |
 | `PREMIUM_REQUIRED` | `0` yazarsan herkes Premium sayılır |
+| `GOOGLE_COST_PER_CALL_USD` | Google çağrı başına tahmini maliyet (varsayılan `0.035`); maliyet kayıtlarında kullanılır |
 | `MAPBOX_DAILY_PER_USER`, `OCCUPANCY_DAILY_PER_USER`, `GOOGLE_DAILY_PER_USER`, `GOOGLE_DAILY_TOTAL`, `GOOGLE_SOC_BELOW` | günlük kotalar ve eşikler |
 | `TRUST_PROXY=1`, `HOST`, `PORT`, `ALLOW_ORIGINS`, `DATA_DIR`, `SESSION_DAYS` | ağ ve veri ayarları (genelde dokunma) |
 

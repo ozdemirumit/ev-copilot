@@ -157,4 +157,7 @@ export default {
   "🟢 Boş": "🟢 Wolna",
   "Teşekkürler: bildirildi": "Dziękuję: zgłoszono",
   "Bildirim gönderilemedi": "Nie udało się wysłać zgłoszenia",
+  "Doluluk kontrol ediliyor…": "Sprawdzanie dostępności…",
+  "{0} dolu istasyon elendi": "Pominięto zajęte stacje: {0}",
+  "Hepsi dolu görünüyor; en yakınlar listelendi": "Wszystkie wyglądają na zajęte; mimo to pokazuję najbliższe",
 };
