@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.71.0';
+self.APP_VERSION = '0.71.1';
 self.APP_CHANGELOG = [
+  {
+    v: '0.71.1', date: '2026-11-01',
+    notes: [
+      'Konumum düğmesi asıl nedeni düzeltildi: düğme önce görünümü sıfırlıyor ve bunu konuma gitme animasyonundan sonra yaptığı için animasyonu iptal ediyordu; GPS açılıyor ama harita kaymıyor, yakınlaşmıyordu. Artık önce görünüm sıfırlanır, sonra konuma animasyonla gidilir ve yakınlaşılır.',
+    ],
+  },
   {
     v: '0.71.0', date: '2026-11-01',
     notes: [

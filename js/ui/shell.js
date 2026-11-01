@@ -30,8 +30,8 @@ export function initShell() {
     const e = effective();
     if (e.lat == null) return false;
     const acc = getState('live').acc; // kaba konumda (şebeke) çok yakınlaşma
+    mapApi.recenter?.(); // önce görünümü sıfırla (jumpTo çalışan animasyonu iptal eder), sonra konuma git: sıra ters olursa harita hiç kaymaz
     mapApi.follow(e.lat, e.lon, acc > 1500 ? 13 : acc > 300 ? 15 : 16, true);
-    mapApi.recenter?.();
     return true;
   };
   $('fab-me').addEventListener('click', async () => {
