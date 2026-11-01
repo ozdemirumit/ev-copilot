@@ -85,7 +85,10 @@ Step 'Eski kullanici donguleri (Baslangic kisayollari ve arka plan betikleri) ka
 
 # ---- klasorler ve dosyalar ----
 Step "Klasorler: $BaseDir" {
-  foreach ($d in $BaseDir, $logs, $caddyDir, (Join-Path $caddyDir 'data'), (Join-Path $caddyDir 'config'), $BackupDir, $dataDir) { New-Item -ItemType Directory -Force -Path $d | Out-Null }
+  foreach ($d in $BaseDir, $logs, $caddyDir, (Join-Path $caddyDir 'data'), (Join-Path $caddyDir 'config'), (Join-Path $BaseDir 'bin'), $BackupDir, $dataDir) { New-Item -ItemType Directory -Force -Path $d | Out-Null }
+  # Hizmetin calistirdigi dosya (nssm.exe) kullanici profilinde olamaz: LocalService orayi okuyamaz ("Access is denied"). ProgramData'ya kopyalanir.
+  Copy-Item $nssm (Join-Path $BaseDir 'bin\nssm.exe') -Force
+  $script:nssm = Join-Path $BaseDir 'bin\nssm.exe'
 }
 Step 'Caddy ve Caddyfile hizmet klasorune kopyalaniyor' {
   Copy-Item $CaddyExe (Join-Path $caddyDir 'caddy.exe') -Force
