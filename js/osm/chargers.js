@@ -6,7 +6,9 @@ import { classify } from '../routing/operators.js';
 import { haversineKm } from '../utils/geo.js';
 import { load } from '../utils/storage.js';
 import { cached, cacheGet, cacheSet, TTL } from '../utils/cache.js';
-import { customRaw, dedupe, finalize, priced, summarize } from '../routing/chargerSource.js';
+import { candidate, customRaw, dedupe, finalize, priced, summarize } from '../routing/chargerSource.js';
+import { mapboxKey } from '../mapbox/api.js';
+import { stationsAlong, stationsAround } from '../mapbox/chargers.js';
 
 // Herkese açık Overpass sunucuları; biri 429/406/hata verirse sıradakine geçilir (adil kullanım: paralel sorgu yok).
 const OVERPASS = [
@@ -17,7 +19,6 @@ const OVERPASS = [
 const SEG_KM = 120; // rota bu uzunlukta parçalara bölünüp her parça tek sorgu olur (parça başına önbelleğe alınır)
 const STEP_KM = 8; // sorguya verilen çizgi noktaları arası
 const AROUND_M = 3000; // çizgiye uzaklık (koridor payı)
-const AC_FALLBACK_KW = 11;
 const DC_SOCKETS = ['type2_combo', 'type1_combo', 'chademo', 'ccs'];
 const AC_SOCKETS = ['type2', 'type2_cable', 'type1', 'type3'];
 const TESLA_SOCKETS = ['tesla_supercharger', 'tesla_destination', 'tesla_supercharger_ccs', 'nacs'];
@@ -37,19 +38,6 @@ export function parseKw(v) {
     return n;
   }).filter(Number.isFinite);
   return nums.length ? Math.max(...nums) : null;
-}
-
-/** Ortak: soket bilgisinden aday istasyon alanları (DC varsa hızlı, değilse yavaş yedek). */
-function candidate({ id, name, lat, lon, opId, src, hasDc, dcKw, acKw, anyInfo, extraKw = null }) {
-  const kwMax = Math.max(0, dcKw || 0, acKw || 0, extraKw || 0) || null;
-  const kwDc = dcKw ?? extraKw;
-  const slow = !hasDc && !(kwMax >= PLANNER.minKw) && (anyInfo || opId === 'other');
-  return {
-    id, name, lat, lon, opId, slots: null,
-    srcKw: slow ? Math.min(kwMax ?? AC_FALLBACK_KW, AC_FALLBACK_KW) : (hasDc ? kwDc : kwMax),
-    uncertain: (hasDc ? kwDc : kwMax) == null,
-    slow, src,
-  };
 }
 
 /** OSM öğesi (amenity=charging_station) → aday istasyon. Tesla/NACS'a özel, herkese açık olmayan ya da konumsuz kayıtlar elenir. */
@@ -196,23 +184,37 @@ export async function fetchChargers(pts, profile) {
   let lastErr = '';
   const take = (r) => { ctx.raw += r.raw; addDrop(ctx.drop, r.drop); r.out.forEach((s) => found.set(s.id, s)); };
 
-  for (const seg of segments(pts)) {
-    const key = `ovp:${fmt(seg[0])}:${seg.length}:${fmt(seg.at(-1))}`;
-    try {
-      const r = await cached(key, TTL.long, async () => {
-        if (fresh) await sleep(1200); // adil kullanım: gerçek sorgular arası bekle
-        fresh++;
-        ctx.calls++;
-        return parseOverpass(await overpass(overpassQuery(`${AROUND_M},${seg.map((p) => fmt(p)).join(',')}`)));
-      });
-      take(r);
-    } catch (err) {
-      failed++;
-      lastErr = err.message;
-      if (err.unreachable) break; // hiçbir sunucuya ulaşılamıyor: kalan parçaları denemenin anlamı yok
-    }
+  // Mapbox anahtarı varsa istasyonlar Mapbox'tan (hızlı); anahtar reddedilirse Overpass'e düşülür
+  let usedMapbox = false;
+  if (mapboxKey()) {
+    const r = await stationsAlong(pts);
+    ctx.calls += r.calls;
+    take({ out: [...r.out.values()], raw: r.raw, drop: r.drop });
+    if (r.failed) errors.push(`Mapbox: ${r.failed} arama başarısız${r.lastError ? ' — ' + r.lastError : ''}`);
+    if (r.skipped) errors.push(`Mapbox: ${r.skipped} arama üst sınır nedeniyle yapılmadı`);
+    if (r.fatal) errors.push(r.fatal.message + ' (Overpass denendi)');
+    usedMapbox = !r.fatal;
   }
-  if (failed) errors.push(`Overpass: ${failed} parça alınamadı${lastErr ? ' — ' + lastErr : ''}`);
+
+  if (!usedMapbox) {
+    for (const seg of segments(pts)) {
+      const key = `ovp:${fmt(seg[0])}:${seg.length}:${fmt(seg.at(-1))}`;
+      try {
+        const r = await cached(key, TTL.long, async () => {
+          if (fresh) await sleep(1200); // adil kullanım: gerçek sorgular arası bekle
+          fresh++;
+          ctx.calls++;
+          return parseOverpass(await overpass(overpassQuery(`${AROUND_M},${seg.map((p) => fmt(p)).join(',')}`)));
+        });
+        take(r);
+      } catch (err) {
+        failed++;
+        lastErr = err.message;
+        if (err.unreachable) break; // hiçbir sunucuya ulaşılamıyor: kalan parçaları denemenin anlamı yok
+      }
+    }
+    if (failed) errors.push(`Overpass: ${failed} parça alınamadı${lastErr ? ' — ' + lastErr : ''}`);
+  }
 
   const key = ocmKey();
   if (key) {
@@ -235,7 +237,7 @@ export async function fetchChargers(pts, profile) {
   }
 
   const stations = finalize([...customRaw(), ...found.values()], profile);
-  if (!found.size && failed) errors.unshift('İstasyon kaynağına ulaşılamadı: internet veya Overpass sunucusu');
+  if (!found.size && failed && !usedMapbox) errors.unshift('İstasyon kaynağına ulaşılamadı: internet veya Overpass sunucusu');
   return { stations, errors, cached: ctx.calls === 0 && found.size > 0, summary: summarize(stations, profile, ctx) };
 }
 
@@ -250,9 +252,19 @@ export async function fetchAround(lat, lon, radiusKm, force = false) {
   const run = async () => {
     ran = true;
     const out = [];
-    try {
-      out.push(...parseOverpass(await overpass(overpassQuery(`${km * 1000},${lat.toFixed(5)},${lon.toFixed(5)}`))).out);
-    } catch (err) { errors.push(err.message); }
+    let usedMapbox = false;
+    if (mapboxKey()) {
+      const r = await stationsAround(lat, lon, km);
+      out.push(...r.out.values());
+      if (r.failed) errors.push(`Mapbox: ${r.failed} arama başarısız${r.lastError ? ' — ' + r.lastError : ''}`);
+      if (r.fatal) errors.push(r.fatal.message + ' (Overpass denendi)');
+      usedMapbox = !r.fatal;
+    }
+    if (!usedMapbox) {
+      try {
+        out.push(...parseOverpass(await overpass(overpassQuery(`${km * 1000},${lat.toFixed(5)},${lon.toFixed(5)}`))).out);
+      } catch (err) { errors.push(err.message); }
+    }
     const key = ocmKey();
     if (key) {
       try { out.push(...(await ocmQuery(lat, lon, km, key)).out); } catch (err) { errors.push(err.message); }

@@ -28,7 +28,9 @@ export function initRoutePanel() {
   const paintTraffic = () => {
     const i = getState('route').trafficInfo;
     if (!i) return;
-    $('traffic-info').textContent = `Süre ${hm(i.driveMin)} (trafiksiz, canlı trafik yok) · ortalama hız ${Math.round(i.avgFreeKmh)} km/s`;
+    $('traffic-info').textContent = i.live
+      ? `Mapbox canlı trafik: süre ${hm(i.driveMin)}, olağan ${hm(i.freeMin)} (×${i.ratio.toFixed(2)}) · ortalama hız ${Math.round(i.avgFreeKmh)} km/s`
+      : `Süre ${hm(i.driveMin)} (trafiksiz, canlı trafik yok) · ortalama hız ${Math.round(i.avgFreeKmh)} km/s`;
   };
   subscribe('route', paintTraffic);
   paintTraffic();

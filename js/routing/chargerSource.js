@@ -6,6 +6,21 @@ import { operatorById } from './operators.js';
 import { haversineKm } from '../utils/geo.js';
 import { load, save } from '../utils/storage.js';
 
+const AC_FALLBACK_KW = 11; // yalnızca AC/gücü bilinmeyen istasyonda varsayılan güç (aracın AC şarj sınırına yakın)
+
+/** Ortak: soket bilgisinden aday istasyon alanları (DC varsa hızlı, değilse yavaş yedek). */
+export function candidate({ id, name, lat, lon, opId, src, hasDc, dcKw, acKw, anyInfo, extraKw = null }) {
+  const kwMax = Math.max(0, dcKw || 0, acKw || 0, extraKw || 0) || null;
+  const kwDc = dcKw ?? extraKw;
+  const slow = !hasDc && !(kwMax >= PLANNER.minKw) && (anyInfo || opId === 'other');
+  return {
+    id, name, lat, lon, opId, slots: null,
+    srcKw: slow ? Math.min(kwMax ?? AC_FALLBACK_KW, AC_FALLBACK_KW) : (hasDc ? kwDc : kwMax),
+    uncertain: (hasDc ? kwDc : kwMax) == null,
+    slow, src,
+  };
+}
+
 // ---------- Kullanıcının kendi istasyonları ----------
 const CUSTOM_KEY = 'customStations';
 export const getCustomStations = () => load(CUSTOM_KEY, []);

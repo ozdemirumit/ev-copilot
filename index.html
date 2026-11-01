@@ -73,7 +73,7 @@
 
     <div class="card stack" id="ocm-card">
       <h2 style="margin:0">🗺️ Veri kaynakları</h2>
-      <p class="small muted" style="margin:0">Hepsi ücretsiz açık servis (OpenStreetMap verisi, © OpenStreetMap katkıcıları): harita OpenFreeMap, rota ve rakım Valhalla, yer arama Photon, istasyonlar Overpass, hava Open-Meteo, yol hız limiti OSM. Canlı trafik, kaza/kamera ve istasyon doluluğu yoktur; süreler trafiksiz hesaplanır.</p>
+      <p class="small muted" style="margin:0">Hepsi ücretsiz açık servis (OpenStreetMap verisi, © OpenStreetMap katkıcıları): harita OpenFreeMap, rota ve rakım Valhalla, yer arama Photon, istasyonlar Overpass, hava Open-Meteo, yol hız limiti OSM. Canlı trafik, kaza/kamera ve istasyon doluluğu yoktur; süreler trafiksiz hesaplanır. İsteğe bağlı Mapbox anahtarı girersen rota canlı trafikli olur, trafik uyarısı gelir ve istasyonlar Mapbox'tan aranır (Overpass'ten çok daha hızlı).</p>
       <label class="field">OpenChargeMap anahtarı (isteğe bağlı: istasyon kapsamını artırır)
         <input type="text" id="ocm-key" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="openchargemap.org/site/develop/api">
       </label>
@@ -82,6 +82,13 @@
         <button class="btn primary" id="ocm-test" type="button">✔️ Kaydet ve sına</button>
       </div>
       <div class="small muted" id="ocm-out">Anahtar yalnızca bu telefonda saklanır.</div>
+      <label class="field">Mapbox anahtarı (isteğe bağlı: canlı trafikli rota ve hızlı istasyon araması; herkese açık "pk." anahtarı)
+        <input type="text" id="mb-key" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="pk. ile başlar (account.mapbox.com)">
+      </label>
+      <div class="row wrap">
+        <button class="btn primary" id="mb-test" type="button">✔️ Kaydet ve sına</button>
+      </div>
+      <div class="small muted" id="mb-out">Anahtar yalnızca bu telefonda saklanır. Ücretsiz aylık kotalar dolarsa Mapbox ücretlendirebilir (mapbox.com/pricing); anahtarı Mapbox hesabında URL ve kapsam (Directions, Search) ile kısıtla.</div>
       <div class="row between">
         <span class="small muted" id="cache-info"></span>
         <button class="btn ghost sm" id="cache-clear" type="button">🧹 Önbelleği temizle</button>

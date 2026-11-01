@@ -21,7 +21,7 @@ export const CATS = {
 const HOSTS = [
   [/(^|\.)iternio\.com$/, 'abrp'],
   [/^tiles\.openfreemap\.org$/, 'tiles'],
-  [/^(valhalla1\.openstreetmap\.de|api\.open-meteo\.com|photon\.komoot\.io|nominatim\.openstreetmap\.org|api\.openchargemap\.io|overpass[\w.-]*)$/, 'services'],
+  [/^(api\.mapbox\.com|valhalla1\.openstreetmap\.de|api\.open-meteo\.com|photon\.komoot\.io|nominatim\.openstreetmap\.org|api\.openchargemap\.io|overpass[\w.-]*)$/, 'services'],
   [/^(unpkg\.com|cdn\.jsdelivr\.net|cdnjs\.cloudflare\.com)$/, 'libs'],
 ];
 const REQ_OVERHEAD = 450; // tarayıcının eklediği başlıklar (User-Agent, Accept-*, Origin, Referer, Sec-*) için tahmin

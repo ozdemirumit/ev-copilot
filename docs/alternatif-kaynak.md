@@ -80,4 +80,5 @@ Doluluk bilgisi yok: slotlar "bilinmiyor" görünür.
 
 - **Google tamamen kaldırıldı.** Tek kaynak seti: harita OpenFreeMap (MapLibre), rota/rakım/yol hız limiti Valhalla, yer arama/adres adı Photon, istasyonlar Overpass (+ isteğe bağlı OpenChargeMap anahtarı), hava Open-Meteo. `js/providers/index.js` bunları doğrudan dışa aktarır; kaynak seçimi yoktur.
 - Canlı trafik, trafik renk katmanı, istasyon doluluğu ve Google çağrı sayacı yoktur. Süreler serbest akış.
+- v0.41.0: isteğe bağlı Mapbox anahtarı (`js/mapbox/`): trafikli rota, yol önü trafik uyarısı ve Search Box istasyon araması; anahtar yoksa veya reddedilirse ücretsiz kaynaklar.
 - Eski Google kodu git geçmişinde (v0.39.0 ve öncesi: `js/google/`, `js/routing/googleRoute.js`, `js/providers/google.js`, `js/ui/maps/google.js`).

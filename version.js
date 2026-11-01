@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.40.0';
+self.APP_VERSION = '0.41.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.41.0', date: '2026-11-01',
+    notes: [
+      'Mapbox eklendi (isteğe bağlı): Rota sekmesindeki Veri kaynakları kartına herkese açık Mapbox anahtarı (pk.) girilirse rota canlı trafikli olur (olağan süreye göre gecikme gösterilir), navigasyonda yoldaki yoğunluk uyarısı gelir ve şarj istasyonları Overpass yerine Mapbox Search Box ile aranır (çok daha hızlı).',
+      'Anahtar reddedilirse veya Mapbox yanıt vermezse rota Valhalla\'ya, istasyonlar Overpass\'e otomatik düşer. Mapbox istasyon kayıtlarında güç bilgisi yoktur: kW operatör tablosundan tahmin edilir, listede yıldız (*) görünür. Anahtarsız kullanım aynen sürer.',
+      'Mapbox gerçek anahtarla henüz sınanmadı (yalnızca sahte yanıtlarla): Kaydet ve sına düğmesi Directions ve Search Box için sonucu gösterir.',
+    ],
+  },
   {
     v: '0.40.0', date: '2026-11-01',
     notes: [
