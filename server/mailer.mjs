@@ -30,7 +30,9 @@ export function createMailer(env) {
       const finish = (err) => { if (done) return; done = true; clearTimeout(timer); sock.destroy(); err ? reject(err) : resolve(); };
       const timer = setTimeout(() => finish(new Error('SMTP zaman aşımı')), 20000);
       sock.setEncoding('utf8');
-      sock.on('error', (e) => finish(new Error('SMTP bağlantı hatası: ' + e.code || e.message)));
+      sock.on('error', (e) => finish(new Error(/CERT|VERIFY/.test(String(e.code))
+        ? 'SMTP TLS sertifikası doğrulanamadı (' + e.code + '): bilgisayardaki antivirüs e-posta taramasını (ör. Norton Mail Shield) kapat ya da bu bağlantıyı hariç tut'
+        : 'SMTP bağlantı hatası: ' + (e.code || e.message))));
       sock.on('close', () => finish(new Error('SMTP bağlantısı kapandı')));
       const check = () => { // son yanıt satırı "250 ..." (çok satırlı yanıtta ara satırlar "250-")
         const lines = buf.split('\r\n');
