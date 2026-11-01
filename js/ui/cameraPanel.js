@@ -84,6 +84,27 @@ export function initCameraPanel() {
   $('ocr-threshold-out').textContent = o.threshold;
 
   const persist = persistCamera;
+
+  // Eğim düzeltme: otomatik (varsayılan) ya da elle dönme/yatıklık; önizleme kutusu sonucu gösterir
+  const skewAuto = $('ocr-skew-auto');
+  const rot = $('ocr-rot');
+  const shear = $('ocr-shear');
+  const paintSkew = () => {
+    $('ocr-rot-out').textContent = rot.value + '°';
+    $('ocr-shear-out').textContent = shear.value + '°';
+    rot.disabled = shear.disabled = skewAuto.checked;
+  };
+  skewAuto.checked = o.autoSkew;
+  rot.value = o.rot;
+  shear.value = o.shear;
+  paintSkew();
+  skewAuto.addEventListener('change', () => { patch('ocr', { autoSkew: skewAuto.checked }); paintSkew(); persist(); });
+  rot.addEventListener('input', () => { patch('ocr', { rot: Number(rot.value) }); paintSkew(); persist(); });
+  shear.addEventListener('input', () => { patch('ocr', { shear: Number(shear.value) }); paintSkew(); persist(); });
+  setInterval(() => {
+    const [r, s] = ($('ocr-preview').dataset.skew || '0,0').split(',').map(Number);
+    $('ocr-skew-read').textContent = !getState('system').camera ? '' : skewAuto.checked ? `Algılanan eğim: dönme ${r}°, yatıklık ${s}°` : `Uygulanan: dönme ${r}°, yatıklık ${s}°`;
+  }, 700);
   const speedOn = $('ocr-speed-on');
   speedOn.checked = o.speedOn;
   speedOn.addEventListener('change', () => { patch('ocr', { speedOn: speedOn.checked }); persist(); });
@@ -115,6 +136,8 @@ export function initCameraPanel() {
     $('ocr-raw').textContent = s.raw == null ? '--' : s.raw;
     $('ocr-ok').textContent = s.accepted == null ? '--' : s.accepted;
     $('ocr-state').textContent = STATUS_TEXT[s.status] || s.status;
+    $('ocr-err').textContent = s.error ? 'OCR hatası: ' + s.error : '';
+    $('ocr-err').classList.toggle('hidden', !(s.status === 'error' && s.error));
     $('ocr-speed-read').textContent = !s.speedOn
       ? 'kapalı'
       : `${s.rawSpeed == null ? '--' : s.rawSpeed} km/h · ${STATUS_TEXT[s.speedStatus] || s.speedStatus}`;

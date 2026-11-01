@@ -87,6 +87,9 @@ export const DEFAULT_CAMERA = {
   contrast: 1.5,
   threshold: 128,
   useThreshold: true,
+  autoSkew: true, // telefon göstergeye eğik dururken rakamları otomatik düzelt
+  rot: 0, // elle eğim düzeltme: dönme (derece)
+  shear: 0, // elle eğim düzeltme: yatıklık (derece)
 };
 
 export const FALLBACK_POS = { lat: 39.9334, lon: 32.8597 }; // Test Modu'nda GPS yoksa Ankara

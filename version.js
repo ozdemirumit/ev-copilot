@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.44.0';
+self.APP_VERSION = '0.45.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.45.0', date: '2026-11-01',
+    notes: [
+      'OCR eğik yazıyı okuyor: telefon göstergeye açılı dururken rakamlar hem döner hem yatar. Okuma kutusundaki görüntünün dönmesi ve yatıklığı her okumada otomatik tahmin edilip düzeltilir (Kamera > Görüntü filtresi > Eğimi otomatik düzelt; açık gelir). Eğik sahte rakamlarla denendi: düzeltme olmadan okunamayan veya düşük güvenli okumalar düzeltmeyle %91-97 güvenle okundu. Çok aşırı eğimde (yaklaşık 25° üstü) otomatik yetmeyebilir: otomatiği kapatıp Dönme ve Yatıklık sürgüleriyle elle düzelt.',
+      'OCR hata verince nedeni artık Okuma kartında yazılı görünür (ör. motor dosyası yüklenemedi); "Hata" yazısının sebebi anlaşılabilir.',
+    ],
+  },
   {
     v: '0.44.0', date: '2026-11-01',
     notes: [

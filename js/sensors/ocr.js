@@ -126,7 +126,7 @@ async function tick(video, stage) {
         }
       }
     } catch (err) {
-      patch('ocr', { status: 'error' });
+      patch('ocr', { status: 'error', error: String(err?.message || err).slice(0, 160) });
       console.warn('OCR hatası:', err);
     }
   }
@@ -137,12 +137,12 @@ export async function startOcr(video, stage) {
   if (running) return;
   running = true;
   patch('system', { ocr: true });
-  patch('ocr', { status: 'loading' });
+  patch('ocr', { status: 'loading', error: null });
   try {
     await getWorker(); // ilk seferde Tesseract + dil verisi iner
   } catch (err) {
     stopOcr();
-    patch('ocr', { status: 'error' });
+    patch('ocr', { status: 'error', error: String(err?.message || err).slice(0, 160) });
     throw err;
   }
   if (running) tick(video, stage);

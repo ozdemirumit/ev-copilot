@@ -263,6 +263,7 @@
         <label class="switch"><input type="checkbox" id="ocr-speed-on"><i></i></label>
       </div>
       <dl class="kv"><dt>Ekran hızı</dt><dd id="ocr-speed-read">kapalı</dd></dl>
+      <p class="small hidden" id="ocr-err" style="margin:0;color:var(--bad)"></p>
       <p class="small muted" style="margin:0">Outlier filtresi: 5 sn içinde ±%2'den büyük pil değişimi reddedilir, son geçerli değer korunur. Hız açıksa mavi kutuyu ekrandaki hız rakamlarına oturt.</p>
     </div>
 
@@ -285,7 +286,16 @@
         <input type="range" id="ocr-contrast" min="0.5" max="4" step="0.1" value="1.5"></div>
       <div class="slider-row"><label for="ocr-threshold">Eşik değeri</label><output id="ocr-threshold-out">128</output>
         <input type="range" id="ocr-threshold" min="0" max="255" step="1" value="128"></div>
+      <div class="row between">
+        <label for="ocr-skew-auto">Eğimi otomatik düzelt (telefon açılı dururken)</label>
+        <label class="switch"><input type="checkbox" id="ocr-skew-auto" checked><i></i></label>
+      </div>
+      <div class="slider-row"><label for="ocr-rot">Dönme (elle)</label><output id="ocr-rot-out">0°</output>
+        <input type="range" id="ocr-rot" min="-30" max="30" step="1" value="0"></div>
+      <div class="slider-row"><label for="ocr-shear">Yatıklık (elle)</label><output id="ocr-shear-out">0°</output>
+        <input type="range" id="ocr-shear" min="-30" max="30" step="1" value="0"></div>
       <canvas class="preview-canvas" id="ocr-preview" width="320" height="90" aria-label="Filtre önizleme"></canvas>
+      <p class="small muted" id="ocr-skew-read" style="margin:0"></p>
       <p class="small muted" style="margin:0">Önizleme, OCR'ın gördüğü işlenmiş görüntüdür. Rakamlar siyah-beyaz ve net olana kadar eşiği ayarla; koyu zeminli ekranlar otomatik ters çevrilir.</p>
     </div>
   </section>

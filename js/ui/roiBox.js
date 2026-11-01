@@ -9,6 +9,7 @@ function persist() {
   save('camera', {
     roi: o.roi, roiSpeed: o.roiSpeed, speedOn: o.speedOn,
     contrast: o.contrast, threshold: o.threshold, useThreshold: o.useThreshold,
+    autoSkew: o.autoSkew, rot: o.rot, shear: o.shear,
   });
 }
 
