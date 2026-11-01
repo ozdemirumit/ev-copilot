@@ -1,8 +1,8 @@
-// Ortak önbellek: aynı bilgiyi (hava, rakım, hız limiti, adres, arama…) Google'dan tekrar tekrar sormamak için.
+// Ortak önbellek: aynı bilgiyi (hava, rakım, hız limiti, adres, arama…) sunucudan tekrar tekrar sormamak için.
 // - Bellek + (persist ise) LocalStorage; her kayıt bir son kullanma süresiyle (TTL) saklanır, süresi dolan atılır.
 // - Aynı anahtar için eşzamanlı çağrılar tek istekte birleşir (in-flight tekilleştirme).
-// - İstatistik: isabet = Google'a gidilmeyen çağrı (kota/fatura tasarrufu).
-// NOT: Google hizmet şartları Maps içeriğinin uzun süre saklanmasını kısıtlar; bu yüzden TTL'ler kısa tutulur (TTL sabitleri).
+// - İstatistik: isabet = sunucuya gidilmeyen çağrı (adil kullanım).
+// NOT: herkese açık sunucuları gereksiz yormamak için sonuçlar saklanır; TTL'ler TTL sabitlerindedir.
 import { load, save, remove } from './storage.js';
 
 export const TTL = {

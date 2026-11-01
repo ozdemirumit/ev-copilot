@@ -24,7 +24,7 @@ async function query(e) {
   busy = true;
   lastQ = { lat: e.lat, lon: e.lon, at: Date.now() };
   try {
-    // Aynı yol kesiti (≈ 110 m hücre) ve gidiş yönü (8 dilim) için sonuç saklanır: aynı yolu tekrar sürerken Google'a (ve faturaya) gidilmez
+    // Aynı yol kesiti (≈ 110 m hücre) ve gidiş yönü (8 dilim) için sonuç saklanır: aynı yolu tekrar sürerken sunucuya gidilmez
     const key = `sl:${e.lat.toFixed(3)},${e.lon.toFixed(3)},${Math.round((e.heading ?? 0) / 45) % 8}`;
     const res = await cached(key, TTL.long, async () => {
       return { kph: await fetchSpeedLimit(e.lat, e.lon, e.heading) }; // yalnızca gerçek kaynak çağrısı yapılır; sonuç önbelleğe yazılır

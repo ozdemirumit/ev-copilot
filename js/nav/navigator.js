@@ -86,7 +86,7 @@ function tick() {
   const ins = instruction(st);
   const remain = Math.max(0, plan.profile.totalKm - km);
   const nextStop = plan.stops.find((s) => s.km > km + 0.3);
-  // Varış: Google'ın trafikli kalan süresi (ahead.js 10 dk'da bir yeniler; arada geçen süre düşülür) + kalan şarj molaları.
+  // Varış: canlı kalan süre varsa o (ahead.js yeniler; arada geçen süre düşülür) + kalan şarj molaları.
   // Yoksa rota süresinin kalan oranı, o da yoksa profil süresi.
   const live = nav.liveRemain;
   const driveH = live && Date.now() - live.at < 15 * 60e3 ? Math.max(0, live.h - (Date.now() - live.at) / 3600e3)

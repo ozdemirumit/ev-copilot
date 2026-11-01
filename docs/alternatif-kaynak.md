@@ -75,3 +75,9 @@ Doluluk bilgisi yok: slotlar "bilinmiyor" görünür.
 - Alternatif kaynak modu kaldırıldı. `js/providers/index.js` veri türü başına sabit eşlemeyi tutar: Google (rota, trafik, arama, adres adı, istasyon, doluluk, harita) + ücretsiz Open-Meteo (hava) ve Valhalla/OSM (rakım, yol hız limiti).
 - Çevrimdışı harita özelliği denendi ve **kaldırıldı** (v0.38.0): kurulum (R2, Actions) ve bakım yükü kazanımına göre fazla ağırdı. Silinen: `js/offline/`, MapLibre/PMTiles/stil dosyaları, `docs/offline-harita.md`, Actions iş akışı. Eski indirmeler açılışta otomatik temizlenir.
 - Kayıtlı rota (v0.37.0) duruyor: son plan IndexedDB'de (`js/utils/idb.js`, `controller.js` saveTrip/restoreTrip), açılışta geri yüklenir. Çevrimdışı YENİ rota hesabı yok.
+
+## Güncel durum (v0.40.0)
+
+- **Google tamamen kaldırıldı.** Tek kaynak seti: harita OpenFreeMap (MapLibre), rota/rakım/yol hız limiti Valhalla, yer arama/adres adı Photon, istasyonlar Overpass (+ isteğe bağlı OpenChargeMap anahtarı), hava Open-Meteo. `js/providers/index.js` bunları doğrudan dışa aktarır; kaynak seçimi yoktur.
+- Canlı trafik, trafik renk katmanı, istasyon doluluğu ve Google çağrı sayacı yoktur. Süreler serbest akış.
+- Eski Google kodu git geçmişinde (v0.39.0 ve öncesi: `js/google/`, `js/routing/googleRoute.js`, `js/providers/google.js`, `js/ui/maps/google.js`).

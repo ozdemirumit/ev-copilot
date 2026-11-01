@@ -1,4 +1,4 @@
-// Google Routes API dönüş adımlarını rota km'sine oturtur; talimat metni Google'dan Türkçe gelir (languageCode tr-TR).
+// Rota dönüş adımlarını rota km'sine oturtur; talimat metni Valhalla'dan Türkçe gelir (tr-TR).
 
 /**
  * Her adıma rota boyunca konum `km` ekle. Routes API'de manevra, adımın başındadır: konumu önceki adımların uzunluk
@@ -23,7 +23,7 @@ const ARROW = {
   left: '⬅️', right: '➡️', 'slight left': '↖️', 'slight right': '↗️', 'sharp left': '↙️', 'sharp right': '↘️', straight: '⬆️', uturn: '↩️',
 };
 
-/** Talimat: { arrow, text (Google'ın Türkçe cümlesi), road }. Mesafe ayrıca eklenir. */
+/** Talimat: { arrow, text (Türkçe cümle), road }. Mesafe ayrıca eklenir. */
 export function instruction(st) {
   let arrow = ARROW[st.modifier] || ARROW.straight;
   if (st.type === 'depart') arrow = '🚗';

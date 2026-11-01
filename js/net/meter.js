@@ -20,8 +20,8 @@ export const CATS = {
 
 const HOSTS = [
   [/(^|\.)iternio\.com$/, 'abrp'],
-  [/(^|\.)(gstatic\.com|googleusercontent\.com)$|^(mt\d|khms\d)\.google\.com$|^tiles\.openfreemap\.org$/, 'tiles'],
-  [/^(maps\.googleapis\.com|routes\.googleapis\.com|places\.googleapis\.com|weather\.googleapis\.com|roads\.googleapis\.com|valhalla1\.openstreetmap\.de|api\.open-meteo\.com|photon\.komoot\.io|nominatim\.openstreetmap\.org|api\.openchargemap\.io|overpass[\w.-]*)$/, 'services'],
+  [/^tiles\.openfreemap\.org$/, 'tiles'],
+  [/^(valhalla1\.openstreetmap\.de|api\.open-meteo\.com|photon\.komoot\.io|nominatim\.openstreetmap\.org|api\.openchargemap\.io|overpass[\w.-]*)$/, 'services'],
   [/^(unpkg\.com|cdn\.jsdelivr\.net|cdnjs\.cloudflare\.com)$/, 'libs'],
 ];
 const REQ_OVERHEAD = 450; // tarayıcının eklediği başlıklar (User-Agent, Accept-*, Origin, Referer, Sec-*) için tahmin

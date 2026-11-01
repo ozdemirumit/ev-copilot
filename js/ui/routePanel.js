@@ -24,12 +24,11 @@ function gmapsUrl(start, end, stops) {
 }
 
 export function initRoutePanel() {
-  // Hız ve trafik Google'dan okunur (elle ayar yok): planlama sonrası özet burada gösterilir
+  // Hız rota adımlarından gelir (elle ayar yok): planlama sonrası özet burada gösterilir
   const paintTraffic = () => {
     const i = getState('route').trafficInfo;
     if (!i) return;
-    $('traffic-info').textContent = `Google: trafikli süre ${hm(i.driveMin)}, trafiksiz ${hm(i.freeMin)} (×${i.ratio.toFixed(2)}) · ortalama serbest hız ${Math.round(i.avgFreeKmh)} km/s`
-      + (i.jamKm >= 1 ? ` · yavaş/sıkışık ${i.jamKm.toFixed(0)} km` : ' · trafik akıcı');
+    $('traffic-info').textContent = `Süre ${hm(i.driveMin)} (trafiksiz, canlı trafik yok) · ortalama hız ${Math.round(i.avgFreeKmh)} km/s`;
   };
   subscribe('route', paintTraffic);
   paintTraffic();

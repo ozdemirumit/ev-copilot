@@ -71,27 +71,21 @@
       </div>
     </div>
 
-    <div class="card stack" id="g-card">
-      <h2 style="margin:0">🔑 Google Haritalar anahtarı</h2>
-      <p class="small muted" style="margin:0">Harita, rota (trafikli), istasyon ve doluluk, yer arama ve adres adı Google'dan gelir (hava, rakım ve yol hız limiti ücretsiz açık servislerden). Anahtar sadece bu telefonda saklanır. Google Cloud'da anahtarı HTTP yönlendiren kısıtıyla (ozdemirumit.github.io/*) ve şu API'lerle sınırla: Maps JavaScript, Routes, Places (New), Geocoding.</p>
-      <label class="field">API anahtarı
-        <input type="text" id="g-key" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="AIza ile başlar">
+    <div class="card stack" id="ocm-card">
+      <h2 style="margin:0">🗺️ Veri kaynakları</h2>
+      <p class="small muted" style="margin:0">Hepsi ücretsiz açık servis (OpenStreetMap verisi, © OpenStreetMap katkıcıları): harita OpenFreeMap, rota ve rakım Valhalla, yer arama Photon, istasyonlar Overpass, hava Open-Meteo, yol hız limiti OSM. Canlı trafik, kaza/kamera ve istasyon doluluğu yoktur; süreler trafiksiz hesaplanır.</p>
+      <label class="field">OpenChargeMap anahtarı (isteğe bağlı: istasyon kapsamını artırır)
+        <input type="text" id="ocm-key" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="openchargemap.org/site/develop/api">
       </label>
       <div class="row wrap">
-        <button class="btn ghost" id="btn-gkey-scan" type="button">📷 Kamerayla oku</button>
-        <button class="btn primary" id="btn-gkey-test" type="button">✔️ Kaydet ve sına</button>
+        <button class="btn ghost" id="btn-ocm-scan" type="button">📷 Kamerayla oku</button>
+        <button class="btn primary" id="ocm-test" type="button">✔️ Kaydet ve sına</button>
       </div>
-      <div class="small" id="g-test-out"></div>
+      <div class="small muted" id="ocm-out">Anahtar yalnızca bu telefonda saklanır.</div>
       <div class="row between">
         <span class="small muted" id="cache-info"></span>
         <button class="btn ghost sm" id="cache-clear" type="button">🧹 Önbelleği temizle</button>
       </div>
-      <details class="g-usage" id="g-usage-box">
-        <summary><span id="g-usage-head">Google kullanımı ve tahmini maliyet</span></summary>
-        <div class="g-usage-rows" id="g-usage-rows"></div>
-        <p class="small muted" style="margin:6px 0">Yalnızca bu cihazdan çıkan, Google'ın kabul ettiği çağrılar sayılır (önbellekten gelenler sayılmaz). Fiyatlar tahmindir, gerçek fatura için Cloud Console &gt; Faturalandırma &gt; Raporlar.</p>
-        <button class="btn ghost sm" id="g-usage-reset" type="button">Sayacı sıfırla</button>
-      </details>
     </div>
 
     <div class="card stack">
@@ -121,15 +115,11 @@
         <input type="range" id="min-arrival" min="5" max="40" step="1" value="15">
       </div>
 
-      <p class="small muted" id="traffic-info" style="margin:0">Hız ve trafik rota planlanınca Google'dan okunur.</p>
+      <p class="small muted" id="traffic-info" style="margin:0">Süre ve hız rota planlanınca hesaplanır (canlı trafik yok: süreler trafiksiz).</p>
 
       <div class="row between">
         <label for="map-saver">Haritayı gizle (veri tasarrufu)</label>
         <label class="switch"><input type="checkbox" id="map-saver"><i></i></label>
-      </div>
-      <div class="row between">
-        <label for="map-traffic">Haritada trafik renkleri (Google)</label>
-        <label class="switch"><input type="checkbox" id="map-traffic"><i></i></label>
       </div>
 
       <button class="btn primary" id="btn-plan" type="button">⚡ Rotayı Planla</button>

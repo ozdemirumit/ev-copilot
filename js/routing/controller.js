@@ -27,7 +27,7 @@ const routeSig = () => {
 
 function buildFromRaw() {
   const r = getState('route');
-  return buildProfile({ ...raw, cruise: r.cruise, traffic: r.traffic }); // raw.speeds = Google'dan dilim hızları
+  return buildProfile({ ...raw, cruise: r.cruise, traffic: r.traffic }); // raw.speeds = rota adımlarından dilim hızları
 }
 
 /**
@@ -107,7 +107,7 @@ export async function refetchStations() {
 
 /**
  * Rotayı planla. `from` verilirse (yeniden rota: rotadan çıkıldı) başlangıç o konumdur ve istasyonlar yeniden aranmaz,
- * mevcut liste yeni rotaya izdüşürülür (Google'a yeniden gitmemek için).
+ * mevcut liste yeni rotaya izdüşürülür (sunucuya yeniden gitmemek için).
  * via: şarj istasyonu — rota ondan geçer ve plan ilk durak olarak orada şarj eder (varış noktası değişmez).
  * extra: plana eklenecek ek istasyonlar (ör. yakın çevre aramasından).
  */
@@ -126,7 +126,7 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
     patch('sim', { routeKm: 0, lat: null, lon: null, play: false }); // simüle araç yeni rotanın başına
     const rt = await fetchRoute(start, end, via ? [via] : []);
     const pts = resampleRoute(rt.coords);
-    // Hız ve trafik Google'dan: dilim başına serbest akış hızı (yol limiti/sınıfı) ve trafik çarpanı. Elle ayar yok.
+    // Hız rota adımlarından: dilim başına serbest akış hızı (yol limiti/sınıfı) ve trafik çarpanı. Elle ayar yok.
     const speeds = segmentSpeeds(rt, pts);
     patch('route', {
       trafficInfo: { ratio: rt.trafficRatio, driveMin: rt.durationH * 60, freeMin: (rt.durationH * 60) / rt.trafficRatio, avgFreeKmh: speeds.avgFreeKmh, jamKm: rt.intervals.reduce((a, iv) => a + (iv.to - iv.from), 0) },

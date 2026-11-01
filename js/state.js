@@ -10,7 +10,7 @@ const store = {
   },
   // Test Modu değerleri (sürgüler + simülatör konumu).
   sim: { ...DEFAULT_SIM, ...load('sim', {}), enabled: false, play: false },
-  // Konumdaki hava durumu (Google Weather); rota hava durumu plan.profile.wx içinde.
+  // Konumdaki hava durumu (Open-Meteo); rota hava durumu plan.profile.wx içinde.
   weather: { temp: null, rain: null, windSpeed: null, windDir: null, at: 0, lat: null, lon: null },
   // Rota seçimleri ve kullanıcı tahminleri.
   route: {
@@ -18,8 +18,8 @@ const store = {
     minArrivalSoc: load('minArrival', 15),
     cruise: load('cruise', 100),
     traffic: load('trafficEst', 0),
-    trafficAuto: load('trafficAuto', true), // trafik yoğunluğunu Google süresinden otomatik türet
-    trafficInfo: null, // { ratio, driveMin, freeMin } son planlamada Google'dan
+    trafficAuto: load('trafficAuto', true), // trafik yoğunluğunu trafikli süreden (varsa) otomatik türet
+    trafficInfo: null, // { ratio, driveMin, freeMin } son planlamada rotadan
     consAdj: load('consAdj', 0), // % tüketim düzeltmesi (PHYSICS.consScale ile eşleşir)
     chargerMin: load('chargerMin', 10), // ara istasyona varışta en az %
     maxChargeTo: load('maxChargeTo', 90), // durakta şarj hedefi üst sınırı %
@@ -44,7 +44,7 @@ const store = {
   system: { wakeLock: false, camera: false, ocr: false },
   // Sürüş geçmişi kaydı değişince güncellenir (kayıtlar physics/history.js içinde)
   hist: { n: 0, at: 0 },
-  // Navigasyon (limitOn: Google Roads hız limiti kontrolü ücretlidir, varsayılan kapalı): active = dönüş dönüş yönlendirme açık; voice = sesli yönlendirme; lowSoc = düşük pil uyarı eşiği (%).
+  // Navigasyon (limitOn: yol hız limiti kontrolü varsayılan kapalı): active = dönüş dönüş yönlendirme açık; voice = sesli yönlendirme; lowSoc = düşük pil uyarı eşiği (%).
   nav: { active: false, voice: load('voiceOn', true), lowSoc: load('lowSoc', 20), step: null, alert: null,
     speedAlert: load('speedAlert', 0), headingUp: load('headingUp', true),
     limitOn: load('limitOn', false), limit: null, limitErr: null, ahead: { rain: null, traffic: null, speed: null }, liveRemain: null },

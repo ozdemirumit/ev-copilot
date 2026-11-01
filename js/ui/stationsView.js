@@ -30,8 +30,8 @@ function renderList() {
   const none = !!p.profile && p.status !== 'loading' && !p.stations.length;
   warn.textContent = errs.length
     ? (none ? 'Hiç istasyon alınamadı. ' : 'Liste eksik olabilir. ') + errs.join(' · ')
-      + ' — Google anahtarını Rota sekmesinden "Kaydet ve sına" ile kontrol et; sorun geçiciyse biraz sonra yeniden dene.'
-    : none ? `Rota boyunca uygun (DC, ≥40 kW) istasyon bulunamadı (Google verisi). Bildiğin istasyonları "Kendi istasyonlarım"dan ekleyebilirsin.` : '';
+      + ' — İnternet bağlantını kontrol et; sorun geçiciyse biraz sonra yeniden dene (açık kaynak sunucular zaman zaman yanıt vermez).'
+    : none ? `Rota boyunca uygun (DC, ≥40 kW) istasyon bulunamadı (OpenStreetMap/OpenChargeMap verisi). Bildiğin istasyonları "Kendi istasyonlarım"dan ekleyebilirsin.` : '';
   warn.classList.toggle('hidden', !warn.textContent);
   retry.classList.toggle('hidden', !(errs.length || none));
   retry.disabled = p.status === 'loading';
@@ -50,7 +50,7 @@ function renderList() {
   const aheadCount = p.stations.filter(ahead).length;
   const sm = p.stationInfo?.summary;
   const smText = sm
-    ? ` Google: ${sm.raw} kayıt → ${sm.kept} aday` + (Object.keys(sm.drop).length ? ` (elenen: ${Object.entries(sm.drop).map(([k, v]) => `${k} ${v}`).join(', ')})` : '')
+    ? ` Kaynak: ${sm.raw} kayıt → ${sm.kept} aday` + (Object.keys(sm.drop).length ? ` (elenen: ${Object.entries(sm.drop).map(([k, v]) => `${k} ${v}`).join(', ')})` : '')
       + (sm.textCalls ? ` · yedek metin araması ${sm.textCalls} çağrı, ${sm.textFound} bulundu` : '')
       + ` · 100 km başına aday: ${sm.bins.map((n, i) => `${i * 100}–${i * 100 + 100}: ${n}`).join(' · ')}.`
     : '';
@@ -71,11 +71,11 @@ function renderList() {
     );
     left.append(meta);
 
-    // Operatör yanlışsa (Google kaydındaki ad yanıltıcı olabilir) düzelt: fiyat ve kW tablodan buna göre alınır, kalıcıdır.
+    // Operatör yanlışsa (kayıttaki ad yanıltıcı olabilir) düzelt: fiyat ve kW tablodan buna göre alınır, kalıcıdır.
     const fix = document.createElement('select');
     fix.className = 'op-fix';
     fix.setAttribute('aria-label', 'Operatörü düzelt');
-    getOperators().forEach((o) => fix.append(new Option(o.name + (o.id === r.station.opRaw && r.station.corrected ? ` (Google)` : ''), o.id)));
+    getOperators().forEach((o) => fix.append(new Option(o.name + (o.id === r.station.opRaw && r.station.corrected ? ` (kayıt)` : ''), o.id)));
     fix.value = r.station.opId;
     fix.addEventListener('change', () => {
       setStationOperator(r.station.id, fix.value === r.station.opRaw ? null : fix.value);

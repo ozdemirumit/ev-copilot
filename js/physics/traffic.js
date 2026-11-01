@@ -2,7 +2,7 @@ import { batteryPowerKw, hvacKw } from './model.js';
 import { PHYSICS as P } from '../config.js';
 
 /**
- * Trafik yoğunluğu (0..100) → ortalama hız çarpanı. Yoğunluk Google'ın trafikli süresinden otomatik
+ * Trafik yoğunluğu (0..100) → ortalama hız çarpanı. Yoğunluk trafikli süreden (varsa) otomatik
  * türetilir (densityFromRatio) ya da kullanıcı tahmini (Rota sekmesi) / Test Modu sürgüsüdür.
  */
 export function speedFactor(density) {
@@ -11,7 +11,7 @@ export function speedFactor(density) {
 }
 
 /**
- * Google'ın trafikli/trafiksiz süre oranından (≥ 1) yoğunluk (0..100): speedFactor'ün tersi (hız çarpanı = 1/oran).
+ * Trafikli/trafiksiz süre oranından (≥ 1) yoğunluk (0..100): speedFactor'ün tersi (hız çarpanı = 1/oran).
  * %3'ten az yavaşlama "trafik yok" sayılır (süre tahmin gürültüsü).
  */
 export function densityFromRatio(ratio) {

@@ -27,7 +27,7 @@ import { initCustomStations } from './ui/customStations.js';
 import { initCards } from './ui/cards.js';
 import { initHistoryPanel } from './ui/historyPanel.js';
 import { initCollapse } from './ui/collapse.js';
-import { initGoogleKey } from './ui/googleKey.js';
+import { initOcmKey } from './ui/ocmKey.js';
 import { initNavigator } from './nav/navigator.js';
 import { initNearby } from './nav/nearby.js';
 import { initAhead } from './nav/ahead.js';
@@ -69,7 +69,7 @@ initCollapse();
 initRoiBox();
 initCameraPanel();
 initWakeLock();
-initGoogleKey();
+initOcmKey();
 initMap();
 initRouteController();
 initRangeEngine();
@@ -82,10 +82,10 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => { /* file:// vb. */ });
 }
 
-// Kaldırılan çevrimdışı harita özelliğinden kalan indirme dosyası ve ayarlar (telefondaki yer boşalsın)
+// Kaldırılan özelliklerden (Google, çevrimdışı harita) kalan ayarlar ve indirme dosyası: telefondaki yer boşalsın, Google anahtarı cihazda kalmasın
 (async () => {
   try {
-    ['pack.tur', 'mapBase', 'mapMode', 'ocmKey', 'source'].forEach((k) => localStorage.removeItem('evcp.' + k));
+    ['pack.tur', 'mapBase', 'mapMode', 'source', 'gKey', 'gUsage', 'trafficLayer'].forEach((k) => localStorage.removeItem('evcp.' + k));
     const root = await navigator.storage?.getDirectory?.();
     await root?.removeEntry('maps', { recursive: true });
   } catch { /* hiç indirilmemişti */ }

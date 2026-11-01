@@ -15,7 +15,7 @@ export function metric(mode, minutes, cost) {
 export const usable = (s) => (s.kw >= P.minKw || (P.allowSlow && s.slow)) && !(isFresh(s) && slotKind(s) === 'out'); // tamamen arızalı (taze bilgi) istasyon aday olmaz
 
 /**
- * Hızlı DC istasyon bulunmayan uzun rota aralıkları (km). Veri eksikliğini (özellikle Google'ın istasyon kaydının seyrek olduğu bölgeler)
+ * Hızlı DC istasyon bulunmayan uzun rota aralıkları (km). Veri eksikliğini (özellikle açık kaynak istasyon kaydının seyrek olduğu bölgeler)
  * kullanıcıya göstermek için; yalnızca `minGapKm`'den uzun boşluklar döner.
  */
 export function stationGaps(stations, totalKm, minGapKm = 150) {

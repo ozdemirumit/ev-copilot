@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.39.0';
+self.APP_VERSION = '0.40.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.40.0', date: '2026-11-01',
+    notes: [
+      'Google kaldırıldı: uygulama artık hiçbir Google servisi ve anahtarı kullanmıyor. Harita OpenFreeMap (MapLibre), rota ve rakım Valhalla, yer arama ve adres adı Photon, şarj istasyonları Overpass (isteğe bağlı OpenChargeMap anahtarıyla daha geniş kapsam), hava Open-Meteo, yol hız limiti OpenStreetMap.',
+      'Kaybedilenler: canlı trafik (süreler trafiksiz hesaplanır), trafik renk katmanı, istasyon yuva doluluğu ve Google çağrı sayacı. Rota planı, enerji modeli, kayıtlı rota ve navigasyon aynen çalışır.',
+      'Telefonda eski Google anahtarı ve sayaç verisi açılışta otomatik silinir. Rota sekmesinde yeni Veri kaynakları kartı: OpenChargeMap anahtarı (isteğe bağlı) ve önbellek durumu.',
+    ],
+  },
   {
     v: '0.39.0', date: '2026-11-01',
     notes: [

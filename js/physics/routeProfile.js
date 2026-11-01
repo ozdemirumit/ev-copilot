@@ -50,13 +50,13 @@ export function buildProfile({ pts, elevations, wx, cruise, traffic, elevSource 
       temp: w?.temp ?? 15,
       rain: w?.rain ?? 0,
       wind: w ? { speed: w.windSpeed, dir: w.windDir } : null,
-      // Google'dan: serbest akış hızı ve trafik çarpanı (yoksa seyir hızı + trafik yoğunluğuna düşülür)
+      // Rota adımlarından: serbest akış hızı ve trafik çarpanı (yoksa seyir hızı + trafik yoğunluğuna düşülür)
       vFree: speeds?.[i]?.vFree ?? null,
       tf: speeds?.[i]?.tf ?? null,
     });
   }
 
-  // vOv: hızı elle geçersiz kıl (eco-hız tavsiyesi). Yoksa dilimin Google hızı (vFree × tf), o da yoksa seyir hızı × trafik.
+  // vOv: hızı elle geçersiz kıl (eco-hız tavsiyesi). Yoksa dilimin rota hızı (vFree × tf), o da yoksa seyir hızı × trafik.
   const cost = (seg, vOv = null) => {
     const vf = vOv ?? seg.vFree ?? cruise;
     const tfac = seg.tf ?? speedFactor(traffic);

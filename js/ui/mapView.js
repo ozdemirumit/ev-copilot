@@ -3,14 +3,12 @@ import { load, save } from '../utils/storage.js';
 import { toast } from './toast.js';
 import { attachSearch } from './placeSearch.js';
 import { reverseLabel } from '../providers/index.js';
-import { createGoogleMap } from './maps/google.js';
+import { createMapLibreMap } from './maps/maplibre.js';
 
 /** Harita çizim API'si; initMap() çağrılınca dolar (routing/controller.js, nav/* kullanır). Harita henüz yüklenmediyse çizimler sıraya alınır. */
 export const mapApi = { drawRoute() {}, drawStations() {}, drawNearby() {}, setPoint() {}, follow() {}, navView() {} };
 
 let boot = async () => {};
-/** Google anahtarı girilince/değişince haritayı (yeniden) başlat. */
-export const bootMap = () => boot();
 
 const fmt = (p) => (p ? `${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}` : '');
 
@@ -23,13 +21,13 @@ function el(tag, cls, text) {
 const pinEl = (kind, label) => { const d = el('div', 'pin ' + kind); d.append(el('b', '', label)); return d; };
 
 /**
- * Harita: Google Maps JavaScript API (maps/google.js bağdaştırıcısı, koyu şema).
+ * Harita: MapLibre GL JS + OpenFreeMap vektör karoları (maps/maplibre.js bağdaştırıcısı, koyu şema, OpenStreetMap verisi).
  * Harita nesnesi hazır olana dek yapılan işaretleme/çizim çağrıları sıraya alınır ve harita hazır olunca uygulanır.
- * Rota/arama/istasyon mantığı haritadan bağımsızdır. Konumlar { lat, lon }; zoom Google ölçeğindedir.
+ * Rota/arama/istasyon mantığı haritadan bağımsızdır. Konumlar { lat, lon }; zoom web-mercator (Google) ölçeğindedir, bağdaştırıcı MapLibre'a çevirir.
  */
 export function initMap() {
   const mapEl = document.getElementById('map');
-  let adapter = null; // hazır harita bağdaştırıcısı (maps/google.js)
+  let adapter = null; // hazır harita bağdaştırıcısı (maps/maplibre.js)
   let booting = null;
   const queue = [];
   const readyHooks = []; // harita hazır olunca bir kez çalışacak güncellemeler (sıraya alınması gereksiz olanlar)
@@ -46,7 +44,7 @@ export function initMap() {
     booting ??= (async () => {
       try {
         note(''); // uyarı katmanı kalksın: harita boş bir kapta kurulur
-        adapter = await createGoogleMap(mapEl);
+        adapter = await createMapLibreMap(mapEl);
         adapter.onClick(onMapClick);
         adapter.onDragStart(() => { lastDrag = Date.now(); });
         queue.splice(0).forEach((fn) => fn());
@@ -65,13 +63,6 @@ export function initMap() {
     mapEl.classList.toggle('hidden', saver.checked);
     if (!saver.checked) boot().then(() => adapter?.resize());
   });
-
-  // Trafik renk katmanı (yalnızca Google haritasında): anahtar kalıcıdır, harita hazır olunca uygulanır
-  const trafficSw = document.getElementById('map-traffic');
-  trafficSw.checked = load('trafficLayer', false);
-  const applyTraffic = () => adapter?.traffic?.(trafficSw.checked);
-  trafficSw.addEventListener('change', () => { save('trafficLayer', trafficSw.checked); applyTraffic(); });
-  readyHooks.push(applyTraffic);
 
   const marker = (pos, content, title = '') => adapter.marker(pos, content, title);
   const unmark = (m) => m?.remove();

@@ -5,12 +5,12 @@ const SHELL = [
   './', './index.html', './manifest.webmanifest', './icons/icon.svg', './css/styles.css',
   './js/app.js', './js/config.js', './js/state.js',
   './js/utils/storage.js', './js/utils/cache.js', './js/utils/idb.js', './js/utils/geo.js',
-  './js/ui/toast.js', './js/ui/tabs.js', './js/ui/mapView.js', './js/ui/maps/google.js', './js/ui/roiBox.js', './js/ui/cameraPanel.js',
+  './js/ui/toast.js', './js/ui/tabs.js', './js/ui/mapView.js', './js/ui/maps/maplibre.js', './js/ui/ocmKey.js', './js/ui/roiBox.js', './js/ui/cameraPanel.js',
   './js/ui/testPanel.js', './js/ui/abrpPanel.js', './js/ui/stationsView.js', './js/ui/cards.js', './js/ui/historyPanel.js', './js/physics/history.js',
   './js/ui/gpsControl.js', './js/ui/statusBadges.js', './js/ui/routePanel.js', './js/ui/vehiclePanel.js', './js/ui/customStations.js', './js/ui/collapse.js', './js/nav/steps.js', './js/nav/track.js', './js/nav/navigator.js', './js/nav/nearby.js', './js/nav/ahead.js', './js/nav/speedLimit.js', './js/ui/placeSearch.js', './js/ui/tokenScanner.js', './js/ui/installPrompt.js', './js/ui/dataUsage.js', './js/ui/versionInfo.js', './js/net/meter.js', './version.js', './icons/icon-192.png', './icons/icon-512.png',
   './js/physics/model.js', './js/physics/traffic.js', 
   './js/physics/routeProfile.js', './js/physics/routeSpeed.js', './js/physics/consumption.js', './js/physics/rangeEngine.js',
-  './js/routing/operators.js', './js/routing/googleRoute.js', './js/google/loader.js', './js/google/api.js', './js/google/usage.js', './js/google/places.js', './js/providers/index.js', './js/providers/google.js', './js/providers/free.js', './js/osm/valhalla.js', './js/osm/speedLimit.js', './js/osm/weather.js', './js/osm/elevation.js', './js/ui/googleKey.js', './js/routing/chargeCurve.js', './js/routing/chargerSource.js',
+  './js/routing/operators.js', './js/providers/index.js', './js/osm/valhalla.js', './js/osm/route.js', './js/osm/chargers.js', './js/osm/search.js', './js/osm/speedLimit.js', './js/osm/weather.js', './js/osm/elevation.js', './js/routing/chargeCurve.js', './js/routing/chargerSource.js',
   './js/routing/planner.js', './js/routing/controller.js', './js/routing/livePlan.js', './js/routing/slots.js',
   './js/advisor/voice.js', './js/advisor/ecoSpeed.js', './js/advisor/fallback.js',
   './js/abrp/telemetry.js', './js/sim/simulator.js',
@@ -20,7 +20,7 @@ const SHELL = [
 
 // Kütüphaneler (vendor/): uygulama sürümünden BAĞIMSIZ önbellek ve önce-önbellek stratejisi. Uygulama sürümü artınca
 // yeniden indirilmez (Tesseract ~4 MB). Kütüphane dosyaları değişirse bu adı artır.
-const VENDOR_CACHE = 'ev-copilot-vendor-v3'; // v3: MapLibre/PMTiles/stil dosyaları kaldırıldı, eski önbellek silinsin
+const VENDOR_CACHE = 'ev-copilot-vendor-v4'; // v4: MapLibre geri geldi (PMTiles/stil dosyaları yok), eski önbellek silinsin
 const VENDOR_PRECACHE = []; // Tesseract ilk kullanımda önbelleğe girer
 const VENDOR_PATH = new URL('./vendor/', self.registration.scope).pathname;
 

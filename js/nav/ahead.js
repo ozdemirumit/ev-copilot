@@ -1,5 +1,5 @@
 // Yol önü uyarıları (seçili veri kaynağından): ileride yağmur, ileride yoğun/yavaş trafik (kaynak sunuyorsa) ve kullanıcının
-// belirlediği hız eşiği. Navigasyon açıkken periyodik yenilenir. Google kaza, polis ve hız kamerası verisi SUNMAZ.
+// belirlediği hız eşiği. Navigasyon açıkken periyodik yenilenir. Kaza, polis ve hız kamerası verisi yoktur; canlı trafik de yoktur (yalnızca yağış uyarısı çalışır).
 import { getState, patch, subscribe, effective } from '../state.js';
 import { save } from '../utils/storage.js';
 import { fetchWeather, fetchTrafficAhead } from '../providers/index.js';
@@ -89,7 +89,7 @@ function check() {
   const e = effective();
 
   // Hız eşiği (kullanıcı belirler; yolun yasal sınırı değildir)
-  // Yol limiti (Google Roads) biliniyorsa o; yoksa kullanıcının eşiği. Resmî limitte GPS payı için 5 km/h tolerans.
+  // Yol limiti (OpenStreetMap) biliniyorsa o; yoksa kullanıcının eşiği. Resmî limitte GPS payı için 5 km/h tolerans.
   const road = currentLimit();
   const limit = road ?? nav.speedAlert;
   const over = limit > 0 && (e.speed ?? 0) > limit + (road ? 5 : SPEED_TOLERANCE);

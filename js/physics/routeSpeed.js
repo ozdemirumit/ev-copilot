@@ -1,4 +1,4 @@
-// Rotanın hızı Google'dan okunur (elle seyir hızı / trafik tahmini yok):
+// Rotanın hızı rota adımlarından okunur (elle seyir hızı / trafik tahmini yok):
 //  - serbest akış hızı: Routes API adımlarının trafiksiz süresinden (staticDuration) → yol limiti/yol sınıfı yansır
 //  - trafik: TRAFFIC_ON_POLYLINE aralıkları (NORMAL / SLOW / TRAFFIC_JAM) → hız çarpanı
 // Çıktı rota profiline (her ~2 km dilim) hız olarak verilir; enerji, süre ve hava zamanlaması bunu kullanır.

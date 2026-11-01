@@ -1,4 +1,4 @@
-// Şarj yuvası (konnektör) doluluğu: Google Places `evChargeOptions.connectorAggregation` alanlarından
+// Şarj yuvası (konnektör) doluluğu: `evChargeOptions.connectorAggregation` biçimindeki (şu an hiçbir kaynak sunmuyor) alanlardan
 // (count, availableCount, outOfServiceCount, availabilityLastUpdateTime). Bilgi yalnızca bazı ağlar için vardır.
 
 export const FRESH_MS = 15 * 60e3; // planlamada doluluk bu kadar tazeyse dikkate alınır
