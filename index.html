@@ -87,7 +87,10 @@
         <input type="range" id="cur-soc" min="0" max="100" step="1" value="80">
       </div>
       <p class="small muted" id="cur-soc-note" style="margin:0"></p>
-      <button class="btn primary" id="btn-plan" type="button">⚡ Rotayı Planla</button>
+      <div class="row" id="plan-actions">
+        <button class="btn primary" id="btn-plan" type="button">⚡ Rotayı Planla</button>
+        <button class="btn primary" id="btn-nav" type="button">▶ Navigasyonu başlat</button>
+      </div>
 
       <div class="summary">
         <div><b id="sum-dist">—</b><span>Mesafe (km)</span></div>
@@ -127,7 +130,6 @@
     <div class="card stack" id="nav-card">
       <h2 style="margin:0">🧭 Navigasyon</h2>
       <p class="small muted" style="margin:0">Rota planlandıktan sonra dönüş dönüş yönlendirme ve sesli uyarılar. Rotadan çıkarsan bulunduğun yerden yeniden rota kurar; pil düşerse yakındaki en uygun istasyonu önerir.</p>
-      <button class="btn primary" id="btn-nav" type="button">▶ Navigasyonu başlat</button>
       <div class="row between">
         <label for="nav-voice">Sesli yönlendirme</label>
         <label class="switch"><input type="checkbox" id="nav-voice" checked><i></i></label>

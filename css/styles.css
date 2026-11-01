@@ -469,3 +469,9 @@ body.navmode .socbar { display: flex; }
 .socbar[data-src="manual"] small { color: var(--warn); }
 body.sheet-open .socbar { display: none; }
 @media (max-height: 520px) { .socbar { bottom: calc(var(--nav-h) + var(--safe-b) + 70px); } }
+
+/* Rotayı Planla ve Navigasyonu başlat yan yana */
+#plan-actions .btn { flex: 1; min-width: 0; padding: 12px 6px; font-size: 14px; line-height: 1.2; }
+#plan-actions { align-items: stretch; }
+.place-chips { gap: 6px; }
+.chip { padding: 7px 10px; }
