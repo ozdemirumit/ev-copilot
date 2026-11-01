@@ -1,3 +1,4 @@
+import { progressKm } from '../routing/progress.js';
 import { getState, patch, subscribe } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { getOperators, persistOperators, resetOperators } from '../routing/operators.js';
@@ -40,7 +41,7 @@ function renderList() {
     hint.textContent = 'Rota planlayınca rotadaki istasyonlar burada listelenir.';
     return;
   }
-  const here = getState('engine').routeKm ?? p.fromKm ?? 0;
+  const here = progressKm();
   const ahead = (st) => st.km > here - 0.3; // geride kalan istasyonlar listeden çıkar
   const stops = p.stops.filter((s) => ahead(s.station));
   const planned = new Map(stops.map((s, i) => [s.station.id, i + 1]));

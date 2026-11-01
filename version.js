@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.52.0';
+self.APP_VERSION = '0.52.1';
 self.APP_CHANGELOG = [
+  {
+    v: '0.52.1', date: '2026-11-01',
+    notes: [
+      'Mapbox istek sınırı (429) düzeltildi: istasyon araması istekleri artık saniyede ~4 ile aralıklanıyor, 429 alan kutular Mapbox\'un istediği süre beklenip en çok 4 kez yeniden deneniyor (eskiden o kutular sonuçsuz kalıyordu, "7 arama başarısız" uyarısının nedeni). Sahte 429\'larla denendi: 12 kutunun 12\'si tamamlandı.',
+      'Rota önizlemesinde "0 şarj durağı" hatası düzeltildi: konumun rotanın sonunda olduğu bir önizlemede (ör. İstanbul\'dayken Ankara-İstanbul planlayınca) duraklar "geride kaldı" sayılıp gizleniyordu. Artık ilerleme yalnızca navigasyon açıkken ya da araç hareket ederken ve rotanın üzerindeyken sayılır; park halinde plan baştan gösterilir ve konuma göre kısaltılmaz.',
+    ],
+  },
   {
     v: '0.52.0', date: '2026-11-01',
     notes: [

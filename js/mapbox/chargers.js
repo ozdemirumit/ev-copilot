@@ -9,7 +9,10 @@ const LIMIT = 25; // category aramasının üst sınırı: dolu dönen kutu dör
 const HALF_KM = 25; // rota boyunca her kutunun yarı kenarı
 const SPACING_KM = 40; // kutu merkezleri arası (kutular örtüşür)
 const MAX_DEPTH = 2;
-const MAX_CALLS = 150; // bir aramada üst sınır (kota koruması)
+const MAX_CALLS = 200; // bir aramada üst sınır (kota koruması; 429 tekrarları da sayılır)
+const GAP_MS = 250; // iki Search Box isteği arası en az (hız sınırına takılmamak için ~4 istek/sn)
+const MAX_RETRIES = 4; // 429 alan kutu bu kadar kez yeniden denenir
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const BOX_TTL_MS = 2 * 3600e3; // yalnızca bellekte: Mapbox arama sonuçlarını kalıcı saklamayız
 const CAT_TTL_MS = 30 * 24 * 3600e3;
 const CAT_FALLBACK = 'charging_station'; // Mapbox mobil SDK belgelerindeki kanonik ad
@@ -68,13 +71,22 @@ function boxesAlong(pts) {
 
 /** Kutu listesini (gerekirse bölerek) tara. Dönüş: { out: Map, raw, drop, calls, failed, fatal, lastError, skipped }. */
 async function run(boxes) {
-  const ctx = { out: new Map(), raw: 0, drop: {}, calls: 0, failed: 0, skipped: 0, fatal: null, lastError: '' };
+  const ctx = { out: new Map(), raw: 0, drop: {}, calls: 0, failed: 0, skipped: 0, throttled: 0, fatal: null, lastError: '' };
+  let nextSlot = 0; // istekleri aralıklandıran ortak sıra
+  let pauseUntil = 0; // 429 sonrası ortak bekleme
+  const pace = async () => {
+    const now = Date.now();
+    const t = Math.max(now, nextSlot, pauseUntil);
+    nextSlot = t + GAP_MS;
+    if (t > now) await sleep(t - now);
+  };
   const cat = await categoryId();
   const queue = [...boxes];
   const one = async (b) => {
     const bbox = [b.lon - b.hLon, b.lat - b.hLat, b.lon + b.hLon, b.lat + b.hLat];
     const key = `mbc:${cat}:${bbox.map((x) => x.toFixed(3)).join(',')}`;
-    const json = await cached(key, BOX_TTL_MS, () => {
+    const json = await cached(key, BOX_TTL_MS, async () => {
+      await pace();
       ctx.calls++;
       return mbfetch(`/search/searchbox/v1/category/${encodeURIComponent(cat)}`, {
         bbox: bbox.map((x) => x.toFixed(5)).join(','), proximity: `${b.lon.toFixed(5)},${b.lat.toFixed(5)}`, limit: LIMIT, exclude_fields: 'photos,reviews',
@@ -93,11 +105,16 @@ async function run(boxes) {
       if (ctx.calls >= MAX_CALLS) { ctx.skipped += queue.length; queue.length = 0; break; }
       const b = queue.shift();
       try { await one(b); } catch (err) {
-        if (err.fatal) ctx.fatal = err; else { ctx.failed++; ctx.lastError = err.message; }
+        if (err.fatal) ctx.fatal = err;
+        else if (err.status === 429 && (b.tries = (b.tries || 0) + 1) <= MAX_RETRIES) { // hız sınırı: bekle, kutuyu sıraya geri koy
+          pauseUntil = Math.max(pauseUntil, Date.now() + (err.retryAfterMs ?? 3000) * b.tries);
+          ctx.throttled++;
+          queue.push(b);
+        } else { ctx.failed++; ctx.lastError = err.message; }
       }
     }
   };
-  await Promise.all([worker(), worker(), worker()]);
+  await Promise.all([worker(), worker()]);
   return ctx;
 }
 

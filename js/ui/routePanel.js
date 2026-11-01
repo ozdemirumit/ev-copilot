@@ -1,3 +1,4 @@
+import { progressKm } from '../routing/progress.js';
 import { getState, patch, subscribe } from '../state.js';
 import { save } from '../utils/storage.js';
 import { stationGaps } from '../routing/planner.js';
@@ -40,7 +41,7 @@ export function initRoutePanel() {
   const gm = $('btn-gmaps');
 
   /** Araç rotada nerede: canlı konum, yoksa planın başlangıcı. Geçilen duraklar/istasyonlar bu km'ye göre elenir. */
-  const curKm = () => getState('engine').routeKm ?? getState('plan').fromKm ?? 0;
+  const curKm = progressKm;
 
   function paint() {
     const p = getState('plan');

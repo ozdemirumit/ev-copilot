@@ -26,6 +26,7 @@ function check() {
   const e = effective();
   if (plan.status !== 'ready' || !plan.profile || eng.routeKm == null || e.soc == null) return;
   if (eng.offRouteKm > 3) return; // rotadan çıkıldı: yeniden rota (navigasyon) halleder
+  if (!getState('nav').active && (e.speed ?? 0) <= 5) return; // park halinde (rota önizlemesi): plan konuma göre kısaltılmaz
   if (Date.now() - lastReplan < COOLDOWN_MS) return;
 
   const km = eng.routeKm;

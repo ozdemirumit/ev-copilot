@@ -10,6 +10,7 @@ export class MapboxError extends Error {
     super(message);
     this.fatal = fatal; // anahtar/izin sorunu: aynı istek tekrarlanmaz, tüm işlem Mapbox'sız sürer
     this.status = status;
+    this.retryAfterMs = null; // 429'da Mapbox'ın istediği bekleme
   }
 }
 
@@ -31,6 +32,12 @@ export async function mbfetch(path, params = {}, { timeoutMs = 25000 } = {}) {
   try { msg = (await res.json()).message || ''; } catch { /* gövde yok */ }
   if (res.status === 401) throw new MapboxError('Mapbox anahtarı geçersiz veya süresi dolmuş', { fatal: true, status: 401 });
   if (res.status === 403) throw new MapboxError('Mapbox erişimi reddetti: anahtarın kapsamını (Directions, Search) veya URL kısıtını kontrol et', { fatal: true, status: 403 });
-  if (res.status === 429) throw new MapboxError('Mapbox istek sınırına ulaşıldı, biraz bekle', { status: 429 });
+  if (res.status === 429) {
+    const err = new MapboxError('Mapbox istek sınırına ulaşıldı, biraz bekle', { status: 429 });
+    const ra = Number(res.headers.get('retry-after'));
+    const reset = Number(res.headers.get('x-rate-limit-reset')); // epoch saniye
+    err.retryAfterMs = Math.min(15000, Math.max(1000, ra > 0 ? ra * 1000 : reset > 0 ? reset * 1000 - Date.now() : 3000));
+    throw err;
+  }
   throw new MapboxError(msg ? `Mapbox: ${msg}` : `Mapbox HTTP ${res.status}`, { status: res.status });
 }
