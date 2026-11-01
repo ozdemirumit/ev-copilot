@@ -2,6 +2,7 @@
 // gibi OSM'de name:tr olarak kayıtlı adlarla da bulur). Photon önce gelir; Nominatim biraz sonra eklenir (kullanım politikası:
 // en çok saniyede 1 istek, yazarken sürekli sorgu yok: yazma durunca bir kez). Ters adres Photon'dan. Anahtarsız, OpenStreetMap verisi.
 // Öneri yanıtı koordinatı da taşır, bu yüzden ayrı bir ayrıntı çağrısı gerekmez (resolvePlace yalnızca arayüz uyumu içindir).
+import { getLang, langInfo } from '../i18n/index.js';
 import { cached, TTL } from '../utils/cache.js';
 import { haversineKm } from '../utils/geo.js';
 
@@ -39,7 +40,7 @@ async function nominatim(q) {
   const wait = nomLast + NOM_GAP_MS - Date.now();
   if (wait > 0) await sleep(wait);
   nomLast = Date.now();
-  const res = await fetch(`${NOMINATIM}/search?q=${encodeURIComponent(q)}&format=jsonv2&accept-language=tr&addressdetails=1&limit=5`, { signal: AbortSignal.timeout(10000) });
+  const res = await fetch(`${NOMINATIM}/search?q=${encodeURIComponent(q)}&format=jsonv2&accept-language=${getLang()}&addressdetails=1&limit=5`, { signal: AbortSignal.timeout(10000) });
   if (!res.ok) throw new Error(`Nominatim HTTP ${res.status}`);
   return (await res.json()).map(describeNominatim).filter((x) => Number.isFinite(x.lat) && Number.isFinite(x.lon));
 }
@@ -57,7 +58,8 @@ export function mergeResults(photonList, nomList) {
  * Photon sonucu hemen döner; Nominatim sonucu hazır olunca onMore(birleşik liste) çağrılır (yazma sürüyorsa çağrılmaz).
  */
 export async function searchPlaces(q, _token, near = null, onMore = null) {
-  const bias = near ? `&lat=${near.lat.toFixed(2)}&lon=${near.lon.toFixed(2)}` : '';
+  const pl = langInfo().photon;
+  const bias = (near ? `&lat=${near.lat.toFixed(2)}&lon=${near.lon.toFixed(2)}` : '') + (pl !== 'default' ? `&lang=${pl}` : ''); // Photon yalnızca en, de, fr, varsayılan(yerel ad) destekler
   const json = await cached(`oac:${q.toLowerCase()}:${bias}`, TTL.route, () => photon(`/api/?q=${encodeURIComponent(q)}&limit=8${bias}`), { persist: false });
   const first = (json.features || []).filter((f) => f.geometry?.coordinates).map((f) => ({
     ...describe(f.properties || {}),

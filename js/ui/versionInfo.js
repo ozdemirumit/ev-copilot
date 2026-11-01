@@ -1,5 +1,6 @@
 import { getState } from '../state.js';
 import { toast } from './toast.js';
+import { tr } from '../i18n/index.js';
 
 /**
  * Sürüm numarası (üst çubukta ve Daha Fazla sayfasında), sürüm notları penceresi ve güncelleme.
@@ -62,7 +63,7 @@ export function initVersionInfo() {
   const local = globalThis.APP_CHANGELOG || [];
   $('btn-version').textContent = 'v' + APP_VERSION;
   $('about-version').textContent = 'v' + APP_VERSION;
-  $('ver-line').textContent = 'Sürüm v' + APP_VERSION;
+  $('ver-line').textContent = tr('Sürüm v') + APP_VERSION;
 
   const renderLog = (log) => {
     const list = $('changelog');

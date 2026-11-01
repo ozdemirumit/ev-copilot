@@ -1,5 +1,6 @@
 // Rota Valhalla'dan (OpenStreetMap yol verisi; FOSSGIS herkese açık sunucusu, anahtarsız). OSRM biçimi istenir:
 // adım türleri/değiştiricileri uygulamanın talimat sözlüğüyle aynıdır, metinler Türkçe gelir. Canlı trafik YOKTUR: süreler serbest akış.
+import { getLang, langInfo } from '../i18n/index.js';
 import { cached, TTL } from '../utils/cache.js';
 import { valhalla } from './valhalla.js';
 
@@ -38,6 +39,7 @@ const TURN_TR = {
  */
 export function polishText(text, modifier) {
   let t = clean(text);
+  if (getLang() !== 'tr') return t || 'Devam edin.'; // Türkçe düzeltmeler yalnızca Türkçe şablon için (öteki dillerde Valhalla metni olduğu gibi)
   t = t.replace(/(\p{L}*(?:Caddesi|Sokağı|Bulvarı|Yolu|Sokak|Cadde|Bulvar|Yol)) caddesi(ne|nde|ni)?(?=[\s.,]|$)/giu, (_, name, suf) => {
     if (!suf) return name;
     const vowel = [...name.toLocaleLowerCase('tr')].reverse().find((c) => 'aıoueiöü'.includes(c));
@@ -53,7 +55,7 @@ export function polishText(text, modifier) {
  */
 export function fetchRoute(start, end, via = []) {
   const k = (p) => `${p.lat.toFixed(4)},${p.lon.toFixed(4)}`;
-  return cached(`ort:${k(start)}>${k(end)}|${via.map(k).join(';')}`, TTL.route, () => routeFromValhalla(start, end, via), { persist: false });
+  return cached(`ort:${getLang()}:${k(start)}>${k(end)}|${via.map(k).join(';')}`, TTL.route, () => routeFromValhalla(start, end, via), { persist: false });
 }
 
 async function routeFromValhalla(start, end, via) {
@@ -64,7 +66,7 @@ async function routeFromValhalla(start, end, via) {
     format: 'osrm',
     shape_format: 'polyline6',
     banner_instructions: false,
-    directions_options: { language: 'tr-TR' },
+    directions_options: { language: langInfo().route },
   });
   const r = json.routes?.[0];
   if (!r?.geometry) throw new Error('Rota bulunamadı (sunucu yanıtı boş)');

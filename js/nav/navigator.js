@@ -1,5 +1,6 @@
 // Dönüş dönüş navigasyon: üst banner, sesli yönlendirme, harita takibi, rotadan çıkınca yeniden rota.
 // Konum/ilerleme rangeEngine'den gelir (engine.routeKm, offRouteKm); Test Modu'nda simüle araçla aynı şekilde çalışır.
+import { locale } from '../i18n/index.js';
 import { getState, patch, subscribe, effective } from '../state.js';
 import { save } from '../utils/storage.js';
 import { mapApi } from '../ui/mapView.js';
@@ -71,7 +72,7 @@ function paint(arrow, dist, text, road, sub, warn = false) {
   $('nav-banner').classList.toggle('warn', warn);
 }
 
-const hhmm = (ms) => new Date(ms).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+const hhmm = (ms) => new Date(ms).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' });
 
 /** Her saniye: sıradaki manevrayı bul, bannerı çiz, eşiklerde konuş, harita aracı izlesin. */
 function tick() {

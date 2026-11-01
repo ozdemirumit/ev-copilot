@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.56.0';
+self.APP_VERSION = '0.57.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.57.0', date: '2026-11-01',
+    notes: [
+      'Dil seçimi: Daha Fazla sayfasında Dil / Language. Varsayılan İngilizce; Türkçe, Deutsch, Français, Italiano, Español, Português, Nederlands, Polski, Română, Ελληνικά ve Български seçilebilir. Seçim telefonda saklanır, değişince sayfa yenilenir. Eskiden Türkçe kullanıyorsan Daha Fazla > Dil / Language bölümünden Türkçeyi seç.',
+      'Arayüz metinleri, bildirimler, sesli uyarılar ve navigasyon talimatları seçilen dilde gelir; rota talimatı dili Valhalla ya, yer arama dili Photon ve Nominatim e, konuşma sesi tarayıcıya aktarılır.',
+      'Çeviriler yapay zekâyla üretildi ve anadili konuşan biri tarafından henüz gözden geçirilmedi; hatalı bir ifade görürsen haber ver. Sürüm notları (bu pencere) şimdilik yalnızca Türkçedir.',
+    ],
+  },
   {
     v: '0.56.0', date: '2026-11-01',
     notes: [

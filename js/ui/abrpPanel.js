@@ -1,3 +1,4 @@
+import { locale } from '../i18n/index.js';
 import { getState, patch, subscribe, effective } from '../state.js';
 import { load, save, remove } from '../utils/storage.js';
 import { buildPacket, sendNow, getIntervalMs } from '../abrp/telemetry.js';
@@ -85,7 +86,7 @@ export function initAbrpPanel() {
     els.topBadge.textContent = 'ABRP: ' + a.text.toLowerCase();
     els.http.textContent = a.http == null ? '—' : String(a.http);
     document.getElementById('abrp-webhook-status').textContent = a.webhook || '—';
-    els.last.textContent = a.lastSentAt ? new Date(a.lastSentAt).toLocaleTimeString('tr-TR') : '—';
+    els.last.textContent = a.lastSentAt ? new Date(a.lastSentAt).toLocaleTimeString(locale()) : '—';
   }
 
   const refreshPacket = () => { els.packet.textContent = JSON.stringify(buildPacket(), null, 2); };

@@ -4,6 +4,7 @@ import { getState, effective } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { mapApi } from './mapView.js';
 import { toast } from './toast.js';
+import { tr } from '../i18n/index.js';
 
 const KEY = 'places';
 const SLOTS = [
@@ -44,7 +45,7 @@ export function initPlaces() {
     const all = read();
     chips.replaceChildren(...SLOTS.map((slot) => {
       const p = all[slot.id];
-      const b = el('button', 'chip' + (p?.lat == null ? ' empty' : ''), `${slot.icon} ${p?.lat == null ? slot.name : nameOf(slot, p)}`);
+      const b = el('button', 'chip' + (p?.lat == null ? ' empty' : ''), `${slot.icon} ${p?.lat == null ? tr(slot.name) : tr(nameOf(slot, p))}`);
       b.type = 'button';
       b.title = p?.lat == null ? 'Kayıtlı değil: Yerleri düzenle\'den ekle' : `${lastField === 'start' ? 'Başlangıç' : 'Varış'} yap`;
       b.addEventListener('click', () => {

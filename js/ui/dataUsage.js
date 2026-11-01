@@ -1,3 +1,4 @@
+import { locale } from '../i18n/index.js';
 import { CATS, getUsage, subscribeUsage, resetUsage, sum } from '../net/meter.js';
 import { toast } from './toast.js';
 
@@ -43,7 +44,7 @@ export function initDataUsage() {
     const s = sum(session);
     $('usage-total').textContent = `↑ ${fmtBytes(t.up)}  ↓ ${fmtBytes(t.down)}  (toplam ${fmtBytes(t.up + t.down)}) · ${t.n} istek`;
     $('usage-session').textContent = `↑ ${fmtBytes(s.up)}  ↓ ${fmtBytes(s.down)}  (toplam ${fmtBytes(s.up + s.down)})`;
-    $('usage-since').textContent = new Date(total.since).toLocaleString('tr-TR');
+    $('usage-since').textContent = new Date(total.since).toLocaleString(locale());
   }
 
   badge.addEventListener('click', () => { dlg.showModal(); paint(); });

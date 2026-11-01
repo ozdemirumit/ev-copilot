@@ -1,4 +1,5 @@
 import { getState } from '../state.js';
+import { tr, locale } from '../i18n/index.js';
 
 const lastSpoken = new Map();
 let voice = null;
@@ -6,7 +7,8 @@ let voice = null;
 function pickVoice() {
   if (voice) return voice;
   const list = window.speechSynthesis?.getVoices() || [];
-  voice = list.find((v) => v.lang?.toLowerCase().startsWith('tr')) || null;
+  const code = locale().slice(0, 2).toLowerCase();
+  voice = list.find((v) => v.lang?.toLowerCase().startsWith(code)) || null;
   return voice;
 }
 
@@ -18,8 +20,8 @@ export function speak(text, { key = text, cooldownMs = 60000, force = false, int
   if (now - (lastSpoken.get(key) || 0) < cooldownMs) return false;
   lastSpoken.set(key, now);
   if (interrupt) synth.cancel(); // eski komut kuyruğa yığılmasın (yalnızca güncel talimat konuşulsun)
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'tr-TR';
+  const u = new SpeechSynthesisUtterance(tr(text)); // sözlük seçili dile çevirir (Türkçede aynen)
+  u.lang = locale();
   const v = pickVoice();
   if (v) u.voice = v;
   u.rate = 1.0;

@@ -66,6 +66,12 @@ Test Modu açıkken `effective()` sensör yerine sürgü değerlerini verir; GPS
 3. **Kalibrasyon:** ölçülen / model enerji oranı **k** (EMA, 0.6–1.8) kaydedilir; planlayıcı ve menzil bunu kullanır. İlk sürüşlerde k öğrenilir.
 4. **Rota tahmini:** `routeProfile` her dilimi (eğim, rüzgar, yağış, sıcaklık, trafik) enerjiye çevirir; DP planlayıcı bunu ve şarj eğrisini kullanır.
 
+## Diller (çeviri)
+Varsayılan dil İngilizcedir; Daha Fazla > Dil / Language ile seçilir (seçim cihazda saklanır, sayfa yenilenir). Diller: English, Türkçe, Deutsch, Français, Italiano, Español, Português, Nederlands, Polski, Română, Ελληνικά, Български.
+- Kaynak dil Türkçedir. Metinler kodda ve `index.html`'de Türkçe yazılır; `js/i18n/lang/<kod>.js` Türkçe metni hedef dile eşler. `js/i18n/index.js` açılışta sayfa metinlerini ve `title/placeholder/aria-label` değerlerini çevirir, sonradan yazılan metinleri (toast, banner, listeler) MutationObserver ile, sesli uyarıları `speak()` içinde çevirir. Değişken parçalı metinler `{0}`, `{1}` yer tutuculu desenlerle eşleşir. Çevirisi olmayan metin Türkçe kalır; geliştirirken eksikler `window.__i18nMissing` içinde görünür.
+- Yeni metin eklerken: `node scripts/i18n-extract.mjs && node scripts/i18n-keys.mjs` (`i18n/keys.now.json` üretir), eksikleri `js/i18n/lang/*.extra.js` (ek sözlük) ya da ana dosyaya ekle; `node scripts/i18n-validate.mjs en de ...` yer tutucu ve eksik denetimi yapar.
+- Rota talimatı dili Valhalla'ya (`directions_options.language`), yer arama dili Photon/Nominatim'e, sesli uyarı dili ve ses seçimi tarayıcı konuşma motoruna dilden aktarılır. Mapbox rotası talimatları Türkçe kurulup sözlükle çevrilir. Çeviriler yapay zekâyla üretildi: anadili konuşan biri gözden geçirmeli.
+
 ## Sürümleme
 
 Tek kaynak: [version.js](version.js) (`APP_VERSION` + `APP_CHANGELOG`). Sayfa üst çubuğunda `vX.Y.Z` görünür; **başlığa veya sürüme dokununca uygulama yenilenir** (yeni sürüm varsa service worker güncellenir; aktif plan/OCR varken ikinci dokunuş ister), **ⓘ** düğmesi sürüm notlarını açar. Service worker önbellek adı sürümden türer, bu yüzden sürüm değişince telefon yeni dosyaları indirir.

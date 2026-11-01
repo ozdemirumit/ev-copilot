@@ -1,4 +1,5 @@
 // Menzil sekmesi: yolculuk özeti, tüketim/hız grafiği, hız bandı tablosu ve planda kullanılan k.
+import { locale } from '../i18n/index.js';
 import { getState, subscribe } from '../state.js';
 import { records, byBand, summary, clearHistory, relFactor } from '../physics/history.js';
 
@@ -72,7 +73,7 @@ function paintTrips(rs) {
   trips.forEach((t) => {
     const row = document.createElement('div');
     row.className = 'trip';
-    const when = new Date(t.t0).toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const when = new Date(t.t0).toLocaleString(locale(), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
     row.append(
       Object.assign(document.createElement('b'), { textContent: when }),
       Object.assign(document.createElement('span'), { textContent: `${t.dist.toFixed(0)} km · ${hmDur(t.hours)} · ort. ${(t.dist / t.hours).toFixed(0)} km/s` }),

@@ -1,0 +1,67 @@
+js/abrp/telemetry.js:109 Veri bekleniyor (pil/konum)
+js/mapbox/route.js:8 slight left
+js/mapbox/route.js:8 slight right
+js/mapbox/route.js:9 sharp left
+js/mapbox/route.js:9 keskin sola
+js/mapbox/route.js:9 sharp right
+js/mapbox/route.js:12 new name
+js/mapbox/route.js:12 on ramp
+js/mapbox/route.js:12 off ramp
+js/mapbox/route.js:12 end of road
+js/mapbox/route.js:24 end of road
+js/mapbox/route.js:27 on ramp
+js/mapbox/route.js:28 off ramp
+js/mapbox/route.js:40 exit roundabout
+js/mapbox/route.js:40 exit rotary
+js/mapbox/test.js:7 Directions (trafikli rota)
+js/nav/navigator.js:262 .bottomnav [data-tab="map"]
+js/nav/nearby.js:89 Konum yok
+js/nav/nearby.js:93 .bottomnav [data-tab="map"]
+js/nav/nearby.js:138 small muted
+js/nav/nearby.js:156 row wrap
+js/nav/nearby.js:157 btn primary sm
+js/nav/nearby.js:160 btn ghost sm
+js/nav/nearby.js:164 btn ghost sm
+js/nav/nearby.js:166 .bottomnav [data-tab="map"]
+js/nav/nearby.js:210 btn primary sm
+js/nav/nearby.js:217 btn ghost sm
+js/nav/nearby.js:219 .bottomnav [data-tab="stations"]
+js/nav/steps.js:20 new name
+js/nav/steps.js:23 slight left
+js/nav/steps.js:23 slight right
+js/nav/steps.js:23 sharp left
+js/nav/steps.js:23 sharp right
+js/nav/steps.js:34 Devam edin
+js/osm/chargers.js:195 (Overpass denendi)
+js/osm/chargers.js:260 (Overpass denendi)
+js/osm/route.js:32 slight left
+js/osm/route.js:32 slight right
+js/osm/route.js:33 sharp left
+js/osm/route.js:33 sharp right
+js/osm/route.js:42 Devam edin.
+js/osm/route.js:48 Devam edin.
+js/osm/route.js:76 exit roundabout
+js/routing/chargerSource.js:29 Benim istasyonum
+js/sensors/gps.js:51 Geolocation desteklenmiyor
+js/ui/cameraPanel.js:37 kamera zoom'u
+js/ui/collapse.js:31 .card > *
+js/ui/customStations.js:28 btn ghost
+js/ui/defaultStart.js:36 Konumum (konum bulununca)
+js/ui/historyPanel.js:86 veri yok
+js/ui/installPrompt.js:14 (display-mode: standalone)
+js/ui/mapView.js:32 M18 45C18 45 3 28 3 17A15 15 0 0 1 33 17C33 28 18 45 18 45Z
+js/ui/places.js:84 small muted
+js/ui/places.js:87 row wrap
+js/ui/places.js:88 btn ghost sm
+js/ui/places.js:103 btn danger sm
+js/ui/routePanel.js:127 stop wx
+js/ui/shell.js:50 Navigasyonu durdur
+js/ui/socBar.js:34 ind sim
+js/ui/stationsView.js:10 En ekonomik
+js/ui/stationsView.js:93 small muted
+js/ui/stationsView.js:101 <td></td> <td><input type="number" inputmode="decimal" step="0.1" min="0" aria-label="TL/kWh"></td> <td><input type="number" inputmode="numeric" step="10" min="1" max="400" aria-label="kW"></td>
+js/ui/statusBadges.js:6 GPS: hata
+js/ui/statusBadges.js:12 OCR: okuyor
+js/ui/statusBadges.js:15 OCR: manuel
+js/ui/statusBadges.js:16 OCR: hata
+js/ui/tabs.js:12 .bottomnav [data-tab]

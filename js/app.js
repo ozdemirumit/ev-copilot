@@ -12,6 +12,8 @@
 })();
 
 import { installMeter } from './net/meter.js';
+import { initI18n } from './i18n/index.js';
+import { initLangSelect } from './ui/langSelect.js';
 import { initVersionInfo } from './ui/versionInfo.js';
 import { initDataUsage } from './ui/dataUsage.js';
 import { initTabs } from './ui/tabs.js';
@@ -52,7 +54,9 @@ import { initTelemetry } from './abrp/telemetry.js';
 import { initSimulator } from './sim/simulator.js';
 
 // Sıra önemli: paneller state'i okuyup boyar; motorlar en sonda başlar; sekme en son açılır.
-installMeter(); // ilk iş: sonraki tüm fetch çağrıları sayılsın
+await initI18n(); // önce dil: sayfa metinleri çevrilir, sonra paneller kendi metinlerini yazar (gözlemci onları da çevirir)
+installMeter(); // sonraki tüm fetch çağrıları sayılsın
+initLangSelect();
 initVersionInfo();
 initDataUsage();
 initStatusBadges();

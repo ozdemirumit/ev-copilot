@@ -1,6 +1,7 @@
 // Kartları başlıklarındaki +/− düğmesiyle açıp kapatır. Durum cihazda saklanır (evcp.collapsed).
 // Kart HTML'inde data-collapsed="1" varsa ilk açılışta kapalı gelir; kullanıcı bir kez değiştirince seçimi hatırlanır.
 import { load, save } from '../utils/storage.js';
+import { tr } from '../i18n/index.js';
 
 const state = load('collapsed', {});
 
@@ -8,7 +9,7 @@ function set(card, btn, title, closed) {
   card.classList.toggle('collapsed', closed);
   btn.textContent = closed ? '+' : '−';
   btn.setAttribute('aria-expanded', String(!closed));
-  btn.setAttribute('aria-label', (closed ? 'Aç: ' : 'Kapat: ') + title);
+  btn.setAttribute('aria-label', tr(closed ? 'Aç:' : 'Kapat:') + ' ' + title);
 }
 
 export function initCollapse() {

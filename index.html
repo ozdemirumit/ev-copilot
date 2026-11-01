@@ -9,6 +9,8 @@
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="css/styles.css">
+  <style>html:not(.i18n-ready) body { visibility: hidden; }</style>
+  <script>setTimeout(function () { document.documentElement.classList.add('i18n-ready'); }, 3000);</script>
 </head>
 <body>
 
@@ -495,6 +497,11 @@
 
   <!-- ===== DAHA FAZLA ===== -->
   <section class="tab" id="tab-more" data-title="Daha fazla">
+    <div class="card stack" id="lang-card">
+      <label class="field" for="lang-select">🌐 Dil / Language
+        <select id="lang-select" aria-label="Language"></select>
+      </label>
+    </div>
     <div class="card stack" id="version-card">
       <div>
         <b id="ver-line">Sürüm</b>

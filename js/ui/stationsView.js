@@ -1,3 +1,4 @@
+import { tr } from '../i18n/index.js';
 import { progressKm } from '../routing/progress.js';
 import { getState, patch, subscribe } from '../state.js';
 import { load, save } from '../utils/storage.js';
@@ -22,7 +23,7 @@ function renderList() {
   const list = $('station-list');
   const hint = $('station-hint');
   list.replaceChildren();
-  $('station-title').textContent = `İstasyonlar · ${MODE_TITLE[p.mode]}`;
+  $('station-title').textContent = `${tr('İstasyonlar')} · ${tr(MODE_TITLE[p.mode])}`;
 
   // Veri kaynağı sorunları kalıcı gösterilir (toast kaybolur): hata varsa neden + "yeniden ara".
   const warn = $('station-warn');

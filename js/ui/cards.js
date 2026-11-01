@@ -1,5 +1,6 @@
 import { effective, getState, subscribe } from '../state.js';
 import { compass } from '../utils/geo.js';
+import { tr } from '../i18n/index.js';
 
 const $ = (id) => document.getElementById(id);
 const num = (v, d = 0) => (v == null ? '—' : v.toFixed(d));
@@ -10,7 +11,7 @@ const set = (id, text) => { $(id).textContent = text; };
 function trafficLabel(t) {
   if (t == null) return '—';
   const name = t < 20 ? 'Akıcı' : t < 50 ? 'Yoğun' : t < 80 ? 'Sıkışık' : 'Durma-kalkma';
-  return `${name} (%${t})`;
+  return `${tr(name)} (%${t})`;
 }
 
 /** Bir metrik kartının ana değerini yaz (birim <small> içinde kalır). */
@@ -37,7 +38,7 @@ function paint() {
   metric('c-power', g.powerKw, 0);
   set('c-window', g.measuredKm == null ? 'veri bekleniyor (≥3 puan düşüş)' : `${g.measuredKm.toFixed(1)} km`);
   set('c-model', g.kwh100Est == null ? '—' : `${g.kwh100Est.toFixed(1)} kWh/100km`);
-  set('c-k', g.k.toFixed(2) + (Math.abs(g.k - 1) < 0.005 ? ' (kalibre değil)' : ''));
+  set('c-k', g.k.toFixed(2) + (Math.abs(g.k - 1) < 0.005 ? ' ' + tr('(kalibre değil)') : ''));
 
   // Hava
   set('w-temp', withUnit(e.extTemp, '°C'));

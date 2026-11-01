@@ -1,0 +1,2995 @@
+[
+ {
+  "key": "{0} OK",
+  "where": [
+   "js/abrp/telemetry.js:67",
+   "js/abrp/telemetry.js:86"
+  ]
+ },
+ {
+  "key": "Hata {0} {1}",
+  "where": [
+   "js/abrp/telemetry.js:68"
+  ]
+ },
+ {
+  "key": "Gönderildi (yanıt okunamıyor)",
+  "where": [
+   "js/abrp/telemetry.js:76",
+   "js/abrp/telemetry.js:91"
+  ]
+ },
+ {
+  "key": "ağ",
+  "where": [
+   "js/abrp/telemetry.js:78",
+   "js/abrp/telemetry.js:93"
+  ]
+ },
+ {
+  "key": "Hata {0}",
+  "where": [
+   "js/abrp/telemetry.js:86"
+  ]
+ },
+ {
+  "key": "Pil okuması eski — OCR / kamera kontrol et",
+  "where": [
+   "js/abrp/telemetry.js:105"
+  ]
+ },
+ {
+  "key": "Token / API Key eksik",
+  "where": [
+   "js/abrp/telemetry.js:112"
+  ]
+ },
+ {
+  "key": "Rotadan ayrıldınız — yeniden planlama için Rotayı Planla'ya dokunun.",
+  "where": [
+   "js/advisor/fallback.js:32"
+  ]
+ },
+ {
+  "key": "varış",
+  "where": [
+   "js/advisor/fallback.js:40"
+  ]
+ },
+ {
+  "key": "{0}: {1} km, tahmini varış %{2}",
+  "where": [
+   "js/advisor/fallback.js:46"
+  ]
+ },
+ {
+  "key": "{0} — yeniden planlanıyor",
+  "where": [
+   "js/advisor/fallback.js:56"
+  ]
+ },
+ {
+  "key": "Tüketim arttı. {0} için pil yetmeyebilir. Rota bir önceki istasyon olan {1} noktasına güncellendi.",
+  "where": [
+   "js/advisor/fallback.js:60"
+  ]
+ },
+ {
+  "key": "{0}. Hız uygun, klima ve ani gaz kullanımını azaltın.",
+  "where": [
+   "js/advisor/fallback.js:71"
+  ]
+ },
+ {
+  "key": "{0} noktasına güvenle varmak için hızınızı {1} kilometreye düşürün.",
+  "where": [
+   "js/advisor/fallback.js:72"
+  ]
+ },
+ {
+  "key": "{0} noktasına ulaşmak mümkün görünmüyor. En yakın şarj noktasını arayın.",
+  "where": [
+   "js/advisor/fallback.js:76"
+  ]
+ },
+ {
+  "key": "Özel araç",
+  "where": [
+   "js/config.js:8",
+   "js/config.js:8",
+   "js/ui/vehiclePanel.js:54"
+  ]
+ },
+ {
+  "key": "Özel",
+  "where": [
+   "js/config.js:8"
+  ]
+ },
+ {
+  "key": "Elle girilen değerler",
+  "where": [
+   "js/config.js:8"
+  ]
+ },
+ {
+  "key": "Eşarj",
+  "where": [
+   "js/config.js:71"
+  ]
+ },
+ {
+  "key": "eşarj",
+  "where": [
+   "js/config.js:71"
+  ]
+ },
+ {
+  "key": "e-şarj",
+  "where": [
+   "js/config.js:71"
+  ]
+ },
+ {
+  "key": "Diğer",
+  "where": [
+   "js/config.js:75"
+  ]
+ },
+ {
+  "key": "Mapbox anahtarı yok",
+  "where": [
+   "js/mapbox/api.js:20"
+  ]
+ },
+ {
+  "key": "Mapbox yanıt vermedi (zaman aşımı)",
+  "where": [
+   "js/mapbox/api.js:28"
+  ]
+ },
+ {
+  "key": "Mapbox'a ulaşılamadı (internet?)",
+  "where": [
+   "js/mapbox/api.js:28"
+  ]
+ },
+ {
+  "key": "Mapbox anahtarı geçersiz veya süresi dolmuş",
+  "where": [
+   "js/mapbox/api.js:33"
+  ]
+ },
+ {
+  "key": "Mapbox erişimi reddetti: anahtarın kapsamını (Directions, Search) veya URL kısıtını kontrol et",
+  "where": [
+   "js/mapbox/api.js:34"
+  ]
+ },
+ {
+  "key": "Mapbox istek sınırına ulaşıldı, biraz bekle",
+  "where": [
+   "js/mapbox/api.js:36"
+  ]
+ },
+ {
+  "key": "Mapbox: {0}",
+  "where": [
+   "js/mapbox/api.js:42"
+  ]
+ },
+ {
+  "key": "Mapbox HTTP {0}",
+  "where": [
+   "js/mapbox/api.js:42"
+  ]
+ },
+ {
+  "key": "Şarj istasyonu",
+  "where": [
+   "js/mapbox/chargers.js:52",
+   "js/osm/chargers.js:51",
+   "js/osm/chargers.js:84"
+  ]
+ },
+ {
+  "key": "mbc:{0}:{1}",
+  "where": [
+   "js/mapbox/chargers.js:87"
+  ]
+ },
+ {
+  "key": "sağa",
+  "where": [
+   "js/mapbox/route.js:8"
+  ]
+ },
+ {
+  "key": "hafifçe sola",
+  "where": [
+   "js/mapbox/route.js:8"
+  ]
+ },
+ {
+  "key": "hafifçe sağa",
+  "where": [
+   "js/mapbox/route.js:8"
+  ]
+ },
+ {
+  "key": "keskin sağa",
+  "where": [
+   "js/mapbox/route.js:9"
+  ]
+ },
+ {
+  "key": "düz",
+  "where": [
+   "js/mapbox/route.js:9"
+  ]
+ },
+ {
+  "key": "Yola çıkın{0}",
+  "where": [
+   "js/mapbox/route.js:19"
+  ]
+ },
+ {
+  "key": "Varış noktasına ulaştınız",
+  "where": [
+   "js/mapbox/route.js:20",
+   "js/mapbox/route.js:53",
+   "js/nav/navigator.js:138"
+  ]
+ },
+ {
+  "key": "U dönüşü yapın{0}",
+  "where": [
+   "js/mapbox/route.js:22"
+  ]
+ },
+ {
+  "key": "Düz devam edin",
+  "where": [
+   "js/mapbox/route.js:23"
+  ]
+ },
+ {
+  "key": "{0} dönün",
+  "where": [
+   "js/mapbox/route.js:23"
+  ]
+ },
+ {
+  "key": "Yolun sonunda {0}dönün{1}",
+  "where": [
+   "js/mapbox/route.js:24"
+  ]
+ },
+ {
+  "key": "Yol ayrımında {0}devam edin{1}",
+  "where": [
+   "js/mapbox/route.js:25"
+  ]
+ },
+ {
+  "key": "Yola katılın{0}",
+  "where": [
+   "js/mapbox/route.js:26"
+  ]
+ },
+ {
+  "key": "{0}bağlantı yoluna girin{1}",
+  "where": [
+   "js/mapbox/route.js:27"
+  ]
+ },
+ {
+  "key": "Çıkıştan ayrılın{0}{1}",
+  "where": [
+   "js/mapbox/route.js:28"
+  ]
+ },
+ {
+  "key": "Kavşağa girin, {0}. çıkıştan çıkın",
+  "where": [
+   "js/mapbox/route.js:30"
+  ]
+ },
+ {
+  "key": "Kavşağa girin",
+  "where": [
+   "js/mapbox/route.js:30"
+  ]
+ },
+ {
+  "key": "Düz devam edin{0}",
+  "where": [
+   "js/mapbox/route.js:31"
+  ]
+ },
+ {
+  "key": "Ara durağa ulaştınız",
+  "where": [
+   "js/mapbox/route.js:50",
+   "js/osm/route.js:87"
+  ]
+ },
+ {
+  "key": "mrt:{0}>{1}|{2}",
+  "where": [
+   "js/mapbox/route.js:84"
+  ]
+ },
+ {
+  "key": "Mapbox rota bulamadı",
+  "where": [
+   "js/mapbox/route.js:93"
+  ]
+ },
+ {
+  "key": "rota dönmedi",
+  "where": [
+   "js/mapbox/test.js:10"
+  ]
+ },
+ {
+  "key": "çalışıyor (trafik verisi var, {0} dk)",
+  "where": [
+   "js/mapbox/test.js:11"
+  ]
+ },
+ {
+  "key": "çalışıyor (olağan süre verisi yok: trafik oranı 1 sayılır)",
+  "where": [
+   "js/mapbox/test.js:11"
+  ]
+ },
+ {
+  "key": "Search Box (istasyon araması)",
+  "where": [
+   "js/mapbox/test.js:13"
+  ]
+ },
+ {
+  "key": "çalışıyor (\"{0}\" kategorisi, Ankara çevresinde {1} kayıt)",
+  "where": [
+   "js/mapbox/test.js:16"
+  ]
+ },
+ {
+  "key": ", buzlanma riski",
+  "where": [
+   "js/nav/ahead.js:52"
+  ]
+ },
+ {
+  "key": "🌧️ İleride yağmur: ~{0} km sonra ({1} mm/sa, {2}°C{3})",
+  "where": [
+   "js/nav/ahead.js:53"
+  ]
+ },
+ {
+  "key": ". Buzlanma riski var",
+  "where": [
+   "js/nav/ahead.js:54"
+  ]
+ },
+ {
+  "key": "İleride yaklaşık {0} kilometre sonra yağmur bekleniyor{1}.",
+  "where": [
+   "js/nav/ahead.js:54"
+  ]
+ },
+ {
+  "key": "Yol önü hava durumu alınamadı:",
+  "where": [
+   "js/nav/ahead.js:56"
+  ]
+ },
+ {
+  "key": "🚦 Rotada trafik kaynaklı ≈ {0} dk gecikme var",
+  "where": [
+   "js/nav/ahead.js:72"
+  ]
+ },
+ {
+  "key": "Şu an",
+  "where": [
+   "js/nav/ahead.js:74",
+   "js/nav/ahead.js:77"
+  ]
+ },
+ {
+  "key": "~{0} km ileride",
+  "where": [
+   "js/nav/ahead.js:74"
+  ]
+ },
+ {
+  "key": "yoğun trafik",
+  "where": [
+   "js/nav/ahead.js:75"
+  ]
+ },
+ {
+  "key": "yavaş trafik",
+  "where": [
+   "js/nav/ahead.js:75"
+  ]
+ },
+ {
+  "key": "🚦 {0} {1} ({2} km)",
+  "where": [
+   "js/nav/ahead.js:76"
+  ]
+ },
+ {
+  "key": ", rotada ≈ {0} dk gecikme",
+  "where": [
+   "js/nav/ahead.js:76"
+  ]
+ },
+ {
+  "key": "{0} kilometre ileride",
+  "where": [
+   "js/nav/ahead.js:77"
+  ]
+ },
+ {
+  "key": "Tahmini gecikme {0} dakika.",
+  "where": [
+   "js/nav/ahead.js:77"
+  ]
+ },
+ {
+  "key": "{0} {1}, yaklaşık {2} kilometre.{3}",
+  "where": [
+   "js/nav/ahead.js:77"
+  ]
+ },
+ {
+  "key": "Trafik bilgisi alınamadı:",
+  "where": [
+   "js/nav/ahead.js:79"
+  ]
+ },
+ {
+  "key": "Yol hız limitini",
+  "where": [
+   "js/nav/ahead.js:99"
+  ]
+ },
+ {
+  "key": "Hız eşiğini",
+  "where": [
+   "js/nav/ahead.js:99",
+   "js/nav/ahead.js:100"
+  ]
+ },
+ {
+  "key": "eşik",
+  "where": [
+   "js/nav/ahead.js:99"
+  ]
+ },
+ {
+  "key": "⚠️ {0} aştın: {1} km/s ({2} {3})",
+  "where": [
+   "js/nav/ahead.js:99"
+  ]
+ },
+ {
+  "key": "Hız limitini",
+  "where": [
+   "js/nav/ahead.js:100"
+  ]
+ },
+ {
+  "key": "{0} aştınız. {1} kilometre, limit {2}.",
+  "where": [
+   "js/nav/ahead.js:100"
+  ]
+ },
+ {
+  "key": "{0} km/s",
+  "where": [
+   "js/nav/ahead.js:121"
+  ]
+ },
+ {
+  "key": "kapalı",
+  "where": [
+   "js/nav/ahead.js:121",
+   "js/osm/chargers.js:75",
+   "js/ui/cameraPanel.js:141"
+  ]
+ },
+ {
+  "key": "Rota hesaplanıyor…",
+  "where": [
+   "js/nav/navigator.js:88"
+  ]
+ },
+ {
+  "key": "Önce Rotayı Planla",
+  "where": [
+   "js/nav/navigator.js:92"
+  ]
+ },
+ {
+  "key": "Konum bekleniyor…",
+  "where": [
+   "js/nav/navigator.js:99"
+  ]
+ },
+ {
+  "key": "GPS kapalıysa üstteki 📍 düğmesine dokun",
+  "where": [
+   "js/nav/navigator.js:99"
+  ]
+ },
+ {
+  "key": "Rotadan çıktınız",
+  "where": [
+   "js/nav/navigator.js:114"
+  ]
+ },
+ {
+  "key": "Yeni rota hesaplanıyor…",
+  "where": [
+   "js/nav/navigator.js:114"
+  ]
+ },
+ {
+  "key": "Rota yeniden hesaplanıyor.",
+  "where": [
+   "js/nav/navigator.js:118"
+  ]
+ },
+ {
+  "key": "Yeni rota hazır.",
+  "where": [
+   "js/nav/navigator.js:120"
+  ]
+ },
+ {
+  "key": "Varış noktasına ulaştınız.",
+  "where": [
+   "js/nav/navigator.js:135"
+  ]
+ },
+ {
+  "key": "Kalan {0} km · varış {1}",
+  "where": [
+   "js/nav/navigator.js:153"
+  ]
+ },
+ {
+  "key": "· ⚡ {0} {1} km",
+  "where": [
+   "js/nav/navigator.js:153"
+  ]
+ },
+ {
+  "key": "Sonra ({0} sonra): {1}",
+  "where": [
+   "js/nav/navigator.js:156"
+  ]
+ },
+ {
+  "key": "stop:{0}:{1}",
+  "where": [
+   "js/nav/navigator.js:171"
+  ]
+ },
+ {
+  "key": "stop:{0}:5",
+  "where": [
+   "js/nav/navigator.js:173"
+  ]
+ },
+ {
+  "key": "{0} kilometre sonra şarj durağı: {1}. Varışta tahmini pil yüzde {2}.",
+  "where": [
+   "js/nav/navigator.js:175"
+  ]
+ },
+ {
+  "key": "{0} sa {1} dk",
+  "where": [
+   "js/nav/navigator.js:204",
+   "js/ui/historyPanel.js:62",
+   "js/ui/routePanel.js:12"
+  ]
+ },
+ {
+  "key": "{0} dk",
+  "where": [
+   "js/nav/navigator.js:204",
+   "js/ui/historyPanel.js:62",
+   "js/ui/routePanel.js:12"
+  ]
+ },
+ {
+  "key": "{0} km · {1}",
+  "where": [
+   "js/nav/navigator.js:204"
+  ]
+ },
+ {
+  "key": "Önce rotayı planla",
+  "where": [
+   "js/nav/navigator.js:238",
+   "js/nav/navigator.js:252"
+  ]
+ },
+ {
+  "key": "Konumundan hedefe yeni rota kuruluyor…",
+  "where": [
+   "js/nav/navigator.js:245"
+  ]
+ },
+ {
+  "key": "Yeni rota kurulamadı: önceki planla başlıyor",
+  "where": [
+   "js/nav/navigator.js:247"
+  ]
+ },
+ {
+  "key": "Konum yok: üstteki 📍 ile GPS'i aç (veya Test Modu)",
+  "where": [
+   "js/nav/navigator.js:254",
+   "js/nav/nearby.js:61"
+  ]
+ },
+ {
+  "key": "İpucu: ekran kapanmasın diye 🔆 düğmesine dokun",
+  "where": [
+   "js/nav/navigator.js:255"
+  ]
+ },
+ {
+  "key": "Navigasyon başladı.",
+  "where": [
+   "js/nav/navigator.js:267"
+  ]
+ },
+ {
+  "key": "⏹ Navigasyonu durdur",
+  "where": [
+   "js/nav/navigator.js:287"
+  ]
+ },
+ {
+  "key": "▶ Navigasyonu başlat",
+  "where": [
+   "js/nav/navigator.js:287"
+  ]
+ },
+ {
+  "key": "Sesli yönlendirme açık.",
+  "where": [
+   "js/nav/navigator.js:299"
+  ]
+ },
+ {
+  "key": "Yakındaki istasyonlar aranıyor…",
+  "where": [
+   "js/nav/nearby.js:64"
+  ]
+ },
+ {
+  "key": "Arama başarısız:",
+  "where": [
+   "js/nav/nearby.js:70"
+  ]
+ },
+ {
+  "key": "Rota güncellendi: {0} üzerinden, orada %{1} → %{2} şarj",
+  "where": [
+   "js/nav/nearby.js:103"
+  ]
+ },
+ {
+  "key": "Rota {0} üzerinden güncellendi",
+  "where": [
+   "js/nav/nearby.js:104"
+  ]
+ },
+ {
+  "key": "Rota güncellendi. {0} istasyonunda şarj durağı eklendi.",
+  "where": [
+   "js/nav/nearby.js:106"
+  ]
+ },
+ {
+  "key": "şimdi",
+  "where": [
+   "js/nav/nearby.js:131"
+  ]
+ },
+ {
+  "key": "dk önce",
+  "where": [
+   "js/nav/nearby.js:131"
+  ]
+ },
+ {
+  "key": "(önbellek)",
+  "where": [
+   "js/nav/nearby.js:131"
+  ]
+ },
+ {
+  "key": "{0} istasyon · {1} km çevre · {2} güncellendi{3}",
+  "where": [
+   "js/nav/nearby.js:131"
+  ]
+ },
+ {
+  "key": "Henüz aranmadı. Konumunu açıp \"Ara\"ya dokun.",
+  "where": [
+   "js/nav/nearby.js:132"
+  ]
+ },
+ {
+  "key": "Bu çevrede istasyon bulunamadı.",
+  "where": [
+   "js/nav/nearby.js:138"
+  ]
+ },
+ {
+  "key": "Bu çevrede hızlı (DC) istasyon bulunamadı; yavaş AC olanlar için \"AC de göster\"i aç.",
+  "where": [
+   "js/nav/nearby.js:138"
+  ]
+ },
+ {
+  "key": "{0} km",
+  "where": [
+   "js/nav/nearby.js:148",
+   "js/nav/steps.js:39",
+   "js/nav/steps.js:40"
+  ]
+ },
+ {
+  "key": "AC/yavaş",
+  "where": [
+   "js/nav/nearby.js:149",
+   "js/ui/routePanel.js:87",
+   "js/ui/stationsView.js:71"
+  ]
+ },
+ {
+  "key": "{0} · {1}{2} kW{3} · {4} TL/kWh",
+  "where": [
+   "js/nav/nearby.js:149"
+  ]
+ },
+ {
+  "key": "~{0} km yol",
+  "where": [
+   "js/nav/nearby.js:151"
+  ]
+ },
+ {
+  "key": "· varışta %{0}",
+  "where": [
+   "js/nav/nearby.js:152"
+  ]
+ },
+ {
+  "key": "· %{0}'e ≈ {1} dk, {2} TL",
+  "where": [
+   "js/nav/nearby.js:153"
+  ]
+ },
+ {
+  "key": "· doluluk bilgisi yok",
+  "where": [
+   "js/nav/nearby.js:154"
+  ]
+ },
+ {
+  "key": "🧭 Git",
+  "where": [
+   "js/nav/nearby.js:157",
+   "js/nav/nearby.js:210"
+  ]
+ },
+ {
+  "key": "↗ Haritalar",
+  "where": [
+   "js/nav/nearby.js:160"
+  ]
+ },
+ {
+  "key": "📍 Haritada",
+  "where": [
+   "js/nav/nearby.js:164"
+  ]
+ },
+ {
+  "key": "{0} km · {1} kW · {2} TL/kWh",
+  "where": [
+   "js/nav/nearby.js:207"
+  ]
+ },
+ {
+  "key": "· varışta ~%{0}",
+  "where": [
+   "js/nav/nearby.js:208"
+  ]
+ },
+ {
+  "key": "· yetmeyebilir",
+  "where": [
+   "js/nav/nearby.js:208"
+  ]
+ },
+ {
+  "key": "📋 Tüm listeyi aç",
+  "where": [
+   "js/nav/nearby.js:217"
+  ]
+ },
+ {
+  "key": "Pil %{0}: yakındaki istasyonları listelemek için konum gerekli. Üstteki 📍 düğmesiyle GPS'i aç.",
+  "where": [
+   "js/nav/nearby.js:246"
+  ]
+ },
+ {
+  "key": "arama başarısız: {0}",
+  "where": [
+   "js/nav/nearby.js:257"
+  ]
+ },
+ {
+  "key": "{0} km çevrede istasyon bulunamadı",
+  "where": [
+   "js/nav/nearby.js:257"
+  ]
+ },
+ {
+  "key": "aranıyor…",
+  "where": [
+   "js/nav/nearby.js:257"
+  ]
+ },
+ {
+  "key": "Pil %{0}: yakındaki istasyonlar {1}",
+  "where": [
+   "js/nav/nearby.js:258"
+  ]
+ },
+ {
+  "key": "Pil %{0}: uygun istasyon bulunamadı",
+  "where": [
+   "js/nav/nearby.js:264"
+  ]
+ },
+ {
+  "key": "Pil %{0} — en yakın şarj istasyonları:",
+  "where": [
+   "js/nav/nearby.js:267"
+  ]
+ },
+ {
+  "key": "(rota otomatik güncellendi)",
+  "where": [
+   "js/nav/nearby.js:267"
+  ]
+ },
+ {
+  "key": "Pil yüzde {0}. En yakın şarj istasyonu {1}, {2} kilometre. {3} kilovat, kilovat saati {4} lira.",
+  "where": [
+   "js/nav/nearby.js:279"
+  ]
+ },
+ {
+  "key": "sl:{0},{1},{2}",
+  "where": [
+   "js/nav/speedLimit.js:28"
+  ]
+ },
+ {
+  "key": "Kapalı: yol hız limiti sorgulanmaz. Hız uyarısı senin belirlediğin eşikle çalışır.",
+  "where": [
+   "js/nav/speedLimit.js:71"
+  ]
+ },
+ {
+  "key": "Yol hız limiti alınamadı ({0}); senin eşiğin kullanılır.",
+  "where": [
+   "js/nav/speedLimit.js:72"
+  ]
+ },
+ {
+  "key": "Bu yolun hız limiti: {0} km/s",
+  "where": [
+   "js/nav/speedLimit.js:73"
+  ]
+ },
+ {
+  "key": "Yol hız limiti sürerken okunur (OpenStreetMap; etiketi olmayan yolda bilinmez)",
+  "where": [
+   "js/nav/speedLimit.js:73"
+  ]
+ },
+ {
+  "key": "Yol hız limiti kontrolü açık (OpenStreetMap, ücretsiz)",
+  "where": [
+   "js/nav/speedLimit.js:90"
+  ]
+ },
+ {
+  "key": "Yol hız limiti kontrolü kapalı",
+  "where": [
+   "js/nav/speedLimit.js:90"
+  ]
+ },
+ {
+  "key": "{0} m",
+  "where": [
+   "js/nav/steps.js:41"
+  ]
+ },
+ {
+  "key": "{0} kilometre",
+  "where": [
+   "js/nav/steps.js:46"
+  ]
+ },
+ {
+  "key": "{0} metre",
+  "where": [
+   "js/nav/steps.js:47"
+  ]
+ },
+ {
+  "key": "{0} sonra {1}",
+  "where": [
+   "js/nav/steps.js:54"
+  ]
+ },
+ {
+  "key": "Rota / hava / arama servisleri",
+  "where": [
+   "js/net/meter.js:14"
+  ]
+ },
+ {
+  "key": "Harita karoları",
+  "where": [
+   "js/net/meter.js:15"
+  ]
+ },
+ {
+  "key": "Kütüphaneler ve OCR motoru",
+  "where": [
+   "js/net/meter.js:16"
+  ]
+ },
+ {
+  "key": "Uygulama dosyaları",
+  "where": [
+   "js/net/meter.js:17"
+  ]
+ },
+ {
+  "key": "Diğer (webhook vb.)",
+  "where": [
+   "js/net/meter.js:18"
+  ]
+ },
+ {
+  "key": "herkese açık değil",
+  "where": [
+   "js/osm/chargers.js:50",
+   "js/osm/chargers.js:76"
+  ]
+ },
+ {
+  "key": "socket:{0}",
+  "where": [
+   "js/osm/chargers.js:53"
+  ]
+ },
+ {
+  "key": "socket:{0}:output",
+  "where": [
+   "js/osm/chargers.js:54"
+  ]
+ },
+ {
+  "key": "Overpass istek sınırı (429)",
+  "where": [
+   "js/osm/chargers.js:112"
+  ]
+ },
+ {
+  "key": "Overpass HTTP {0}",
+  "where": [
+   "js/osm/chargers.js:112"
+  ]
+ },
+ {
+  "key": "Overpass zaman aşımı",
+  "where": [
+   "js/osm/chargers.js:116"
+  ]
+ },
+ {
+  "key": "Overpass yanıt vermedi",
+  "where": [
+   "js/osm/chargers.js:119"
+  ]
+ },
+ {
+  "key": "[out:json][timeout:60];nwr[\"amenity\"=\"charging_station\"](around:{0});out tags center;",
+  "where": [
+   "js/osm/chargers.js:142"
+  ]
+ },
+ {
+  "key": "&latitude={0}&longitude={1}&key={2}",
+  "where": [
+   "js/osm/chargers.js:152"
+  ]
+ },
+ {
+  "key": "OpenChargeMap anahtarı reddedildi",
+  "where": [
+   "js/osm/chargers.js:154"
+  ]
+ },
+ {
+  "key": "OpenChargeMap HTTP {0}",
+  "where": [
+   "js/osm/chargers.js:154"
+  ]
+ },
+ {
+  "key": "Önce anahtarı gir",
+  "where": [
+   "js/osm/chargers.js:165",
+   "js/ui/ocmKey.js:46"
+  ]
+ },
+ {
+  "key": "çalışıyor ({0} kayıt, {1} aday)",
+  "where": [
+   "js/osm/chargers.js:168"
+  ]
+ },
+ {
+  "key": "Mapbox: {0} arama başarısız{1}",
+  "where": [
+   "js/osm/chargers.js:193",
+   "js/osm/chargers.js:259"
+  ]
+ },
+ {
+  "key": "Mapbox: {0} arama üst sınır nedeniyle yapılmadı",
+  "where": [
+   "js/osm/chargers.js:194"
+  ]
+ },
+ {
+  "key": "ovp:{0}:{1}:{2}",
+  "where": [
+   "js/osm/chargers.js:201"
+  ]
+ },
+ {
+  "key": "Overpass: {0} parça alınamadı{1}",
+  "where": [
+   "js/osm/chargers.js:216"
+  ]
+ },
+ {
+  "key": "ocm:{0},{1}",
+  "where": [
+   "js/osm/chargers.js:231"
+  ]
+ },
+ {
+  "key": "OpenChargeMap: {0} arama başarısız{1}",
+  "where": [
+   "js/osm/chargers.js:236"
+  ]
+ },
+ {
+  "key": "İstasyon kaynağına ulaşılamadı: internet veya Overpass sunucusu",
+  "where": [
+   "js/osm/chargers.js:240"
+  ]
+ },
+ {
+  "key": "nearO:{0},{1}:{2}",
+  "where": [
+   "js/osm/chargers.js:274"
+  ]
+ },
+ {
+  "key": "oel:{0}:{1}",
+  "where": [
+   "js/osm/elevation.js:16"
+  ]
+ },
+ {
+  "key": "Valhalla (OSM yükseklik verisi)",
+  "where": [
+   "js/osm/elevation.js:27"
+  ]
+ },
+ {
+  "key": "Valhalla rakım başarısız, Open-Meteo deneniyor:",
+  "where": [
+   "js/osm/elevation.js:29"
+  ]
+ },
+ {
+  "key": "{0}?latitude={1}&longitude={2}",
+  "where": [
+   "js/osm/elevation.js:39"
+  ]
+ },
+ {
+  "key": "HTTP {0}",
+  "where": [
+   "js/osm/elevation.js:41"
+  ]
+ },
+ {
+  "key": "Open-Meteo (Copernicus DEM)",
+  "where": [
+   "js/osm/elevation.js:44"
+  ]
+ },
+ {
+  "key": "Rakım servisi başarısız:",
+  "where": [
+   "js/osm/elevation.js:46"
+  ]
+ },
+ {
+  "key": "nı",
+  "where": [
+   "js/osm/route.js:30"
+  ]
+ },
+ {
+  "key": "Sola dönün.",
+  "where": [
+   "js/osm/route.js:32"
+  ]
+ },
+ {
+  "key": "Sağa dönün.",
+  "where": [
+   "js/osm/route.js:32"
+  ]
+ },
+ {
+  "key": "Hafifçe sola dönün.",
+  "where": [
+   "js/osm/route.js:32"
+  ]
+ },
+ {
+  "key": "Hafifçe sağa dönün.",
+  "where": [
+   "js/osm/route.js:32"
+  ]
+ },
+ {
+  "key": "Keskin sola dönün.",
+  "where": [
+   "js/osm/route.js:33"
+  ]
+ },
+ {
+  "key": "Keskin sağa dönün.",
+  "where": [
+   "js/osm/route.js:33"
+  ]
+ },
+ {
+  "key": "Düz devam edin.",
+  "where": [
+   "js/osm/route.js:33"
+  ]
+ },
+ {
+  "key": "U dönüşü yapın.",
+  "where": [
+   "js/osm/route.js:33"
+  ]
+ },
+ {
+  "key": "aıoueiöü",
+  "where": [
+   "js/osm/route.js:45"
+  ]
+ },
+ {
+  "key": "aıou",
+  "where": [
+   "js/osm/route.js:46"
+  ]
+ },
+ {
+  "key": "ort:{0}:{1}>{2}|{3}",
+  "where": [
+   "js/osm/route.js:58"
+  ]
+ },
+ {
+  "key": "Rota bulunamadı (sunucu yanıtı boş)",
+  "where": [
+   "js/osm/route.js:72"
+  ]
+ },
+ {
+  "key": "Photon: istek sınırı, biraz bekle",
+  "where": [
+   "js/osm/search.js:26"
+  ]
+ },
+ {
+  "key": "Photon HTTP {0}",
+  "where": [
+   "js/osm/search.js:26"
+  ]
+ },
+ {
+  "key": "{0}/search?q={1}&format=jsonv2&accept-language={2}&addressdetails=1&limit=5",
+  "where": [
+   "js/osm/search.js:43"
+  ]
+ },
+ {
+  "key": "Nominatim HTTP {0}",
+  "where": [
+   "js/osm/search.js:44"
+  ]
+ },
+ {
+  "key": "&lat={0}&lon={1}",
+  "where": [
+   "js/osm/search.js:62"
+  ]
+ },
+ {
+  "key": "&lang={0}",
+  "where": [
+   "js/osm/search.js:62"
+  ]
+ },
+ {
+  "key": "oac:{0}:{1}",
+  "where": [
+   "js/osm/search.js:63"
+  ]
+ },
+ {
+  "key": "nom:{0}",
+  "where": [
+   "js/osm/search.js:75"
+  ]
+ },
+ {
+  "key": "Yerin konumu alınamadı",
+  "where": [
+   "js/osm/search.js:84"
+  ]
+ },
+ {
+  "key": "org:{0},{1}",
+  "where": [
+   "js/osm/search.js:91"
+  ]
+ },
+ {
+  "key": "Ücretsiz yol sunucusu yanıt vermedi (zaman aşımı)",
+  "where": [
+   "js/osm/valhalla.js:15"
+  ]
+ },
+ {
+  "key": "Ücretsiz yol sunucusuna ulaşılamadı (internet?)",
+  "where": [
+   "js/osm/valhalla.js:15"
+  ]
+ },
+ {
+  "key": "Ücretsiz yol sunucusu istek sınırına ulaştı, biraz bekle",
+  "where": [
+   "js/osm/valhalla.js:20"
+  ]
+ },
+ {
+  "key": "Rota bulunamadı: başlangıç/varış yola yakın değil veya bağlantı yok",
+  "where": [
+   "js/osm/valhalla.js:21"
+  ]
+ },
+ {
+  "key": "Yol sunucusu: {0}",
+  "where": [
+   "js/osm/valhalla.js:22"
+  ]
+ },
+ {
+  "key": "Yol sunucusu HTTP {0}",
+  "where": [
+   "js/osm/valhalla.js:22"
+  ]
+ },
+ {
+  "key": "owx:{0},{1}",
+  "where": [
+   "js/osm/weather.js:8"
+  ]
+ },
+ {
+  "key": "{0}?latitude={1}&longitude={2}&hourly=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m",
+  "where": [
+   "js/osm/weather.js:31"
+  ]
+ },
+ {
+  "key": "&forecast_days={0}&timezone=UTC&timeformat=unixtime&wind_speed_unit=kmh",
+  "where": [
+   "js/osm/weather.js:32"
+  ]
+ },
+ {
+  "key": "Open-Meteo HTTP {0}",
+  "where": [
+   "js/osm/weather.js:34"
+  ]
+ },
+ {
+  "key": "Open-Meteo: bazı noktalar için tahmin yok",
+  "where": [
+   "js/osm/weather.js:57"
+  ]
+ },
+ {
+  "key": "Hava durumu alınamadı:",
+  "where": [
+   "js/physics/rangeEngine.js:55"
+  ]
+ },
+ {
+  "key": "Mapbox rotası alınamadı ({0}); ücretsiz rota kullanıldı, trafik yok",
+  "where": [
+   "js/providers/index.js:22"
+  ]
+ },
+ {
+  "key": "my{0}{1}",
+  "where": [
+   "js/routing/chargerSource.js:29"
+  ]
+ },
+ {
+  "key": "geçmiş ({0} km) + canlı",
+  "where": [
+   "js/routing/controller.js:48"
+  ]
+ },
+ {
+  "key": "geçmiş ölçüm (~{0} km/s civarı, {1} km)",
+  "where": [
+   "js/routing/controller.js:49"
+  ]
+ },
+ {
+  "key": "geçmiş ortalama ({0} km) + hıza göre düzeltme",
+  "where": [
+   "js/routing/controller.js:50"
+  ]
+ },
+ {
+  "key": "canlı kalibrasyon",
+  "where": [
+   "js/routing/controller.js:51"
+  ]
+ },
+ {
+  "key": "kalibre değil (model varsayımı)",
+  "where": [
+   "js/routing/controller.js:51"
+  ]
+ },
+ {
+  "key": "İstasyonlar önbellekten alındı",
+  "where": [
+   "js/routing/controller.js:93"
+  ]
+ },
+ {
+  "key": "Şarj istasyonları aranıyor…",
+  "where": [
+   "js/routing/controller.js:101",
+   "js/routing/controller.js:187"
+  ]
+ },
+ {
+  "key": "Önce başlangıç ve varış seç",
+  "where": [
+   "js/routing/controller.js:123"
+  ]
+ },
+ {
+  "key": "Pil okunamadı: %80 varsayıldı",
+  "where": [
+   "js/routing/controller.js:126"
+  ]
+ },
+ {
+  "key": "Rota alınıyor…",
+  "where": [
+   "js/routing/controller.js:130"
+  ]
+ },
+ {
+  "key": "Rakım ve hava durumu alınıyor…",
+  "where": [
+   "js/routing/controller.js:162"
+  ]
+ },
+ {
+  "key": "Rakım alınamadı: rota düz kabul edildi",
+  "where": [
+   "js/routing/controller.js:173",
+   "js/routing/controller.js:223"
+  ]
+ },
+ {
+  "key": "Hava durumu alınamadı: rüzgar/yağış yok sayıldı",
+  "where": [
+   "js/routing/controller.js:174",
+   "js/routing/controller.js:224"
+  ]
+ },
+ {
+  "key": "Yeni rota alınamadı, mevcut plan korundu:",
+  "where": [
+   "js/routing/controller.js:201"
+  ]
+ },
+ {
+  "key": "Plan hatası:",
+  "where": [
+   "js/routing/controller.js:204"
+  ]
+ },
+ {
+  "key": "Yeniden rota verisi tamamlanamadı:",
+  "where": [
+   "js/routing/controller.js:238"
+  ]
+ },
+ {
+  "key": "az önce",
+  "where": [
+   "js/routing/controller.js:323"
+  ]
+ },
+ {
+  "key": "saat önce",
+  "where": [
+   "js/routing/controller.js:323"
+  ]
+ },
+ {
+  "key": ": internet varsa yeniden planla",
+  "where": [
+   "js/routing/controller.js:323"
+  ]
+ },
+ {
+  "key": "Kayıtlı rota yüklendi ({0} planlandı){1}",
+  "where": [
+   "js/routing/controller.js:323"
+  ]
+ },
+ {
+  "key": "şarj üniteleri arızalı",
+  "where": [
+   "js/routing/livePlan.js:75"
+  ]
+ },
+ {
+  "key": "şu an boş yuva yok",
+  "where": [
+   "js/routing/livePlan.js:75"
+  ]
+ },
+ {
+  "key": "{0} istasyonunda {1}. Plan güncelleniyor.",
+  "where": [
+   "js/routing/livePlan.js:75"
+  ]
+ },
+ {
+  "key": "Başlangıçtan",
+  "where": [
+   "js/routing/planner.js:148"
+  ]
+ },
+ {
+  "key": "{0}. km'deki {1} istasyonundan",
+  "where": [
+   "js/routing/planner.js:148"
+  ]
+ },
+ {
+  "key": "sonraki aday istasyon {0}. km'de ({1} km)",
+  "where": [
+   "js/routing/planner.js:149"
+  ]
+ },
+ {
+  "key": "varışa {0} km var",
+  "where": [
+   "js/routing/planner.js:149"
+  ]
+ },
+ {
+  "key": "Uygun şarj zinciri bulunamadı: {0} sonra {1}, ama %{2} pille en fazla ~{3} km gidilebilir.",
+  "where": [
+   "js/routing/planner.js:150"
+  ]
+ },
+ {
+  "key": "Bu aralıkta haritada istasyon eksik olabilir: İstasyon sekmesindeki \"Kendi istasyonlarım\"a bildiğin istasyonları ekle; ayrıca tüketimi, giriş pilini veya şarj hedefini gözden geçir (toplam tüketim ≈ %{0} pil, {1} aday istasyon).",
+  "where": [
+   "js/routing/planner.js:151"
+  ]
+ },
+ {
+  "key": "· şimdi",
+  "where": [
+   "js/routing/slots.js:47"
+  ]
+ },
+ {
+  "key": "· {0} dk önce",
+  "where": [
+   "js/routing/slots.js:47"
+  ]
+ },
+ {
+  "key": "· eski bilgi",
+  "where": [
+   "js/routing/slots.js:47"
+  ]
+ },
+ {
+  "key": "⚫ arızalı",
+  "where": [
+   "js/routing/slots.js:48"
+  ]
+ },
+ {
+  "key": "🔴 dolu (0/{0})",
+  "where": [
+   "js/routing/slots.js:49"
+  ]
+ },
+ {
+  "key": "🟢 {0}/{1} boş",
+  "where": [
+   "js/routing/slots.js:50"
+  ]
+ },
+ {
+  "key": "Kamera API yok (HTTPS gerekli olabilir)",
+  "where": [
+   "js/sensors/camera.js:7",
+   "js/ui/tokenScanner.js:51"
+  ]
+ },
+ {
+  "key": "scale({0})",
+  "where": [
+   "js/sensors/camera.js:48"
+  ]
+ },
+ {
+  "key": "Tesseract.js yüklenemedi",
+  "where": [
+   "js/sensors/ocr.js:35"
+  ]
+ },
+ {
+  "key": "OCR hatası:",
+  "where": [
+   "js/sensors/ocr.js:132",
+   "js/ui/cameraPanel.js:138"
+  ]
+ },
+ {
+  "key": "rgb({0},{1},{2})",
+  "where": [
+   "js/sensors/preprocess.js:144"
+  ]
+ },
+ {
+  "key": "Wake Lock bu tarayıcıda desteklenmiyor",
+  "where": [
+   "js/sensors/wakeLock.js:16"
+  ]
+ },
+ {
+  "key": "Ekran açık kalacak",
+  "where": [
+   "js/sensors/wakeLock.js:36"
+  ]
+ },
+ {
+  "key": "Wake Lock alınamadı:",
+  "where": [
+   "js/sensors/wakeLock.js:39"
+  ]
+ },
+ {
+  "key": "Varışa ulaşıldı",
+  "where": [
+   "js/sim/simulator.js:35"
+  ]
+ },
+ {
+  "key": "Pil bitti: simülasyonda %80'e sıfırlandı, sürüş devam ediyor",
+  "where": [
+   "js/sim/simulator.js:53"
+  ]
+ },
+ {
+  "key": "{0} dinleyicisi hata verdi:",
+  "where": [
+   "js/state.js:62"
+  ]
+ },
+ {
+  "key": "(önerilen)",
+  "where": [
+   "js/ui/abrpPanel.js:45"
+  ]
+ },
+ {
+  "key": "{0} sn{1}",
+  "where": [
+   "js/ui/abrpPanel.js:45"
+  ]
+ },
+ {
+  "key": "≈ {0} MB/saat sürüşte; araç duruyorken en az {1} sn'de bir gönderilir.",
+  "where": [
+   "js/ui/abrpPanel.js:52"
+  ]
+ },
+ {
+  "key": "🙈 Gizle",
+  "where": [
+   "js/ui/abrpPanel.js:70"
+  ]
+ },
+ {
+  "key": "👁️ Göster",
+  "where": [
+   "js/ui/abrpPanel.js:70"
+  ]
+ },
+ {
+  "key": "Yükleniyor",
+  "where": [
+   "js/ui/cameraPanel.js:10"
+  ]
+ },
+ {
+  "key": "Geçerli",
+  "where": [
+   "js/ui/cameraPanel.js:10"
+  ]
+ },
+ {
+  "key": "Okunamadı",
+  "where": [
+   "js/ui/cameraPanel.js:11"
+  ]
+ },
+ {
+  "key": "Yakınlaştırma uygulanamadı:",
+  "where": [
+   "js/ui/cameraPanel.js:31"
+  ]
+ },
+ {
+  "key": "dijital (netlik azalır)",
+  "where": [
+   "js/ui/cameraPanel.js:37"
+  ]
+ },
+ {
+  "key": "Kamera açılamadı:",
+  "where": [
+   "js/ui/cameraPanel.js:56",
+   "js/ui/tokenScanner.js:62"
+  ]
+ },
+ {
+  "key": "⏹ Kamerayı Durdur",
+  "where": [
+   "js/ui/cameraPanel.js:70"
+  ]
+ },
+ {
+  "key": "📷 Kamerayı Başlat",
+  "where": [
+   "js/ui/cameraPanel.js:70"
+  ]
+ },
+ {
+  "key": "⏹ OCR Durdur",
+  "where": [
+   "js/ui/cameraPanel.js:74"
+  ]
+ },
+ {
+  "key": "🔍 OCR Başlat",
+  "where": [
+   "js/ui/cameraPanel.js:74"
+  ]
+ },
+ {
+  "key": "Algılanan eğim: dönme {0}°, yatıklık {1}°",
+  "where": [
+   "js/ui/cameraPanel.js:107"
+  ]
+ },
+ {
+  "key": "Uygulanan: dönme {0}°, yatıklık {1}°",
+  "where": [
+   "js/ui/cameraPanel.js:107"
+  ]
+ },
+ {
+  "key": "Test Modu açık — pili Test sekmesinden değiştir",
+  "where": [
+   "js/ui/cameraPanel.js:126"
+  ]
+ },
+ {
+  "key": "{0} km/h · {1}",
+  "where": [
+   "js/ui/cameraPanel.js:142"
+  ]
+ },
+ {
+  "key": "Akıcı",
+  "where": [
+   "js/ui/cards.js:12"
+  ]
+ },
+ {
+  "key": "Yoğun",
+  "where": [
+   "js/ui/cards.js:12"
+  ]
+ },
+ {
+  "key": "Sıkışık",
+  "where": [
+   "js/ui/cards.js:12"
+  ]
+ },
+ {
+  "key": "veri bekleniyor (≥3 puan düşüş)",
+  "where": [
+   "js/ui/cards.js:38"
+  ]
+ },
+ {
+  "key": "{0} kWh/100km",
+  "where": [
+   "js/ui/cards.js:39"
+  ]
+ },
+ {
+  "key": "(kalibre değil)",
+  "where": [
+   "js/ui/cards.js:40"
+  ]
+ },
+ {
+  "key": "°C",
+  "where": [
+   "js/ui/cards.js:43"
+  ]
+ },
+ {
+  "key": "{0} km/h · {1} ({2}°)",
+  "where": [
+   "js/ui/cards.js:45"
+  ]
+ },
+ {
+  "key": "{0} {1} km/h",
+  "where": [
+   "js/ui/cards.js:47"
+  ]
+ },
+ {
+  "key": "{0}% tüketim",
+  "where": [
+   "js/ui/cards.js:48"
+  ]
+ },
+ {
+  "key": "(rakım yok)",
+  "where": [
+   "js/ui/cards.js:54"
+  ]
+ },
+ {
+  "key": "↑{0} m / ↓{1} m{2}",
+  "where": [
+   "js/ui/cards.js:54"
+  ]
+ },
+ {
+  "key": "{0} kWh",
+  "where": [
+   "js/ui/cards.js:55"
+  ]
+ },
+ {
+  "key": "+{0} dk / 100 km",
+  "where": [
+   "js/ui/cards.js:60"
+  ]
+ },
+ {
+  "key": "+{0} kWh / 100 km",
+  "where": [
+   "js/ui/cards.js:61"
+  ]
+ },
+ {
+  "key": "−{0} kWh / 100 km",
+  "where": [
+   "js/ui/cards.js:62"
+  ]
+ },
+ {
+  "key": "{0} kWh / 100 km",
+  "where": [
+   "js/ui/cards.js:63"
+  ]
+ },
+ {
+  "key": "Aç:",
+  "where": [
+   "js/ui/collapse.js:11"
+  ]
+ },
+ {
+  "key": "Seçilen konum: {0}, {1}",
+  "where": [
+   "js/ui/customStations.js:19"
+  ]
+ },
+ {
+  "key": "· {0} kW",
+  "where": [
+   "js/ui/customStations.js:36"
+  ]
+ },
+ {
+  "key": "İstasyon eklendi",
+  "where": [
+   "js/ui/customStations.js:54"
+  ]
+ },
+ {
+  "key": "Önce bir yer ara ve listeden seç",
+  "where": [
+   "js/ui/customStations.js:57"
+  ]
+ },
+ {
+  "key": "Konum yok: önce GPS açık olmalı",
+  "where": [
+   "js/ui/customStations.js:60"
+  ]
+ },
+ {
+  "key": "Bulunduğum yer",
+  "where": [
+   "js/ui/customStations.js:61"
+  ]
+ },
+ {
+  "key": "{0} (benim)",
+  "where": [
+   "js/ui/customStations.js:61"
+  ]
+ },
+ {
+  "key": "{0} B",
+  "where": [
+   "js/ui/dataUsage.js:8"
+  ]
+ },
+ {
+  "key": "{0} KB",
+  "where": [
+   "js/ui/dataUsage.js:9"
+  ]
+ },
+ {
+  "key": "{0} MB",
+  "where": [
+   "js/ui/dataUsage.js:10"
+  ]
+ },
+ {
+  "key": "Henüz veri yok",
+  "where": [
+   "js/ui/dataUsage.js:39"
+  ]
+ },
+ {
+  "key": "↑ {0} ↓ {1} (toplam {2}) · {3} istek",
+  "where": [
+   "js/ui/dataUsage.js:45"
+  ]
+ },
+ {
+  "key": "↑ {0} ↓ {1} (toplam {2})",
+  "where": [
+   "js/ui/dataUsage.js:46"
+  ]
+ },
+ {
+  "key": "Emin misin? Tekrar dokun",
+  "where": [
+   "js/ui/dataUsage.js:56"
+  ]
+ },
+ {
+  "key": "Veri sayaçları sıfırlandı",
+  "where": [
+   "js/ui/dataUsage.js:63"
+  ]
+ },
+ {
+  "key": "Sayaçları sıfırla",
+  "where": [
+   "js/ui/dataUsage.js:68"
+  ]
+ },
+ {
+  "key": "{0} · {1} · menzil {2} km",
+  "where": [
+   "js/ui/dimmer.js:31"
+  ]
+ },
+ {
+  "key": "Henüz yeterli ölçüm yok (sürerken pil yüzdesi düştükçe birikir).",
+  "where": [
+   "js/ui/historyPanel.js:23"
+  ]
+ },
+ {
+  "key": "Çubuk: kWh/100km (üst sınır {0}) · Çizgi: hız km/s (üst sınır {1}) · son {2} ölçüm (sol eski, sağ yeni)",
+  "where": [
+   "js/ui/historyPanel.js:42"
+  ]
+ },
+ {
+  "key": "empty small muted",
+  "where": [
+   "js/ui/historyPanel.js:70"
+  ]
+ },
+ {
+  "key": "Henüz yolculuk kaydı yok (sürerken pil yüzdesi düştükçe birikir).",
+  "where": [
+   "js/ui/historyPanel.js:70"
+  ]
+ },
+ {
+  "key": "{0} km · {1} · ort. {2} km/s",
+  "where": [
+   "js/ui/historyPanel.js:79"
+  ]
+ },
+ {
+  "key": "{0} kWh · {1} kWh/100km · pil −%{2} ({3} ölçüm)",
+  "where": [
+   "js/ui/historyPanel.js:80"
+  ]
+ },
+ {
+  "key": "{0} km · {1} kWh/100km · ort. {2} km/s",
+  "where": [
+   "js/ui/historyPanel.js:86"
+  ]
+ },
+ {
+  "key": "({0} ölçüm)",
+  "where": [
+   "js/ui/historyPanel.js:92"
+  ]
+ },
+ {
+  "key": "geçmiş ortalamaya",
+  "where": [
+   "js/ui/historyPanel.js:100"
+  ]
+ },
+ {
+  "key": "Hız düzeltmesi ({0} göre):",
+  "where": [
+   "js/ui/historyPanel.js:100"
+  ]
+ },
+ {
+  "key": "{0} km/s ×{1}",
+  "where": [
+   "js/ui/historyPanel.js:100"
+  ]
+ },
+ {
+  "key": "Hız düzeltmesi: yeterli ölçüm birikince (her hızda ≥ 25 km) burada görünür.",
+  "where": [
+   "js/ui/historyPanel.js:101"
+  ]
+ },
+ {
+  "key": "🗑️ Geçmişi sil",
+  "where": [
+   "js/ui/historyPanel.js:119",
+   "js/ui/historyPanel.js:122"
+  ]
+ },
+ {
+  "key": "Silmek için tekrar dokun",
+  "where": [
+   "js/ui/historyPanel.js:121"
+  ]
+ },
+ {
+  "key": "Uygulama yükleniyor…",
+  "where": [
+   "js/ui/installPrompt.js:23"
+  ]
+ },
+ {
+  "key": "Uygulama yüklendi",
+  "where": [
+   "js/ui/installPrompt.js:28"
+  ]
+ },
+ {
+  "key": "Harita kütüphanesi yüklenemedi",
+  "where": [
+   "js/ui/maps/maplibre.js:15"
+  ]
+ },
+ {
+  "key": "Harita yüklenemedi (internet?)",
+  "where": [
+   "js/ui/maps/maplibre.js:29"
+  ]
+ },
+ {
+  "key": "Tiles © Esri — Esri, Maxar, Earthstar Geographics ve GIS Kullanıcı Topluluğu",
+  "where": [
+   "js/ui/maps/maplibre.js:53"
+  ]
+ },
+ {
+  "key": "{0}{1}/{z}/{y}/{x}",
+  "where": [
+   "js/ui/maps/maplibre.js:62"
+  ]
+ },
+ {
+  "key": "spin {0}{1}{2}",
+  "where": [
+   "js/ui/mapView.js:36"
+  ]
+ },
+ {
+  "key": "<svg viewBox=\"0 0 36 46\" aria-hidden=\"true\"><path d=\"{0}\"/></svg>",
+  "where": [
+   "js/ui/mapView.js:37"
+  ]
+ },
+ {
+  "key": "Bu tarayıcıda Geolocation yok",
+  "where": [
+   "js/ui/mapView.js:160"
+  ]
+ },
+ {
+  "key": "Konum alınamadı:",
+  "where": [
+   "js/ui/mapView.js:166"
+  ]
+ },
+ {
+  "key": "translateY(50%) rotate({0}deg)",
+  "where": [
+   "js/ui/mapView.js:256",
+   "js/ui/mapView.js:341"
+  ]
+ },
+ {
+  "key": "{0} · {1} kW · {2} TL/kWh",
+  "where": [
+   "js/ui/mapView.js:302"
+  ]
+ },
+ {
+  "key": "{0} · {1} kW",
+  "where": [
+   "js/ui/mapView.js:309"
+  ]
+ },
+ {
+  "key": "Anahtar biçimi geçersiz",
+  "where": [
+   "js/ui/ocmKey.js:20"
+  ]
+ },
+ {
+  "key": "Sınanıyor…",
+  "where": [
+   "js/ui/ocmKey.js:28",
+   "js/ui/ocmKey.js:48"
+  ]
+ },
+ {
+  "key": "{0} OpenChargeMap: {1}",
+  "where": [
+   "js/ui/ocmKey.js:30"
+  ]
+ },
+ {
+  "key": "Bu gizli (sk.) anahtar: yalnızca herkese açık pk. anahtarı girilir",
+  "where": [
+   "js/ui/ocmKey.js:39"
+  ]
+ },
+ {
+  "key": "Mapbox anahtarı biçimi geçersiz (pk. ile başlamalı)",
+  "where": [
+   "js/ui/ocmKey.js:40"
+  ]
+ },
+ {
+  "key": "Önbellek: {0} kayıt · {1} çağrı sunucuya gitmedi, {2} gitti",
+  "where": [
+   "js/ui/ocmKey.js:61"
+  ]
+ },
+ {
+  "key": "Önbellek temizlendi",
+  "where": [
+   "js/ui/ocmKey.js:63"
+  ]
+ },
+ {
+  "key": "İş",
+  "where": [
+   "js/ui/places.js:11"
+  ]
+ },
+ {
+  "key": "Kayıtlı değil: Yerleri düzenle'den ekle",
+  "where": [
+   "js/ui/places.js:49"
+  ]
+ },
+ {
+  "key": "Başlangıç",
+  "where": [
+   "js/ui/places.js:49"
+  ]
+ },
+ {
+  "key": "Varış",
+  "where": [
+   "js/ui/places.js:49"
+  ]
+ },
+ {
+  "key": "{0} yap",
+  "where": [
+   "js/ui/places.js:49"
+  ]
+ },
+ {
+  "key": "{0} kayıtlı değil: aşağıdan ekle",
+  "where": [
+   "js/ui/places.js:55"
+  ]
+ },
+ {
+  "key": "{0} adı",
+  "where": [
+   "js/ui/places.js:74"
+  ]
+ },
+ {
+  "key": "kayıtlı değil",
+  "where": [
+   "js/ui/places.js:84"
+  ]
+ },
+ {
+  "key": "Önce varış seç",
+  "where": [
+   "js/ui/places.js:91"
+  ]
+ },
+ {
+  "key": "Önce başlangıç seç",
+  "where": [
+   "js/ui/places.js:91"
+  ]
+ },
+ {
+  "key": "{0} kaydedildi",
+  "where": [
+   "js/ui/places.js:93",
+   "js/ui/places.js:101",
+   "js/ui/tokenScanner.js:130"
+  ]
+ },
+ {
+  "key": "Varışı kaydet",
+  "where": [
+   "js/ui/places.js:95"
+  ]
+ },
+ {
+  "key": "Başlangıcı kaydet",
+  "where": [
+   "js/ui/places.js:96"
+  ]
+ },
+ {
+  "key": "📍 Konumum",
+  "where": [
+   "js/ui/places.js:97"
+  ]
+ },
+ {
+  "key": "Konum yok: üstteki 📍 ile GPS'i aç",
+  "where": [
+   "js/ui/places.js:99"
+  ]
+ },
+ {
+  "key": "🗑 Sil",
+  "where": [
+   "js/ui/places.js:103"
+  ]
+ },
+ {
+  "key": "Konum alınıyor…",
+  "where": [
+   "js/ui/placeSearch.js:42"
+  ]
+ },
+ {
+  "key": "Konum alınamadı",
+  "where": [
+   "js/ui/placeSearch.js:49"
+  ]
+ },
+ {
+  "key": "Koordinat: {0}, {1}",
+  "where": [
+   "js/ui/placeSearch.js:67"
+  ]
+ },
+ {
+  "key": "Aranıyor…",
+  "where": [
+   "js/ui/placeSearch.js:69",
+   "js/ui/placeSearch.js:73"
+  ]
+ },
+ {
+  "key": "Sonuç bulunamadı",
+  "where": [
+   "js/ui/placeSearch.js:71"
+  ]
+ },
+ {
+  "key": "Arama başarısız (internet?)",
+  "where": [
+   "js/ui/placeSearch.js:75"
+  ]
+ },
+ {
+  "key": "En Hızlı",
+  "where": [
+   "js/ui/routePanel.js:8"
+  ]
+ },
+ {
+  "key": "En Ekonomik",
+  "where": [
+   "js/ui/routePanel.js:8"
+  ]
+ },
+ {
+  "key": "Mapbox canlı trafik: süre {0}, olağan {1} (×{2}) · ortalama hız {3} km/s",
+  "where": [
+   "js/ui/routePanel.js:33"
+  ]
+ },
+ {
+  "key": "· haritada sarı: yavaş, kırmızı: yoğun trafik ({0} km)",
+  "where": [
+   "js/ui/routePanel.js:33"
+  ]
+ },
+ {
+  "key": "· yoğun kesim yok",
+  "where": [
+   "js/ui/routePanel.js:33"
+  ]
+ },
+ {
+  "key": "Süre {0} (trafiksiz, canlı trafik yok) · ortalama hız {1} km/s",
+  "where": [
+   "js/ui/routePanel.js:34"
+  ]
+ },
+ {
+  "key": "Başlangıç ve varış seçip Rotayı Planla'ya dokun.",
+  "where": [
+   "js/ui/routePanel.js:55"
+  ]
+ },
+ {
+  "key": "{0}–{1} km",
+  "where": [
+   "js/ui/routePanel.js:69"
+  ]
+ },
+ {
+  "key": "⚠ {0} arasında bilinen hızlı (DC) istasyon yok; harita verisi eksik olabilir.",
+  "where": [
+   "js/ui/routePanel.js:69"
+  ]
+ },
+ {
+  "key": "— eşiğin {0} puan altı, tolerans içinde",
+  "where": [
+   "js/ui/routePanel.js:72"
+  ]
+ },
+ {
+  "key": "Varışta tahmini pil %{0} (eşik %{1}{2}) · şarj {3} · {4} TL{5}",
+  "where": [
+   "js/ui/routePanel.js:74"
+  ]
+ },
+ {
+  "key": "Şarj gerekmiyor — varışta tahmini pil %{0} (eşik %{1}{2}).{3}",
+  "where": [
+   "js/ui/routePanel.js:75"
+  ]
+ },
+ {
+  "key": "{0} dk · {1} TL",
+  "where": [
+   "js/ui/routePanel.js:84"
+  ]
+ },
+ {
+  "key": "önceki duraktan",
+  "where": [
+   "js/ui/routePanel.js:87"
+  ]
+ },
+ {
+  "key": "yolculuk başından",
+  "where": [
+   "js/ui/routePanel.js:87"
+  ]
+ },
+ {
+  "key": "{0} km kaldı ({1} {2} km) · {3} {4}{5} kW · %{6} → %{7}",
+  "where": [
+   "js/ui/routePanel.js:87"
+  ]
+ },
+ {
+  "key": "· sapma {0} km",
+  "where": [
+   "js/ui/routePanel.js:88"
+  ]
+ },
+ {
+  "key": "Hava durumu alınamadı: rüzgâr ve yağış hesaba katılmadı",
+  "where": [
+   "js/ui/routePanel.js:111"
+  ]
+ },
+ {
+  "key": ". Rotayı Planla ile tekrar dene.",
+  "where": [
+   "js/ui/routePanel.js:112"
+  ]
+ },
+ {
+  "key": "Ortalama {0} °C · en düşük {1} °C",
+  "where": [
+   "js/ui/routePanel.js:121"
+  ]
+ },
+ {
+  "key": "· yağış: {0}",
+  "where": [
+   "js/ui/routePanel.js:122"
+  ]
+ },
+ {
+  "key": "· yağış yok",
+  "where": [
+   "js/ui/routePanel.js:122"
+  ]
+ },
+ {
+  "key": "· ortalama net rüzgâr {0} {1} km/h",
+  "where": [
+   "js/ui/routePanel.js:123"
+  ]
+ },
+ {
+  "key": "({0} olduğu için yedek)",
+  "where": [
+   "js/ui/routePanel.js:124"
+  ]
+ },
+ {
+  "key": "· kaynak: {0}{1}",
+  "where": [
+   "js/ui/routePanel.js:124"
+  ]
+ },
+ {
+  "key": "🌧️ {0} mm/sa",
+  "where": [
+   "js/ui/routePanel.js:128"
+  ]
+ },
+ {
+  "key": "☀️ yağış yok",
+  "where": [
+   "js/ui/routePanel.js:128"
+  ]
+ },
+ {
+  "key": "arka −",
+  "where": [
+   "js/ui/routePanel.js:129"
+  ]
+ },
+ {
+  "key": "💨 {0} km/h ({1}{2})",
+  "where": [
+   "js/ui/routePanel.js:129"
+  ]
+ },
+ {
+  "key": "{0} °C · {1}",
+  "where": [
+   "js/ui/routePanel.js:132"
+  ]
+ },
+ {
+  "key": "Önce bir rota planla",
+  "where": [
+   "js/ui/shell.js:24"
+  ]
+ },
+ {
+  "key": "Konum aranıyor…",
+  "where": [
+   "js/ui/shell.js:37"
+  ]
+ },
+ {
+  "key": "Navigasyonu başlat",
+  "where": [
+   "js/ui/shell.js:50"
+  ]
+ },
+ {
+  "key": "Başlangıç için haritaya dokun",
+  "where": [
+   "js/ui/shell.js:67"
+  ]
+ },
+ {
+  "key": "Varış için haritaya dokun",
+  "where": [
+   "js/ui/shell.js:67"
+  ]
+ },
+ {
+  "key": "canlı",
+  "where": [
+   "js/ui/socBar.js:31"
+  ]
+ },
+ {
+  "key": "Tahmini menzil (%{0} eşik piline kadar)",
+  "where": [
+   "js/ui/socBar.js:42"
+  ]
+ },
+ {
+  "key": "; %0'a kadar yaklaşık {0} km",
+  "where": [
+   "js/ui/socBar.js:42"
+  ]
+ },
+ {
+  "key": "Pil kameradan canlı okunuyor: elle ayar gerekmez",
+  "where": [
+   "js/ui/socBar.js:49"
+  ]
+ },
+ {
+  "key": "Test Modu: pil Test sekmesindeki değerdir.",
+  "where": [
+   "js/ui/socInput.js:24"
+  ]
+ },
+ {
+  "key": "Pil bilinmiyor: plan %80 varsayar. Sürgüyle gir.",
+  "where": [
+   "js/ui/socInput.js:25"
+  ]
+ },
+ {
+  "key": "Pil kameradan canlı okunuyor: elle ayar gerekmez (kamera durursa sürgü açılır).",
+  "where": [
+   "js/ui/socInput.js:26"
+  ]
+ },
+ {
+  "key": "Elle girildi: yol alındıkça tüketim modeliyle düşer, kamera okuyunca düzelir.",
+  "where": [
+   "js/ui/socInput.js:27"
+  ]
+ },
+ {
+  "key": "Son okunan değer.",
+  "where": [
+   "js/ui/socInput.js:28"
+  ]
+ },
+ {
+  "key": "En hızlı",
+  "where": [
+   "js/ui/stationsView.js:10"
+  ]
+ },
+ {
+  "key": "Optimum (süre + maliyet)",
+  "where": [
+   "js/ui/stationsView.js:10"
+  ]
+ },
+ {
+  "key": "İstasyonlar · {0}",
+  "where": [
+   "js/ui/stationsView.js:25"
+  ]
+ },
+ {
+  "key": "Hiç istasyon alınamadı.",
+  "where": [
+   "js/ui/stationsView.js:33"
+  ]
+ },
+ {
+  "key": "Liste eksik olabilir.",
+  "where": [
+   "js/ui/stationsView.js:33"
+  ]
+ },
+ {
+  "key": "— İnternet bağlantını kontrol et; sorun geçiciyse biraz sonra yeniden dene (açık kaynak sunucular zaman zaman yanıt vermez).",
+  "where": [
+   "js/ui/stationsView.js:34"
+  ]
+ },
+ {
+  "key": "Rota boyunca uygun (DC, ≥40 kW) istasyon bulunamadı (OpenStreetMap/OpenChargeMap verisi). Bildiğin istasyonları \"Kendi istasyonlarım\"dan ekleyebilirsin.",
+  "where": [
+   "js/ui/stationsView.js:35"
+  ]
+ },
+ {
+  "key": "Rota planlayınca rotadaki istasyonlar burada listelenir.",
+  "where": [
+   "js/ui/stationsView.js:41"
+  ]
+ },
+ {
+  "key": "Kaynak: {0} kayıt → {1} aday",
+  "where": [
+   "js/ui/stationsView.js:54"
+  ]
+ },
+ {
+  "key": "(elenen: {0})",
+  "where": [
+   "js/ui/stationsView.js:54"
+  ]
+ },
+ {
+  "key": "· yedek metin araması {0} çağrı, {1} bulundu",
+  "where": [
+   "js/ui/stationsView.js:55"
+  ]
+ },
+ {
+  "key": "· 100 km başına aday: {0}.",
+  "where": [
+   "js/ui/stationsView.js:56"
+  ]
+ },
+ {
+  "key": "{0} istasyon ileride, {1} tanesine ek şarj olmadan ulaşılabiliyor.",
+  "where": [
+   "js/ui/stationsView.js:58"
+  ]
+ },
+ {
+  "key": "Aday satırlarında süre/maliyet: varış pilinden %80'e (veya +10 puana) şarj.",
+  "where": [
+   "js/ui/stationsView.js:59"
+  ]
+ },
+ {
+  "key": "Planda #{0}",
+  "where": [
+   "js/ui/stationsView.js:70"
+  ]
+ },
+ {
+  "key": "{0} · {1}{2} kW{3} · {4} TL/kWh · {5} km ileride · varış %{6} → %{7}",
+  "where": [
+   "js/ui/stationsView.js:71"
+  ]
+ },
+ {
+  "key": "Operatörü düzelt",
+  "where": [
+   "js/ui/stationsView.js:78"
+  ]
+ },
+ {
+  "key": "(kayıt)",
+  "where": [
+   "js/ui/stationsView.js:79"
+  ]
+ },
+ {
+  "key": "{0} TL",
+  "where": [
+   "js/ui/stationsView.js:89"
+  ]
+ },
+ {
+  "key": "Erişilebilir istasyon yok.",
+  "where": [
+   "js/ui/stationsView.js:93"
+  ]
+ },
+ {
+  "key": "GPS: kapalı",
+  "where": [
+   "js/ui/statusBadges.js:4"
+  ]
+ },
+ {
+  "key": "GPS: aranıyor",
+  "where": [
+   "js/ui/statusBadges.js:5"
+  ]
+ },
+ {
+  "key": "GPS: izin yok",
+  "where": [
+   "js/ui/statusBadges.js:7"
+  ]
+ },
+ {
+  "key": "OCR: kapalı",
+  "where": [
+   "js/ui/statusBadges.js:10"
+  ]
+ },
+ {
+  "key": "OCR: yükleniyor",
+  "where": [
+   "js/ui/statusBadges.js:11"
+  ]
+ },
+ {
+  "key": "OCR: değer reddedildi",
+  "where": [
+   "js/ui/statusBadges.js:13"
+  ]
+ },
+ {
+  "key": "OCR: okunamadı",
+  "where": [
+   "js/ui/statusBadges.js:14"
+  ]
+ },
+ {
+  "key": "GPS: ±{0} m",
+  "where": [
+   "js/ui/statusBadges.js:30"
+  ]
+ },
+ {
+  "key": "OCR: son okuma {0} önce",
+  "where": [
+   "js/ui/statusBadges.js:41"
+  ]
+ },
+ {
+  "key": "output[data-out=\"{0}\"]",
+  "where": [
+   "js/ui/testPanel.js:18"
+  ]
+ },
+ {
+  "key": "⏸ Durdur",
+  "where": [
+   "js/ui/testPanel.js:40"
+  ]
+ },
+ {
+  "key": "▶ Oynat",
+  "where": [
+   "js/ui/testPanel.js:40"
+  ]
+ },
+ {
+  "key": "{0} / {1} km",
+  "where": [
+   "js/ui/testPanel.js:44"
+  ]
+ },
+ {
+  "key": "rota yok (gidiş açısı yönünde ilerler)",
+  "where": [
+   "js/ui/testPanel.js:44"
+  ]
+ },
+ {
+  "key": "Önce Test Modu'nu aç",
+  "where": [
+   "js/ui/testPanel.js:59"
+  ]
+ },
+ {
+  "key": "ABRP User Token",
+  "where": [
+   "js/ui/tokenScanner.js:14"
+  ]
+ },
+ {
+  "key": "ABRP API Key",
+  "where": [
+   "js/ui/tokenScanner.js:15"
+  ]
+ },
+ {
+  "key": "OpenChargeMap anahtarı",
+  "where": [
+   "js/ui/tokenScanner.js:16"
+  ]
+ },
+ {
+  "key": "Önce Kamera sekmesindeki kamerayı durdur",
+  "where": [
+   "js/ui/tokenScanner.js:50"
+  ]
+ },
+ {
+  "key": "{0} oku",
+  "where": [
+   "js/ui/tokenScanner.js:54"
+  ]
+ },
+ {
+  "key": "{0} yazılı olduğu ekranı kamerayla kutunun içine sığdır, metin net ve büyük görünsün.",
+  "where": [
+   "js/ui/tokenScanner.js:56"
+  ]
+ },
+ {
+  "key": "Kamera açılıyor…",
+  "where": [
+   "js/ui/tokenScanner.js:58"
+  ]
+ },
+ {
+  "key": "OCR motoru hazırlanıyor… (ilk seferde iner)",
+  "where": [
+   "js/ui/tokenScanner.js:74"
+  ]
+ },
+ {
+  "key": "Metin aranıyor…",
+  "where": [
+   "js/ui/tokenScanner.js:77",
+   "js/ui/tokenScanner.js:89"
+  ]
+ },
+ {
+  "key": "Okunuyor… {0}/{1}",
+  "where": [
+   "js/ui/tokenScanner.js:84"
+  ]
+ },
+ {
+  "key": "Okuma başarısız:",
+  "where": [
+   "js/ui/tokenScanner.js:94"
+  ]
+ },
+ {
+  "key": "Okunan {0}",
+  "where": [
+   "js/ui/tokenScanner.js:108"
+  ]
+ },
+ {
+  "key": "Geçersiz değer: yalnızca harf, rakam ve tire",
+  "where": [
+   "js/ui/tokenScanner.js:125"
+  ]
+ },
+ {
+  "key": "Kayıtlı araç: {0}",
+  "where": [
+   "js/ui/vehiclePanel.js:52"
+  ]
+ },
+ {
+  "key": "Özel araç ({0} kWh)",
+  "where": [
+   "js/ui/vehiclePanel.js:70"
+  ]
+ },
+ {
+  "key": "Araç değerleri geçersiz",
+  "where": [
+   "js/ui/vehiclePanel.js:73"
+  ]
+ },
+ {
+  "key": "Araç değişince sayfa yenilenir; aktif plan ve OCR sıfırlanır. Devam edilsin mi?",
+  "where": [
+   "js/ui/vehiclePanel.js:77"
+  ]
+ },
+ {
+  "key": "Model tahmini {0} kWh/100 km ({1} km/h, düz yol, 15 °C, rüzgârsız); düzeltmeyle {2} kWh/100 km.",
+  "where": [
+   "js/ui/vehiclePanel.js:93"
+  ]
+ },
+ {
+  "key": "version.js?t={0}",
+  "where": [
+   "js/ui/versionInfo.js:27"
+  ]
+ },
+ {
+  "key": "Güncelleniyor…",
+  "where": [
+   "js/ui/versionInfo.js:39"
+  ]
+ },
+ {
+  "key": "Sürüm v",
+  "where": [
+   "js/ui/versionInfo.js:65"
+  ]
+ },
+ {
+  "key": "v{0} · {1}",
+  "where": [
+   "js/ui/versionInfo.js:72"
+  ]
+ },
+ {
+  "key": "Güncelleyince sayfa yenilenir; aktif plan ve OCR sıfırlanır. Devam edilsin mi?",
+  "where": [
+   "js/ui/versionInfo.js:82"
+  ]
+ },
+ {
+  "key": "⬆ Güncelle v{0}",
+  "where": [
+   "js/ui/versionInfo.js:89"
+  ]
+ },
+ {
+  "key": "Yayındaki sürüm denetleniyor…",
+  "where": [
+   "js/ui/versionInfo.js:91"
+  ]
+ },
+ {
+  "key": "Yayındaki sürüm denetlenemedi (internet?)",
+  "where": [
+   "js/ui/versionInfo.js:92"
+  ]
+ },
+ {
+  "key": "Yayındaki sürüm denetlenmedi",
+  "where": [
+   "js/ui/versionInfo.js:93"
+  ]
+ },
+ {
+  "key": "Yeni sürüm var: v{0}. \"Güncelle\"ye dokun.",
+  "where": [
+   "js/ui/versionInfo.js:94"
+  ]
+ },
+ {
+  "key": "Güncelsin (yayındaki sürüm v{0}).",
+  "where": [
+   "js/ui/versionInfo.js:95"
+  ]
+ },
+ {
+  "key": "Yayındaki en son sürüm: v{0} (şu an v{1}). Notlar yayındaki sürümdendir.",
+  "where": [
+   "js/ui/versionInfo.js:96"
+  ]
+ },
+ {
+  "key": "Güncelsin: yayındaki sürüm v{0}.",
+  "where": [
+   "js/ui/versionInfo.js:96"
+  ]
+ },
+ {
+  "key": "Yenilemek için tekrar dokun (aktif plan / OCR sıfırlanır)",
+  "where": [
+   "js/ui/versionInfo.js:140"
+  ]
+ }
+]
