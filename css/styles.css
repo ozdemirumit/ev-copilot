@@ -127,6 +127,8 @@ input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; }
 .pin b { font-size: 12px; color: #fff; }
 .pin.start { background: var(--accent-dim); }
 .pin.end { background: var(--bad); }
+.pin.place { background: var(--card-2); border-color: var(--warn); }
+.pin.place b { font-size: 14px; }
 .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
 .summary div { background: var(--bg); border-radius: 10px; padding: 8px 4px; }
 .summary b { display: block; font-size: 17px; font-variant-numeric: tabular-nums; }
@@ -389,3 +391,15 @@ body.navmode .fabs { bottom: calc(var(--nav-h) + var(--safe-b) + 92px); }
   main { left: 50%; right: auto; width: min(760px, calc(100vw - 16px)); transform: translateX(-50%); }
   .dock { max-width: 560px; left: 50%; right: auto; width: calc(100vw - 24px); transform: translateX(-50%); }
 }
+
+/* Kayıtlı yerler: Ev, İş, favoriler */
+.place-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card-2); color: var(--text); font-size: 13px; font-weight: 600; }
+.chip.empty { border-style: dashed; color: var(--muted); }
+.chip:active { background: var(--accent-dim); }
+.places-edit summary { cursor: pointer; font-size: 13px; color: var(--muted); padding: 4px 0; }
+.places-edit[open] summary { margin-bottom: 8px; }
+.place-row { padding: 8px 0; border-top: 1px solid var(--line); }
+.place-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.place-head input { flex: 1; padding: 6px 8px; }
+.place-icon { font-size: 18px; }

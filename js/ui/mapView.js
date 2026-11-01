@@ -11,6 +11,7 @@ export const mapApi = {
   drawRoute() {}, drawStations() {}, drawNearby() {}, setPoint() {}, follow() {}, navView() {},
   setSatellite() {}, isSatellite: () => false, hasRoute: () => false, cancelPick() {}, pickBar() {}, // initMap doldurur (pickBar'ı ui/shell.js)
   snap: () => null, // navigator.js: konumu rotaya yapıştırır
+  drawPlaces() {}, // ui/places.js kayıtlı yerleri çizer
 };
 
 let boot = async () => {};
@@ -238,6 +239,13 @@ export function initMap() {
     Object.assign(d.style, { width: size + 'px', height: size + 'px', background: color, borderColor: ring });
     return d;
   };
+
+  // Kayıtlı yerler (Ev, İş, favoriler): küçük emoji iğneleri
+  let placeMarks = [];
+  mapApi.drawPlaces = (places) => whenMap(() => {
+    placeMarks.forEach(unmark);
+    placeMarks = places.map((p) => marker(p, pinEl('place', p.icon), p.name));
+  });
 
   // "Yakınımdaki istasyonlar" listesindekiler (seçili olan vurgulanır)
   mapApi.drawNearby = (list, focusId = null) => whenMap(() => {

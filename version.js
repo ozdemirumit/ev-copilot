@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.45.0';
+self.APP_VERSION = '0.46.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.46.0', date: '2026-11-01',
+    notes: [
+      'Kayıtlı yerler: Ev, İş ve 3 favori. Rota sayfasındaki çiplere dokununca yer, son dokunduğun kutuya (başlangıç ya da varış) yazılır. "Yerleri düzenle" bölümünden varışı, başlangıcı ya da konumunu bir yuvaya kaydedersin; favorilere ad verilir (ör. Anne). Yerler yalnızca bu telefonda saklanır ve haritada küçük emoji iğneleriyle görünür.',
+    ],
+  },
   {
     v: '0.45.0', date: '2026-11-01',
     notes: [

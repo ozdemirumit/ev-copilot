@@ -62,6 +62,7 @@
   <section class="tab" id="tab-route" data-title="Rota">
     <div class="card stack">
       <h2>Rota</h2>
+      <div class="place-chips" id="place-chips" aria-label="Kayıtlı yerler"></div>
       <div class="row">
         <label class="field" style="flex:1">Başlangıç
           <input type="text" id="route-start" autocomplete="off" spellcheck="false" enterkeyhint="search" placeholder="Yer veya adres ara…">
@@ -80,6 +81,11 @@
         <button class="btn ghost" id="btn-mylocation" type="button">🎯 Konumumu başlangıç yap</button>
         <button class="btn ghost" id="btn-clear-route" type="button">Temizle</button>
       </div>
+      <details class="places-edit" id="places-edit">
+        <summary>✎ Yerleri düzenle (Ev, İş, 3 favori)</summary>
+        <div class="stack" id="places-list"></div>
+        <p class="small muted" style="margin:6px 0 0">Çipe dokununca yer, son dokunduğun kutuya (başlangıç ya da varış) yazılır. Yerler yalnızca bu telefonda saklanır.</p>
+      </details>
 
       <div class="slider-row">
         <label for="min-arrival">Minimum varış pili eşiği</label>
