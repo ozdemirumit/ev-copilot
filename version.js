@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.72.3';
+self.APP_VERSION = '0.72.4';
 self.APP_CHANGELOG = [
+  {
+    v: '0.72.4', date: '2026-11-01',
+    notes: [
+      'Sürüş simülasyonunda (Test Modu) rota başlangıcı A artık araçla birlikte sürekli güncellenmez: simülasyon, navigasyon ya da kurulu plan varken A sabit kalır, rota durumu her adımda yeniden tetiklenmez. Test Modu açılınca (plan yoksa) A bir kez simülasyon konumuna alınır.',
+    ],
+  },
   {
     v: '0.72.3', date: '2026-11-01',
     notes: [

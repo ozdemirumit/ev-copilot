@@ -16,11 +16,20 @@ export function initDefaultStart() {
     const s = getState('route').start;
     return !s || s.auto === true;
   };
+  // Plan kurulmuş/kuruluyorsa, navigasyon açıksa ya da Test Modu (sürüş simülasyonu) çalışıyorsa A rota başlangıcında sabit kalır:
+  // araç ilerledikçe A'yı taşımak rota durumunu (route) sürekli tetikler ve çizilen rotayla uyuşmaz.
+  const frozen = () => !!getState('route').start
+    && (getState('sim').enabled || getState('nav').active || ['ready', 'loading'].includes(getState('plan').status));
+  let simWas = getState('sim').enabled;
   const apply = () => {
     if (!isAuto()) return;
+    const simNow = getState('sim').enabled;
+    const simSwitched = simNow !== simWas; // Test Modu açılıp kapandı: A bir kez yeni konuma alınır (plan yoksa)
+    simWas = simNow;
+    if (frozen() && !(simSwitched && getState('plan').status !== 'ready' && getState('plan').status !== 'loading')) return;
     const e = effective();
     if (e.lat == null || e.lon == null) return;
-    if (last && haversineKm(last, e) < 0.1 && getState('route').start) return;
+    if (!simSwitched && last && haversineKm(last, e) < 0.1 && getState('route').start) return;
     last = { lat: e.lat, lon: e.lon };
     mapApi.setPoint('start', { lat: e.lat, lon: e.lon, label: 'Konumum', auto: true }, { fit: false });
   };
