@@ -6,7 +6,7 @@ import { save } from '../utils/storage.js';
 import { mapApi } from '../ui/mapView.js';
 import { toast } from '../ui/toast.js';
 import { rerouteFromHere } from '../routing/controller.js';
-import { speak } from '../advisor/voice.js';
+import { speak, testVoice } from '../advisor/voice.js';
 import { instruction, fmtDist, spoken, isMinor } from './steps.js';
 import { buildTrack, locate, headingAt, pointAtKm } from './track.js';
 import { bearing } from '../utils/geo.js';
@@ -298,6 +298,16 @@ export function initNavigator() {
     save('voiceOn', voice.checked);
     if (voice.checked) speak('Sesli yönlendirme açık.', { force: true, key: 'voicetest', cooldownMs: 0, interrupt: true });
     else window.speechSynthesis?.cancel();
+  });
+
+  // Sesi dene: konuşma motoru gerçekten başlıyor mu, başlamıyorsa nedeni ne
+  $('nav-voice-test').addEventListener('click', async () => {
+    const out = $('nav-voice-out');
+    out.textContent = '…';
+    const r = await testVoice();
+    out.textContent = r.ok ? `Ses çalıyor (${r.lang}, ${r.voices} ses). Duymuyorsan medya sesini ve Android metin okuma (TTS) ayarını kontrol et.`
+      : r.reason === 'unsupported' ? 'Bu cihazda sesli uyarı desteklenmiyor'
+        : `Ses çıkmadı: ${r.reason === 'timeout' ? 'ses motoru yanıt vermedi' : r.reason} (${r.voices ?? 0} ses). Telefonda Metin okuma (TTS) motorunu ve ses paketini kontrol et.`;
   });
 
   low.value = nav.lowSoc;

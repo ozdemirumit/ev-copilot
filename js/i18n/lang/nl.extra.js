@@ -167,4 +167,11 @@ export default {
   "Kendi anahtarlarım (isteğe bağlı)": "Mijn eigen sleutels (optioneel)",
   "1 km çevre": "1 km omgeving",
   "5 km çevre": "5 km omgeving",
+  "🔊 Sesi dene": "🔊 Geluid testen",
+  "Ses çalıyor ({0}, {1} ses). Duymuyorsan medya sesini ve Android metin okuma (TTS) ayarını kontrol et.": "Het geluid wordt afgespeeld ({0}, {1} stemmen). Hoor je niets, controleer dan het mediavolume en de tekst-naar-spraak (TTS) van Android.",
+  "Bu cihazda sesli uyarı desteklenmiyor": "Spraakmeldingen worden op dit apparaat niet ondersteund",
+  "Ses çıkmadı: {0} ({1} ses). Telefonda Metin okuma (TTS) motorunu ve ses paketini kontrol et.": "Geen geluid: {0} ({1} stemmen). Controleer de tekst-naar-spraak-engine (TTS) en het stempakket op de telefoon.",
+  "Ses çıkmadı: {0}": "Geen geluid: {0}",
+  "Sesli uyarı denemesi.": "Test van spraakmelding.",
+  "ses motoru yanıt vermedi": "de spraakengine reageerde niet",
 };

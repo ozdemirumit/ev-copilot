@@ -167,4 +167,11 @@ export default {
   "Kendi anahtarlarım (isteğe bağlı)": "Mis propias claves (opcional)",
   "1 km çevre": "Radio de 1 km",
   "5 km çevre": "Radio de 5 km",
+  "🔊 Sesi dene": "🔊 Probar sonido",
+  "Ses çalıyor ({0}, {1} ses). Duymuyorsan medya sesini ve Android metin okuma (TTS) ayarını kontrol et.": "El sonido se está reproduciendo ({0}, {1} voces). Si no lo oyes, revisa el volumen multimedia y el texto a voz (TTS) de Android.",
+  "Bu cihazda sesli uyarı desteklenmiyor": "Las alertas de voz no son compatibles con este dispositivo",
+  "Ses çıkmadı: {0} ({1} ses). Telefonda Metin okuma (TTS) motorunu ve ses paketini kontrol et.": "Sin sonido: {0} ({1} voces). Revisa el motor de texto a voz (TTS) y el paquete de voz del teléfono.",
+  "Ses çıkmadı: {0}": "Sin sonido: {0}",
+  "Sesli uyarı denemesi.": "Prueba de aviso de voz.",
+  "ses motoru yanıt vermedi": "el motor de voz no respondió",
 };

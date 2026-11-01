@@ -167,4 +167,11 @@ export default {
   "Kendi anahtarlarım (isteğe bağlı)": "My own keys (optional)",
   "1 km çevre": "1 km radius",
   "5 km çevre": "5 km radius",
+  "🔊 Sesi dene": "🔊 Test sound",
+  "Ses çalıyor ({0}, {1} ses). Duymuyorsan medya sesini ve Android metin okuma (TTS) ayarını kontrol et.": "Sound is playing ({0}, {1} voices). If you can't hear it, check the media volume and Android's text-to-speech (TTS) settings.",
+  "Bu cihazda sesli uyarı desteklenmiyor": "Voice alerts aren't supported on this device",
+  "Ses çıkmadı: {0} ({1} ses). Telefonda Metin okuma (TTS) motorunu ve ses paketini kontrol et.": "No sound: {0} ({1} voices). Check the text-to-speech (TTS) engine and voice pack on the phone.",
+  "Ses çıkmadı: {0}": "No sound: {0}",
+  "Sesli uyarı denemesi.": "Voice alert test.",
+  "ses motoru yanıt vermedi": "the speech engine did not respond",
 };

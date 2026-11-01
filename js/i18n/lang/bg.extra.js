@@ -167,4 +167,11 @@ export default {
   "Kendi anahtarlarım (isteğe bağlı)": "Моите ключове (по избор)",
   "1 km çevre": "Радиус 1 км",
   "5 km çevre": "Радиус 5 км",
+  "🔊 Sesi dene": "🔊 Тест на звука",
+  "Ses çalıyor ({0}, {1} ses). Duymuyorsan medya sesini ve Android metin okuma (TTS) ayarını kontrol et.": "Звукът се възпроизвежда ({0}, {1} гласа). Ако не чувате, проверете силата на звука за медия и синтеза на реч (TTS) в Android.",
+  "Bu cihazda sesli uyarı desteklenmiyor": "Гласовите известия не се поддържат на това устройство",
+  "Ses çıkmadı: {0} ({1} ses). Telefonda Metin okuma (TTS) motorunu ve ses paketini kontrol et.": "Няма звук: {0} ({1} гласа). Проверете машината за синтез на реч (TTS) и гласовия пакет на телефона.",
+  "Ses çıkmadı: {0}": "Няма звук: {0}",
+  "Sesli uyarı denemesi.": "Тест на гласово известие.",
+  "ses motoru yanıt vermedi": "речевият механизъм не отговори",
 };

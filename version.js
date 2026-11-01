@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.72.5';
+self.APP_VERSION = '0.72.6';
 self.APP_CHANGELOG = [
+  {
+    v: '0.72.6', date: '2026-11-02',
+    notes: [
+      'Sesli uyarılar için tanı: Navigasyon kartına Sesi dene düğmesi eklendi; konuşma motoru gerçekten başlıyor mu, kaç ses var, başlamıyorsa nedeni ne gösterir. Konuşma reddedilirse artık sessizce kaybolmaz, ekranda Ses çıkmadı uyarısı çıkar (dakikada en çok bir kez). Kesme gerektiren yönlendirmelerde konuşma, Chrome da iptalin hemen ardından gelen konuşmayı yutmasın diye kısa bekleyerek başlatılır.',
+    ],
+  },
   {
     v: '0.72.5', date: '2026-11-01',
     notes: [

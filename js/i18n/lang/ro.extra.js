@@ -167,4 +167,11 @@ export default {
   "Kendi anahtarlarım (isteğe bağlı)": "Cheile mele (opțional)",
   "1 km çevre": "Rază 1 km",
   "5 km çevre": "Rază 5 km",
+  "🔊 Sesi dene": "🔊 Testează sunetul",
+  "Ses çalıyor ({0}, {1} ses). Duymuyorsan medya sesini ve Android metin okuma (TTS) ayarını kontrol et.": "Sunetul se redă ({0}, {1} voci). Dacă nu auzi nimic, verifică volumul media și setările de sinteză vocală (TTS) din Android.",
+  "Bu cihazda sesli uyarı desteklenmiyor": "Alertele vocale nu sunt acceptate pe acest dispozitiv",
+  "Ses çıkmadı: {0} ({1} ses). Telefonda Metin okuma (TTS) motorunu ve ses paketini kontrol et.": "Fără sunet: {0} ({1} voci). Verifică motorul de sinteză vocală (TTS) și pachetul de voce de pe telefon.",
+  "Ses çıkmadı: {0}": "Fără sunet: {0}",
+  "Sesli uyarı denemesi.": "Test de alertă vocală.",
+  "ses motoru yanıt vermedi": "motorul vocal nu a răspuns",
 };

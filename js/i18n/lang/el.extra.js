@@ -167,4 +167,11 @@ export default {
   "Kendi anahtarlarım (isteğe bağlı)": "Τα δικά μου κλειδιά (προαιρετικά)",
   "1 km çevre": "Ακτίνα 1 km",
   "5 km çevre": "Ακτίνα 5 km",
+  "🔊 Sesi dene": "🔊 Δοκιμή ήχου",
+  "Ses çalıyor ({0}, {1} ses). Duymuyorsan medya sesini ve Android metin okuma (TTS) ayarını kontrol et.": "Ο ήχος αναπαράγεται ({0}, {1} φωνές). Αν δεν ακούτε, ελέγξτε την ένταση πολυμέσων και τη μετατροπή κειμένου σε ομιλία (TTS) του Android.",
+  "Bu cihazda sesli uyarı desteklenmiyor": "Οι φωνητικές ειδοποιήσεις δεν υποστηρίζονται σε αυτή τη συσκευή",
+  "Ses çıkmadı: {0} ({1} ses). Telefonda Metin okuma (TTS) motorunu ve ses paketini kontrol et.": "Χωρίς ήχο: {0} ({1} φωνές). Ελέγξτε τη μηχανή μετατροπής κειμένου σε ομιλία (TTS) και το πακέτο φωνής στο τηλέφωνο.",
+  "Ses çıkmadı: {0}": "Χωρίς ήχο: {0}",
+  "Sesli uyarı denemesi.": "Δοκιμή φωνητικής ειδοποίησης.",
+  "ses motoru yanıt vermedi": "η μηχανή ομιλίας δεν ανταποκρίθηκε",
 };
