@@ -475,3 +475,6 @@ body.sheet-open .socbar { display: none; }
 #plan-actions { align-items: stretch; }
 .place-chips { gap: 6px; }
 .chip { padding: 7px 10px; }
+/* Kayıtlı yer çipleri her ekranda tek satır: eşit genişlik, uzun ad kısalır */
+.place-chips { flex-wrap: nowrap; gap: 5px; }
+.chip { flex: 1 1 0; min-width: 0; padding: 7px 3px; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
