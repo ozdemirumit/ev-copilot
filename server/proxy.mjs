@@ -195,7 +195,7 @@ async function ocm(req, res, url, id) {
 }
 
 // ---------- Overpass ----------
-const OP_QUERY = /^\[out:json\]\[timeout:\d{1,3}\];nwr\["amenity"="charging_station"\]\(around:[0-9.,-]{1,4000}\);out tags center;$/;
+const OP_QUERY = /^\[out:json\]\[timeout:\d{1,3}\];nwr\["(?:amenity"="charging_station|highway"="speed_camera)"\]\(around:[0-9.,-]{1,12000}\);out tags center;$/; // şarj istasyonu ve hız kamerası sorguları
 let opChain = Promise.resolve();
 let opLast = 0;
 const opDead = new Map();
@@ -229,7 +229,7 @@ async function overpass(req, res, url, id) {
   if (url.pathname !== '/overpass' || req.method !== 'POST') return json(res, 404, { error: 'yol yok' });
   const chunks = [];
   let size = 0;
-  for await (const c of req) { size += c.length; if (size > 20000) return json(res, 413, { error: 'gövde çok büyük' }); chunks.push(c); }
+  for await (const c of req) { size += c.length; if (size > 40000) return json(res, 413, { error: 'gövde çok büyük' }); chunks.push(c); }
   const query = new URLSearchParams(Buffer.concat(chunks).toString('utf8')).get('data') || '';
   if (!OP_QUERY.test(query)) return json(res, 400, { error: 'desteklenmeyen sorgu' });
   const key = 'op:' + createHash('sha1').update(query).digest('hex');

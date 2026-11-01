@@ -26,7 +26,7 @@ const setAhead = (part) => patch('nav', { ahead: { ...getState('nav').ahead, ...
 
 function render() {
   const a = getState('nav').ahead;
-  const lines = [a.speed, a.rain, a.traffic].filter(Boolean);
+  const lines = [a.speed, a.cam, a.grade, a.rain, a.traffic].filter(Boolean); // kamera ve dik eğim: nav/roadWarnings.js
   const bar = $('road-alert');
   bar.replaceChildren(...lines.map((t) => Object.assign(document.createElement('div'), { textContent: t })));
   bar.classList.toggle('hidden', !lines.length);

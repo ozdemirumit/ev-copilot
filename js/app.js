@@ -25,6 +25,7 @@ import { captureInviteFromUrl, listenInviteDeepLink } from './account/auth.js';
 import { initSync } from './account/sync.js';
 import { initHistorySync } from './account/historySync.js';
 import { initCharging } from './physics/charging.js';
+import { initRoadWarnings } from './nav/roadWarnings.js';
 import { refreshCaps } from './net/proxy.js';
 import { initDimmer } from './ui/dimmer.js';
 import { initSocInput } from './ui/socInput.js';
@@ -104,6 +105,7 @@ initAccountPanel();
 initSync();
 initHistorySync();
 initCharging();
+initRoadWarnings();
 refreshCaps(); // sunucu özellikleri (Mapbox/OpenChargeMap sunucuda mı) bu oturum için tazelenir
 initDimmer();
 initSocInput();

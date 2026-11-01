@@ -2,8 +2,17 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.64.0';
+self.APP_VERSION = '0.65.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.65.0', date: '2026-11-01',
+    notes: [
+      'Yol önü sesli uyarıları: Dik eğim ve hız kamerası eklendi (yağış, trafik ve hız eşiği uyarıları zaten vardı). Navigasyon açıkken ve sesli yönlendirme açıkken çalışır; ekranda üstteki uyarı şeridinde de görünür. Navigasyon kartında Dik eğim uyarısı ve Hız kamerası uyarısı anahtarları var.',
+      'Dik eğim: rota profilindeki rakım verisinden hesaplanır (internet gerekmez). 2 km lik dilimlerin ortalama eğimi %5 ve üstü olan iniş ya da yokuş kesimine 0,5-2,2 km kala bir kez uyarır: dik inişte hızı kontrol etmeni, dik yokuşta tüketimin artacağını söyler.',
+      'Hız kamerası: OpenStreetMap te highway=speed_camera olarak işaretli sabit kameralar rota boyunca aranır (sonuçlar 7 gün saklanır); kameraya 1 km ve 300 m kala uyarır, limit biliniyorsa onu da söyler. Veri eksik olabilir: mobil kameralar ve işaretlenmemiş kameralar yoktur. Ara sunucu kullanılıyorsa sorgu ondan geçer.',
+      'Kaza uyarısı yok: ücretsiz ve güvenilir canlı kaza verisi kaynağı bulunmuyor.',
+    ],
+  },
   {
     v: '0.64.0', date: '2026-11-01',
     notes: [

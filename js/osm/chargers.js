@@ -96,7 +96,7 @@ const deadUntil = new Map(); // yanıt vermeyen sunucu 10 dk atlanır (her sorgu
 const DEAD_MS = 10 * 60e3;
 
 /** Overpass sorgusu; sunucular sırayla denenir. Dönüş: öğe dizisi. Hepsi ulaşılamazsa `unreachable: true` işaretli hata fırlatır. */
-async function overpass(query) {
+export async function overpass(query) {
   if (proxyHas('overpass')) { // ara sunucu: ortak önbellek ve sıralı istek; ulaşılamazsa halka açık sunuculara düşülür
     try {
       const res = await proxyFetch('/overpass', { method: 'POST', body: new URLSearchParams({ data: query }), signal: AbortSignal.timeout(60000) });

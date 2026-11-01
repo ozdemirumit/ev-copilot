@@ -47,7 +47,7 @@ const store = {
   // Navigasyon (limitOn: yol hız limiti kontrolü varsayılan kapalı): active = dönüş dönüş yönlendirme açık; voice = sesli yönlendirme; lowSoc = düşük pil uyarı eşiği (%).
   nav: { active: false, voice: load('voiceOn', true), lowSoc: load('lowSoc', 20), step: null, alert: null,
     speedAlert: load('speedAlert', 0), headingUp: load('headingUp', true),
-    limitOn: load('limitOn', false), limit: null, limitErr: null, ahead: { rain: null, traffic: null, speed: null }, liveRemain: null },
+    limitOn: load('limitOn', false), limit: null, limitErr: null, ahead: { rain: null, traffic: null, speed: null, grade: null, cam: null }, liveRemain: null },
 };
 
 const listeners = {};

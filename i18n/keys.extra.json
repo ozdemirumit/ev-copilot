@@ -117,5 +117,15 @@
  "%{0} → %{1} · {2} kWh · {3} dk · ort. {4} kW",
  "%{0} → %{1} · {2} kWh · {3} dk · ort. {4} kW · {5} TL",
  "Favoriler",
- "Henüz son hedef yok"
+ "Henüz son hedef yok",
+ "{0} ileride dik iniş, %{1} eğim, {2} boyunca. Hızını kontrol et.",
+ "{0} ileride dik yokuş, %{1} eğim, {2} boyunca. Tüketim artar.",
+ "Hız kamerası {0} ileride.",
+ "Hız kamerası {0} ileride, limit {1}.",
+ "⛰️ {0} ileride dik iniş (%{1})",
+ "⛰️ {0} ileride dik yokuş (%{1})",
+ "📷 Hız kamerası {0} ileride",
+ "Dik eğim uyarısı",
+ "Hız kamerası uyarısı (OpenStreetMap; tüm kameraları kapsamaz)",
+ "1 kilometre"
 ]
