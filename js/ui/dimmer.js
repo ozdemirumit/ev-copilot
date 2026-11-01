@@ -28,7 +28,7 @@ export function initDimmer() {
     $('dim-dist').textContent = text('nav-dist');
     $('dim-text').textContent = text('nav-text');
     $('dim-speed').textContent = text('nh-speed');
-    $('dim-eta').textContent = `${text('nh-eta')} · ${text('nh-rem')}`;
+    $('dim-eta').textContent = `${text('nh-eta')} · ${text('nh-rem')} · menzil ${text('socbar-range')} km`;
     const warn = ['road-alert', 'near-alert-body'].map((id) => $(id)).find((x) => x && x.offsetParent && x.textContent.trim());
     $('dim-warn').textContent = warn ? '⚠ ' + warn.textContent.trim().slice(0, 120) : '';
   };

@@ -22,6 +22,11 @@ function setMode(m) {
   patch('engine', { socSrc: m });
 }
 
+const ONLINE_MS = 45_000; // kamera okuması bu süreden eskiyse pil "çevrimdışı" (kırmızı) sayılır; OCR sabit değerde 15 sn'de bir okur
+
+/** Pil değeri şu an kameradan canlı mı okunuyor? (Yeşil: evet. Kırmızı: elle girilmiş, tahmin ya da kamera okuması eski/yok.) */
+export const isOnline = () => mode === 'ocr' && Date.now() - ocrAt <= ONLINE_MS;
+
 /** Tahmin yapılıyor mu (elle değerden düşüyor)? rangeEngine bu durumda pili öğrenmeye katmaz. */
 export const isEstimating = () => mode === 'manual' && est != null && !getState('sim').enabled;
 

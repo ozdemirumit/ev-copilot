@@ -481,3 +481,14 @@ body.sheet-open .socbar { display: none; }
 
 .fabs button svg { display: block; margin: auto; }
 #fab-me { color: var(--info); }
+
+/* Pil çevrimiçi göstergesi: yeşil = kameradan canlı okunuyor, kırmızı = okuma yok (elle/tahmin), mavi = Test Modu */
+.ind { display: inline-block; width: 9px; height: 9px; margin-right: 4px; border-radius: 50%; background: var(--bad); vertical-align: 1px; box-shadow: 0 0 0 2px rgba(255, 93, 108, .25); }
+.ind.on { background: var(--accent); box-shadow: 0 0 0 2px rgba(46, 230, 166, .25); }
+.ind.sim { background: var(--info); box-shadow: 0 0 0 2px rgba(90, 169, 255, .25); }
+.socbar { width: 52px; }
+.socbar-range { display: flex; flex-direction: column; align-items: center; line-height: 1; margin-top: 2px; padding-top: 3px; border-top: 1px solid var(--line); width: 100%; }
+.socbar-range b { font-size: 14px; color: var(--info); font-variant-numeric: tabular-nums; }
+.socbar-range small { font-size: 9px; color: var(--muted); }
+.socbar-srcline { display: flex; align-items: center; justify-content: center; line-height: 1; }
+.socbar-srcline .ind { width: 8px; height: 8px; margin-right: 3px; }

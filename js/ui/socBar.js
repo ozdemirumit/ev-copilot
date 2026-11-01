@@ -1,7 +1,8 @@
 // Navigasyonda sol kenarda dikey pil sürgüsü: parmakla yukarı/aşağı sürükleyerek mevcut pil elle ayarlanır.
 // Değer yolda kendiliğinden düşer (physics/socEstimate.js); kamera okuyunca o değer geçerli olur.
 import { getState, patch, subscribe, effective } from '../state.js';
-import { setManual } from '../physics/socEstimate.js';
+import { VEHICLE } from '../config.js';
+import { setManual, isOnline } from '../physics/socEstimate.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -23,9 +24,21 @@ export function initSocBar() {
     val.textContent = v == null ? '--' : Math.round(v);
     track.setAttribute('aria-valuenow', String(Math.round(pct)));
     const m = getState('engine').socSrc;
-    const label = e.source === 'sim' ? 'test' : m === 'ocr' ? 'kamera' : m === 'manual' ? 'elle' : '—';
+    const sim = e.source === 'sim';
+    const online = !sim && isOnline();
+    // Yeşil = pil kameradan canlı okunuyor; kırmızı = okuma yok (elle girilmiş / tahmin / kamera eski); mavi = Test Modu
+    const label = sim ? 'test' : online ? 'canlı' : m === 'manual' ? 'tahmin' : m === 'ocr' ? 'eski' : 'yok';
     src.textContent = label;
-    bar.dataset.src = e.source === 'sim' ? 'sim' : m || 'none';
+    bar.dataset.src = sim ? 'sim' : m || 'none';
+    const cls = sim ? 'ind sim' : online ? 'ind on' : 'ind';
+    $('socbar-dot').className = cls;
+    const nhDot = $('nh-soc-dot');
+    if (nhDot) nhDot.className = cls;
+    // Şarjla tahmini menzil (eşik piline kadar; Menzil sekmesindeki ile aynı): km
+    const r = getState('engine').rangeKm;
+    $('socbar-range').textContent = r == null ? '--' : String(Math.max(0, Math.round(r)));
+    const total = getState('engine').kwh100Est > 0 && v != null ? Math.round(((v / 100) * VEHICLE.batteryNetKwh / getState('engine').kwh100Est) * 100) : null;
+    $('socbar-rangebox').title = `Tahmini menzil (%${getState('route').minArrivalSoc} eşik piline kadar)` + (total != null ? `; %0'a kadar yaklaşık ${total} km` : '');
     bar.classList.toggle('low', v != null && v < getState('nav').lowSoc);
   };
 
@@ -54,5 +67,6 @@ export function initSocBar() {
   });
 
   subscribe(['live', 'sim', 'engine', 'nav'], paint);
+  setInterval(paint, 3000); // kamera okuması eskiyince (yeşil → kırmızı) değer değişmese de güncelle
   paint();
 }

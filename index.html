@@ -587,10 +587,11 @@
 <div class="mapui" id="mapui">
   <div class="socbar" id="socbar" aria-label="Mevcut pil (elle ayarla)">
     <b id="socbar-val">--</b><span class="socbar-pct">%</span>
+    <div class="socbar-range" id="socbar-rangebox" title="Tahmini menzil"><b id="socbar-range">--</b><small>km</small></div>
     <div class="socbar-track" id="socbar-track" role="slider" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Mevcut pil yüzdesi" tabindex="0">
       <div class="socbar-fill" id="socbar-fill"></div><div class="socbar-thumb" id="socbar-thumb"></div>
     </div>
-    <small id="socbar-src">—</small>
+    <div class="socbar-srcline"><i class="ind" id="socbar-dot"></i><small id="socbar-src">—</small></div>
   </div>
   <div class="pickbar hidden" id="pickbar" role="status"><span id="pick-text"></span><button class="btn sm" id="pick-cancel" type="button">İptal</button></div>
   <div class="fabs" id="fabs">
@@ -607,7 +608,7 @@
     <div class="nh-cell"><b id="nh-speed">0</b><small>km/s</small></div>
     <div class="limit-sign hidden" id="nh-limit" title="Yol hız limiti"></div>
     <div class="nh-cell nh-main"><b id="nh-eta">--:--</b><small id="nh-rem">—</small></div>
-    <div class="nh-cell"><b id="nh-soc">--</b><small>% pil</small></div>
+    <div class="nh-cell"><b id="nh-soc">--</b><small><i class="ind" id="nh-soc-dot"></i>% pil</small></div>
     <div class="nh-btns">
       <button type="button" id="nh-limitbtn" aria-label="Yol hız limiti kontrolünü aç/kapat" title="Yol hız limiti kontrolü (ücretli)">🚧</button>
       <button type="button" id="nh-voice" aria-label="Sesli yönlendirme aç/kapat">🔊</button>

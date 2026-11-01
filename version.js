@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.52.1';
+self.APP_VERSION = '0.53.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.53.0', date: '2026-11-01',
+    notes: [
+      'Navigasyon ekranında şarjla tahmini menzil (km): sol pil çubuğunun altında mavi rakam. Mevcut pilden, Rota sekmesindeki minimum varış pili eşiğine kadar gidilebilecek mesafe (Menzil sekmesindeki değerle aynı); rakama basılı tutunca %0\'a kadar menzil de yazar. Karartma modunda da görünür.',
+      'Pil çevrimiçi göstergesi: yeşil nokta + "canlı" = pil kameradan canlı okunuyor (son 45 sn içinde). Kırmızı nokta = okuma yok: "tahmin" (elle girilmiş, yolda modelle düşüyor) ya da "eski" (kamera okuması 45 sn\'den eski). Mavi = Test Modu. Gösterge hem sol pil çubuğunda hem alttaki "% pil" kutusunda.',
+    ],
+  },
   {
     v: '0.52.1', date: '2026-11-01',
     notes: [
