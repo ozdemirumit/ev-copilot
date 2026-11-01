@@ -2,8 +2,17 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.60.0';
+self.APP_VERSION = '0.61.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.61.0', date: '2026-11-01',
+    notes: [
+      'Hesap: Daha Fazla sayfasında Hesap kartı. Davet linkine dokunup Google ile giriş yapınca telefona hiçbir anahtar yazılmaz; Mapbox ve OpenChargeMap sunucudan gelir. Giriş tarayıcıda yapılır, uygulama oturumu kendiliğinden alır. Çok kullanıcılı: her kişinin kendi hesabı, günlük kotası ve verisi vardır. Hesabı sil düğmesi hesabı ve sunucudaki tüm veriyi siler.',
+      'Hesapla senkron: ayarlar, favoriler, son hedefler, araç ve tüketim ölçümleri cihazlar arasında eşitlenir (çakışmada son yazan kazanır, ölçümler ve son hedefler birleştirilir). ABRP ve API anahtarları hiçbir zaman eşitlenmez.',
+      'Kalıcı geçmiş: yolculuklar (tarih, mesafe, süre, ortalama hız, kWh, kWh/100 km, pil düşüşü, sıcaklık, konumlar) ve yeni şarj oturumları (nerede, hangi istasyon, pil başı ve sonu, kWh, süre, ortalama kW, tahmini maliyet) hesaba bağlı olarak sunucuda saklanır, cihazdan silinse de kalır. Şarj oturumu, kamera pili okurken araç dururken pil yükselince kendiliğinden kaydedilir; Menzil sekmesinde Şarj oturumları listesi var.',
+      'Android: evcopilot://invite bağlantısı davet kodunu uygulamaya taşır (Capacitor App eklentisi eklendi). Sunucu tarafı server klasöründe, kurulum ve Google ayarı server/README.md içinde.',
+    ],
+  },
   {
     v: '0.60.0', date: '2026-11-01',
     notes: [

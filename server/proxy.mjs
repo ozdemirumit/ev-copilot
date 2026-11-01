@@ -1,7 +1,8 @@
 // EV Co-Pilot ara sunucusu (isteğe bağlı). Telefon yerine bu sunucu Mapbox, OpenChargeMap ve Overpass'e gider:
 //  - anahtarlar yalnızca burada (server/.env) durur, uygulamaya ve repoya girmez;
 //  - Overpass/OpenChargeMap/Mapbox arama yanıtları ortak önbelleğe alınır, Overpass istekleri sıraya konur (429 azalır);
-//  - istemci erişim koduyla doğrulanır, istek sınırı ve izin verilen köken (origin) denetimi vardır;
+//  - istemci davetle kayıt olmuş bir hesapla (Google girişi, oturum belirteci uygulamada kendiliğinden saklanır) ya da yönetici erişim koduyla doğrulanır;
+//  - hesaplar ve hesapla senkron: server/accounts.mjs; istek sınırı, kullanıcı başına günlük kota ve izin verilen köken (origin) denetimi vardır;
 //  - yalnızca sabit yollar ve parametreler iletilir (açık vekil değildir).
 // Bağımlılık yok (Node 18+). Çalıştırma ve kurulum: server/README.md
 import http from 'node:http';
@@ -9,6 +10,8 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { openStore } from './store.mjs';
+import { createAccounts } from './accounts.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -94,6 +97,27 @@ const once = (k, fn) => {
   return p;
 };
 
+// ---------- kullanıcı başına günlük kota (Mapbox faturasını ve ortak Overpass'i korur) ----------
+const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300) };
+const usage = new Map();
+const today = () => new Date().toISOString().slice(0, 10);
+/** Hesaplı (yönetici olmayan) kullanıcının günlük hakkı bittiyse true. Eski erişim kodu ve yönetici sınırsızdır. */
+function overQuota(id, kind) {
+  if (!id || id.kind !== 'user' || id.admin) return false;
+  const k = `${id.key}|${today()}|${kind}`;
+  const n = (usage.get(k) || 0) + 1;
+  usage.set(k, n);
+  return n > DAILY[kind];
+}
+setInterval(() => { const d = today(); for (const k of usage.keys()) if (!k.includes(`|${d}|`)) usage.delete(k); }, 3600e3).unref();
+
+async function readJson(req, max) {
+  const chunks = [];
+  let size = 0;
+  for await (const c of req) { size += c.length; if (size > max) return undefined; chunks.push(c); }
+  try { return JSON.parse(Buffer.concat(chunks).toString('utf8') || 'null'); } catch { return undefined; }
+}
+
 // ---------- yardımcılar ----------
 const scrub = (s) => { let t = s; for (const secret of [MAPBOX, OCM]) if (secret) t = t.split(secret).join('***'); return t; };
 function send(res, status, body, headers = {}) {
@@ -122,7 +146,7 @@ const MB_PATHS = [
   [/^\/search\/searchbox\/v1\/category\/[A-Za-z0-9_%-]{1,60}$/, 3600e3],
   [/^\/search\/searchbox\/v1\/list\/category$/, 24 * 3600e3],
 ];
-async function mapbox(req, res, url) {
+async function mapbox(req, res, url, id) {
   if (!MAPBOX) return json(res, 501, { error: 'Sunucuda Mapbox anahtarı yok' });
   const path = url.pathname.slice('/mapbox'.length);
   const rule = MB_PATHS.find(([re]) => re.test(path));
@@ -134,6 +158,7 @@ async function mapbox(req, res, url) {
   const key = `mb:${path}?${q}`;
   const hit = rule[1] ? cget(key) : null;
   if (hit) return reply(res, hit, { 'X-Cache': 'hit' });
+  if (overQuota(id, 'mapbox')) return json(res, 429, { error: 'günlük Mapbox hakkı doldu' }, { 'Retry-After': '3600' });
   const u = await once(key, () => {
     const real = new URLSearchParams(q);
     real.set('access_token', MAPBOX);
@@ -145,7 +170,7 @@ async function mapbox(req, res, url) {
 
 // ---------- OpenChargeMap ----------
 const OCM_PARAMS = new Set(['output', 'compact', 'verbose', 'maxresults', 'distanceunit', 'distance', 'latitude', 'longitude', 'countrycode']);
-async function ocm(req, res, url) {
+async function ocm(req, res, url, id) {
   if (!OCM) return json(res, 501, { error: 'Sunucuda OpenChargeMap anahtarı yok' });
   if (url.pathname !== '/ocm/poi' || req.method !== 'GET') return json(res, 404, { error: 'yol yok' });
   const q = new URLSearchParams();
@@ -158,6 +183,7 @@ async function ocm(req, res, url) {
   const key = `ocm:${q}`;
   const hit = cget(key);
   if (hit) return reply(res, hit, { 'X-Cache': 'hit' });
+  if (overQuota(id, 'ocm')) return json(res, 429, { error: 'günlük OpenChargeMap hakkı doldu' }, { 'Retry-After': '3600' });
   const u = await once(key, () => {
     const real = new URLSearchParams(q);
     real.set('key', OCM);
@@ -198,7 +224,7 @@ function overpassQueued(query) {
   opChain = p.catch(() => {});
   return p;
 }
-async function overpass(req, res, url) {
+async function overpass(req, res, url, id) {
   if (url.pathname !== '/overpass' || req.method !== 'POST') return json(res, 404, { error: 'yol yok' });
   const chunks = [];
   let size = 0;
@@ -208,6 +234,7 @@ async function overpass(req, res, url) {
   const key = 'op:' + createHash('sha1').update(query).digest('hex');
   const hit = cget(key);
   if (hit) return reply(res, hit, { 'X-Cache': 'hit' });
+  if (overQuota(id, 'overpass')) return json(res, 429, { error: 'günlük Overpass hakkı doldu' }, { 'Retry-After': '3600' });
   const u = await once(key, () => overpassQueued(query));
   if (u.status === 200) cset(key, u, 6 * 3600e3);
   reply(res, u, { 'X-Cache': 'miss' });
@@ -219,6 +246,9 @@ const clientIp = (req) => {
   if (TRUST_PROXY && /^(::1|127\.0\.0\.1|::ffff:127\.0\.0\.1)$/.test(raw)) return String(req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'] || raw).split(',')[0].trim();
   return raw;
 };
+
+const store = openStore(env.DATA_DIR || join(here, 'data'));
+const accounts = createAccounts({ env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, ocm: !!OCM, overpass: true }) });
 
 const server = http.createServer(async (req, res) => {
   const t0 = Date.now();
@@ -237,19 +267,30 @@ const server = http.createServer(async (req, res) => {
       res.setHeader('Access-Control-Expose-Headers', 'Retry-After, X-Rate-Limit-Reset, X-Cache');
     }
     if (req.method === 'OPTIONS') {
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'X-Access-Code, Content-Type');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'X-Access-Code, Authorization, Content-Type');
       res.setHeader('Access-Control-Max-Age', '600');
       return send(res, 204, '');
     }
     if (blocked(ip)) return json(res, 429, { error: 'çok fazla yanlış kod, sonra dene' }, { 'Retry-After': '600' });
-    if (!authOk(req.headers['x-access-code'])) { noteFail(ip); return json(res, 401, { error: 'erişim kodu geçersiz' }); }
-    if (limited(ip)) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
+    // kimlik gerektirmeyen yollar: giriş akışı, davet sayfası, yapılandırma
+    const pp = url.pathname;
+    if (pp === '/v1/config' || pp === '/v1/auth/poll' || pp.startsWith('/auth/') || pp.startsWith('/i/')) {
+      if (limited(ip)) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
+      if (await accounts.handlePublic(req, res, url, ip)) return;
+    }
+    const code = req.headers['x-access-code'];
+    let id = null;
+    if (code && authOk(code)) id = { kind: 'legacy', admin: true, key: 'c:' + ip };
+    else { const u = accounts.userFromRequest(req); if (u) id = { kind: 'user', user: u, admin: !!u.admin, key: u.id }; }
+    if (!id) { if (code || accounts.hasCredentials(req)) noteFail(ip); return json(res, 401, { error: 'giriş gerekli' }); }
+    if (limited(id.key)) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
     const p = url.pathname;
-    if (p === '/health') return json(res, 200, { ok: true, mapbox: !!MAPBOX, ocm: !!OCM, overpass: true, v: 1 });
-    if (p.startsWith('/mapbox/')) return await mapbox(req, res, url);
-    if (p.startsWith('/ocm/')) return await ocm(req, res, url);
-    if (p === '/overpass') return await overpass(req, res, url);
+    if (p === '/health') return json(res, 200, { ok: true, mapbox: !!MAPBOX, ocm: !!OCM, overpass: true, v: 2 });
+    if (p.startsWith('/mapbox/')) return await mapbox(req, res, url, id);
+    if (p.startsWith('/ocm/')) return await ocm(req, res, url, id);
+    if (p === '/overpass') return await overpass(req, res, url, id);
+    if (await accounts.handleAuthed(req, res, url, id)) return;
     return json(res, 404, { error: 'yol yok' });
   } catch (err) {
     console.error('hata:', scrub(String(err?.message || err)));
@@ -259,5 +300,5 @@ const server = http.createServer(async (req, res) => {
 server.requestTimeout = 120000;
 server.headersTimeout = 15000;
 server.listen(PORT, HOST, () => {
-  console.log(`EV Co-Pilot ara sunucusu ${HOST}:${PORT} · Mapbox ${MAPBOX ? 'var' : 'yok'} · OpenChargeMap ${OCM ? 'var' : 'yok'} · ${CODES.length} erişim kodu`);
+  console.log(`EV Co-Pilot ara sunucusu ${HOST}:${PORT} · Mapbox ${MAPBOX ? 'var' : 'yok'} · OpenChargeMap ${OCM ? 'var' : 'yok'} · Google girişi ${accounts.googleOn ? 'açık' : 'kapalı'} · ${CODES.length} yönetici kodu`);
 });

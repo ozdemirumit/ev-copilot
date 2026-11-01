@@ -39,3 +39,24 @@ Statik IP + port yönlendirme istersen: HTTPS sertifikasını (örn. Caddy ile o
 - Mapbox için sunucuda tutulan token'ı yine de kapsamla (Directions, Search) kısıtla.
 - Sunucu yalnızca şu yolları iletir: Mapbox directions/search (driving, driving-traffic, category), OpenChargeMap `/v3/poi`, ve yalnızca şarj istasyonu Overpass sorguları.
 - Bilgisayar kapalıyken sunucu da kapalıdır; uygulama yedek yola düşer.
+
+## Hesaplar: davet + Google ile giriş (çok kullanıcılı)
+Telefonda hiçbir anahtar yazılmaz. Kullanıcı davet linkine dokunur, Google ile giriş yapar; oturum belirteci uygulamada kendiliğinden saklanır. Mapbox/OpenChargeMap anahtarları yalnızca sunucuda durur.
+
+**Sunucu ayarı (`server\.env`):**
+1. Google Cloud Console > API'ler ve Hizmetler > OAuth izin ekranı (dış, test ya da yayında) > Kimlik bilgileri > **OAuth istemci kimliği, tür: Web uygulaması**.
+   Yetkili yönlendirme URI'si: `https://evcopilot.duckdns.org/auth/google/callback`.
+2. `PUBLIC_URL=https://evcopilot.duckdns.org`, `GOOGLE_CLIENT_ID=...`, `GOOGLE_CLIENT_SECRET=...` yaz (istemci gizlisi yalnızca burada kalır).
+3. `ADMIN_EMAILS=senin@gmail.com` yazarsan o e-posta davetsiz kayıt olur ve yönetici olur. Yazmazsan ilk daveti aşağıdaki komutla üretirsin.
+4. Sunucuyu yeniden başlat.
+
+**Davet üretmek:** `node server\invite.mjs "Ali" 7` → tek kullanımlık, 7 gün geçerli link yazar (`https://evcopilot.duckdns.org/i/KOD`). Linki kişiye gönder; link sayfasında "Android uygulamasında aç" (`evcopilot://invite?code=KOD`) ve "Web uygulamasında aç" düğmeleri vardır. Uygulama kodu alır, kişi "Google ile giriş"e basar.
+
+**Giriş akışı:** uygulama rastgele bir kod (nonce) üretip tarayıcıda `/auth/google` sayfasını açar; Google'dan dönünce sunucu oturumu o kodla bekleyen uygulamaya tek seferlik teslim eder (uygulama 2 sn'de bir yoklar). Sonraki girişlerde davet gerekmez.
+
+**Veri (`server\data\db.json`, repoya girmez, yedeğini al):** kullanıcılar, davetler (yalnızca özeti), oturumlar (özeti), eşitlenen ayarlar ve kalıcı geçmiş (yolculuklar, şarj oturumları). Eşitlenmeyenler: ABRP, API anahtarları, oturum, sunucu adresi.
+- Uç noktalar (oturumla): `GET /v1/me`, `GET/PUT /v1/sync[/anahtar]`, `GET/POST /v1/history/trips|charges`, `DELETE /v1/me` (hesap ve tüm veri silinir), `POST /v1/auth/logout`.
+- Yönetici (yönetici kodu ya da yönetici hesabı): `POST/GET /admin/invites`, `DELETE /admin/invites/ID`, `GET /admin/users`, `POST /admin/users/ID/disable|enable`.
+- Kullanıcı başına günlük kota: Mapbox 400, OpenChargeMap 200, Overpass 300 (`.env` ile değişir); yönetici ve yönetici kodu sınırsız.
+
+**Gizlilik:** sunucu e-posta, ad, ayarlar, konum içeren yolculuk ve şarj geçmişi saklar. Google Play için gizlilik politikası ve hesap silme (uygulamada "Hesabı sil") gerekir.

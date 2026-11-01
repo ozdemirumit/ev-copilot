@@ -3,7 +3,7 @@
 // Test Modu ve şarj sırasındaki veriler kaydedilmez.
 import { load, save, remove } from '../utils/storage.js';
 import { VEHICLE, PHYSICS } from '../config.js';
-import { patch } from '../state.js';
+import { patch, effective, getState } from '../state.js';
 
 const KEY = 'hist';
 const MAX_RECORDS = 400; // ≈ 400 × ~10 km = birkaç bin km
@@ -67,6 +67,7 @@ export function feed({ dKm, dt, moving, modelStepKwh, soc, temp, headwind, grade
   const kBase = modelDelta > 0.05 ? (measuredKwh * PHYSICS.consScale) / modelDelta : null; // consScale'den bağımsız ölçülen/model oranı
   if (kBase != null && v >= 20 && v <= 200 && kBase >= 0.4 && kBase <= 3) {
     const t = Date.now();
+    const pos = effective();
     const trip = recs.length ? recs.at(-1).trip + (t - recs.at(-1).t > TRIP_GAP_MS ? 1 : 0) : 1;
     recs.push({
       t, trip, dist: +dist.toFixed(2), v: Math.round(v), drop,
@@ -76,6 +77,8 @@ export function feed({ dKm, dt, moving, modelStepKwh, soc, temp, headwind, grade
       temp: Math.round((snap.tSum - anchor.tSum) / dist),
       hw: Math.round((snap.hwSum - anchor.hwSum) / dist),
       grade: +(((snap.gSum - anchor.gSum) / dist) * 100).toFixed(1),
+      lat: pos.lat != null ? +pos.lat.toFixed(4) : null, lon: pos.lon != null ? +pos.lon.toFixed(4) : null, // yolculuğun nerede olduğu (geçmiş ve hesap geçmişi için)
+      dest: String(getState('route').end?.label || '').slice(0, 40) || null,
     });
     if (recs.length > MAX_RECORDS) recs = recs.slice(-MAX_RECORDS);
     relCache = new Map();

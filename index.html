@@ -206,6 +206,8 @@
       <p class="small muted" id="h-rel" style="margin:0"></p>
       <h3 style="margin:6px 0 0">Yolculuklar (en yeni üstte)</h3>
       <div id="h-trips" class="trip-list"></div>
+      <h3 style="margin:6px 0 0">Şarj oturumları (en yeni üstte)</h3>
+      <div id="h-charges" class="trip-list"></div>
       <div id="h-chart" class="hchart" role="img" aria-label="Tüketim ve hız grafiği"></div>
       <p class="small muted" style="margin:0" id="h-legend"></p>
       <table class="optable">
@@ -504,6 +506,42 @@
         <select id="lang-select" aria-label="Language"></select>
       </label>
     </div>
+    <div class="card stack" id="account-card">
+      <h2 style="margin:0">👤 Hesap</h2>
+      <div class="stack" id="acc-in">
+        <p class="small muted" style="margin:0">Hesapla giriş yapınca ayarların, favorilerin ve sürüş geçmişin cihazlar arasında eşitlenir ve sunucudaki servisler için anahtar yazman gerekmez. Giriş için davet gerekir.</p>
+        <label class="field">Davet kodu (davet linkinden gelir)
+          <input type="text" id="acc-invite" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Davet linkine dokunduysan kendiliğinden dolar">
+        </label>
+        <button class="btn primary" id="acc-google" type="button">🔐 Google ile giriş</button>
+        <a class="small hidden" id="acc-link" href="#" target="_blank" rel="noopener">Sayfa açılmadıysa buraya dokun</a>
+        <div class="small muted" id="acc-out"></div>
+      </div>
+      <div class="stack hidden" id="acc-sync">
+        <div><b id="acc-name"></b><div class="small muted" id="acc-email"></div></div>
+        <div class="small muted" id="acc-sync-line"></div>
+        <div class="row wrap">
+          <button class="btn" id="acc-sync-now" type="button">🔄 Şimdi eşitle</button>
+          <button class="btn" id="acc-signout" type="button">Çıkış yap</button>
+          <button class="btn ghost" id="acc-delete" type="button">🗑️ Hesabı sil</button>
+        </div>
+      </div>
+      <details class="places-edit" id="acc-adv">
+        <summary>Gelişmiş: sunucu</summary>
+        <div class="stack">
+      <label class="field">Ara sunucu adresi (isteğe bağlı)
+        <input type="url" id="proxy-url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://">
+      </label>
+      <label class="field">Ara sunucu yönetici erişim kodu
+        <input type="text" id="proxy-code" autocomplete="off" autocapitalize="off" spellcheck="false">
+      </label>
+      <div class="row wrap">
+        <button class="btn primary" id="proxy-test" type="button">✔️ Kaydet ve sına</button>
+      </div>
+      <div class="small muted" id="proxy-out">Yönetici kodu yalnızca sunucu sahibi içindir. Adres boşsa varsayılan sunucu kullanılır; hesapla giriş yapan kullanıcıların bunu doldurması gerekmez.</div>
+        </div>
+      </details>
+    </div>
     <div class="card stack" id="version-card">
       <div>
         <b id="ver-line">Sürüm</b>
@@ -596,16 +634,6 @@
         <button class="btn primary" id="mb-test" type="button">✔️ Kaydet ve sına</button>
       </div>
       <div class="small muted" id="mb-out">Anahtar yalnızca bu telefonda saklanır. Ücretsiz aylık kotalar dolarsa Mapbox ücretlendirebilir (mapbox.com/pricing); anahtarı Mapbox hesabında URL ve kapsam (Directions, Search) ile kısıtla.</div>
-      <label class="field">Ara sunucu adresi (isteğe bağlı)
-        <input type="url" id="proxy-url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://">
-      </label>
-      <label class="field">Ara sunucu erişim kodu
-        <input type="text" id="proxy-code" autocomplete="off" autocapitalize="off" spellcheck="false">
-      </label>
-      <div class="row wrap">
-        <button class="btn primary" id="proxy-test" type="button">✔️ Kaydet ve sına</button>
-      </div>
-      <div class="small muted" id="proxy-out">Adres boşsa uygulama servislere doğrudan gider. Sunucu varsa Mapbox, OpenChargeMap ve Overpass istekleri ondan geçer; anahtarlar sunucuda durur ve bu telefona yazılmaz.</div>
       <div class="row between">
         <span class="small muted" id="cache-info"></span>
         <button class="btn ghost sm" id="cache-clear" type="button">🧹 Önbelleği temizle</button>

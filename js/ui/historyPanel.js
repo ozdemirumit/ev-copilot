@@ -2,6 +2,7 @@
 import { locale } from '../i18n/index.js';
 import { getState, subscribe } from '../state.js';
 import { records, byBand, summary, clearHistory, relFactor } from '../physics/history.js';
+import { chargeLog } from '../physics/charging.js';
 
 const $ = (id) => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
@@ -83,6 +84,28 @@ function paintTrips(rs) {
   });
 }
 
+function paintCharges() {
+  const box = $('h-charges');
+  if (!box) return;
+  box.replaceChildren();
+  const list = chargeLog().slice().sort((a, b) => b.t - a.t).slice(0, 15);
+  if (!list.length) {
+    box.append(Object.assign(document.createElement('div'), { className: 'empty small muted', textContent: 'Henüz şarj oturumu yok (kamera pil yüzdesini okurken araç dururken pil yükselince kaydedilir).' }));
+    return;
+  }
+  list.forEach((c) => {
+    const row = document.createElement('div');
+    row.className = 'trip';
+    const when = new Date(c.t0).toLocaleString(locale(), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const where = c.station || `${c.lat}, ${c.lon}`;
+    row.append(
+      Object.assign(document.createElement('b'), { textContent: `${when} · ${where}` }),
+      Object.assign(document.createElement('span'), { textContent: `%${c.soc0} → %${c.soc1} · ${c.kwh} kWh · ${c.min} dk · ort. ${c.avgKw} kW` + (c.cost != null ? ` · ${c.cost} TL` : '') }),
+    );
+    box.append(row);
+  });
+}
+
 const fmt = (s) => (s ? `${s.km.toFixed(0)} km · ${s.kwh100.toFixed(1)} kWh/100km · ort. ${s.v.toFixed(0)} km/s` : 'veri yok');
 
 function paint() {
@@ -101,6 +124,7 @@ function paint() {
       : 'Hız düzeltmesi: yeterli ölçüm birikince (her hızda ≥ 25 km) burada görünür.';
   }
   paintTrips(rs);
+  paintCharges();
   drawChart(rs.slice(-CHART_N));
 
   const body = $('h-bands');
@@ -122,5 +146,6 @@ export function initHistoryPanel() {
     setTimeout(() => { delete btn.dataset.armed; btn.textContent = '🗑️ Geçmişi sil'; }, 4000);
   });
   subscribe(['hist', 'plan'], paint);
+  document.addEventListener('charges-changed', paint);
   paint();
 }

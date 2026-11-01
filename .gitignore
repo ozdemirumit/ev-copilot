@@ -5,3 +5,4 @@ node_modules/
 *.aab
 server/.env
 server/*.log
+server/data/

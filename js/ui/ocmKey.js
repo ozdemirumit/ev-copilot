@@ -65,11 +65,10 @@ export function initOcmKey() {
   $('proxy-test').addEventListener('click', async () => {
     const u = pUrl.value.trim();
     if (u && !/^https:\/\//i.test(u)) return toast('Adres https:// ile başlamalı');
-    if (u && !pCode.value.trim()) return toast('Önce erişim kodunu gir');
+    if (!pCode.value.trim()) return toast('Önce erişim kodunu gir');
     pOut.textContent = 'Sınanıyor…';
     const r = await testProxy(u, pCode.value);
-    if (!u) pOut.textContent = 'Ara sunucu kapalı: uygulama servislere doğrudan gider.';
-    else if (!r.ok) pOut.textContent = `⚠️ ${tr(r.text)}`;
+    if (!r.ok) pOut.textContent = `⚠️ ${tr(r.text)}`;
     else pOut.replaceChildren(...[
       '✅ Sunucu çalışıyor',
       r.caps.mapbox ? 'Mapbox: sunucuda' : 'Mapbox: sunucuda yok',
