@@ -129,9 +129,9 @@ function goTo(s, { auto = false } = {}) {
   if (e.lat == null) return toast('Konum yok');
   const start = { lat: e.lat, lon: e.lon, label: 'Konumum' };
   const dest = getState('route').end;
-  mapApi.setPoint('start', start, { fit: false });
-  document.querySelector('.bottomnav [data-tab="map"]')?.click();
   const keep = dest && getState('plan').profile && haversineKm(dest, s) > 1;
+  if (!(keep && getState('sim').enabled)) mapApi.setPoint('start', start, { fit: false }); // sürüş simülasyonunda istasyon üzerinden yeniden rota A'yı taşımaz
+  document.querySelector('.bottomnav [data-tab="map"]')?.click();
   if (!keep) mapApi.setPoint('end', { lat: s.lat, lon: s.lon, label: s.name });
   const done = () => { if (getState('plan').steps?.length) startNav(); };
   if (keep) {

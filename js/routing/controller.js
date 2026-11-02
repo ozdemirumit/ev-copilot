@@ -125,6 +125,8 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
   startSoc = e.soc ?? 80;
   if (e.soc == null) toast('Pil okunamadı: %80 varsayıldı');
   const prev = { ...getState('plan') }; // internet yoksa/rota alınamazsa mevcut (kayıtlı) plan bozulmasın
+  const resumeSim = !!from && getState('sim').enabled && getState('sim').play; // yeniden rota (kritik pil, rotadan çıkış): simülasyon oynuyorsa yeni rota kurulunca devam eder
+  const restoreSim = () => { if (resumeSim && getState('sim').enabled) patch('sim', { play: true }); };
 
   try {
     patch('plan', { status: 'loading', text: 'Rota alınıyor…', stops: [], totals: null, ranking: [], fromKm: 0, fromSoc: null });
@@ -140,7 +142,7 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
       traffic: densityFromRatio(rt.trafficRatio), // rota genelinde yoğunluk (planK hız bandı için)
     });
     mapApi.drawRoute(rt.coords, { fit: !from, traffic: rt.trafficSpans || null });
-    if (from) mapApi.setPoint('start', from, { fit: false });
+    if (from && !getState('sim').enabled) mapApi.setPoint('start', from, { fit: false }); // sürüş simülasyonunda A rota başlangıcında sabit kalır
 
     if (from) {
       // Yeniden rota (navigasyon): rota, adımlar ve plan hemen kurulur; rakım ve hava arkadan gelir. Navigasyon beklemeden devam eder.
@@ -156,6 +158,7 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
       }
       applyPlan(computePlan(), { startSoc });
       enrichRoute(pts, speeds, getState('plan').planId); // beklenmez
+      restoreSim();
       return true;
     }
 
@@ -195,6 +198,7 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
     return true;
   } catch (err) {
     console.error(err);
+    restoreSim();
     if (prev.profile && prev.status !== 'loading') {
       patch('plan', { ...prev }); // eski plan ve istasyonlar geri gelir
       mapApi.drawStations(prev.stations.filter((s) => s.km > (prev.fromKm ?? 0) - 0.3), prev.stops);
