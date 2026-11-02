@@ -145,7 +145,7 @@ function drawSum(root) {
   root.append(table(['Ayar', 'Durum'], [
     ['Google ile giriş', on(s.configured.googleLogin)], ['Mapbox anahtarı', on(s.configured.mapbox)], ['HERE anahtarı', on(s.configured.here)], ['OpenChargeMap anahtarı', on(s.configured.ocm)],
     ['Google Places anahtarı', on(s.configured.googlePlaces)], ['E-posta gönderimi (SMTP)', on(s.configured.smtp)], ['Premium zorunlu (kapalıysa herkes Premium)', on(s.configured.premiumRequired)],
-    ['Mapbox aylık arama (sunucu sayacı / sınır)', s.mapbox ? `${s.mapbox.used} / ${s.mapbox.cap} (${s.mapbox.month})` : '–'], ['HERE aylık istek (sunucu sayacı / sınır)', s.here ? `${s.here.used} / ${s.here.cap} (${s.here.month})` : '–'], ['Genel adres', s.server.publicUrl || '–'], ['Çalışma süresi', dur(s.server.uptimeSec)], ['Bellek', s.server.memMb + ' MB'], ['Node', s.server.node],
+    ['Mapbox aylık arama (sunucu sayacı / sınır)', s.mapbox ? `${s.mapbox.used} / ${s.mapbox.cap} (${s.mapbox.month})` : '–'], ['EPDK istasyon listesi (haftalık)', s.epdk ? (s.epdk.rows ? s.epdk.rows + ' istasyon · ' + s.epdk.ageDays + ' gün önce' : 'henüz indirilmedi') + (s.epdk.lastError ? ' · son hata: ' + s.epdk.lastError : '') : '–'], ['HERE aylık istek (sunucu sayacı / sınır)', s.here ? `${s.here.used} / ${s.here.cap} (${s.here.month})` : '–'], ['Genel adres', s.server.publicUrl || '–'], ['Çalışma süresi', dur(s.server.uptimeSec)], ['Bellek', s.server.memMb + ' MB'], ['Node', s.server.node],
   ]));
   root.append(el('p', 'mut', 'Anahtar değerleri burada gösterilmez; yalnızca tanımlı olup olmadığı görünür.'));
 }
