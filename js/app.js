@@ -37,6 +37,7 @@ import { initMap } from './ui/mapView.js';
 import { initRoiBox } from './ui/roiBox.js';
 import { initCameraPanel } from './ui/cameraPanel.js';
 import { initTestPanel } from './ui/testPanel.js';
+import { initPremiumGate } from './ui/premiumGate.js';
 import { initAbrpPanel } from './ui/abrpPanel.js';
 import { initStationsView } from './ui/stationsView.js';
 import { initRoutePanel } from './ui/routePanel.js';
@@ -72,6 +73,7 @@ initStatusBadges();
 initCards();
 initHistoryPanel();
 initGpsControl();
+initPremiumGate(); // Premium dışında Kamera ve Test menüleri gizlenir (class önce konur, paneller sonra)
 initTestPanel();
 initAbrpPanel();
 initTokenScanner();

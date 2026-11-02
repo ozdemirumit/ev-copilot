@@ -345,6 +345,7 @@ body.sheet-open main { display: block; }
 .sheet-head .grab { position: absolute; left: 50%; top: 6px; width: 38px; height: 4px; margin-left: -19px; border-radius: 2px; background: var(--line); }
 .sheet-x { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--card); color: var(--muted); font-size: 15px; }
 .menu { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+body:not(.is-premium) [data-premium-only] { display: none !important; } /* Kamera ve Test yalnızca Premium'da (js/ui/premiumGate.js) */
 .menu-item { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 14px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); text-align: left; color: var(--text); }
 .menu-item span { font-size: 24px; line-height: 1; margin-bottom: 4px; }
 .menu-item b { font-size: 15px; }

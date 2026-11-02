@@ -31,7 +31,8 @@ export function initTabs() {
   });
 
   function show(id) {
-    const section = document.getElementById('tab-' + id);
+    let section = document.getElementById('tab-' + id);
+    if (section?.hasAttribute('data-premium-only') && !document.body.classList.contains('is-premium')) section = null; // Premium'a özel sayfa: değilse açılmaz (harita kalır)
     const open = !!section;
     const shown = open ? id : 'map';
     document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === section));

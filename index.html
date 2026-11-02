@@ -262,7 +262,7 @@
   </section>
 
   <!-- ===== 3) KAMERA / OCR ===== -->
-  <section class="tab" id="tab-camera" data-title="Kamera">
+  <section class="tab" id="tab-camera" data-title="Kamera" data-premium-only>
     <div class="cam-stage" id="cam-stage">
       <video id="cam-video" playsinline muted autoplay></video>
       <div class="cam-empty" id="cam-empty">Kamera kapalı.<br>Başlat'a bas, sonra yeşil kutuyu Togg ekranındaki iri pil rakamlarının (ör. "75") üzerine sürükle. Küçük % işareti, pil simgesi ve mavi halka kutunun dışında kalsın.</div>
@@ -463,7 +463,7 @@
   </section>
 
   <!-- ===== 6) TEST MODU ===== -->
-  <section class="tab" id="tab-test" data-title="Test">
+  <section class="tab" id="tab-test" data-title="Test" data-premium-only>
     <div class="card stack">
       <div class="row between">
         <div><h2 style="margin:0">Test Modu</h2><span class="small muted">GPS/OCR yerine aşağıdaki değerler kullanılır</span></div>
@@ -595,9 +595,9 @@
     </div>
     <div class="menu">
       <button class="menu-item" type="button" data-tab="range"><span>⚡</span><b>Menzil</b><small>Menzil, hava, tüketim</small></button>
-      <button class="menu-item" type="button" data-tab="camera"><span>📷</span><b>Kamera</b><small>Göstergeden pil okuma</small></button>
+      <button class="menu-item" type="button" data-tab="camera" data-premium-only><span>📷</span><b>Kamera</b><small>Göstergeden pil okuma</small></button>
       <button class="menu-item" type="button" data-tab="abrp"><span>📡</span><b>ABRP</b><small>Canlı telemetri köprüsü</small></button>
-      <button class="menu-item" type="button" data-tab="test"><span>🧪</span><b>Test</b><small>Test modu, simülasyon</small></button>
+      <button class="menu-item" type="button" data-tab="test" data-premium-only><span>🧪</span><b>Test</b><small>Test modu, simülasyon</small></button>
     </div>
     <div class="card stack" id="vehicle-card" data-collapsed="1">
       <h2>Araç ve tüketim</h2>

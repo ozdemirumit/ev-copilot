@@ -152,7 +152,7 @@ export function initCameraPanel() {
   auto.addEventListener('change', () => { save('autoOcr', auto.checked); if (auto.checked) autoStart(); }); // açınca hemen de başlat
 
   async function autoStart() {
-    if (!auto.checked || getState('sim').enabled) return;
+    if (!auto.checked || getState('sim').enabled || !document.body.classList.contains('is-premium')) return; // kamera Premium'a özel
     try {
       const perm = await navigator.permissions.query({ name: 'camera' });
       if (perm.state !== 'granted') return;
@@ -162,4 +162,5 @@ export function initCameraPanel() {
     if (getState('system').camera && !getState('system').ocr) ocrBtn.click();
   }
   autoStart();
+  document.addEventListener('plan-changed', () => { if (!getState('system').camera) autoStart(); }); // plan sunucudan gelince (Premium doğrulanınca) otomatik başlat
 }
