@@ -13,7 +13,8 @@ export function metric(mode, minutes, cost) {
 }
 
 /** Planlanabilir istasyon: hızlı DC (≥ minKw) veya yedek olarak izin verilmişse yavaş AC/belirsiz. */
-export const usable = (s) => (s.kw >= P.minKw || (P.allowSlow && s.slow)) && !(isFresh(s) && slotKind(s) === 'out'); // tamamen arızalı (taze bilgi) istasyon aday olmaz
+export const meetsPower = (s) => s.kw >= P.minKw || (P.allowSlow && s.slow && P.minKw <= P.baseKw); // güç filtresi (40+ dışında) açıkken yavaş yedek aday olmaz
+export const usable = (s) => meetsPower(s) &&!(isFresh(s) && slotKind(s) === 'out'); // tamamen arızalı (taze bilgi) istasyon aday olmaz
 
 /**
  * Hızlı DC istasyon bulunmayan uzun rota aralıkları (km). Veri eksikliğini (özellikle açık kaynak istasyon kaydının seyrek olduğu bölgeler)

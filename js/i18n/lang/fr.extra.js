@@ -208,4 +208,5 @@ export default {
   "HERE anahtarı geçersiz": "Clé HERE invalide",
   "HERE yanıt vermedi": "HERE ne répond pas",
   "Plan {0} sn sürdü: rota {1} · rakım/hava {2} · istasyon {3} · hesap {4}": "Plan en {0} s : itinéraire {1} · altitude/météo {2} · bornes {3} · calcul {4}",
+  "En az şarj gücü (kW)": "Puissance de charge minimale (kW)",
 };

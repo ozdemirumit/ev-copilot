@@ -43,7 +43,8 @@ export const PLANNER = {
   billedEff: 0.95, // faturalanan kWh = bataryaya giren / 0.95
   maxStations: 80,
   corridorM: 2500,
-  minKw: 40,
+  baseKw: 40, // "hızlı DC" sayılma eşiği (istasyon sınıflandırması; sabit)
+  minKw: load('minKw', 40), // kullanıcının seçtiği en düşük şarj gücü (Şarj planı filtresi: 40/60/100/150); bunun altı plana girmez
   allowSlow: load('allowSlow', true), // DC yetmediğinde yavaş AC/tipi belirsiz (herkese açık) istasyonlar yedek aday olsun
   detourKwhPerKm: 0.2,
   detourKmh: 50,

@@ -6,6 +6,7 @@ import { stationGaps } from '../routing/planner.js';
 import { slotEl, livePrice } from '../routing/slots.js';
 import { mapApi } from './mapView.js';
 import { proxyHas } from '../net/proxy.js';
+import { PLANNER } from '../config.js';
 
 const showMap = () => document.querySelector('.bottomnav [data-tab="map"]')?.click();
 
@@ -41,6 +42,18 @@ export function initRoutePanel() {
   subscribe('route', paintTraffic);
   document.addEventListener('plan-changed', () => paint());
   paintTraffic();
+
+  // En az şarj gücü filtresi (AC = hepsi, 60 / 100 / 150 kW): planlayıcı yalnızca bu güç ve üstündeki istasyonları kullanır, plan hemen yeniden hesaplanır
+  const kwBtns = [...document.querySelectorAll('#min-kw [data-minkw]')];
+  const paintKw = () => kwBtns.forEach((b) => { const on = Number(b.dataset.minkw) === getState('route').minKw; b.classList.toggle('sel', on); b.setAttribute('aria-pressed', String(on)); });
+  kwBtns.forEach((b) => b.addEventListener('click', () => {
+    const v = Number(b.dataset.minkw);
+    PLANNER.minKw = v;
+    save('minKw', v);
+    patch('route', { minKw: v }); // controller imzayı görür ve ağ çağrısı olmadan yeniden planlar
+  }));
+  subscribe('route', paintKw);
+  paintKw();
 
   const list = $('plan-list');
   const status = $('plan-status');

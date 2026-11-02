@@ -3,12 +3,12 @@ import { load, save } from '../utils/storage.js';
 import { kvDel } from '../utils/idb.js';
 import { fetchRoute, fetchChargers, fetchElevations, fetchWeather } from '../providers/index.js';
 import { reprice, reproject } from './chargerSource.js';
-import { planRoute, rankStations } from './planner.js';
+import { planRoute, rankStations, meetsPower } from './planner.js';
 import { resampleRoute, buildProfile } from '../physics/routeProfile.js';
 import { densityFromRatio, speedFactor } from '../physics/traffic.js';
 import { segmentSpeeds } from '../physics/routeSpeed.js';
 import { kForSpeed, relFactor, overall } from '../physics/history.js';
-import { PHYSICS } from '../config.js';
+import { PHYSICS, PLANNER } from '../config.js';
 import { mapApi } from '../ui/mapView.js';
 import { toast } from '../ui/toast.js';
 import { rememberDest } from '../ui/recentDest.js';
@@ -23,7 +23,7 @@ let timer = null;
 
 const routeSig = () => {
   const r = getState('route');
-  return [r.cruise, r.traffic, r.minArrivalSoc, r.consAdj, r.chargerMin, r.maxChargeTo, r.minStopAdd, r.tolerance, r.allowSlow, getState('hist').at].join('|'); // hist.at: yeni sürüş ölçümü hız düzeltmesini değiştirir
+  return [r.cruise, r.traffic, r.minArrivalSoc, r.consAdj, r.chargerMin, r.maxChargeTo, r.minStopAdd, r.tolerance, r.allowSlow, r.minKw,getState('hist').at].join('|'); // hist.at: yeni sürüş ölçümü hız düzeltmesini değiştirir
 };
 
 /** Plan kurulurken hangi aşamada ne kadar zaman gitti (tm: başlangıç, rota, rakım/hava, istasyon). Her zaman konsola yazılır; 6 sn'yi aşarsa telefonda da gösterilir. */
@@ -94,7 +94,7 @@ function applyPlan(out, extra = {}) {
   });
   const pl = getState('plan');
   const from = (pl.fromKm ?? 0) - 0.3;
-  mapApi.drawStations(pl.stations.filter((s) => s.km > from), result.stops); // geride kalan istasyonlar haritadan da çıkar
+  mapApi.drawStations(pl.stations.filter((s) => s.km > from && (PLANNER.minKw <= PLANNER.baseKw || meetsPower(s))), result.stops); // geride kalan istasyonlar haritadan da çıkar
 }
 
 /** İstasyonları getir ve plan durumuna yaz; hata/önbellek bilgisi İstasyon sekmesinde kalıcı gösterilir. */
@@ -211,7 +211,7 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
     restoreSim();
     if (prev.profile && prev.status !== 'loading') {
       patch('plan', { ...prev }); // eski plan ve istasyonlar geri gelir
-      mapApi.drawStations(prev.stations.filter((s) => s.km > (prev.fromKm ?? 0) - 0.3), prev.stops);
+      mapApi.drawStations(prev.stations.filter((s) => s.km > (prev.fromKm ?? 0) - 0.3 && (PLANNER.minKw <= PLANNER.baseKw || meetsPower(s))), prev.stops);
       toast('Yeni rota alınamadı, mevcut plan korundu: ' + err.message, 5000);
     } else {
       patch('plan', { status: 'error', text: err.message });

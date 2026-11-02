@@ -12,7 +12,7 @@ const AC_FALLBACK_KW = 11; // yalnızca AC/gücü bilinmeyen istasyonda varsayı
 export function candidate({ id, name, lat, lon, opId, src, hasDc, dcKw, acKw, anyInfo, extraKw = null }) {
   const kwMax = Math.max(0, dcKw || 0, acKw || 0, extraKw || 0) || null;
   const kwDc = dcKw ?? extraKw;
-  const slow = !hasDc && !(kwMax >= PLANNER.minKw) && (anyInfo || opId === 'other');
+  const slow = !hasDc && !(kwMax >= PLANNER.baseKw) && (anyInfo || opId === 'other');
   return {
     id, name, lat, lon, opId, slots: null,
     srcKw: slow ? Math.min(kwMax ?? AC_FALLBACK_KW, AC_FALLBACK_KW) : (hasDc ? kwDc : kwMax),
