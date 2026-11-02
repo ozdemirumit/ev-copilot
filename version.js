@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.73.6';
+self.APP_VERSION = '0.73.7';
 self.APP_CHANGELOG = [
+  {
+    v: '0.73.7', date: '2026-11-02',
+    notes: [
+      'Rota planlama hızlandı: istasyon arama parçaları 120 km yerine 60 km, aynı anda 3 parça ve farklı Overpass aynalarından paralel sorgulanır (önceden sırayla ve her biri 30-40 sn sürüyordu). Sunucuda her Overpass aynası ayrı şeritte paralel çalışır. Mapbox aramaları daha sık (6-7 istek/sn, 3 eşzamanlı) gider; sunucunun dakikalık istek sınırı 120 den 600 e çıkarıldı (uzun rotada kendi sınırına takılıp bekliyordu).',
+    ],
+  },
   {
     v: '0.73.6', date: '2026-11-02',
     notes: [

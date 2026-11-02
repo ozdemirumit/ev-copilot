@@ -44,7 +44,7 @@ const OCM = env.OCM_KEY || '';
 const GOOGLE_PLACES = env.GOOGLE_PLACES_KEY || ''; // isteğe bağlı: istasyon doluluğu (NDW'nin kapsamadığı yerler); yalnızca sunucuda durur
 const ORIGINS = new Set(list(env.ALLOW_ORIGINS || 'https://ozdemirumit.github.io,https://localhost,capacitor://localhost,http://localhost'));
 if (env.PUBLIC_URL) ORIGINS.add(String(env.PUBLIC_URL).replace(/\/+$/, '')); // yönetim paneli (/yonetim) aynı kökenden POST/DELETE yapar
-const RATE = Number(env.RATE_PER_MIN || 120);
+const RATE = Number(env.RATE_PER_MIN || 600); // adres/kullanıcı başına dakikada istek (uzun rotada istasyon araması yüzlerce Mapbox isteği atar)
 const TRUST_PROXY = env.TRUST_PROXY === '1'; // Cloudflare Tunnel arkasında: gerçek istemci adresi CF-Connecting-IP'den okunur
 const MAPBOX_BASE = env.MAPBOX_BASE || 'https://api.mapbox.com'; // yalnızca denemeler için değiştirilir
 const OCM_BASE = env.OCM_BASE || 'https://api.openchargemap.io';
@@ -244,34 +244,43 @@ async function ocm(req, res, url, id) {
 
 // ---------- Overpass ----------
 const OP_QUERY = /^\[out:json\]\[timeout:\d{1,3}\];nwr\["(?:amenity"="charging_station|highway"="speed_camera)"\]\(around:[0-9.,-]{1,12000}\);out tags center;$/; // şarj istasyonu ve hız kamerası sorguları
-let opChain = Promise.resolve();
-let opLast = 0;
 const opDead = new Map();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-/** Overpass sunucularına sırayla ve aralıklı gider (adil kullanım): tüm kullanıcıların istekleri tek sıradan geçer. */
+// Overpass: her ayna için bir "şerit" (aynı anda en çok bir istek, istekler arası GAP_MS). İstekler ortak sıraya girer, boş şerit sıradakini alır:
+// aynalar paralel çalışır (3 ayna ≈ 3 kat hızlı), tek aynaya adil kullanım sınırı aşılmaz. Şeridin aynası yanıt vermezse diğerleri denenir.
+const opLanes = OVERPASS.map((url) => ({ url, last: 0, busy: false }));
+const opQueue = [];
 function overpassQueued(query) {
-  const run = async () => {
-    const wait = opLast + GAP_MS - Date.now();
-    if (wait > 0) await sleep(wait);
-    const now = Date.now();
-    const alive = OVERPASS.filter((u) => (opDead.get(u) ?? 0) < now);
-    let last = null;
-    for (const url of alive.length ? alive : OVERPASS) {
-      try {
-        opLast = Date.now();
-        const u = await upstream(url, { method: 'POST', body: new URLSearchParams({ data: query }), timeoutMs: 50000 });
-        if (u.status === 200) return u;
-        last = u;
-        if (u.status === 429 || u.status === 406) await sleep(2500);
-      } catch (err) {
-        opDead.set(url, Date.now() + 10 * 60e3);
-      }
+  return new Promise((resolve) => { opQueue.push({ query, resolve }); opPump(); });
+}
+function opPump() {
+  for (const lane of opLanes) {
+    if (lane.busy || !opQueue.length) continue;
+    if ((opDead.get(lane.url) ?? 0) > Date.now() && opLanes.some((l) => (opDead.get(l.url) ?? 0) <= Date.now())) continue; // ölü ayna şeridi, canlı varken iş almaz
+    const job = opQueue.shift();
+    lane.busy = true;
+    opRun(lane, job).catch((err) => job.resolve({ status: 502, type: 'application/json', body: Buffer.from('{"error":"Overpass yanıt vermedi"}'), pass: {}, err })).finally(() => { lane.busy = false; opPump(); });
+  }
+}
+async function opRun(lane, { query, resolve }) {
+  const wait = lane.last + GAP_MS - Date.now();
+  if (wait > 0) await sleep(wait);
+  const now = Date.now();
+  const alive = OVERPASS.filter((u) => (opDead.get(u) ?? 0) < now);
+  const order = [lane.url, ...(alive.length ? alive : OVERPASS).filter((u) => u !== lane.url)];
+  let last = null;
+  for (const url of order) {
+    try {
+      lane.last = Date.now();
+      const u = await upstream(url, { method: 'POST', body: new URLSearchParams({ data: query }), timeoutMs: 50000 });
+      if (u.status === 200) return resolve(u);
+      last = u;
+      if (u.status === 429 || u.status === 406) await sleep(2500);
+    } catch (err) {
+      opDead.set(url, Date.now() + 10 * 60e3);
     }
-    return last || { status: 502, type: 'application/json', body: Buffer.from('{"error":"Overpass yanıt vermedi"}'), pass: {} };
-  };
-  const p = opChain.then(run, run);
-  opChain = p.catch(() => {});
-  return p;
+  }
+  resolve(last || { status: 502, type: 'application/json', body: Buffer.from('{"error":"Overpass yanıt vermedi"}'), pass: {} });
 }
 async function overpass(req, res, url, id) {
   if (url.pathname !== '/overpass' || req.method !== 'POST') return json(res, 404, { error: 'yol yok' });

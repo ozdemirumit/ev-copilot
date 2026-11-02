@@ -10,7 +10,7 @@ const HALF_KM = 25; // rota boyunca her kutunun yarı kenarı
 const SPACING_KM = 40; // kutu merkezleri arası (kutular örtüşür)
 const MAX_DEPTH = 2;
 const MAX_CALLS = 200; // bir aramada üst sınır (kota koruması; 429 tekrarları da sayılır)
-const GAP_MS = 250; // iki Search Box isteği arası en az (hız sınırına takılmamak için ~4 istek/sn)
+const GAP_MS = 150; // iki Search Box isteği arası en az (~6-7 istek/sn; Mapbox sınırı dakikada 1000, 429 gelirse ortak bekleme var)
 const MAX_RETRIES = 4; // 429 alan kutu bu kadar kez yeniden denenir
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const BOX_TTL_MS = 2 * 3600e3; // yalnızca bellekte: Mapbox arama sonuçlarını kalıcı saklamayız
@@ -114,7 +114,7 @@ async function run(boxes) {
       }
     }
   };
-  await Promise.all([worker(), worker()]);
+  await Promise.all([worker(), worker(), worker()]);
   return ctx;
 }
 

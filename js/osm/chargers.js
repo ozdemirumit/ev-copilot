@@ -17,7 +17,8 @@ const OVERPASS = [
   'https://overpass.private.coffee/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
 ];
-const SEG_KM = 120; // rota bu uzunlukta parçalara bölünüp her parça tek sorgu olur (parça başına önbelleğe alınır)
+const SEG_KM = 60; // rota bu uzunlukta parçalara bölünüp her parça tek sorgu olur (parça başına önbelleğe alınır); küçük parça = kısa sorgu, paralel çalışır
+const SEG_PARALLEL = 3; // aynı anda en çok bu kadar parça sorgusu (Overpass aynaları arasında dağılır)
 const STEP_KM = 8; // sorguya verilen çizgi noktaları arası
 const AROUND_M = 3000; // çizgiye uzaklık (koridor payı)
 const DC_SOCKETS = ['type2_combo', 'type1_combo', 'chademo', 'ccs'];
@@ -96,7 +97,7 @@ const deadUntil = new Map(); // yanıt vermeyen sunucu 10 dk atlanır (her sorgu
 const DEAD_MS = 10 * 60e3;
 
 /** Overpass sorgusu; sunucular sırayla denenir. Dönüş: öğe dizisi. Hepsi ulaşılamazsa `unreachable: true` işaretli hata fırlatır. */
-export async function overpass(query) {
+export async function overpass(query, pref = 0) {
   if (proxyHas('overpass')) { // ara sunucu: ortak önbellek ve sıralı istek; ulaşılamazsa halka açık sunuculara düşülür
     try {
       const res = await proxyFetch('/overpass', { method: 'POST', body: new URLSearchParams({ data: query }), signal: AbortSignal.timeout(60000) });
@@ -107,7 +108,9 @@ export async function overpass(query) {
     } catch { /* sunucuya ulaşılamadı: doğrudan dene */ }
   }
   const now = Date.now();
-  const alive = OVERPASS.filter((u) => (deadUntil.get(u) ?? 0) < now);
+  const alive0 = OVERPASS.filter((u) => (deadUntil.get(u) ?? 0) < now);
+  const rot = alive0.length ? pref % alive0.length : 0;
+  const alive = [...alive0.slice(rot), ...alive0.slice(0, rot)]; // paralel sorgular farklı aynadan başlar
   let lastErr = null;
   let reached = false;
   for (const url of alive.length ? alive : OVERPASS) {
@@ -191,7 +194,6 @@ export async function fetchChargers(pts, profile) {
   const ctx = { raw: 0, drop: {}, calls: 0, textCalls: 0, textFound: 0 };
   const errors = [];
   const found = new Map();
-  let fresh = 0;
   let failed = 0;
   let lastErr = '';
   const take = (r) => { ctx.raw += r.raw; addDrop(ctx.drop, r.drop); r.out.forEach((s) => found.set(s.id, s)); };
@@ -209,22 +211,33 @@ export async function fetchChargers(pts, profile) {
   }
 
   if (!usedMapbox) {
-    for (const seg of segments(pts)) {
-      const key = `ovp:${fmt(seg[0])}:${seg.length}:${fmt(seg.at(-1))}`;
-      try {
-        const r = await cached(key, TTL.long, async () => {
-          if (fresh) await sleep(1200); // adil kullanım: gerçek sorgular arası bekle
-          fresh++;
-          ctx.calls++;
-          return parseOverpass(await overpass(overpassQuery(`${AROUND_M},${seg.map((p) => fmt(p)).join(',')}`)));
-        });
-        take(r);
-      } catch (err) {
-        failed++;
-        lastErr = err.message;
-        if (err.unreachable) break; // hiçbir sunucuya ulaşılamıyor: kalan parçaları denemenin anlamı yok
+    // Parçalar paralel (en çok SEG_PARALLEL) ve farklı aynalardan başlayarak sorgulanır; gerçek sorguların başlangıçları arasında kısa aralık (adil kullanım)
+    const segs = segments(pts);
+    let nextSeg = 0;
+    let dead = false;
+    let lastStart = 0;
+    const segWorker = async () => {
+      while (nextSeg < segs.length && !dead) {
+        const idx = nextSeg++;
+        const seg = segs[idx];
+        const key = `ovp:${fmt(seg[0])}:${seg.length}:${fmt(seg.at(-1))}`;
+        try {
+          const r = await cached(key, TTL.long, async () => {
+            const slot = Math.max(Date.now(), lastStart + 600); // başlangıçlar en az 600 ms arayla
+            lastStart = slot;
+            if (slot > Date.now()) await sleep(slot - Date.now());
+            ctx.calls++;
+            return parseOverpass(await overpass(overpassQuery(`${AROUND_M},${seg.map((p) => fmt(p)).join(',')}`), idx));
+          });
+          take(r);
+        } catch (err) {
+          failed++;
+          lastErr = err.message;
+          if (err.unreachable) dead = true; // hiçbir sunucuya ulaşılamıyor: kalan parçaları denemenin anlamı yok
+        }
       }
-    }
+    };
+    await Promise.all(Array.from({ length: Math.min(SEG_PARALLEL, segs.length) }, segWorker));
     if (failed) errors.push(`Overpass: ${failed} parça alınamadı${lastErr ? ' — ' + lastErr : ''}`);
   }
 
