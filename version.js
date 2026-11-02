@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.73.11';
+self.APP_VERSION = '0.73.12';
 self.APP_CHANGELOG = [
+  {
+    v: '0.73.12', date: '2026-11-02',
+    notes: [
+      'Haritayı gizle (veri tasarrufu) anahtarı tamamen kaldırıldı: harita her zaman açılır (tarayıcı Veri Tasarrufu açıkken haritanın kendiliğinden gizlenmesi de bitti). Eski kayıtlı gizle seçimi temizlenir.',
+    ],
+  },
   {
     v: '0.73.11', date: '2026-11-02',
     notes: [

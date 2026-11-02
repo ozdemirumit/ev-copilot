@@ -1,5 +1,5 @@
 import { getState, patch, subscribe, effective } from '../state.js';
-import { load, save } from '../utils/storage.js';
+import { load, save, remove } from '../utils/storage.js';
 import { toast } from './toast.js';
 import { attachSearch } from './placeSearch.js';
 import { reverseLabel } from '../providers/index.js';
@@ -55,13 +55,10 @@ export function initMap() {
   const whenMap = (fn) => (adapter ? fn() : queue.push(fn));
   const note = (t) => { mapEl.dataset.msg = t || ''; mapEl.classList.toggle('nomap', !!t); };
 
-  // Veri tasarrufu: harita kapalıyken harita karoları hiç istenmez (rota, istasyon ve konum sayısal olarak çalışır).
-  const saver = document.getElementById('map-saver');
-  saver.checked = load('noTiles', navigator.connection?.saveData === true);
-  mapEl.classList.toggle('hidden', saver.checked);
+  remove('noTiles'); // eski "Haritayı gizle (veri tasarrufu)" seçimi kaldırıldı: kayıtlı değer temizlenir, harita her zaman açılır
 
   boot = async () => {
-    if (adapter || saver.checked) return;
+    if (adapter) return;
     booting ??= (async () => {
       try {
         note(''); // uyarı katmanı kalksın: harita boş bir kapta kurulur
@@ -78,12 +75,6 @@ export function initMap() {
     })();
     return booting;
   };
-
-  saver.addEventListener('change', () => {
-    save('noTiles', saver.checked);
-    mapEl.classList.toggle('hidden', saver.checked);
-    if (!saver.checked) boot().then(() => adapter?.resize());
-  });
 
   let sat = load('sat', false);
   mapApi.isSatellite = () => sat;
