@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.72.8';
+self.APP_VERSION = '0.73.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.73.0', date: '2026-11-02',
+    notes: [
+      'Premium Google modu (deneysel): Daha Fazla > Hesap içinde Google modu anahtarı. Açıkken harita Google Haritalar olur, istasyon kartında Google ayrıntıları (Places UI Kit: puan, fotoğraf, saatler) açılır ve Google doluluk verisi haritada da görünür. Sunucuda Google tarayıcı anahtarı tanımlı olmalıdır; anahtar yalnızca Premium üyelere verilir ve harita açılışı günlük sınırlıdır. Google haritası açılamazsa OpenStreetMap haritasına dönülür.',
+      'Rota sayfasında Mevcut pil, kameradan okunamıyorsa varsayılan olarak %80 gösterir (plan zaten %80 varsayıyordu).',
+    ],
+  },
   {
     v: '0.72.8', date: '2026-11-02',
     notes: [

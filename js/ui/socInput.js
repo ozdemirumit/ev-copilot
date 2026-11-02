@@ -16,8 +16,9 @@ export function initSocInput() {
   const paint = () => {
     const e = effective();
     const v = e.soc;
-    if (!dragging && v != null) slider.value = Math.round(v);
-    out.textContent = v == null ? '—' : '%' + Math.round(dragging ? Number(slider.value) : v);
+    const shown = v ?? 80; // kamera/okuma yoksa plan %80 varsayar (controller.planTrip ile aynı değer); sürgü de bunu gösterir
+    if (!dragging) slider.value = Math.round(shown);
+    out.textContent = '%' + Math.round(dragging ? Number(slider.value) : shown);
     const online = e.source !== 'sim' && isOnline();
     slider.disabled = online; // kamera canlı okuyorsa elle değiştirme gereksiz (ve yanlışlıkla bozmasın)
     const ocrOk = online;

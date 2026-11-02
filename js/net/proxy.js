@@ -69,7 +69,7 @@ export async function refreshCaps() {
     const j = await res.json();
     const c = sess ? j.caps : j;
     const prem = !sess || !!j.user?.premium; // Premium özellikler yalnızca Premium (ya da yönetici) hesapta açılır
-    caps = { mapbox: !!c?.mapbox, ocm: !!c?.ocm, overpass: !!c?.overpass, occupancy: !!c?.occupancy && prem, occupancyLocked: !!c?.occupancy && !prem };
+    caps = { mapbox: !!c?.mapbox, ocm: !!c?.ocm, overpass: !!c?.overpass, occupancy: !!c?.occupancy && prem, occupancyLocked: !!c?.occupancy && !prem, googleMap: !!c?.googleMap && prem && !!sess };
     plan = sess ? { premium: !!j.user?.premium, until: j.user?.premiumUntil || null } : null;
     save('proxyCaps', caps);
     save('proxyPlan', plan);

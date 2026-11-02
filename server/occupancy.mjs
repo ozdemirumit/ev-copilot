@@ -157,6 +157,19 @@ export async function googleLookup(st, key, { fetchImpl = fetch } = {}) {
   return { src: 'google', total: sum((a) => a.count), available: sum((a) => a.availableCount), out: sum((a) => a.outOfServiceCount), at: times.length ? Math.max(...times) : null, price: null };
 }
 
+/** Yakındaki en yakın şarj istasyonunun Google yer kimliği (Places UI Kit kartı için). Yalnızca kimlik istenir (IDs Only: ücretsiz). */
+export async function googlePlaceId(st, key, { fetchImpl = fetch } = {}) {
+  const res = await fetchImpl(`${googleBase()}/v1/places:searchNearby`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': key, 'X-Goog-FieldMask': 'places.id' },
+    body: JSON.stringify({ includedTypes: ['electric_vehicle_charging_station'], maxResultCount: 1, rankPreference: 'DISTANCE', locationRestriction: { circle: { center: { latitude: st.lat, longitude: st.lon }, radius: MATCH_M } } }),
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!res.ok) throw new Error('Google HTTP ' + res.status);
+  const id = (await res.json()).places?.[0]?.id;
+  return typeof id === 'string' && /^[A-Za-z0-9_-]{10,200}$/.test(id) ? id : null;
+}
+
 // ---------- Birleştirici ----------
 const cache = new Map(); // anahtar → { exp, v }
 const HIT_MS = 90e3;
