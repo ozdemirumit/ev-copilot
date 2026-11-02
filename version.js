@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.72.7';
+self.APP_VERSION = '0.72.8';
 self.APP_CHANGELOG = [
+  {
+    v: '0.72.8', date: '2026-11-02',
+    notes: [
+      'Giriş yapmamış her cihaza rastgele bir cihaz kimliği verilir; sunucu anonim cihazları sayar ve istek sınırını cihaza da uygular. Giriş yapınca bu kimlik hesabına bağlanır (yönetim panelinde Cihazlar sekmesi). Kimlikte kişisel veri ya da IP adresi yoktur.',
+    ],
+  },
   {
     v: '0.72.7', date: '2026-11-02',
     notes: [

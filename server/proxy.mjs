@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { openStore } from './store.mjs';
 import { createAccounts } from './accounts.mjs';
 import { createCosts } from './costs.mjs';
+import { createDevices } from './devices.mjs';
 import { createMailer } from './mailer.mjs';
 import { createAppFiles } from './appfiles.mjs';
 import { lookupAll } from './occupancy.mjs';
@@ -145,6 +146,7 @@ function adminSummary() {
       active7d: users.filter((u) => u.lastLogin > now - 7 * 86400e3).length, new7d: users.filter((u) => u.createdAt > now - 7 * 86400e3).length,
     },
     invites: inv,
+    devices: devices.stats(),
     configured: { mapbox: !!MAPBOX, ocm: !!OCM, googlePlaces: !!GOOGLE_PLACES, googleLogin: !!accounts.googleOn, smtp: !!mailer, premiumRequired: String(env.PREMIUM_REQUIRED ?? '1') !== '0' },
     usageToday: byKind,
     google: { callsToday: gToday.d === today() ? gToday.n : 0, dailyCap: GOOGLE_TOTAL, unitUsd: costs.unit, usd: tot },
@@ -324,8 +326,9 @@ const store = openStore(env.DATA_DIR || join(here, 'data'));
 const priceBook = createPriceBook(store);
 const community = createCommunity(store);
 const costs = createCosts(store, env);
+const devices = createDevices(store);
 const mailer = createMailer(env); // SMTP_USER/SMTP_PASS yoksa null
-const accounts = createAccounts({ onDelete: (uid) => { priceBook.forget(uid); community.forget(uid); costs.forget(uid); }, costs, mailer, env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, ocm: !!OCM, overpass: true, occupancy: true }) });
+const accounts = createAccounts({ onDelete: (uid) => { priceBook.forget(uid); community.forget(uid); costs.forget(uid); devices.forget(uid); }, onLink: (deviceId, uid, ip) => devices.link(deviceId, uid, ip), devicesOf: (uid) => devices.forUser(uid), costs, mailer, env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, ocm: !!OCM, overpass: true, occupancy: true }) });
 
 const appFiles = createAppFiles({ dir: join(here, 'public'), send });
 
@@ -347,7 +350,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === 'OPTIONS') {
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'X-Access-Code, Authorization, Content-Type');
+      res.setHeader('Access-Control-Allow-Headers', 'X-Access-Code, Authorization, Content-Type, X-Device-Id');
       res.setHeader('Access-Control-Max-Age', '600');
       return send(res, 204, '');
     }
@@ -365,8 +368,10 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, html, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff',
         'Content-Security-Policy': "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'" });
     }
+    const dev = devices.valid(req.headers['x-device-id']);
     if (pp === '/v1/config' || pp === '/v1/auth/poll' || pp.startsWith('/auth/') || pp.startsWith('/i/')) {
-      if (limited(ip)) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
+      if (limited(ip) || (dev && limited('d:' + dev))) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
+      if (pp === '/v1/config') devices.touch(dev, ip, { app: url.searchParams.get('v'), platform: url.searchParams.get('p') }); // uygulama açılışı: anonim cihaz sayımı
       if (await accounts.handlePublic(req, res, url, ip)) return;
     }
     const code = req.headers['x-access-code'];
@@ -374,7 +379,8 @@ const server = http.createServer(async (req, res) => {
     if (code && authOk(code)) id = { kind: 'legacy', admin: true, key: 'c:' + ip };
     else { const u = accounts.userFromRequest(req); if (u) id = { kind: 'user', user: u, admin: !!u.admin, key: u.id }; }
     if (!id) { if (code || accounts.hasCredentials(req)) noteFail(ip); return json(res, 401, { error: 'giriş gerekli' }); }
-    if (limited(id.key)) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
+    if (limited(id.key) || (dev && id.kind !== 'user' && limited('d:' + dev))) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
+    if (dev && id.kind === 'user') devices.link(dev, id.user.id, ip); // oturumlu istek: cihaz hesaba bağlanır (giriş öncesi anonim kayıt birleşir)
     const p = url.pathname;
     if (p === '/health') return json(res, 200, { ok: true, mapbox: !!MAPBOX, ocm: !!OCM, overpass: true, occupancy: true, v: 3 });
     if (p.startsWith('/mapbox/')) return await mapbox(req, res, url, id);
@@ -385,6 +391,7 @@ const server = http.createServer(async (req, res) => {
     if (p === '/v1/presence' && req.method === 'POST') return await communityRoute(req, res, id, 'presence');
     if (p === '/v1/status' && req.method === 'POST') return await communityRoute(req, res, id, 'status');
     if (p === '/admin/summary' && req.method === 'GET' && id.admin) return json(res, 200, adminSummary());
+    if (p === '/admin/devices' && req.method === 'GET' && id.admin) return json(res, 200, { stats: devices.stats(), devices: devices.list((u) => store.data.users[u]?.email || u) });
     if (await accounts.handleAuthed(req, res, url, id)) return;
     return json(res, 404, { error: 'yol yok' });
   } catch (err) {

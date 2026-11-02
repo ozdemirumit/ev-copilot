@@ -101,12 +101,15 @@ powershell -ExecutionPolicy Bypass -File "D:\AI-Codes\Claude Code\MBRP\server\se
 |---|---|---|
 | **Web uygulaması** (arayüz, hesaplamalar, çeviriler; `index.html`, `js/`, `css/`) | `git push` (GitHub Pages kendiliğinden yayınlar, ~1-2 dk) | Tarayıcı/PWA kullananlarda açılışta "Güncelle" rozeti çıkar. APK'da gömülü kopya olduğu için APK'yı yenilemek gerekir (aşağıdaki satır). |
 | **Android APK** (web kodu ya da Android izinleri/eklentileri değişti) | `npm.cmd run apk` → APK `server\public` içine konur | Kullanıcılar `https://evcopilot.duckdns.org/app` adresinden indirip üstüne kurar; hesapları ve ayarları korunur. |
-| **Sunucu kodu** (`server\*.mjs`) | `node serverestart.mjs` (yönetici gerekmez) | Hizmet süreci kapanır, NSSM 5 sn içinde yeni kodla açar. Kullanıcılar birkaç saniye bağlantı hatası görebilir. |
-| **Sunucu ayarı** (`server\.env`: anahtarlar, Google, kotalar) | `node serverestart.mjs` | Aynı. |
+| **Sunucu kodu** (`server\*.mjs`) | `node server
+estart.mjs` (yönetici gerekmez) | Hizmet süreci kapanır, NSSM 5 sn içinde yeni kodla açar. Kullanıcılar birkaç saniye bağlantı hatası görebilir. |
+| **Sunucu ayarı** (`server\.env`: anahtarlar, Google, kotalar) | `node server
+estart.mjs` | Aynı. |
 | **Caddyfile** | `C:\ProgramData\EVCoPilot\caddy\Caddyfile` dosyasını güncelle (repodaki kopya yalnızca ilk kurulumda taşınır), sonra yönetici PowerShell'de `Restart-Service EVCoPilotCaddy` | HTTPS kısa kesilir. |
 | **Hizmet tanımı** (`server\service\install-services.ps1`) | Yönetici PowerShell'de betiği tekrar çalıştır (yeniden kurar, veriyi silmez) | Kısa kesinti. |
 
-Sunucu kodu bu çalışma kopyasından (`D:\AI-Codes\Claude Code\MBRP\server`) çalıştığı için `git pull` ya da kopyalama gerekmez: dosya değişince yeniden başlatmak yeter. Sırayla tam yayın: `git push` (web) → `npm.cmd run apk` (APK) → `node serverestart.mjs` (sunucu).
+Sunucu kodu bu çalışma kopyasından (`D:\AI-Codes\Claude Code\MBRP\server`) çalıştığı için `git pull` ya da kopyalama gerekmez: dosya değişince yeniden başlatmak yeter. Sırayla tam yayın: `git push` (web) → `npm.cmd run apk` (APK) → `node server
+estart.mjs` (sunucu).
 
 ## Canlı doluluk ve fiyat (`POST /v1/occupancy`)
 Planlı duraklar için dolu/boş soket sayısı ve kWh fiyatı. Uygulama bunu 5 dakikada bir, yaklaşan ilk 2 durak için sorar (`routing/livePlan.js`).
@@ -119,6 +122,7 @@ Planlı duraklar için dolu/boş soket sayısı ve kWh fiyatı. Uygulama bunu 5 
 Canlı doluluk ve canlı kWh fiyatı (`POST /v1/occupancy`) yalnızca Premium hesaplara açıktır; ücretsiz hesapta sunucu `402 premium_required` döndürür, uygulama ipucu gösterir. Yönetici hesapları (`ADMIN_EMAILS`) ve yönetici erişim kodu her zaman erişir.
 - Kullanıcı kaydında `premiumUntil` (ms) tutulur; `/v1/me` ve giriş yanıtı `premium` ve `premiumUntil` döndürür. Uygulama açılışta, öne gelince (en çok 5 dk'da bir) ve her 30 dk'da planı tazeler.
 - **Yönetim paneli:** `/yonetim` (statik sayfa; veriler `/admin/*` ile yönetici kodu ya da yönetici hesabıyla gelir, yanlış kod denemeleri sınırlıdır). Özet (`GET /admin/summary`: kullanıcı/davet sayıları, bugünkü çağrılar, Google kotası ve maliyeti, yapılandırma durumu; anahtar değerleri yok), Kullanıcılar, Davetler ve Maliyet sekmeleri. Komut satırı karşılığı: `node server\premium.mjs list|costs`.
+- **Cihaz kimliği (anonim kullanıcı):** uygulama giriş yapmamış her cihaza rastgele bir kimlik (`d_...`) verir ve `X-Device-Id` başlığında yollar (açılışta `GET /v1/config?v=&p=` ile en çok 6 saatte bir uğrar). Sunucu cihazı sayar (ilk/son görülme, açılış, etkin gün, sürüm, apk/web; IP saklanmaz), genel yollarda istek sınırını IP'ye ek olarak cihaza da uygular, adres başına saatte en çok 20 yeni cihaz kaydı açar. Kullanıcı giriş yapınca (`/v1/auth/poll`) ya da oturumlu bir istek aynı başlıkla gelince cihaz hesaba bağlanır ve anonim sayılmaz; hesap silinince bağlı cihaz kayıtları silinir. Panelde Cihazlar sekmesi, `GET /admin/devices`.
 - **Davetler:** panel (`/yonetim` > Davetler) ya da `POST /admin/invites { email?, label, days, premiumDays?, send? }`. `email` verilirse davet yalnızca o Google hesabıyla kullanılabilir (`invite_email` hatası), `premiumDays` ilk girişte Premium süresi başlatır. `send: true` ve `SMTP_USER`/`SMTP_PASS` varsa davet e-postası `mailer.mjs` (Gmail SMTP, doğrudan TLS 465, uygulama şifresi) ile gönderilir; hata olursa davet yine üretilir ve link panelde görünür. Panel aynı kökenden (PUBLIC_URL) istek yaptığı için köken izin listesine PUBLIC_URL otomatik eklenir. Premium: `POST /admin/premium { userId|email, days | until }` (`until` kesin bitiş, geçmişse kaldırır).
 - **Google maliyet kaydı:** her başarılı Google Places çağrısı çağrıyı yapan kullanıcıya gün gün yazılır (`costs.mjs`, `db.json` içinde `costs`; günlük yedeklere girer, 400 gün tutulur). Tahmini tutar = çağrı × `GOOGLE_COST_PER_CALL_USD` (varsayılan 0.04). Hesap silinince kişiye bağlı kayıt silinir, toplamlar anonim `_silinen` kovasına eklenir. Asıl fatura Google Cloud Billing'dedir.
 - **Elle vermek:** `node server\premium.mjs ornek@gmail.com 30` (30 gün ekler, süre varsa üstüne); `... 0` kaldırır. Kullanıcı listesinde (`GET /admin/users`) `premiumUntil` görünür.

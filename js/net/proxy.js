@@ -12,6 +12,18 @@ export const setSession = (s) => { save('session', s); document.dispatchEvent(ne
 let caps = load('proxyCaps', null); // sunucunun bildirdiği özellikler: { mapbox, ocm, overpass, occupancy (kullanıcı Premium ise), occupancyLocked (sunucuda var ama Premium değil) }
 let plan = load('proxyPlan', null); // hesap planı: { premium, until }
 
+/** Cihaz kimliği: giriş yapmamış kullanıcı için rastgele (d_...), cihazda kalıcı. Giriş yapınca sunucu bu kimliği hesaba bağlar; kimlik hesabın kimliğiyle değişir. */
+export function deviceId() {
+  let id = load('deviceId', '');
+  if (!/^d_[A-Za-z0-9_-]{16,40}$/.test(id)) {
+    const b = new Uint8Array(16);
+    crypto.getRandomValues(b);
+    id = 'd_' + btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    save('deviceId', id);
+  }
+  return id;
+}
+
 const hasCreds = () => !!(getSession() || proxyCode());
 
 /** Sunucu kullanılabilir mi ve istenen özelliği (mapbox | ocm | overpass) sağlıyor mu. */
@@ -20,6 +32,7 @@ export const getPlan = () => (getSession() ? plan : null);
 
 export function proxyFetch(path, init = {}) {
   const headers = new Headers(init.headers || {});
+  headers.set('X-Device-Id', deviceId());
   const s = getSession();
   if (s) headers.set('Authorization', 'Bearer ' + s.token);
   else if (proxyCode()) headers.set('X-Access-Code', proxyCode());
@@ -29,14 +42,22 @@ export function proxyFetch(path, init = {}) {
 /** Herkese açık yapılandırma (giriş sağlayıcıları). Sunucuya ulaşılamazsa null. */
 export async function serverConfig() {
   try {
-    const r = await fetch(proxyBase() + '/v1/config', { signal: AbortSignal.timeout(8000) });
+    const r = await fetch(proxyBase() + `/v1/config?v=${globalThis.APP_VERSION || ''}&p=${globalThis.Capacitor?.isNativePlatform?.() ? 'apk' : 'web'}`, { headers: { 'X-Device-Id': deviceId() }, signal: AbortSignal.timeout(8000) });
     return r.ok ? await r.json() : null;
   } catch { return null; }
 }
 
+/** Giriş yapmamış cihaz: sunucuya cihaz kimliğiyle uğra (anonim cihaz sayımı); en çok 6 saatte bir. */
+function pingAnon() {
+  const last = Number(load('devicePing', 0)) || 0;
+  if (Date.now() - last < 6 * 3600e3) return;
+  save('devicePing', Date.now());
+  serverConfig();
+}
+
 /** Sunucunun özelliklerini yenile (oturum varsa /v1/me, yoksa yönetici kodu varsa /health). 401'de oturum silinir. Dönüş: { ok, text, caps }. */
 export async function refreshCaps() {
-  if (!hasCreds()) { caps = null; save('proxyCaps', null); return { ok: false, text: '', caps: null }; }
+  if (!hasCreds()) { caps = null; save('proxyCaps', null); pingAnon(); return { ok: false, text: '', caps: null }; }
   try {
     const sess = getSession();
     const res = await proxyFetch(sess ? '/v1/me' : '/health', { signal: AbortSignal.timeout(10000) });

@@ -1,7 +1,7 @@
 // Hesap: davet + Google ile giriş. Telefona hiçbir anahtar yazılmaz: sunucunun giriş sayfası tarayıcıda açılır (Google istemci gizlisi yalnızca
 // sunucudadır), uygulama rastgele bir "nonce" ile sonucu yoklar ve oturum belirtecini kendiliğinden saklar.
 import { load, save, remove } from '../utils/storage.js';
-import { getSession, proxyBase, proxyFetch, refreshCaps, serverConfig, setSession } from '../net/proxy.js';
+import { deviceId, getSession, proxyBase, proxyFetch, refreshCaps, serverConfig, setSession } from '../net/proxy.js';
 
 const POLL_MS = 2000;
 const WAIT_MS = 10 * 60e3;
@@ -61,7 +61,7 @@ export function startGoogleSignIn(invite = pendingInvite()) {
       await sleep(POLL_MS);
       let j;
       try {
-        const r = await fetch(`${proxyBase()}/v1/auth/poll?nonce=${nonce}`, { signal: AbortSignal.timeout(8000) });
+        const r = await fetch(`${proxyBase()}/v1/auth/poll?nonce=${nonce}`, { headers: { 'X-Device-Id': deviceId() }, signal: AbortSignal.timeout(8000) });
         j = await r.json();
       } catch { continue; } // ağ kesildi: yoklamaya devam
       if (j.status === 'pending' || (j.status === 'expired' && Date.now() - t0 < 120e3)) continue; // tarayıcı sayfayı açana kadar sunucu nonce'u henüz görmemiş olabilir

@@ -37,7 +37,7 @@ function inviteMail(link, rec) {
   ].join('\n');
 }
 
-export function createAccounts({ env, store, send, json, readJson, caps, onDelete = () => {}, costs = null, mailer = null }) {
+export function createAccounts({ env, store, send, json, readJson, caps, onDelete = () => {}, onLink = null, devicesOf = () => [], costs = null, mailer = null }) {
   const { data } = store;
   const PUBLIC_URL = String(env.PUBLIC_URL || '').replace(/\/+$/, '');
   const APP_URL = env.APP_URL || 'https://ozdemirumit.github.io/ev-copilot/';
@@ -202,6 +202,7 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
       if (!e || e.exp < Date.now()) { json(res, 200, { status: 'expired' }); return true; }
       if (!e.result) { json(res, 200, { status: 'pending' }); return true; }
       pend.delete(nonce); // sonuç bir kez teslim edilir
+      if (e.result.status === 'ok') onLink?.(req.headers['x-device-id'], e.result.user.id, ip); // giriş yapan cihazın anonim kimliği hesaba bağlanır
       byState.delete(e.state);
       json(res, 200, e.result);
       return true;
@@ -348,7 +349,7 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
       const di = /^\/admin\/invites\/(i_[A-Za-z0-9_-]+)$/.exec(p);
       if (di && req.method === 'DELETE') { if (data.invites[di[1]]) data.invites[di[1]].revoked = true; store.save(); json(res, 200, { ok: true }); return true; }
       if (p === '/admin/users' && req.method === 'GET') {
-        json(res, 200, { users: Object.values(data.users).map((u) => ({ id: u.id, email: u.email, name: u.name, admin: u.admin, disabled: u.disabled, createdAt: u.createdAt, lastLogin: u.lastLogin, premiumUntil: u.premiumUntil || null, bytes: usedBytes(u.id), trips: Object.keys(data.history?.[u.id]?.trips || {}).length, charges: Object.keys(data.history?.[u.id]?.charges || {}).length, google: costs?.summary(u.id) || null })) });
+        json(res, 200, { users: Object.values(data.users).map((u) => ({ id: u.id, email: u.email, name: u.name, admin: u.admin, disabled: u.disabled, createdAt: u.createdAt, lastLogin: u.lastLogin, premiumUntil: u.premiumUntil || null, bytes: usedBytes(u.id), trips: Object.keys(data.history?.[u.id]?.trips || {}).length, charges: Object.keys(data.history?.[u.id]?.charges || {}).length, google: costs?.summary(u.id) || null, devices: devicesOf(u.id).length, firstDevice: devicesOf(u.id).reduce((m, d) => Math.min(m, d.firstSeen), Infinity) })) });
         return true;
       }
       if (p === '/admin/costs' && req.method === 'GET') { // kullanıcı başına ücretli çağrılar (Google): bugün / bu ay / toplam, çağrı ve tahmini USD

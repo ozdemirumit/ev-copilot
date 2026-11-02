@@ -62,11 +62,12 @@ code{background:var(--chip);padding:1px 5px;border-radius:5px;word-break:break-a
   </header>
   <main>
     <div class="tabs" id="tabs">
-      <button data-t="sum" class="on">Özet</button><button data-t="users">Kullanıcılar</button><button data-t="inv">Davetler</button><button data-t="cost">Maliyet</button>
+      <button data-t="sum" class="on">Özet</button><button data-t="users">Kullanıcılar</button><button data-t="inv">Davetler</button><button data-t="dev">Cihazlar</button><button data-t="cost">Maliyet</button>
     </div>
     <section id="t-sum"></section>
     <section id="t-users" class="hidden"></section>
     <section id="t-inv" class="hidden"></section>
+    <section id="t-dev" class="hidden"></section>
     <section id="t-cost" class="hidden"></section>
   </main>
 </div>
@@ -78,7 +79,7 @@ const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 let CODE = '';
 try { CODE = sessionStorage.getItem('adm') || ''; } catch {}
-let D = { sum: null, users: [], inv: [], cost: null };
+let D = { sum: null, users: [], inv: [], cost: null, dev: null };
 let tab = 'sum';
 let q = '';
 
@@ -105,8 +106,8 @@ function show() { $('login').classList.toggle('hidden', !!CODE); $('app').classL
 
 async function load() {
   try {
-    const [s, u, i, c] = await Promise.all([api('/admin/summary'), api('/admin/users'), api('/admin/invites'), api('/admin/costs')]);
-    D = { sum: s, users: u.users || [], inv: i.invites || [], cost: c };
+    const [s, u, i, c, dv] = await Promise.all([api('/admin/summary'), api('/admin/users'), api('/admin/invites'), api('/admin/costs'), api('/admin/devices')]);
+    D = { sum: s, users: u.users || [], inv: i.invites || [], cost: c, dev: dv };
     $('stamp').textContent = new Date().toLocaleTimeString('tr-TR');
     draw();
   } catch (e) { toast(e.message); }
@@ -184,7 +185,7 @@ function drawUsers(root) {
     const t = el('button', 'sm ' + (u.disabled ? '' : 'bad'), u.disabled ? 'Aç' : 'Kapat');
     t.onclick = () => (u.disabled || confirm(u.email + ' hesabı kapatılsın mı? (oturumları sonlanır)')) && act(() => api(`/admin/users/${u.id}/${u.disabled ? 'enable' : 'disable'}`, 'POST'), u.disabled ? 'Hesap açıldı' : 'Hesap kapatıldı');
     a.append(t);
-    return [who, plnode, ago(u.lastLogin), fmtDate(u.createdAt), `${u.trips ?? 0} / ${u.charges ?? 0}`, kb(u.bytes), u.google ? `${usd(u.google.usd.month)} / ${usd(u.google.usd.total)}` : '–', a];
+    return [who, plnode, ago(u.lastLogin), fmtDate(u.createdAt) + (u.devices ? ` · ${u.devices} cihaz` : ''), `${u.trips ?? 0} / ${u.charges ?? 0}`, kb(u.bytes), u.google ? `${usd(u.google.usd.month)} / ${usd(u.google.usd.total)}` : '–', a];
   });
   root.append(table(['Kullanıcı', 'Plan', 'Son giriş', 'Kayıt', 'Yolculuk / şarj', 'Veri', 'Google ay / toplam', 'İşlem'], rows, [4, 5, 6]));
 }
@@ -260,17 +261,28 @@ function drawCost(root) {
   root.append(table(['Kullanıcı', 'Bugün (çağrı · USD)', 'Bu ay', 'Toplam'], data, [1, 2, 3]));
 }
 
+function drawDev(root) {
+  root.replaceChildren();
+  const d = D.dev || { stats: {}, devices: [] }; const st = d.stats;
+  const g = el('div', 'grid');
+  g.append(card(st.anonymous ?? 0, 'giriş yapmamış cihaz'), card(st.anonymousActive7d ?? 0, 'son 7 günde açılan anonim cihaz'), card(st.linked ?? 0, 'hesaba bağlanmış cihaz'), card(st.total ?? 0, 'toplam cihaz kaydı'));
+  root.append(g);
+  root.append(el('p', 'mut', 'Uygulama her cihaza rastgele bir kimlik verir. Kullanıcı giriş yapınca cihaz kimliği hesabına bağlanır ve anonim sayılmaz. IP adresi saklanmaz.'));
+  const rows = d.devices.map((r) => [r.id.slice(0, 10) + '…', r.users.length ? el('span', '', r.users.map((u) => u.email).join(', ')) : chip('anonim'), (r.platform || '–') + ' ' + (r.app || ''), fmtDT(r.firstSeen), ago(r.lastSeen), r.days, r.hits]);
+  root.append(table(['Cihaz', 'Hesap', 'Uygulama', 'İlk görülme', 'Son görülme', 'Etkin gün', 'Açılış'], rows, [5, 6]));
+}
+
 function draw() {
   if (!D.sum) return;
-  drawSum($('t-sum')); drawUsers($('t-users')); drawInv($('t-inv')); drawCost($('t-cost'));
-  for (const t of ['sum', 'users', 'inv', 'cost']) $('t-' + t).classList.toggle('hidden', t !== tab);
+  drawSum($('t-sum')); drawUsers($('t-users')); drawInv($('t-inv')); drawDev($('t-dev')); drawCost($('t-cost'));
+  for (const t of ['sum', 'users', 'inv', 'dev', 'cost']) $('t-' + t).classList.toggle('hidden', t !== tab);
 }
 
 $('tabs').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return;
   tab = b.dataset.t;
   document.querySelectorAll('#tabs button').forEach((x) => x.classList.toggle('on', x === b));
-  for (const t of ['sum', 'users', 'inv', 'cost']) $('t-' + t).classList.toggle('hidden', t !== tab);
+  for (const t of ['sum', 'users', 'inv', 'dev', 'cost']) $('t-' + t).classList.toggle('hidden', t !== tab);
 });
 $('refresh').onclick = load;
 $('logout').onclick = logout;
