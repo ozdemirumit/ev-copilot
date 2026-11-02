@@ -20,6 +20,7 @@ import { lookupAll } from './occupancy.mjs';
 import { hereBrowse, compact } from './here.mjs';
 import { createPriceBook } from './prices.mjs';
 import { createCommunity } from './community.mjs';
+import { createStationInfo, MAX_PHOTO_BYTES } from './stationinfo.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -115,7 +116,7 @@ const once = (k, fn) => {
 };
 
 // ---------- kullanıcı başına günlük kota (Mapbox faturasını ve ortak Overpass'i korur) ----------
-const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 40), here: Number(env.HERE_DAILY_PER_USER || 800), price: 20, presence: 60, status: 30 };
+const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 40), here: Number(env.HERE_DAILY_PER_USER || 800), price: 20, presence: 60, status: 30, sinfo: 600, srate: 60, sfac: 120, sphoto: 15 };
 const GOOGLE_TOTAL = Number(env.GOOGLE_DAILY_TOTAL || 150); // tüm kullanıcılar için günlük Google çağrısı tavanı (fatura üst sınırı)
 let gToday = { d: '', n: 0 };
 function googleAllowed(id) {
@@ -375,6 +376,49 @@ async function communityRoute(req, res, id, kind) {
   json(res, r.ok ? 200 : r.error === 'çok sık' ? 429 : 400, r);
 }
 
+// İstasyon bilgisi: puan (1-5), olanaklar (AVM, tuvalet…) ve fotoğraflar. Okumak her kimlikle; yazmak hesap ister.
+async function readBytes(req, max) {
+  const chunks = [];
+  let size = 0;
+  for await (const c of req) { size += c.length; if (size > max) return undefined; chunks.push(c); }
+  return Buffer.concat(chunks);
+}
+async function stationInfoRoute(req, res, id, url) {
+  const p = url.pathname;
+  const uid = id.kind === 'user' ? id.user.id : null;
+  const need = (kind) => { // true: yanıt verildi (hesap yok ya da günlük hak doldu)
+    if (id.kind !== 'user') json(res, 403, { error: 'hesap gerekli' });
+    else if (overQuota(id, kind)) json(res, 429, { error: 'günlük hak doldu' }, { 'Retry-After': '3600' });
+    else return false;
+    return true;
+  };
+  const answer = (r) => json(res, r.ok ? 200 : r.error === 'yetkisiz' ? 403 : r.error === 'yok' ? 404 : 400, r);
+  if (p.startsWith('/v1/station/photo/') && (req.method === 'GET' || req.method === 'DELETE')) {
+    const pid = p.slice('/v1/station/photo/'.length);
+    if (req.method === 'DELETE') { if (need('sfac')) return; return answer(stationInfo.deletePhoto(uid, pid, id.admin)); }
+    const buf = stationInfo.readPhoto(pid);
+    if (!buf) return json(res, 404, { error: 'yok' });
+    return send(res, 200, buf, { 'Content-Type': 'image/jpeg', 'Cache-Control': 'private, max-age=31536000, immutable' }); // yalnızca kimlikli istek ulaşır; içerik değişmez
+  }
+  if (p === '/v1/station/photo' && req.method === 'POST') {
+    if (need('sphoto')) return;
+    const buf = await readBytes(req, MAX_PHOTO_BYTES);
+    return answer(buf ? stationInfo.addPhoto(uid, { lat: url.searchParams.get('lat'), lon: url.searchParams.get('lon') }, buf) : { error: 'fotoğraf çok büyük' });
+  }
+  if (req.method !== 'POST') return json(res, 404, { error: 'yol yok' });
+  const b = await readJson(req, 1000);
+  if (!b) return json(res, 400, { error: 'geçersiz gövde' });
+  if (p === '/v1/station/info') {
+    if (overQuota(id, 'sinfo')) return json(res, 429, { error: 'günlük hak doldu' }, { 'Retry-After': '3600' });
+    const pos = { lat: Number(b.lat), lon: Number(b.lon) };
+    if (!Number.isFinite(pos.lat) || !Number.isFinite(pos.lon) || Math.abs(pos.lat) > 90 || Math.abs(pos.lon) > 180) return json(res, 400, { error: 'geçersiz konum' });
+    return json(res, 200, stationInfo.summary(pos, uid));
+  }
+  if (p === '/v1/station/rate') { if (need('srate')) return; return answer(stationInfo.rate(uid, b)); }
+  if (p === '/v1/station/facility') { if (need('sfac')) return; return answer(stationInfo.facility(uid, b)); }
+  return json(res, 404, { error: 'yol yok' });
+}
+
 // Kullanıcı fiyat bildirimi: şarj sonrası ödenen tutar / kWh (kendi fiyat defterimiz)
 async function priceRoute(req, res, id) {
   if (id.kind !== 'user') return json(res, 403, { error: 'hesap gerekli' });
@@ -395,10 +439,11 @@ process.on('unhandledRejection', (err) => console.error('yakalanmamış söz red
 const store = openStore(env.DATA_DIR || join(here, 'data'));
 const priceBook = createPriceBook(store);
 const community = createCommunity(store);
+const stationInfo = createStationInfo(store, join(env.DATA_DIR || join(here, 'data'), 'photos'));
 const costs = createCosts(store, env);
 const devices = createDevices(store);
 const mailer = createMailer(env); // SMTP_USER/SMTP_PASS yoksa null
-const accounts = createAccounts({ onDelete: (uid) => { priceBook.forget(uid); community.forget(uid); costs.forget(uid); devices.forget(uid); }, onLink: (deviceId, uid, ip) => devices.link(deviceId, uid, ip), devicesOf: (uid) => devices.forUser(uid), costs, mailer, env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, here: !!HERE, ocm: !!OCM, overpass: true, occupancy: true }) });
+const accounts = createAccounts({ onDelete: (uid) => { priceBook.forget(uid); community.forget(uid); stationInfo.forget(uid); costs.forget(uid); devices.forget(uid); }, onLink: (deviceId, uid, ip) => devices.link(deviceId, uid, ip), devicesOf: (uid) => devices.forUser(uid), costs, mailer, env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, here: !!HERE, ocm: !!OCM, overpass: true, occupancy: true }) });
 
 const appFiles = createAppFiles({ dir: join(here, 'public'), send });
 
@@ -462,6 +507,7 @@ const server = http.createServer(async (req, res) => {
     if (p === '/v1/price' && req.method === 'POST') return await priceRoute(req, res, id);
     if (p === '/v1/presence' && req.method === 'POST') return await communityRoute(req, res, id, 'presence');
     if (p === '/v1/status' && req.method === 'POST') return await communityRoute(req, res, id, 'status');
+    if (p.startsWith('/v1/station/')) return await stationInfoRoute(req, res, id, url);
     if (p === '/admin/summary' && req.method === 'GET' && id.admin) return json(res, 200, adminSummary());
     if (p === '/admin/devices' && req.method === 'GET' && id.admin) return json(res, 200, { stats: devices.stats(), devices: devices.list((u) => store.data.users[u]?.email || u) });
     if (await accounts.handleAuthed(req, res, url, id)) return;

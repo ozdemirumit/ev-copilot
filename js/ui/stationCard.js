@@ -1,23 +1,31 @@
 // Haritada bir istasyon iğnesine dokununca açılan kart: ad, operatör, güç, tahmini ve canlı/bildirilen fiyat, canlı doluluk (Premium), topluluk durumu,
-// Git / Haritalar düğmeleri ve Dolu / Boş / Fiyat bildirimi. Canlı bilgi tek istasyon için sunucudan istenir (/v1/occupancy; Hollanda'da NDW, Türkiye'de topluluk).
+// Git / Haritalar düğmeleri, fiyat bildirimi ve topluluk bilgisi: 1-5 puan, çevredeki olanaklar (AVM, tuvalet…) ve fotoğraflar (kameradan ya da galeriden).
+// Canlı bilgi tek istasyon için sunucudan istenir (/v1/occupancy; Hollanda'da NDW, Türkiye'de topluluk).
 import { effective } from '../state.js';
 import { mapApi } from './mapView.js';
 import { toast } from './toast.js';
-import { tr } from '../i18n/index.js';
+import { tr, t } from '../i18n/index.js';
 import { fetchAvailability } from '../routing/occupancyClient.js';
 import { slotEl, livePrice } from '../routing/slots.js';
 import { getSession, proxyFetch, proxyHas } from '../net/proxy.js';
-import { reportStatus } from '../account/community.js';
+import { fetchInfo, ratePoint, markFacility, shrinkPhoto, uploadPhoto, photoUrl, deletePhoto, FACILITIES } from '../account/stationInfo.js';
 import { goToStation } from '../nav/nearby.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => Object.assign(document.createElement(tag), { className: cls || '', textContent: text ?? '' });
 let current = null;
 let token = 0; // eski yanıt yeni karta yazılmasın
+let urls = []; // fotoğraf küçük resimlerinin blob adresleri (kart kapanınca serbest bırakılır)
+
+function freeUrls() {
+  urls.forEach((u) => URL.revokeObjectURL(u));
+  urls = [];
+}
 
 function close() {
   current = null;
   token++;
+  freeUrls();
   $('station-card')?.classList.add('hidden');
 }
 
@@ -57,8 +65,92 @@ async function load(s, box) {
   paintLive(box, s, 'done');
 }
 
+/** Fotoğrafı tam ekran göster; kendi fotoğrafıysa silinebilir. */
+function viewPhoto(src, id, mine, onGone) {
+  const ov = el('div', 'photo-view');
+  const img = el('img');
+  img.src = src;
+  img.alt = '';
+  ov.append(img, btn('✕', () => ov.remove(), 'sheet-x'));
+  if (mine) ov.append(btn('🗑 Sil', async () => { if (await deletePhoto(id)) { ov.remove(); toast('Fotoğraf silindi'); onGone(); } else toast('Kaydedilemedi'); }, 'btn sm del'));
+  ov.addEventListener('click', (e) => { if (e.target === ov) ov.remove(); });
+  document.body.append(ov);
+}
+
+/** Puan, olanaklar ve fotoğraflar bölümü (hesapla giriş gerekir). */
+async function loadInfo(s, box) {
+  const my = token;
+  if (!getSession()) { box.replaceChildren(el('div', 'small muted', 'Puan, fotoğraf ve olanaklar için hesapla giriş yap')); return; }
+  const info = await fetchInfo(s);
+  if (my !== token || !info) return;
+  freeUrls();
+  const again = () => loadInfo(s, box);
+  const r = info.rating;
+  const rate = el('div', 'row sc-rate');
+  rate.append(el('span', 'small muted', 'Puanın:'));
+  for (let i = 1; i <= 5; i++) {
+    const b = btn(i <= (r.mine || 0) ? '★' : '☆', async () => { if (await ratePoint(s, r.mine === i ? 0 : i)) again(); else toast('Kaydedilemedi'); }, 'star');
+    b.setAttribute('aria-label', String(i));
+    rate.append(b);
+  }
+  rate.append(el('span', 'small muted', r.n ? t('Ortalama {0} ({1} oy)', r.avg.toFixed(1), r.n) : 'Henüz puan yok'));
+
+  const fac = el('div', 'stack');
+  fac.append(el('div', 'small muted', 'Olanaklar (dokunarak işaretle)'));
+  const chips = el('div', 'chips');
+  FACILITIES.forEach((f) => {
+    const v = info.facilities[f.id] || { yes: 0, no: 0, mine: null };
+    const b = btn(`${f.icon} ${tr(f.name)}${v.yes ? ' · ' + v.yes : ''}`, async () => { if (await markFacility(s, f.id, v.mine === true ? null : true)) again(); else toast('Kaydedilemedi'); }, 'btn sm' + (v.yes > v.no ? ' sel' : ''));
+    b.setAttribute('aria-pressed', String(v.mine === true));
+    chips.append(b);
+  });
+  fac.append(chips);
+
+  const ph = el('div', 'stack');
+  ph.append(el('div', 'small muted', 'Fotoğraflar'));
+  if (info.photos.length) {
+    const row = el('div', 'photo-row');
+    info.photos.forEach((p) => {
+      const th = el('button', 'photo-th');
+      th.type = 'button';
+      row.append(th);
+      photoUrl(p.id).then((u) => {
+        if (!u) return th.remove();
+        if (my !== token) return URL.revokeObjectURL(u);
+        urls.push(u);
+        th.style.backgroundImage = `url("${u}")`;
+        th.addEventListener('click', () => viewPhoto(u, p.id, p.mine, again));
+      });
+    });
+    ph.append(row);
+  }
+  const add = (capture) => {
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*';
+    if (capture) inp.capture = 'environment';
+    inp.addEventListener('change', async () => {
+      const file = inp.files?.[0];
+      if (!file) return;
+      toast('Fotoğraf yükleniyor…');
+      try {
+        const blob = await shrinkPhoto(file);
+        const res = blob ? await uploadPhoto(s, blob) : { ok: false };
+        toast(res.ok ? 'Fotoğraf eklendi' : 'Fotoğraf yüklenemedi');
+        if (res.ok) again();
+      } catch { toast('Fotoğraf yüklenemedi'); }
+    });
+    inp.click();
+  };
+  const acts = el('div', 'row wrap');
+  acts.append(btn('📷 Fotoğraf çek', () => add(true)), btn('🖼️ Galeriden seç', () => add(false)));
+  ph.append(acts, el('div', 'small muted', 'Fotoğrafta kişi ve plaka görünmesin.'));
+  box.replaceChildren(rate, fac, ph);
+}
+
 function open(s) {
   current = s;
+  freeUrls();
   const card = $('station-card');
   const head = el('div', 'row between');
   head.append(el('b', 'sc-title', s.name));
@@ -75,12 +167,6 @@ function open(s) {
   a.rel = 'noopener';
   acts.append(a);
   if (getSession()) {
-    const say = async (status) => {
-      const ok = await reportStatus(s, status);
-      toast(ok ? 'Teşekkürler: bildirildi' : 'Bildirim gönderilemedi');
-      if (ok) { s.slots = { ...(s.slots || { total: null, available: null, out: 0 }), checked: Date.now(), community: { busy: s.slots?.community?.busy ?? 0, report: { status, at: Date.now() } } }; paintLive(live, s, 'done'); }
-    };
-    acts.append(btn('🔴 Dolu', () => say('full')), btn('🟢 Boş', () => say('free')));
     if (!s.foreign) acts.append(btn('💳 Fiyat bildir', async () => { // TL fiyat bildirimi yalnızca Türkiye'de
       const v = prompt(tr('Bu istasyonun kWh fiyatı (TL)?'));
       if (v == null) return;
@@ -92,9 +178,11 @@ function open(s) {
       } catch { toast('Fiyat gönderilemedi'); }
     }));
   }
-  card.replaceChildren(head, meta, price, live, acts);
+  const info = el('div', 'stack sc-info');
+  card.replaceChildren(head, meta, price, live, acts, info);
   card.classList.remove('hidden');
   load(s, live);
+  loadInfo(s, info);
 }
 
 export function initStationCard() {

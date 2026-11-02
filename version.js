@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.76.0';
+self.APP_VERSION = '0.77.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.77.0', date: '2026-11-02',
+    notes: [
+      'YENİ: İstasyon kartında topluluk bilgisi. 1-5 puan (aynı yıldıza tekrar dokunmak puanı geri alır), çevredeki olanaklar (AVM, tuvalet, restoran, kafe, market, mescit; dokunarak işaretlenir, sayı gösterilir) ve fotoğraflar (kameradan çek ya da galeriden seç; cihazda 1280 px JPEG\u0027e küçültülür, konum bilgisi atılır; kendi fotoğrafını silebilirsin). KALDIRILDI: Dolu / Boş bildirim düğmeleri. Puan, olanak ve fotoğraf için hesapla giriş gerekir. Sunucu güncellemesi gerekir (server\restart.mjs).',
+    ],
+  },
   {
     v: '0.76.0', date: '2026-11-02',
     notes: [

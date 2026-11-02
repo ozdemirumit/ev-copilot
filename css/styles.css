@@ -378,10 +378,20 @@ body.dimmed { background: #000; }
 body.navmode .fabs { bottom: calc(var(--nav-h) + var(--safe-b) + 92px); }
 
 /* Harita iğneleri: damla biçimi, AC mavi / DC turuncu / ≥150 kW mor; planlanan durak büyük, amber halkalı, sıra numaralı */
-.station-card { position: fixed; z-index: 45; left: 12px; right: 12px; bottom: calc(var(--safe-b) + 98px); max-width: 460px; margin: 0 auto; padding: 12px 14px; display: grid; gap: 6px; background: rgba(22, 31, 43, .94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, .14); border-radius: 18px; box-shadow: 0 8px 28px #000b; }
+.station-card { position: fixed; z-index: 45; left: 12px; right: 12px; bottom: calc(var(--safe-b) + 98px); max-width: 460px; max-height: 62vh; overflow-y: auto; margin: 0 auto; padding: 12px 14px; display: grid; gap: 6px; background: rgba(22, 31, 43, .94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, .14); border-radius: 18px; box-shadow: 0 8px 28px #000b; }
 .station-card .sc-title { font-size: 16px; }
 .station-card .sc-price, .station-card .live-price { font-weight: 600; font-variant-numeric: tabular-nums; }
 .station-card .sheet-x { position: static; }
+.station-card .sc-info { margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--line); gap: 10px; }
+.station-card .sc-rate { gap: 2px; align-items: center; }
+.station-card .sc-rate .small { margin-left: 8px; }
+.station-card .star { border: 0; background: none; color: #f5b942; font-size: 24px; line-height: 1; padding: 2px 3px; }
+.photo-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.photo-th { flex: none; width: 64px; height: 64px; border-radius: 10px; border: 1px solid var(--line); background: var(--card) center / cover no-repeat; }
+.photo-view { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; background: rgba(0, 0, 0, .88); }
+.photo-view img { max-width: 96vw; max-height: 86vh; border-radius: 10px; }
+.photo-view .sheet-x { position: absolute; top: calc(var(--safe-t, 0px) + 12px); right: 12px; }
+.photo-view .del { position: absolute; bottom: calc(var(--safe-b) + 16px); }
 @media (min-width: 900px) { .station-card { left: 12px; right: auto; margin: 0; width: 440px; } }
 .spin { cursor: pointer; position: relative; width: 34px; height: 44px; filter: drop-shadow(0 2px 4px #0009); transition: transform .15s; transform-origin: 50% 100%; transform: scale(.82); }
 .spin svg { width: 100%; height: 100%; display: block; }
