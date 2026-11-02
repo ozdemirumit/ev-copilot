@@ -190,4 +190,6 @@ export default {
   "kafa +": "Gegenwind +",
   "Tarayıcı kodu sorunca şunu gir: {0}": "Wenn der Browser nach einem Code fragt, gib ein: {0}",
   "Kod yanlış girildi: girişi yeniden başlat": "Falscher Code eingegeben: Anmeldung neu starten",
+  "Giriş kodun (Google'dan sonra tarayıcıda bu kod istenecek; aklında tut):": "Dein Anmeldecode (der Browser fragt ihn nach Google ab; merk ihn dir):",
+  "🌐 Tarayıcıda devam et": "🌐 Im Browser fortfahren",
 };

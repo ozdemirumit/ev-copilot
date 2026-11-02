@@ -190,4 +190,6 @@ export default {
   "kafa +": "czołowy +",
   "Tarayıcı kodu sorunca şunu gir: {0}": "Gdy przeglądarka poprosi o kod, wpisz: {0}",
   "Kod yanlış girildi: girişi yeniden başlat": "Wpisano zły kod: rozpocznij logowanie od nowa",
+  "Giriş kodun (Google'dan sonra tarayıcıda bu kod istenecek; aklında tut):": "Twój kod logowania (przeglądarka poprosi o niego po Google; zapamiętaj go):",
+  "🌐 Tarayıcıda devam et": "🌐 Kontynuuj w przeglądarce",
 };

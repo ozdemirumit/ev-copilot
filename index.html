@@ -540,6 +540,14 @@
           <input type="text" id="acc-invite" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Davet linkine dokunduysan kendiliğinden dolar">
         </label>
         <button class="btn primary" id="acc-google" type="button">🔐 Google ile giriş</button>
+        <div class="stack hidden" id="acc-pin-box">
+          <div class="small muted">Giriş kodun (Google'dan sonra tarayıcıda bu kod istenecek; aklında tut):</div>
+          <b id="acc-pin" style="font-size:40px;letter-spacing:10px;text-align:center"></b>
+          <div class="row wrap">
+            <button class="btn primary" id="acc-continue" type="button" style="flex:1">🌐 Tarayıcıda devam et</button>
+            <button class="btn ghost" id="acc-pin-cancel" type="button">İptal</button>
+          </div>
+        </div>
         <a class="small hidden" id="acc-link" href="#" target="_blank" rel="noopener">Sayfa açılmadıysa buraya dokun</a>
         <div class="small muted" id="acc-out"></div>
       </div>

@@ -190,4 +190,6 @@ export default {
   "kafa +": "din față +",
   "Tarayıcı kodu sorunca şunu gir: {0}": "Când browserul cere un cod, introdu: {0}",
   "Kod yanlış girildi: girişi yeniden başlat": "Cod greșit: reia autentificarea",
+  "Giriş kodun (Google'dan sonra tarayıcıda bu kod istenecek; aklında tut):": "Codul tău de autentificare (browserul îl va cere după Google; ține-l minte):",
+  "🌐 Tarayıcıda devam et": "🌐 Continuă în browser",
 };

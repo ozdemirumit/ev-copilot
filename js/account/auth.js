@@ -57,12 +57,32 @@ function newNonce() {
   return btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-/** Girişi başlat. Tıklama işleyicisinde, ilk iş olarak çağrılmalı (tarayıcı sekmesi açılabilsin). Dönüş: { url, code (tarayıcıda girilecek 4 hane), done: Promise<user> }. */
-export function startGoogleSignIn(invite = pendingInvite()) {
+/**
+ * Girişi hazırla: kod (tarayıcıda girilecek 4 hane) hemen gösterilebilir, tarayıcı start() ile açılır. start() bir tıklama işleyicisinde, ilk iş olarak çağrılmalı
+ * (tarayıcı sekmesi açılabilsin). Kod önce ekranda görünsün diye iki adım: kod gösterilir, kullanıcı "Tarayıcıda devam et"e basınca tarayıcı açılır.
+ * Dönüş: { url, code, start(): Promise<user> }.
+ */
+export function prepareGoogleSignIn(invite = pendingInvite()) {
   const nonce = newNonce();
   const url = `${proxyBase()}/auth/google?nonce=${nonce}${invite ? '&invite=' + encodeURIComponent(invite) : ''}`;
-  window.open(url, '_blank');
-  const done = (async () => {
+  let started = null;
+  const start = () => {
+    if (started) return started;
+    window.open(url, '_blank');
+    started = waitForLogin(nonce);
+    return started;
+  };
+  return { url, code: loginCode(nonce), start };
+}
+
+/** Tek adımlı eski kullanım: hemen tarayıcıyı açar. Dönüş: { url, code, done: Promise<user> }. */
+export function startGoogleSignIn(invite = pendingInvite()) {
+  const p = prepareGoogleSignIn(invite);
+  return { url: p.url, code: p.code, done: p.start() };
+}
+
+function waitForLogin(nonce) {
+  return (async () => {
     const t0 = Date.now();
     while (Date.now() - t0 < WAIT_MS) {
       await sleep(POLL_MS);
@@ -83,7 +103,6 @@ export function startGoogleSignIn(invite = pendingInvite()) {
     }
     throw Object.assign(new Error('timeout'), { code: 'timeout' });
   })();
-  return { url, code: loginCode(nonce), done };
 }
 
 export async function signOut() {

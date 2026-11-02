@@ -190,4 +190,6 @@ export default {
   "kafa +": "αντίθετος +",
   "Tarayıcı kodu sorunca şunu gir: {0}": "Όταν ο περιηγητής ζητήσει κωδικό, πληκτρολογήστε: {0}",
   "Kod yanlış girildi: girişi yeniden başlat": "Λάθος κωδικός: ξεκινήστε ξανά τη σύνδεση",
+  "Giriş kodun (Google'dan sonra tarayıcıda bu kod istenecek; aklında tut):": "Ο κωδικός σύνδεσής σας (ο περιηγητής θα τον ζητήσει μετά το Google· θυμηθείτε τον):",
+  "🌐 Tarayıcıda devam et": "🌐 Συνέχεια στον περιηγητή",
 };

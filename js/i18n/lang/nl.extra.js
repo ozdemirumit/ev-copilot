@@ -190,4 +190,6 @@ export default {
   "kafa +": "tegen +",
   "Tarayıcı kodu sorunca şunu gir: {0}": "Als de browser om een code vraagt, voer in: {0}",
   "Kod yanlış girildi: girişi yeniden başlat": "Verkeerde code ingevoerd: start het inloggen opnieuw",
+  "Giriş kodun (Google'dan sonra tarayıcıda bu kod istenecek; aklında tut):": "Je inlogcode (de browser vraagt erom na Google; onthoud hem):",
+  "🌐 Tarayıcıda devam et": "🌐 Doorgaan in de browser",
 };

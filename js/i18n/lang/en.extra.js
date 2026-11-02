@@ -190,4 +190,6 @@ export default {
   "kafa +": "headwind +",
   "Tarayıcı kodu sorunca şunu gir: {0}": "When the browser asks for a code, enter: {0}",
   "Kod yanlış girildi: girişi yeniden başlat": "Wrong code entered: start the sign-in again",
+  "Giriş kodun (Google'dan sonra tarayıcıda bu kod istenecek; aklında tut):": "Your sign-in code (the browser will ask for it after Google; remember it):",
+  "🌐 Tarayıcıda devam et": "🌐 Continue in browser",
 };

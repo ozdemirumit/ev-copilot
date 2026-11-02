@@ -1,5 +1,5 @@
 // Daha Fazla > Hesap kartı: davetle Google girişi, senkron durumu, çıkış ve hesabı silme. Telefona hiçbir anahtar yazılmaz.
-import { currentUser, deleteAccount, isSignedIn, pendingInvite, setPendingInvite, signOut, startGoogleSignIn } from '../account/auth.js';
+import { currentUser, deleteAccount, isSignedIn, pendingInvite, prepareGoogleSignIn, setPendingInvite, signOut } from '../account/auth.js';
 import { syncNow, syncState } from '../account/sync.js';
 import { toast } from './toast.js';
 import { sharingOn, setSharing } from '../account/community.js';
@@ -50,19 +50,32 @@ export function initAccountPanel() {
   document.addEventListener('account-changed', paintBrand);
   paintBrand();
 
+  // Giriş iki adımlı: önce 4 haneli kod ekranda görünür, kullanıcı "Tarayıcıda devam et"e basınca tarayıcı açılır (uygulama arka plana gidince kod görünmez olurdu)
+  let prep = null;
+  const pinBox = $('acc-pin-box');
+  const showPin = (on) => { pinBox.classList.toggle('hidden', !on); $('acc-google').classList.toggle('hidden', on); };
   $('acc-google').addEventListener('click', () => {
     if (waiting) return;
     const code = invite.value.trim();
     if (code && !setPendingInvite(code)) return toast('Davet kodu geçersiz');
-    const { url, done, code: pin } = startGoogleSignIn(code); // tarayıcı sekmesi tıklamada açılır
+    prep = prepareGoogleSignIn(code);
+    $('acc-pin').textContent = prep.code;
+    out.textContent = '';
+    showPin(true);
+  });
+  $('acc-pin-cancel').addEventListener('click', () => { prep = null; showPin(false); });
+  $('acc-continue').addEventListener('click', () => {
+    if (waiting || !prep) return;
+    const { url, code: pin } = prep;
+    const done = prep.start(); // tarayıcı sekmesi bu tıklamada açılır
     waiting = true;
-    $('acc-google').disabled = true;
+    $('acc-continue').disabled = true;
     out.textContent = tr('Tarayıcıda Google ile giriş yap, sonra buraya dön…') + ' ' + t('Tarayıcı kodu sorunca şunu gir: {0}', pin);
     link.href = url;
     link.classList.remove('hidden');
     done.then(() => { toast('Giriş yapıldı'); out.textContent = ''; })
       .catch((err) => { out.textContent = '⚠️ ' + tr(ERRORS[err.code] || 'Giriş tamamlanamadı'); })
-      .finally(() => { waiting = false; $('acc-google').disabled = false; link.classList.add('hidden'); paint(); });
+      .finally(() => { waiting = false; prep = null; $('acc-continue').disabled = false; showPin(false); link.classList.add('hidden'); paint(); });
   });
 
   $('acc-sync-now').addEventListener('click', () => { syncNow(); refreshCaps(); });

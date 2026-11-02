@@ -190,4 +190,6 @@ export default {
   "kafa +": "de frente +",
   "Tarayıcı kodu sorunca şunu gir: {0}": "Quando o navegador pedir um código, introduza: {0}",
   "Kod yanlış girildi: girişi yeniden başlat": "Código errado: inicie a sessão de novo",
+  "Giriş kodun (Google'dan sonra tarayıcıda bu kod istenecek; aklında tut):": "O seu código de início de sessão (o navegador pede-o depois do Google; memorize-o):",
+  "🌐 Tarayıcıda devam et": "🌐 Continuar no navegador",
 };

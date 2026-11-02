@@ -190,4 +190,6 @@ export default {
   "kafa +": "de face +",
   "Tarayıcı kodu sorunca şunu gir: {0}": "Quand le navigateur demande un code, saisissez : {0}",
   "Kod yanlış girildi: girişi yeniden başlat": "Code erroné : relancez la connexion",
+  "Giriş kodun (Google'dan sonra tarayıcıda bu kod istenecek; aklında tut):": "Votre code de connexion (le navigateur le demandera après Google ; retenez-le) :",
+  "🌐 Tarayıcıda devam et": "🌐 Continuer dans le navigateur",
 };

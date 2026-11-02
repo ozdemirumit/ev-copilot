@@ -190,4 +190,6 @@ export default {
   "kafa +": "насрещен +",
   "Tarayıcı kodu sorunca şunu gir: {0}": "Когато браузърът поиска код, въведете: {0}",
   "Kod yanlış girildi: girişi yeniden başlat": "Въведен е грешен код: започнете влизането отново",
+  "Giriş kodun (Google'dan sonra tarayıcıda bu kod istenecek; aklında tut):": "Вашият код за вход (браузърът ще го поиска след Google; запомнете го):",
+  "🌐 Tarayıcıda devam et": "🌐 Продължи в браузъра",
 };

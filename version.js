@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.73.5';
+self.APP_VERSION = '0.73.6';
 self.APP_CHANGELOG = [
+  {
+    v: '0.73.6', date: '2026-11-02',
+    notes: [
+      'Google girişinde 4 haneli kod artık tarayıcı açılmadan önce büyük yazıyla gösterilir (önceden tarayıcı hemen açılıp kod görünmez oluyordu). Kodu görüp Tarayıcıda devam et düğmesine basınca tarayıcı açılır; bekleme sırasında kod ekranda kalır.',
+    ],
+  },
   {
     v: '0.73.5', date: '2026-11-02',
     notes: [
