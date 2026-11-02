@@ -28,10 +28,12 @@ export function initGpsControl() {
     btn.setAttribute('aria-pressed', String(on()));
   });
 
-  // Daha önce açıksa ve izin zaten verilmişse otomatik başlat (izin sorusu çıkmaz).
-  if (load('gpsOn', false) && navigator.permissions?.query) {
-    navigator.permissions.query({ name: 'geolocation' }).then((p) => {
-      if (p.state === 'granted') startGps();
-    }).catch(() => {});
+  // GPS varsayılan olarak açık gelir (kullanıcı düğmeyle kapattıysa kapalı kalır). İzin henüz sorulmadıysa ilk açılışta sorulur;
+  // reddedilmişse yeniden denenmez (düğmeyle elle açılır).
+  if (load('gpsOn', true)) {
+    const go = () => { try { startGps(); } catch { /* konum desteği yok: düğmeye dokununca uyarı çıkar */ } };
+    if (navigator.permissions?.query) {
+      navigator.permissions.query({ name: 'geolocation' }).then((p) => { if (p.state !== 'denied') go(); }).catch(go);
+    } else go();
   }
 }

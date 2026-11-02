@@ -24,9 +24,14 @@ export function initDefaultStart() {
   const apply = () => {
     if (!isAuto()) return;
     const simNow = getState('sim').enabled;
-    const simSwitched = simNow !== simWas; // Test Modu açılıp kapandı: A bir kez yeni konuma alınır (plan yoksa)
+    const simSwitched = simNow !== simWas; // Test Modu açılıp kapandı
     simWas = simNow;
-    if (frozen() && !(simSwitched && getState('plan').status !== 'ready' && getState('plan').status !== 'loading')) return;
+    if (simNow) { // Test Modu: otomatik "Konumum" A'sı olmaz; açılırken plan yoksa var olan otomatik A kaldırılır (başlangıcı kullanıcı seçer)
+      const busy = ['ready', 'loading'].includes(getState('plan').status);
+      if (simSwitched && !busy && getState('route').start?.auto) { last = null; mapApi.setPoint('start', null); }
+      return;
+    }
+    if (frozen() && !(simSwitched && getState('plan').status !== 'ready' && getState('plan').status !== 'loading')) return; // Test Modu kapandı: A gerçek konuma bir kez döner (plan yoksa)
     const e = effective();
     if (e.lat == null || e.lon == null) return;
     if (!simSwitched && last && haversineKm(last, e) < 0.1 && getState('route').start) return;
