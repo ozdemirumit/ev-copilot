@@ -6,7 +6,7 @@ import { save } from '../utils/storage.js';
 import { mapApi } from '../ui/mapView.js';
 import { toast } from '../ui/toast.js';
 import { rerouteFromHere } from '../routing/controller.js';
-import { speak, testVoice } from '../advisor/voice.js';
+import { speak, stopSpeech, testVoice } from '../advisor/voice.js';
 import { instruction, fmtDist, spoken, isMinor } from './steps.js';
 import { buildTrack, locate, headingAt, pointAtKm } from './track.js';
 import { bearing } from '../utils/geo.js';
@@ -271,7 +271,7 @@ export async function startNav() {
 export function stopNav() {
   patch('nav', { active: false });
   mapApi.navView(false);
-  window.speechSynthesis?.cancel();
+  stopSpeech();
   tick();
 }
 
@@ -297,7 +297,7 @@ export function initNavigator() {
     patch('nav', { voice: voice.checked });
     save('voiceOn', voice.checked);
     if (voice.checked) speak('Sesli yönlendirme açık.', { force: true, key: 'voicetest', cooldownMs: 0, interrupt: true });
-    else window.speechSynthesis?.cancel();
+    else stopSpeech();
   });
 
   // Sesi dene: konuşma motoru gerçekten başlıyor mu, başlamıyorsa nedeni ne
@@ -337,7 +337,7 @@ export function initNavigator() {
     patch('nav', { voice: on });
     save('voiceOn', on);
     voice.checked = on;
-    if (!on) window.speechSynthesis?.cancel();
+    if (!on) stopSpeech();
   });
   $('nh-overview').addEventListener('click', () => mapApi.overview());
   $('nh-recenter').addEventListener('click', () => { mapApi.recenter(); tick(); });

@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.72.6';
+self.APP_VERSION = '0.72.7';
 self.APP_CHANGELOG = [
+  {
+    v: '0.72.7', date: '2026-11-02',
+    notes: [
+      'Test Modu simülasyon hızına 2x, 4x ve 8x seçenekleri eklendi (1x ile 10x arası).',
+      'APK: sesli uyarılar yeniden çalışır. Güncel Android WebView tarayıcı konuşma motorunu (speechSynthesis) sunmuyor, bu yüzden APK içinde sesler kayboldu. Uygulama artık APK içinde Android yerel metin okuma motorunu (TextToSpeech eklentisi) kullanır; tarayıcıda eskisi gibi çalışır. Yeni APK kurmak gerekir (sunucudaki /app sayfası).',
+    ],
+  },
   {
     v: '0.72.6', date: '2026-11-02',
     notes: [
