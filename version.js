@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.73.12';
+self.APP_VERSION = '0.73.13';
 self.APP_CHANGELOG = [
+  {
+    v: '0.73.13', date: '2026-11-02',
+    notes: [
+      'Varış yazıp rota planlayınca tarayıcının Şifreyi kaydet penceresi çıkıyordu: sayfadaki ABRP User Token ve API Key alanları şifre türündeydi. Artık normal metin alanı (içerik yine noktalı görünür), tarayıcı şifre kaydetmeyi önermez.',
+    ],
+  },
   {
     v: '0.73.12', date: '2026-11-02',
     notes: [
