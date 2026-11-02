@@ -525,6 +525,7 @@ const server = http.createServer(async (req, res) => {
 });
 server.requestTimeout = 120000;
 server.headersTimeout = 15000;
+tesla.get().catch(() => {}); // ilk kullanıcı beklemesin: açılışta Tesla listesi (diskte yoksa) önceden alınır
 server.listen(PORT, HOST, () => {
   console.log(`EV Co-Pilot ara sunucusu ${HOST}:${PORT} · Mapbox ${MAPBOX ? 'var' : 'yok'} · OpenChargeMap ${OCM ? 'var' : 'yok'} · HERE ${HERE ? 'var' : 'yok'} · Google girişi ${accounts.googleOn ? 'açık' : 'kapalı'} · doluluk: NDW${HERE ? ' + HERE' : ''}${GOOGLE_PLACES ? ' + Google' : ''} · ${CODES.length} yönetici kodu`);
 });
