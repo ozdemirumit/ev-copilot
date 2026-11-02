@@ -26,6 +26,16 @@ const routeSig = () => {
   return [r.cruise, r.traffic, r.minArrivalSoc, r.consAdj, r.chargerMin, r.maxChargeTo, r.minStopAdd, r.tolerance, r.allowSlow, getState('hist').at].join('|'); // hist.at: yeni sürüş ölçümü hız düzeltmesini değiştirir
 };
 
+/** Plan kurulurken hangi aşamada ne kadar zaman gitti (tm: başlangıç, rota, rakım/hava, istasyon). Her zaman konsola yazılır; 6 sn'yi aşarsa telefonda da gösterilir. */
+function planTiming(tm) {
+  if (tm.length < 4) return;
+  const t = [...tm, Date.now()];
+  const s = (i) => ((t[i + 1] - t[i]) / 1000).toFixed(1);
+  const total = ((t[4] - t[0]) / 1000).toFixed(1);
+  console.info(`Plan ${total} sn: rota ${s(0)} · rakım/hava ${s(1)} · istasyon ${s(2)} · hesap ${s(3)}`);
+  if (t[4] - t[0] >= 6000) toast(`Plan ${total} sn sürdü: rota ${s(0)} · rakım/hava ${s(1)} · istasyon ${s(2)} · hesap ${s(3)}`, 9000);
+}
+
 function buildFromRaw() {
   const r = getState('route');
   const refV = planK().refV; // planın k'sının dayandığı referans (hız ya da tüm geçmiş): dilimler ona göre hıza bağlı düzeltilir
@@ -131,7 +141,7 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
   try {
     patch('plan', { status: 'loading', text: 'Rota alınıyor…', stops: [], totals: null, ranking: [], fromKm: 0, fromSoc: null });
     patch('sim', { routeKm: 0, lat: from?.lat ?? null, lon: from?.lon ?? null, play: false }); // simüle araç yeni rotanın başına (yeniden rotada bulunduğu yere)
-    const rt = await fetchRoute(start, end, via ? [via] : []);
+    const tm = [Date.now()]; const rt = await fetchRoute(start, end, via ? [via] : []); tm.push(Date.now()); // tm: aşama zamanları (yavaşlık tanısı)
     if (rt.note) toast(rt.note, 7000);
     const pts = resampleRoute(rt.coords);
     // Hız rota adımlarından: dilim başına serbest akış hızı (yol limiti/sınıfı) ve trafik çarpanı. Elle ayar yok.
@@ -184,17 +194,17 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
       wx: wxRes ? wxRes.map((w, i) => ({ km: wxPts[i].km, ...w })) : [],
     };
     sig = routeSig();
-    const profile = buildFromRaw();
+    tm.push(Date.now()); const profile = buildFromRaw();
     const pool = from ? [...getState('plan').stations, ...extra.filter((x) => !getState('plan').stations.some((s) => s.id === x.id))] : [];
     const kept = from ? reproject(pool, profile) : [];
     patch('plan', { route: rt, profile, steps: projectSteps(rt.steps, profile), planId: Date.now(), wxInfo: { source: wxRes?.source ?? null, fallbackReason: wxRes?.fallbackReason ?? null, error: wxError }, forceFirstId: via?.id ?? null, lastStopKm: null, stations: kept, stationInfo: from ? getState('plan').stationInfo : null, text: 'Şarj istasyonları aranıyor…' });
 
     if (!kept.length) {
       cacheKey = [start, end].map((p) => `${p.lat.toFixed(2)},${p.lon.toFixed(2)}`).join('>');
-      await loadStations(pts, profile);
+      await loadStations(pts, profile); tm.push(Date.now());
     }
     applyPlan(computePlan(), { startSoc });
-    rememberDest(end);
+    rememberDest(end); planTiming(tm);
     return true;
   } catch (err) {
     console.error(err);

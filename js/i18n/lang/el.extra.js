@@ -207,4 +207,5 @@ export default {
   "Sunucuda HERE anahtarı yok": "Δεν υπάρχει κλειδί HERE στον διακομιστή",
   "HERE anahtarı geçersiz": "Το κλειδί HERE δεν είναι έγκυρο",
   "HERE yanıt vermedi": "Το HERE δεν ανταποκρίνεται",
+  "Plan {0} sn sürdü: rota {1} · rakım/hava {2} · istasyon {3} · hesap {4}": "Το πλάνο χρειάστηκε {0} δ: διαδρομή {1} · υψόμετρο/καιρός {2} · σταθμοί {3} · υπολογισμός {4}",
 };

@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.74.1';
+self.APP_VERSION = '0.74.2';
 self.APP_CHANGELOG = [
+  {
+    v: '0.74.2', date: '2026-11-02',
+    notes: [
+      'YENİ: Plan 6 saniyeden uzun sürerse ekranda hangi aşamada ne kadar zaman gittiği gösterilir (rota, rakım/hava, istasyon, hesap). Yavaşlığın kaynağını bulmak için; süreler her planda tarayıcı konsoluna da yazılır.',
+    ],
+  },
   {
     v: '0.74.1', date: '2026-11-02',
     notes: [

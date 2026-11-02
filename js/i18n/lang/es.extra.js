@@ -207,4 +207,5 @@ export default {
   "Sunucuda HERE anahtarı yok": "No hay clave de HERE en el servidor",
   "HERE anahtarı geçersiz": "Clave de HERE no válida",
   "HERE yanıt vermedi": "HERE no responde",
+  "Plan {0} sn sürdü: rota {1} · rakım/hava {2} · istasyon {3} · hesap {4}": "Plan en {0} s: ruta {1} · altitud/clima {2} · estaciones {3} · cálculo {4}",
 };
