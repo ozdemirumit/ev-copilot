@@ -174,13 +174,4 @@ export default {
   "Ses çıkmadı: {0}": "Χωρίς ήχο: {0}",
   "Sesli uyarı denemesi.": "Δοκιμή φωνητικής ειδοποίησης.",
   "ses motoru yanıt vermedi": "η μηχανή ομιλίας δεν ανταποκρίθηκε",
-  "🌐 Google modu (Premium, deneysel)": "🌐 Λειτουργία Google (Premium, πειραματική)",
-  "Harita Google Haritalar olur, istasyon kartında Google ayrıntıları (puan, fotoğraf, saatler) ve Google doluluk verisi görünür. Her harita açılışı Google'da ücretlidir; hakkın günlük sınırlıdır. Açıp kapatınca sayfa yenilenir.": "Ο χάρτης γίνεται Google Maps και η κάρτα σταθμού δείχνει λεπτομέρειες Google (βαθμολογία, φωτογραφίες, ώρες) και δεδομένα πληρότητας Google. Κάθε φόρτωση χάρτη χρεώνεται από την Google· το ημερήσιο όριό σας είναι περιορισμένο. Η σελίδα φορτώνει ξανά όταν αλλάξετε.",
-  "Google modu açıldı: sayfa yenileniyor": "Λειτουργία Google ενεργή: επαναφόρτωση",
-  "Google modu kapatıldı: sayfa yenileniyor": "Λειτουργία Google ανενεργή: επαναφόρτωση",
-  "ℹ️ Google ayrıntıları": "ℹ️ Λεπτομέρειες Google",
-  "Google bu istasyon için ayrıntı bulamadı": "Η Google δεν βρήκε λεπτομέρειες για αυτόν τον σταθμό",
-  "Google ayrıntıları alınamadı": "Δεν ήταν δυνατή η λήψη λεπτομερειών Google",
-  "Google haritası açılamadı ({0}): OpenStreetMap haritası kullanılıyor": "Δεν άνοιξε ο χάρτης Google ({0}): χρησιμοποιείται ο χάρτης OpenStreetMap",
-  "Google harita anahtarı reddedildi: Google modu kapatıldı, sayfa yenileniyor": "Το κλειδί χάρτη Google απορρίφθηκε: η λειτουργία Google απενεργοποιήθηκε, επαναφόρτωση",
 };

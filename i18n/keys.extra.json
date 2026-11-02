@@ -173,14 +173,5 @@
  "Ses çıkmadı: {0} ({1} ses). Telefonda Metin okuma (TTS) motorunu ve ses paketini kontrol et.",
  "Ses çıkmadı: {0}",
  "Sesli uyarı denemesi.",
- "ses motoru yanıt vermedi",
- "🌐 Google modu (Premium, deneysel)",
- "Harita Google Haritalar olur, istasyon kartında Google ayrıntıları (puan, fotoğraf, saatler) ve Google doluluk verisi görünür. Her harita açılışı Google'da ücretlidir; hakkın günlük sınırlıdır. Açıp kapatınca sayfa yenilenir.",
- "Google modu açıldı: sayfa yenileniyor",
- "Google modu kapatıldı: sayfa yenileniyor",
- "ℹ️ Google ayrıntıları",
- "Google bu istasyon için ayrıntı bulamadı",
- "Google ayrıntıları alınamadı",
- "Google haritası açılamadı ({0}): OpenStreetMap haritası kullanılıyor",
- "Google harita anahtarı reddedildi: Google modu kapatıldı, sayfa yenileniyor"
+ "ses motoru yanıt vermedi"
 ]

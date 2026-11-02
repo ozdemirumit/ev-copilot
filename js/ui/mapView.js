@@ -4,8 +4,6 @@ import { toast } from './toast.js';
 import { attachSearch } from './placeSearch.js';
 import { reverseLabel } from '../providers/index.js';
 import { createMapLibreMap } from './maps/maplibre.js';
-import { createGoogleMap } from './maps/google.js';
-import { fetchMapKey, googleModeOn, setGoogleMode } from '../net/googleMode.js';
 import { showTab } from './tabs.js';
 
 /** Harita çizim API'si; initMap() çağrılınca dolar (routing/controller.js, nav/* kullanır). Harita henüz yüklenmediyse çizimler sıraya alınır. */
@@ -62,28 +60,12 @@ export function initMap() {
   saver.checked = load('noTiles', navigator.connection?.saveData === true);
   mapEl.classList.toggle('hidden', saver.checked);
 
-  // Premium Google modu açıksa Google haritası; açılamazsa (anahtar, ağ, hak) OpenStreetMap haritasına dönülür
-  async function openAdapter() {
-    if (googleModeOn()) {
-      try {
-        const { key, mapId } = await fetchMapKey();
-        return await createGoogleMap(mapEl, key, mapId, {
-          onAuthFail: () => { setGoogleMode(false); toast('Google harita anahtarı reddedildi: Google modu kapatıldı, sayfa yenileniyor', 5000); setTimeout(() => location.reload(), 3000); },
-        });
-      } catch (err) {
-        toast(`Google haritası açılamadı (${err.message}): OpenStreetMap haritası kullanılıyor`, 6000);
-        mapEl.replaceChildren();
-      }
-    }
-    return createMapLibreMap(mapEl);
-  }
-
   boot = async () => {
     if (adapter || saver.checked) return;
     booting ??= (async () => {
       try {
         note(''); // uyarı katmanı kalksın: harita boş bir kapta kurulur
-        adapter = await openAdapter();
+        adapter = await createMapLibreMap(mapEl);
         adapter.onClick(onMapClick);
         adapter.onDragStart(() => { lastDrag = Date.now(); lastFollow = null; });
         queue.splice(0).forEach((fn) => fn());

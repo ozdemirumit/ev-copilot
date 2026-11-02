@@ -174,13 +174,4 @@ export default {
   "Ses çıkmadı: {0}": "Pas de son : {0}",
   "Sesli uyarı denemesi.": "Test de l'alerte vocale.",
   "ses motoru yanıt vermedi": "le moteur vocal n'a pas répondu",
-  "🌐 Google modu (Premium, deneysel)": "🌐 Mode Google (Premium, expérimental)",
-  "Harita Google Haritalar olur, istasyon kartında Google ayrıntıları (puan, fotoğraf, saatler) ve Google doluluk verisi görünür. Her harita açılışı Google'da ücretlidir; hakkın günlük sınırlıdır. Açıp kapatınca sayfa yenilenir.": "La carte devient Google Maps, et la fiche de la borne affiche les détails Google (note, photos, horaires) et les données d'occupation Google. Chaque chargement de carte est facturé par Google ; votre quota quotidien est limité. La page se recharge au changement.",
-  "Google modu açıldı: sayfa yenileniyor": "Mode Google activé : rechargement",
-  "Google modu kapatıldı: sayfa yenileniyor": "Mode Google désactivé : rechargement",
-  "ℹ️ Google ayrıntıları": "ℹ️ Détails Google",
-  "Google bu istasyon için ayrıntı bulamadı": "Google n'a trouvé aucun détail pour cette borne",
-  "Google ayrıntıları alınamadı": "Impossible d'obtenir les détails Google",
-  "Google haritası açılamadı ({0}): OpenStreetMap haritası kullanılıyor": "Impossible d'ouvrir la carte Google ({0}) : la carte OpenStreetMap est utilisée",
-  "Google harita anahtarı reddedildi: Google modu kapatıldı, sayfa yenileniyor": "Clé de carte Google refusée : mode Google désactivé, rechargement",
 };

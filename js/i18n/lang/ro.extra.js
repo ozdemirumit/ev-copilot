@@ -174,13 +174,4 @@ export default {
   "Ses çıkmadı: {0}": "Fără sunet: {0}",
   "Sesli uyarı denemesi.": "Test de alertă vocală.",
   "ses motoru yanıt vermedi": "motorul vocal nu a răspuns",
-  "🌐 Google modu (Premium, deneysel)": "🌐 Mod Google (Premium, experimental)",
-  "Harita Google Haritalar olur, istasyon kartında Google ayrıntıları (puan, fotoğraf, saatler) ve Google doluluk verisi görünür. Her harita açılışı Google'da ücretlidir; hakkın günlük sınırlıdır. Açıp kapatınca sayfa yenilenir.": "Harta devine Google Maps, iar fișa stației arată detalii Google (scor, fotografii, program) și date Google despre ocupare. Fiecare încărcare a hărții este taxată de Google; limita ta zilnică este restrânsă. Pagina se reîncarcă la comutare.",
-  "Google modu açıldı: sayfa yenileniyor": "Mod Google activat: se reîncarcă",
-  "Google modu kapatıldı: sayfa yenileniyor": "Mod Google dezactivat: se reîncarcă",
-  "ℹ️ Google ayrıntıları": "ℹ️ Detalii Google",
-  "Google bu istasyon için ayrıntı bulamadı": "Google nu a găsit detalii pentru această stație",
-  "Google ayrıntıları alınamadı": "Nu s-au putut obține detaliile Google",
-  "Google haritası açılamadı ({0}): OpenStreetMap haritası kullanılıyor": "Harta Google nu s-a putut deschide ({0}): se folosește harta OpenStreetMap",
-  "Google harita anahtarı reddedildi: Google modu kapatıldı, sayfa yenileniyor": "Cheia hărții Google a fost respinsă: modul Google dezactivat, se reîncarcă",
 };

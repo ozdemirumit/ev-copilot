@@ -174,13 +174,4 @@ export default {
   "Ses çıkmadı: {0}": "Няма звук: {0}",
   "Sesli uyarı denemesi.": "Тест на гласово известие.",
   "ses motoru yanıt vermedi": "речевият механизъм не отговори",
-  "🌐 Google modu (Premium, deneysel)": "🌐 Google режим (Premium, експериментален)",
-  "Harita Google Haritalar olur, istasyon kartında Google ayrıntıları (puan, fotoğraf, saatler) ve Google doluluk verisi görünür. Her harita açılışı Google'da ücretlidir; hakkın günlük sınırlıdır. Açıp kapatınca sayfa yenilenir.": "Картата става Google Maps, а картата на станцията показва подробности от Google (оценка, снимки, часове) и данни на Google за заетост. Всяко зареждане на картата се таксува от Google; дневният ви лимит е ограничен. Страницата се презарежда при превключване.",
-  "Google modu açıldı: sayfa yenileniyor": "Google режимът е включен: презареждане",
-  "Google modu kapatıldı: sayfa yenileniyor": "Google режимът е изключен: презареждане",
-  "ℹ️ Google ayrıntıları": "ℹ️ Подробности от Google",
-  "Google bu istasyon için ayrıntı bulamadı": "Google не намери подробности за тази станция",
-  "Google ayrıntıları alınamadı": "Подробностите от Google не можаха да се получат",
-  "Google haritası açılamadı ({0}): OpenStreetMap haritası kullanılıyor": "Картата на Google не се отвори ({0}): използва се картата OpenStreetMap",
-  "Google harita anahtarı reddedildi: Google modu kapatıldı, sayfa yenileniyor": "Ключът за картата на Google е отхвърлен: Google режимът е изключен, презареждане",
 };

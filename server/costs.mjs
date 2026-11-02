@@ -7,7 +7,6 @@ const day = () => new Date().toISOString().slice(0, 10);
 
 export function createCosts(store, env = {}) {
   const unit = Number(env.GOOGLE_COST_PER_CALL_USD) > 0 ? Number(env.GOOGLE_COST_PER_CALL_USD) : 0.04;
-  const mapUnit = Number(env.GOOGLE_MAP_LOAD_USD) > 0 ? Number(env.GOOGLE_MAP_LOAD_USD) : 0.007; // Maps JavaScript API harita yüklemesi (Dynamic Maps ~7 USD / 1000, ayda 10 000 ücretsiz)
   const book = () => (store.data.costs ||= {}); // anahtar (kullanıcı id'si ya da 'code') → { total: {google}, days: { 'YYYY-AA-GG': {google} } }
 
   /** Bir ücretli çağrı kaydet. who: kullanıcı kimliği (id nesnesi). */
@@ -22,18 +21,16 @@ export function createCosts(store, env = {}) {
     store.save();
   }
 
-  const usd = (calls, maps = 0) => Math.round((calls * unit + maps * mapUnit) * 10000) / 10000;
+  const usd = (calls) => Math.round(calls * unit * 10000) / 10000;
 
-  /** { calls, maps, usd }: Places çağrıları ve harita yüklemeleri (today/month/total) ile tahmini USD (anahtar yoksa sıfır). */
+  /** { today, month, total } çağrı ve USD (anahtar yoksa sıfır). */
   function summary(uid) {
     const rec = book()[uid];
     const g = (o) => o?.google || 0;
-    const m = (o) => o?.gmap || 0;
     const t = day();
-    const inMonth = Object.entries(rec?.days || {}).filter(([k]) => k.slice(0, 7) === t.slice(0, 7));
-    const calls = { today: g(rec?.days?.[t]), month: inMonth.reduce((s, [, v]) => s + g(v), 0), total: g(rec?.total) };
-    const maps = { today: m(rec?.days?.[t]), month: inMonth.reduce((s, [, v]) => s + m(v), 0), total: m(rec?.total) };
-    return { calls, maps, usd: { today: usd(calls.today, maps.today), month: usd(calls.month, maps.month), total: usd(calls.total, maps.total) } };
+    const month = Object.entries(rec?.days || {}).filter(([k]) => k.slice(0, 7) === t.slice(0, 7)).reduce((s, [, v]) => s + g(v), 0);
+    const calls = { today: g(rec?.days?.[t]), month, total: g(rec?.total) };
+    return { calls, usd: { today: usd(calls.today), month: usd(calls.month), total: usd(calls.total) } };
   }
 
   function forget(uid) {

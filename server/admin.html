@@ -144,7 +144,7 @@ function drawSum(root) {
   const on = (b) => chip(b ? 'açık' : 'kapalı', b ? 'ok' : 'warn');
   root.append(table(['Ayar', 'Durum'], [
     ['Google ile giriş', on(s.configured.googleLogin)], ['Mapbox anahtarı', on(s.configured.mapbox)], ['OpenChargeMap anahtarı', on(s.configured.ocm)],
-    ['Google Places anahtarı', on(s.configured.googlePlaces)], ['Google harita anahtarı (Google modu)', on(s.configured.googleMap)], ['E-posta gönderimi (SMTP)', on(s.configured.smtp)], ['Premium zorunlu (kapalıysa herkes Premium)', on(s.configured.premiumRequired)],
+    ['Google Places anahtarı', on(s.configured.googlePlaces)], ['E-posta gönderimi (SMTP)', on(s.configured.smtp)], ['Premium zorunlu (kapalıysa herkes Premium)', on(s.configured.premiumRequired)],
     ['Genel adres', s.server.publicUrl || '–'], ['Çalışma süresi', dur(s.server.uptimeSec)], ['Bellek', s.server.memMb + ' MB'], ['Node', s.server.node],
   ]));
   root.append(el('p', 'mut', 'Anahtar değerleri burada gösterilmez; yalnızca tanımlı olup olmadığı görünür.'));
@@ -255,7 +255,7 @@ function drawCost(root) {
   bar.append(el('span', 'mut', `Birim fiyat: ${c.unitUsd} USD / çağrı (sunucuda GOOGLE_COST_PER_CALL_USD ile ayarlanır). Tutarlar tahmindir; asıl fatura Google Cloud Billing'dedir.`), csv);
   root.append(bar);
   const sum = (f) => rows.reduce((t, r) => t + f(r), 0);
-  const cell = (r, k) => `${r.calls[k]}${r.maps?.[k] ? ' + ' + r.maps[k] + ' harita' : ''} · ${usd(r.usd[k])}`;
+  const cell = (r, k) => `${r.calls[k]} · ${usd(r.usd[k])}`;
   const data = rows.map((r) => [r.email, cell(r, 'today'), cell(r, 'month'), cell(r, 'total')]);
   data.push([el('b', '', 'TOPLAM'), usd(sum((r) => r.usd.today)), usd(sum((r) => r.usd.month)), usd(sum((r) => r.usd.total))]);
   root.append(table(['Kullanıcı', 'Bugün (çağrı · USD)', 'Bu ay', 'Toplam'], data, [1, 2, 3]));

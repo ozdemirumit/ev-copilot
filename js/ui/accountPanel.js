@@ -4,7 +4,6 @@ import { syncNow, syncState } from '../account/sync.js';
 import { toast } from './toast.js';
 import { sharingOn, setSharing } from '../account/community.js';
 import { getPlan, refreshCaps } from '../net/proxy.js';
-import { googleModeAvailable, googleModeOn, setGoogleMode } from '../net/googleMode.js';
 import { locale, tr } from '../i18n/index.js';
 
 const $ = (id) => document.getElementById(id);
@@ -33,8 +32,6 @@ export function initAccountPanel() {
     const part = (t) => Object.assign(document.createElement('span'), { textContent: t });
     box.replaceChildren(part('Plan:'), ' ', part(pl?.premium ? 'Premium' : 'Ücretsiz'),
       ...(pl?.premium && pl.until && !user?.admin ? [' · ', part(tr('{0} tarihine kadar').replace('{0}', new Date(pl.until).toLocaleDateString(locale())))] : []));
-    $('acc-gmode-box').classList.toggle('hidden', !googleModeAvailable());
-    $('acc-gmode').checked = googleModeOn();
     $('acc-name').textContent = user?.name || '';
     $('acc-email').textContent = user?.email || '';
     $('acc-sync-line').textContent = syncState.busy ? tr('Eşitleniyor…')
@@ -44,7 +41,6 @@ export function initAccountPanel() {
   }
   $('acc-share').checked = sharingOn();
   $('acc-share').addEventListener('change', () => setSharing($('acc-share').checked));
-  $('acc-gmode').addEventListener('change', () => { setGoogleMode($('acc-gmode').checked); toast($('acc-gmode').checked ? 'Google modu açıldı: sayfa yenileniyor' : 'Google modu kapatıldı: sayfa yenileniyor'); setTimeout(() => location.reload(), 1200); });
   document.addEventListener('account-changed', paint);
   document.addEventListener('sync-changed', paint);
   document.addEventListener('plan-changed', paint);

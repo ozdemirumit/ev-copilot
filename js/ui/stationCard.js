@@ -9,7 +9,6 @@ import { slotEl, livePrice } from '../routing/slots.js';
 import { getSession, proxyFetch, proxyHas } from '../net/proxy.js';
 import { reportStatus } from '../account/community.js';
 import { goToStation } from '../nav/nearby.js';
-import { googleModeOn, googlePlaceCard } from '../net/googleMode.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => Object.assign(document.createElement(tag), { className: cls || '', textContent: text ?? '' });
@@ -37,7 +36,7 @@ function paintLive(box, s, state) {
   if (state === 'login') return note('Canlı doluluk için hesapla giriş yap');
   if (state === 'none') return box.classList.add('hidden');
   if (state === 'locked') return note('Canlı doluluk ve kWh fiyatı Premium üyelere özeldir.');
-  if (s.slots?.src === 'google' && !googleModeOn()) return note('Google doluluk verisi harita ekranında gösterilemez; İstasyonlar listesinde görünür'); // Places kuralı: Google verisi Google Maps dışındaki haritada gösterilmez
+  if (s.slots?.src === 'google') return note('Google doluluk verisi harita ekranında gösterilemez; İstasyonlar listesinde görünür'); // Places kuralı: Google verisi Google Maps dışındaki haritada gösterilmez
   const node = slotEl(s, '');
   const lp = livePrice(s);
   if (node) { const d = el('div', 'live-slots'); d.append(node); box.append(d); }
@@ -93,20 +92,7 @@ function open(s) {
       } catch { toast('Fiyat gönderilemedi'); }
     }));
   }
-  const extra = [];
-  if (googleModeOn()) { // Google modu: Google Places UI Kit kartı (Google Haritalar üzerinde gösterim kuralına uygun)
-    const box = el('div', 'sc-google');
-    box.append(btn('ℹ️ Google ayrıntıları', async (ev) => {
-      const b = ev.currentTarget;
-      b.disabled = true;
-      try {
-        const g = await googlePlaceCard(s);
-        if (g) b.replaceWith(g); else { b.disabled = false; toast('Google bu istasyon için ayrıntı bulamadı'); }
-      } catch { b.disabled = false; toast('Google ayrıntıları alınamadı'); }
-    }));
-    extra.push(box);
-  }
-  card.replaceChildren(head, meta, price, live, ...extra, acts);
+  card.replaceChildren(head, meta, price, live, acts);
   card.classList.remove('hidden');
   load(s, live);
 }

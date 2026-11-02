@@ -16,7 +16,7 @@ import { createCosts } from './costs.mjs';
 import { createDevices } from './devices.mjs';
 import { createMailer } from './mailer.mjs';
 import { createAppFiles } from './appfiles.mjs';
-import { lookupAll, googlePlaceId } from './occupancy.mjs';
+import { lookupAll } from './occupancy.mjs';
 import { createPriceBook } from './prices.mjs';
 import { createCommunity } from './community.mjs';
 
@@ -41,7 +41,6 @@ const HOST = env.HOST || '127.0.0.1';
 const CODES = list(env.ACCESS_CODES);
 const MAPBOX = env.MAPBOX_TOKEN || '';
 const OCM = env.OCM_KEY || '';
-const GOOGLE_MAPS = env.GOOGLE_MAPS_BROWSER_KEY || ''; // Google modu: tarayıcıda Maps JavaScript API için, HTTP yönlendiren kısıtlı TARAYICI anahtarı; yalnızca Premium üyelere verilir
 const GOOGLE_PLACES = env.GOOGLE_PLACES_KEY || ''; // isteğe bağlı: istasyon doluluğu (NDW'nin kapsamadığı yerler); yalnızca sunucuda durur
 const ORIGINS = new Set(list(env.ALLOW_ORIGINS || 'https://ozdemirumit.github.io,https://localhost,capacitor://localhost,http://localhost'));
 if (env.PUBLIC_URL) ORIGINS.add(String(env.PUBLIC_URL).replace(/\/+$/, '')); // yönetim paneli (/yonetim) aynı kökenden POST/DELETE yapar
@@ -108,7 +107,7 @@ const once = (k, fn) => {
 };
 
 // ---------- kullanıcı başına günlük kota (Mapbox faturasını ve ortak Overpass'i korur) ----------
-const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 40), gmap: Number(env.GOOGLE_MAP_DAILY_PER_USER || 60), gplace: 300, price: 20, presence: 60, status: 30 };
+const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 40), price: 20, presence: 60, status: 30 };
 const GOOGLE_TOTAL = Number(env.GOOGLE_DAILY_TOTAL || 150); // tüm kullanıcılar için günlük Google çağrısı tavanı (fatura üst sınırı)
 let gToday = { d: '', n: 0 };
 function googleAllowed(id) {
@@ -148,7 +147,7 @@ function adminSummary() {
     },
     invites: inv,
     devices: devices.stats(),
-    configured: { mapbox: !!MAPBOX, ocm: !!OCM, googlePlaces: !!GOOGLE_PLACES, googleMap: !!GOOGLE_MAPS, googleLogin: !!accounts.googleOn, smtp: !!mailer, premiumRequired: String(env.PREMIUM_REQUIRED ?? '1') !== '0' },
+    configured: { mapbox: !!MAPBOX, ocm: !!OCM, googlePlaces: !!GOOGLE_PLACES, googleLogin: !!accounts.googleOn, smtp: !!mailer, premiumRequired: String(env.PREMIUM_REQUIRED ?? '1') !== '0' },
     usageToday: byKind,
     google: { callsToday: gToday.d === today() ? gToday.n : 0, dailyCap: GOOGLE_TOTAL, unitUsd: costs.unit, usd: tot },
   };
@@ -298,25 +297,6 @@ async function occupancyRoute(req, res, id) {
   json(res, 200, { results: await lookupAll(stations, { google, soc, book: priceBook, community }) });
 }
 
-// Google modu (Premium): harita anahtarı ve istasyonun Google yer kimliği. Anahtar yalnızca Premium'a verilir, değeri günlüğe yazılmaz.
-const premiumOk = (id) => id.kind !== 'user' || accounts.isPremium(id.user);
-async function googleMapKey(res, id) {
-  if (!premiumOk(id)) return json(res, 402, { error: 'premium_required' });
-  if (!GOOGLE_MAPS) return json(res, 501, { error: 'google_map_off' });
-  if (overQuota(id, 'gmap')) return json(res, 429, { error: 'günlük Google harita hakkı doldu' }, { 'Retry-After': '3600' });
-  costs.add(id, 'gmap'); // her anahtar alışı bir harita yüklemesi sayılır
-  json(res, 200, { key: GOOGLE_MAPS, mapId: env.GOOGLE_MAP_ID || 'DEMO_MAP_ID' }, { 'Cache-Control': 'no-store' });
-}
-async function googlePlaceRoute(req, res, id) {
-  if (!premiumOk(id)) return json(res, 402, { error: 'premium_required' });
-  if (!GOOGLE_PLACES) return json(res, 501, { error: 'google_places_off' });
-  const b = await readJson(req, 500);
-  const lat = Number(b?.lat), lon = Number(b?.lon);
-  if (!(Math.abs(lat) <= 90 && Math.abs(lon) <= 180) || b?.lat == null) return json(res, 400, { error: 'geçersiz gövde' });
-  if (overQuota(id, 'gplace')) return json(res, 429, { error: 'günlük hak doldu' }, { 'Retry-After': '3600' });
-  try { json(res, 200, { placeId: await googlePlaceId({ lat, lon }, GOOGLE_PLACES) }); } catch (err) { console.error('google yer kimliği:', err.message); json(res, 502, { error: 'Google yanıt vermedi' }); }
-}
-
 // Topluluk: şarj başladı/bitti (varlık) ve Dolu/Boş bildirimi. Okumak Premium (/v1/occupancy), katkı vermek her hesaba açık.
 async function communityRoute(req, res, id, kind) {
   if (id.kind !== 'user') return json(res, 403, { error: 'hesap gerekli' });
@@ -348,7 +328,7 @@ const community = createCommunity(store);
 const costs = createCosts(store, env);
 const devices = createDevices(store);
 const mailer = createMailer(env); // SMTP_USER/SMTP_PASS yoksa null
-const accounts = createAccounts({ onDelete: (uid) => { priceBook.forget(uid); community.forget(uid); costs.forget(uid); devices.forget(uid); }, onLink: (deviceId, uid, ip) => devices.link(deviceId, uid, ip), devicesOf: (uid) => devices.forUser(uid), costs, mailer, env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, ocm: !!OCM, overpass: true, occupancy: true, googleMap: !!GOOGLE_MAPS }) });
+const accounts = createAccounts({ onDelete: (uid) => { priceBook.forget(uid); community.forget(uid); costs.forget(uid); devices.forget(uid); }, onLink: (deviceId, uid, ip) => devices.link(deviceId, uid, ip), devicesOf: (uid) => devices.forUser(uid), costs, mailer, env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, ocm: !!OCM, overpass: true, occupancy: true }) });
 
 const appFiles = createAppFiles({ dir: join(here, 'public'), send });
 
@@ -407,8 +387,6 @@ const server = http.createServer(async (req, res) => {
     if (p.startsWith('/ocm/')) return await ocm(req, res, url, id);
     if (p === '/overpass') return await overpass(req, res, url, id);
     if (p === '/v1/occupancy' && req.method === 'POST') return await occupancyRoute(req, res, id);
-    if (p === '/v1/google/map-key' && req.method === 'GET') return await googleMapKey(res, id);
-    if (p === '/v1/google/place' && req.method === 'POST') return await googlePlaceRoute(req, res, id);
     if (p === '/v1/price' && req.method === 'POST') return await priceRoute(req, res, id);
     if (p === '/v1/presence' && req.method === 'POST') return await communityRoute(req, res, id, 'presence');
     if (p === '/v1/status' && req.method === 'POST') return await communityRoute(req, res, id, 'status');
