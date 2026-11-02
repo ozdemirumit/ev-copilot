@@ -112,9 +112,11 @@
     </div>
 
     <div class="card stack" id="plan-card">
-      <div class="row between">
-        <h2 style="margin:0">Şarj planı</h2>
-        <span class="small muted" id="plan-mode-label"></span>
+      <h2 style="margin:0">Şarj planı</h2>
+      <div class="chips" role="group" aria-label="Plan modu">
+        <button class="btn sm" data-sort="fast" type="button">⏱️ Hızlı</button>
+        <button class="btn sm" data-sort="cheap" type="button">💰 Ekonomik</button>
+        <button class="btn sm sel" data-sort="opt" type="button">⚖️ Optimum</button>
       </div>
       <div class="row" style="gap:8px;align-items:center;flex-wrap:nowrap">
         <span class="small muted" style="white-space:nowrap">En az şarj gücü (kW)</span>
@@ -370,8 +372,8 @@
     </div>
 
     <div class="chips" role="group" aria-label="Sıralama">
-      <button class="btn" data-sort="fast" type="button">⏱️ En Hızlı</button>
-      <button class="btn" data-sort="cheap" type="button">💰 En Ekonomik</button>
+      <button class="btn" data-sort="fast" type="button">⏱️ Hızlı</button>
+      <button class="btn" data-sort="cheap" type="button">💰 Ekonomik</button>
       <button class="btn sel" data-sort="opt" type="button">⚖️ Optimum</button>
     </div>
     <div class="card">

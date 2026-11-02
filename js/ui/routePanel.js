@@ -11,7 +11,6 @@ import { PLANNER } from '../config.js';
 const showMap = () => document.querySelector('.bottomnav [data-tab="map"]')?.click();
 
 const $ = (id) => document.getElementById(id);
-const MODE_LABEL = { fast: 'En Hızlı', cheap: 'En Ekonomik', opt: 'Optimum' };
 
 const hm = (min) => {
   const m = Math.round(min);
@@ -66,7 +65,6 @@ export function initRoutePanel() {
   function paint() {
     const p = getState('plan');
     const here = curKm();
-    $('plan-mode-label').textContent = MODE_LABEL[p.mode];
     list.replaceChildren();
     gm.classList.toggle('hidden', p.status !== 'ready');
     $('premium-hint').classList.toggle('hidden', !(p.status === 'ready' && proxyHas('occupancyLocked')));

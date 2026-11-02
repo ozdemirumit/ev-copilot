@@ -210,4 +210,8 @@ export default {
   "Plan {0} sn sürdü: rota {1} · rakım/hava {2} · istasyon {3} · hesap {4}": "Plan dauerte {0} s: Route {1} · Höhe/Wetter {2} · Ladestationen {3} · Berechnung {4}",
   "En az şarj gücü (kW)": "Mindest-Ladeleistung (kW)",
   "En az şarj gücü filtresi {0} kW: düşürmeyi (AC) dene.": "Filter Mindest-Ladeleistung {0} kW: versuche einen niedrigeren Wert (AC).",
+  "⏱️ Hızlı": "⏱️ Schnell",
+  "💰 Ekonomik": "💰 Günstig",
+  "Hızlı": "Schnell",
+  "Ekonomik": "Günstig",
 };

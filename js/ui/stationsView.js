@@ -8,7 +8,7 @@ import { setStationOperator } from '../routing/chargerSource.js';
 import { slotEl } from '../routing/slots.js';
 
 const $ = (id) => document.getElementById(id);
-const MODE_TITLE = { fast: 'En hızlı', cheap: 'En ekonomik', opt: 'Optimum (süre + maliyet)' };
+const MODE_TITLE = { fast: 'Hızlı', cheap: 'Ekonomik', opt: 'Optimum (süre + maliyet)' };
 
 function text(tag, cls, content) {
   const el = document.createElement(tag);

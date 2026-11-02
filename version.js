@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.75.1';
+self.APP_VERSION = '0.75.2';
 self.APP_CHANGELOG = [
+  {
+    v: '0.75.2', date: '2026-11-02',
+    notes: [
+      'DEĞİŞTİ: Plan modu adları kısaldı: Hızlı, Ekonomik, Optimum (önceden En Hızlı / En Ekonomik). Aynı üç seçenek artık Şarj planı kartında da, başlığın altında seçilebilir; İstasyonlar sekmesindekiyle ortaktır, birinde değişen diğerinde de değişir ve plan yeniden hesaplanır.',
+    ],
+  },
   {
     v: '0.75.1', date: '2026-11-02',
     notes: [
