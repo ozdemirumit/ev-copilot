@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.73.15';
+self.APP_VERSION = '0.73.16';
 self.APP_CHANGELOG = [
+  {
+    v: '0.73.16', date: '2026-11-02',
+    notes: [
+      'Uygulama açılınca GPS açıksa harita ilk gerçek konumda bir kez konuma odaklanır (rota, navigasyon ya da Test Modu varsa görünüm bozulmaz).',
+    ],
+  },
   {
     v: '0.73.15', date: '2026-11-02',
     notes: [

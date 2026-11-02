@@ -5,7 +5,7 @@ import { mapApi } from './mapView.js';
 import { showTab } from './tabs.js';
 import { startNav, stopNav } from '../nav/navigator.js';
 import { toast } from './toast.js';
-import { save } from '../utils/storage.js';
+import { save, load } from '../utils/storage.js';
 import { startGps, stopGps, locateOnce } from '../sensors/gps.js';
 
 const $ = (id) => document.getElementById(id);
@@ -55,7 +55,15 @@ export function initShell() {
       }
     }
   });
-  subscribe('live', () => { if (wantCenter && centerMe()) wantCenter = false; });
+  // Açılışta GPS açıksa (varsayılan açık) ilk gerçek konumda harita bir kez konuma odaklanır (rota/navigasyon/test varken görünüm bozulmaz)
+  let startCenter = load('gpsOn', true);
+  if (startCenter) setTimeout(() => { startCenter = false; }, 90000);
+  subscribe('live', () => {
+    if (wantCenter && centerMe()) wantCenter = false;
+    if (!startCenter) return;
+    if (getState('nav').active || getState('sim').enabled || mapApi.hasRoute()) { startCenter = false; return; }
+    if (getState('live').gps === 'ok' && centerMe()) startCenter = false;
+  });
 
   // Navigasyon düğmesi: plan hazırsa görünür
   const navBtn = $('fab-nav');
