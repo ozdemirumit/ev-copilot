@@ -78,10 +78,11 @@ const blocked = (ip) => (fails.get(ip)?.until ?? 0) > Date.now();
 function noteFail(ip) {
   const f = fails.get(ip) || { n: 0, until: 0 };
   f.n += 1;
+  f.at = Date.now();
   if (f.n >= 10) { f.until = Date.now() + 10 * 60e3; f.n = 0; } // 10 yanlış kod: 10 dk engel
   fails.set(ip, f);
 }
-setInterval(() => { const m = Math.floor(Date.now() / 60000); for (const [k, v] of hits) if (v.min < m - 1) hits.delete(k); for (const [k, v] of fails) if (v.until < Date.now() && !v.n) fails.delete(k); }, 60000).unref();
+setInterval(() => { const m = Math.floor(Date.now() / 60000); for (const [k, v] of hits) if (v.min < m - 1) hits.delete(k); for (const [k, v] of fails) if (v.until < Date.now() && (!v.n || (v.at ?? 0) < Date.now() - 600e3)) fails.delete(k); }, 60000).unref();
 
 // ---------- önbellek ----------
 const cache = new Map();
@@ -90,13 +91,18 @@ const MAX_ITEM = 6e6;
 function cget(k) {
   const e = cache.get(k);
   if (!e) return null;
-  if (e.exp < Date.now()) { cache.delete(k); return null; }
+  if (e.exp < Date.now()) { cacheBytes -= e.body.length; cache.delete(k); return null; }
   return e;
 }
+const MAX_BYTES = 200e6; // önbelleğin toplam bayt tavanı (yüzlerce farklı sorgu belleği şişirmesin)
+let cacheBytes = 0;
 function cset(k, e, ttlMs) {
   if (e.body.length > MAX_ITEM) return;
+  const old = cache.get(k);
+  if (old) cacheBytes -= old.body.length;
   cache.set(k, { ...e, exp: Date.now() + ttlMs });
-  while (cache.size > MAX_ENTRIES) cache.delete(cache.keys().next().value);
+  cacheBytes += e.body.length;
+  while (cache.size > MAX_ENTRIES || cacheBytes > MAX_BYTES) { const first = cache.keys().next().value; cacheBytes -= cache.get(first).body.length; cache.delete(first); }
 }
 const inflight = new Map();
 const once = (k, fn) => {
@@ -273,7 +279,7 @@ async function overpass(req, res, url, id) {
   let size = 0;
   for await (const c of req) { size += c.length; if (size > 40000) return json(res, 413, { error: 'gövde çok büyük' }); chunks.push(c); }
   const query = new URLSearchParams(Buffer.concat(chunks).toString('utf8')).get('data') || '';
-  if (!OP_QUERY.test(query)) return json(res, 400, { error: 'desteklenmeyen sorgu' });
+  if (!OP_QUERY.test(query) || Number(/around:([0-9.]+),/.exec(query)?.[1]) > 20000) return json(res, 400, { error: 'desteklenmeyen sorgu' }); // yarıçap üst sınırı 20 km
   const key = 'op:' + createHash('sha1').update(query).digest('hex');
   const hit = cget(key);
   if (hit) return reply(res, hit, { 'X-Cache': 'hit' });
@@ -288,7 +294,7 @@ async function occupancyRoute(req, res, id) {
   if (id.kind === 'user' && !accounts.isPremium(id.user)) return json(res, 402, { error: 'premium_required' }); // canlı doluluk ve fiyat yalnızca Premium üyelere
   const b = await readJson(req, 4000);
   if (!b || !Array.isArray(b.stations) || b.stations.length < 1 || b.stations.length > 6) return json(res, 400, { error: 'geçersiz gövde' });
-  const stations = b.stations.map((s) => ({ id: String(s.id).slice(0, 40), lat: Number(s.lat), lon: Number(s.lon), dc: !!s.dc }))
+  const stations = b.stations.filter((s) => s && typeof s === 'object').map((s) => ({ id: String(s.id).slice(0, 40), lat: Number(s.lat), lon: Number(s.lon), dc: !!s.dc }))
     .filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lon) && Math.abs(s.lat) <= 90 && Math.abs(s.lon) <= 180);
   if (!stations.length) return json(res, 400, { error: 'geçersiz istasyon' });
   if (overQuota(id, 'occupancy')) return json(res, 429, { error: 'günlük doluluk hakkı doldu' }, { 'Retry-After': '3600' });
@@ -322,6 +328,7 @@ const clientIp = (req) => {
   return raw;
 };
 
+process.on('unhandledRejection', (err) => console.error('yakalanmamış söz reddi:', scrub(String(err?.message || err)))); // tek bir hatalı istek süreci düşürmesin
 const store = openStore(env.DATA_DIR || join(here, 'data'));
 const priceBook = createPriceBook(store);
 const community = createCommunity(store);
@@ -335,12 +342,13 @@ const appFiles = createAppFiles({ dir: join(here, 'public'), send });
 const server = http.createServer(async (req, res) => {
   const t0 = Date.now();
   const ip = clientIp(req);
-  const url = new URL(req.url, 'http://x');
+  let url;
+  try { url = new URL(req.url, 'http://x'); } catch { res.writeHead(400); return res.end(); } // geçersiz adres ("//" gibi) süreci düşürmesin
   const origin = req.headers.origin;
   let status = 0;
   const done = res.end.bind(res);
   res.end = (...a) => { status = res.statusCode; return done(...a); };
-  res.on('close', () => console.log(`${new Date().toISOString()} ${ip} ${req.method} ${url.pathname} ${status} ${Date.now() - t0}ms`));
+  res.on('close', () => console.log(`${new Date().toISOString()} ${ip} ${req.method} ${url.pathname.replace(/^\/i\/.*/, '/i/…')} ${status} ${Date.now() - t0}ms`)); // davet kodu günlüğe yazılmaz
   try {
     if (origin) {
       if (!ORIGINS.has(origin)) return json(res, 403, { error: 'köken izinli değil' });

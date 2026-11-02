@@ -37,14 +37,16 @@ export function createPriceBook(store) {
         const rs = e.reports.filter((r) => Date.now() - r.at < MAX_AGE_MS);
         if (!rs.length) continue;
         const at = Math.max(...rs.map((r) => r.at));
-        if (!best || at > best.at) best = { kwh: Math.round(med(rs.map((r) => r.kwh)) * 100) / 100, currency: rs.at(-1).currency, n: rs.length, at };
+        const cur = rs.reduce((a, r) => (r.at > a.at ? r : a)).currency; // en yeni bildirimin para birimi; medyan yalnızca aynı para biriminden alınır
+        const same = rs.filter((r) => r.currency === cur);
+        if (!best || at > best.at) best = { kwh: Math.round(med(same.map((r) => r.kwh)) * 100) / 100, currency: cur, n: same.length, at };
       }
     }
     return best;
   }
   /** Bir kullanıcının bildirimlerini sil (hesap silme). */
   function forget(userId) {
-    for (const e of Object.values(data())) e.reports = e.reports.filter((r) => r.by !== userId);
+    for (const [k, e] of Object.entries(data())) { e.reports = e.reports.filter((r) => r.by !== userId); if (!e.reports.length) delete data()[k]; }
     store.save();
   }
   return { report, nearest, forget };

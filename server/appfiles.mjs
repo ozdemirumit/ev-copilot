@@ -48,7 +48,8 @@ export function createAppFiles({ dir, send }) {
         'Content-Type': 'application/vnd.android.package-archive', 'Content-Disposition': 'attachment; filename="EV-Co-Pilot.apk"',
         'Content-Length': n, 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff',
       });
-      if (req.method === 'HEAD') res.end(); else createReadStream(apk).pipe(res);
+      if (req.method === 'HEAD') res.end();
+      else { const rs = createReadStream(apk); rs.on('error', () => res.destroy()); rs.pipe(res); } // dosya silinir/kilitlenirse süreç düşmez, bağlantı kesilir
       return true;
     }
     if (url.pathname === '/app/latest.json') { send(res, 200, JSON.stringify({ ...(meta() || {}), size: size() }), { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' }); return true; }

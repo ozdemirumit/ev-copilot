@@ -13,6 +13,8 @@ export function createDevices(store) {
   const book = () => (store.data.devices ||= {});
   const fresh = new Map(); // ip → { hour, n }
 
+  setInterval(() => { const h = Math.floor(Date.now() / 3600e3); for (const [k, v] of fresh) if (v.hour < h) fresh.delete(k); }, 3600e3).unref();
+
   const valid = (id) => (typeof id === 'string' && ID.test(id) ? id : null);
 
   function prune() {

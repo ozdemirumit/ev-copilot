@@ -22,9 +22,15 @@ export function openStore(dir) {
     timer = null;
     if (!dirty) return;
     dirty = false;
-    const tmp = file + '.tmp';
-    writeFileSync(tmp, JSON.stringify(data));
-    renameSync(tmp, file);
+    try {
+      const tmp = file + '.tmp';
+      writeFileSync(tmp, JSON.stringify(data));
+      renameSync(tmp, file);
+    } catch (err) { // disk dolu ya da antivirüs dosyayı kilitledi: süreç düşmesin, sonraki kayıtta yeniden denenir
+      dirty = true;
+      timer ||= setTimeout(flush, 10000);
+      console.error('db.json yazılamadı:', err.code || err.message);
+    }
   };
   const save = () => {
     dirty = true;

@@ -18,7 +18,7 @@ const MAX_USER = 3_000_000; // kullanıcı başına toplam bayt
 // Geçmiş (yalnızca eklenir, kimlikle tekrar gönderim güvenli): yolculuklar ve şarj oturumları. Değerli veri olduğu için eşitlenen ayarlardan ayrı tutulur.
 const HISTORY_KINDS = new Set(['trips', 'charges']);
 const MAX_REC = 6000; // kayıt başına bayt
-const MAX_RECS = 20000; // kullanıcı ve tür başına kayıt
+const MAX_RECS = 5000; // kullanıcı ve tür başına kayıt (en çok ~30 MB)
 
 import { validEmail } from './mailer.mjs';
 
@@ -186,9 +186,10 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
       if (!googleOn) { page(res, 501, 'Giriş kapalı', 'Sunucuda Google girişi ayarlanmamış.'); return true; }
       const nonce = url.searchParams.get('nonce') || '';
       const invite = url.searchParams.get('invite') || '';
-      if (!NONCE.test(nonce) || (invite && !INVITE.test(invite)) || pend.size > 500) { page(res, 400, 'Geçersiz istek', 'Uygulamaya dönüp tekrar dene.'); return true; }
+      // tek adres en çok 10 bekleyen giriş açabilir (herkesin girişini kilitleyemez)
+      if (!NONCE.test(nonce) || (invite && !INVITE.test(invite)) || pend.size > 500 || (!pend.has(nonce) && [...pend.values()].filter((x) => x.ip === ip).length >= 10)) { page(res, 400, 'Geçersiz istek', 'Uygulamaya dönüp tekrar dene.'); return true; }
       const state = rnd(24);
-      pend.set(nonce, { state, invite, exp: Date.now() + 10 * 60e3, result: null });
+      pend.set(nonce, { ip, state, invite, exp: Date.now() + 10 * 60e3, result: null });
       byState.set(state, nonce);
       const q = new URLSearchParams({ client_id: G_ID, redirect_uri: `${PUBLIC_URL}/auth/google/callback`, response_type: 'code', scope: 'openid email profile', state, prompt: 'select_account' });
       res.writeHead(302, { Location: `${G_AUTH}?${q}`, 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' });
@@ -259,9 +260,9 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
           if (!b || !Array.isArray(b.items) || b.items.length > 500) { json(res, 400, { error: 'geçersiz gövde' }); return true; }
           let saved = 0;
           for (const it of b.items) {
-            if (!it || typeof it.id !== 'string' || !/^[A-Za-z0-9_-]{6,40}$/.test(it.id) || !Number.isFinite(it.t)) continue;
+            if (!it || typeof it.id !== 'string' || !/^[A-Za-z0-9_-]{6,40}$/.test(it.id) || /^__/.test(it.id) || !Number.isFinite(it.t)) continue; // '__proto__' gibi kimlikler nesne prototipini bozmasın
             if (JSON.stringify(it).length > MAX_REC) continue;
-            if (!bucket[it.id] && Object.keys(bucket).length >= MAX_RECS) continue;
+            if (!Object.hasOwn(bucket, it.id) && Object.keys(bucket).length >= MAX_RECS) continue;
             bucket[it.id] = { ...it, t: Math.min(it.t, Date.now() + 86400e3) };
             saved++;
           }
