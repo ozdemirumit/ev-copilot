@@ -200,4 +200,9 @@ export default {
   "≈ {0} MB/saat; her {1} sn'de bir gönderilir.": "≈ {0} MB/ώρα· αποστολή κάθε {1} δ.",
   "{0} istasyonunda {1}. Plan güncellendi.": "Στον {0}: {1}. Το πλάνο ενημερώθηκε.",
   "{0} istasyonunda {1}. Başka uygun istasyon yok, plan değişmedi.": "Στον {0}: {1}. Δεν υπάρχει άλλος κατάλληλος σταθμός, το πλάνο δεν άλλαξε.",
+  "HERE: {0} arama başarısız{1}": "HERE: αναζητήσεις που απέτυχαν: {0}{1}",
+  "HERE: {0} arama üst sınır nedeniyle yapılmadı": "HERE: αναζητήσεις που δεν έγιναν λόγω ανώτατου ορίου: {0}",
+  "(Mapbox/Overpass denendi)": "(δοκιμάστηκε Mapbox/Overpass)",
+  "HERE aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor": "Το μηνιαίο όριο HERE εξαντλήθηκε: χρησιμοποιούνται δωρεάν πηγές",
+  "Sunucuda HERE anahtarı yok": "Δεν υπάρχει κλειδί HERE στον διακομιστή",
 };

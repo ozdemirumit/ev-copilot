@@ -200,4 +200,9 @@ export default {
   "≈ {0} MB/saat; her {1} sn'de bir gönderilir.": "≈ {0} MB/oră; trimis la fiecare {1} s.",
   "{0} istasyonunda {1}. Plan güncellendi.": "La {0}: {1}. Plan actualizat.",
   "{0} istasyonunda {1}. Başka uygun istasyon yok, plan değişmedi.": "La {0}: {1}. Nicio altă stație potrivită, planul rămâne neschimbat.",
+  "HERE: {0} arama başarısız{1}": "HERE: {0} căutări eșuate{1}",
+  "HERE: {0} arama üst sınır nedeniyle yapılmadı": "HERE: {0} căutări nu s-au efectuat din cauza limitei maxime",
+  "(Mapbox/Overpass denendi)": "(s-a încercat Mapbox/Overpass)",
+  "HERE aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor": "Limita lunară HERE s-a epuizat: se folosesc surse gratuite",
+  "Sunucuda HERE anahtarı yok": "Nu există cheie HERE pe server",
 };

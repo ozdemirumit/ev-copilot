@@ -199,5 +199,10 @@
  "Kayıtlı değil: Favoriler sekmesinden ekle",
  "≈ {0} MB/saat; her {1} sn'de bir gönderilir.",
  "{0} istasyonunda {1}. Plan güncellendi.",
- "{0} istasyonunda {1}. Başka uygun istasyon yok, plan değişmedi."
+ "{0} istasyonunda {1}. Başka uygun istasyon yok, plan değişmedi.",
+ "HERE: {0} arama başarısız{1}",
+ "HERE: {0} arama üst sınır nedeniyle yapılmadı",
+ "(Mapbox/Overpass denendi)",
+ "HERE aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor",
+ "Sunucuda HERE anahtarı yok"
 ]

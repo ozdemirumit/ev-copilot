@@ -9,7 +9,7 @@ export const proxyBase = () => (String(load('proxyUrl', '') || '').trim() || DEF
 export const proxyCode = () => String(load('proxyCode', '') || '').trim();
 export const getSession = () => { const s = load('session', null); return s?.token ? s : null; };
 export const setSession = (s) => { save('session', s); document.dispatchEvent(new Event('account-changed')); };
-let caps = load('proxyCaps', null); // sunucunun bildirdiği özellikler: { mapbox, ocm, overpass, occupancy (kullanıcı Premium ise), occupancyLocked (sunucuda var ama Premium değil) }
+let caps = load('proxyCaps', null); // sunucunun bildirdiği özellikler: { mapbox, here, ocm, overpass, occupancy (kullanıcı Premium ise), occupancyLocked (sunucuda var ama Premium değil) }
 let plan = load('proxyPlan', null); // hesap planı: { premium, until }
 
 /** Cihaz kimliği: giriş yapmamış kullanıcı için rastgele (d_...), cihazda kalıcı. Giriş yapınca sunucu bu kimliği hesaba bağlar; kimlik hesabın kimliğiyle değişir. */
@@ -69,7 +69,7 @@ export async function refreshCaps() {
     const j = await res.json();
     const c = sess ? j.caps : j;
     const prem = !sess || !!j.user?.premium; // Premium özellikler yalnızca Premium (ya da yönetici) hesapta açılır
-    caps = { mapbox: !!c?.mapbox, ocm: !!c?.ocm, overpass: !!c?.overpass, occupancy: !!c?.occupancy && prem, occupancyLocked: !!c?.occupancy && !prem };
+    caps = { mapbox: !!c?.mapbox, here: !!c?.here, ocm: !!c?.ocm, overpass: !!c?.overpass, occupancy: !!c?.occupancy && prem, occupancyLocked: !!c?.occupancy && !prem };
     plan = sess ? { premium: !!j.user?.premium, until: j.user?.premiumUntil || null } : null;
     save('proxyCaps', caps);
     save('proxyPlan', plan);

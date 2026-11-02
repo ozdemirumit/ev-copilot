@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.73.16';
+self.APP_VERSION = '0.74.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.74.0', date: '2026-11-02',
+    notes: [
+      'YENİ: HERE veri kaynağı (sunucuda). Şarj istasyonları önce HERE Search ile alınır: güç (kW) ve soket türü (CCS/CHAdeMO/Type 2) doğrudan gelir, Mapbox hakkı harcanmaz. HERE kullanılamazsa Mapbox, o da olmazsa Overpass devreye girer; istasyonsuz kesimler Overpass ile tamamlanır.',
+      'YENİ: Canlı doluluk (Premium) için HERE bağlantı durumu eklendi (müsait / dolu / arızalı). Yalnızca beslemesi canlı istasyonlarda gösterilir; durumu bilinmeyen yuva varsa dolu denmez. Fiyat HERE tarafında yok.',
+    ],
+  },
   {
     v: '0.73.16', date: '2026-11-02',
     notes: [

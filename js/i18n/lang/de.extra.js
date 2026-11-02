@@ -200,4 +200,9 @@ export default {
   "≈ {0} MB/saat; her {1} sn'de bir gönderilir.": "≈ {0} MB/Std.; wird alle {1} s gesendet.",
   "{0} istasyonunda {1}. Plan güncellendi.": "Bei {0}: {1}. Plan aktualisiert.",
   "{0} istasyonunda {1}. Başka uygun istasyon yok, plan değişmedi.": "Bei {0}: {1}. Keine andere passende Station, Plan unverändert.",
+  "HERE: {0} arama başarısız{1}": "HERE: Suche fehlgeschlagen ({0}×){1}",
+  "HERE: {0} arama üst sınır nedeniyle yapılmadı": "HERE: Suche wegen Limit nicht ausgeführt ({0}×)",
+  "(Mapbox/Overpass denendi)": "(Mapbox/Overpass versucht)",
+  "HERE aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor": "HERE-Monatskontingent aufgebraucht: kostenlose Quellen werden genutzt",
+  "Sunucuda HERE anahtarı yok": "Kein HERE-Schlüssel auf dem Server",
 };

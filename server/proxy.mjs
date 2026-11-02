@@ -17,6 +17,7 @@ import { createDevices } from './devices.mjs';
 import { createMailer } from './mailer.mjs';
 import { createAppFiles } from './appfiles.mjs';
 import { lookupAll } from './occupancy.mjs';
+import { hereBrowse, compact } from './here.mjs';
 import { createPriceBook } from './prices.mjs';
 import { createCommunity } from './community.mjs';
 
@@ -41,6 +42,7 @@ const HOST = env.HOST || '127.0.0.1';
 const CODES = list(env.ACCESS_CODES);
 const MAPBOX = env.MAPBOX_TOKEN || '';
 const OCM = env.OCM_KEY || '';
+const HERE = env.HERE_API_KEY || ''; // istasyon listesi ve canlı durum (HERE Search, show=ev); yalnızca sunucuda durur
 const GOOGLE_PLACES = env.GOOGLE_PLACES_KEY || ''; // isteğe bağlı: istasyon doluluğu (NDW'nin kapsamadığı yerler); yalnızca sunucuda durur
 const ORIGINS = new Set(list(env.ALLOW_ORIGINS || 'https://ozdemirumit.github.io,https://localhost,capacitor://localhost,http://localhost'));
 if (env.PUBLIC_URL) ORIGINS.add(String(env.PUBLIC_URL).replace(/\/+$/, '')); // yönetim paneli (/yonetim) aynı kökenden POST/DELETE yapar
@@ -113,7 +115,7 @@ const once = (k, fn) => {
 };
 
 // ---------- kullanıcı başına günlük kota (Mapbox faturasını ve ortak Overpass'i korur) ----------
-const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 40), price: 20, presence: 60, status: 30 };
+const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 40), here: Number(env.HERE_DAILY_PER_USER || 800), price: 20, presence: 60, status: 30 };
 const GOOGLE_TOTAL = Number(env.GOOGLE_DAILY_TOTAL || 150); // tüm kullanıcılar için günlük Google çağrısı tavanı (fatura üst sınırı)
 let gToday = { d: '', n: 0 };
 function googleAllowed(id) {
@@ -153,8 +155,9 @@ function adminSummary() {
     },
     invites: inv,
     mapbox: { month: mbUsage().month, used: mbUsage().n, cap: MB_CAP },
+    here: { month: hereUsage().month, used: hereUsage().n, cap: HERE_CAP },
     devices: devices.stats(),
-    configured: { mapbox: !!MAPBOX, ocm: !!OCM, googlePlaces: !!GOOGLE_PLACES, googleLogin: !!accounts.googleOn, smtp: !!mailer, premiumRequired: String(env.PREMIUM_REQUIRED ?? '1') !== '0' },
+    configured: { mapbox: !!MAPBOX, here: !!HERE, ocm: !!OCM, googlePlaces: !!GOOGLE_PLACES, googleLogin: !!accounts.googleOn, smtp: !!mailer, premiumRequired: String(env.PREMIUM_REQUIRED ?? '1') !== '0' },
     usageToday: byKind,
     google: { callsToday: gToday.d === today() ? gToday.n : 0, dailyCap: GOOGLE_TOTAL, unitUsd: costs.unit, usd: tot },
   };
@@ -169,7 +172,7 @@ async function readJson(req, max) {
 }
 
 // ---------- yardımcılar ----------
-const scrub = (s) => { let t = s; for (const secret of [MAPBOX, OCM, GOOGLE_PLACES]) if (secret) t = t.split(secret).join('***'); return t; };
+const scrub = (s) => { let t = s; for (const secret of [MAPBOX, OCM, GOOGLE_PLACES, HERE]) if (secret) t = t.split(secret).join('***'); return t; };
 function send(res, status, body, headers = {}) {
   const buf = Buffer.isBuffer(body) ? body : Buffer.from(typeof body === 'string' ? body : JSON.stringify(body));
   res.writeHead(status, { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...headers, 'Content-Length': buf.length });
@@ -231,6 +234,39 @@ async function mapbox(req, res, url, id) {
     return upstream(`${MAPBOX_BASE}${path}?${real}`);
   });
   if (rule[1] && u.status === 200) cset(key, u, rule[1]);
+  reply(res, u, { 'X-Cache': 'miss' });
+}
+
+// ---------- HERE (istasyon listesi + doluluk) ----------
+// HERE kullanımı aylık sayılır (HERE_MONTHLY_CAP, varsayılan 20000 istek); sınırda 402 döner, uygulama Mapbox/Overpass'e düşer. Sayaç db.json'da kalıcıdır.
+const HERE_CAP = Number(env.HERE_MONTHLY_CAP || 20000);
+function hereUsage() {
+  const ym = new Date().toISOString().slice(0, 7);
+  const c = (store.data.counters ||= {});
+  if (c.here?.month !== ym) { c.here = { month: ym, n: 0 }; store.save(); }
+  return c.here;
+}
+const hereAllowed = () => hereUsage().n < HERE_CAP;
+const hereCount = () => { hereUsage().n++; store.save(); };
+async function hereStations(req, res, url, id) {
+  if (!HERE) return json(res, 501, { error: 'Sunucuda HERE anahtarı yok' });
+  if (url.pathname !== '/here/stations' || req.method !== 'GET') return json(res, 404, { error: 'yol yok' });
+  const lat = Number(url.searchParams.get('lat'));
+  const lon = Number(url.searchParams.get('lon'));
+  const r = Math.min(40, Math.max(1, Number(url.searchParams.get('r')) || 20));
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return json(res, 400, { error: 'geçersiz konum' });
+  const key = `here:${lat.toFixed(3)},${lon.toFixed(3)}:${r}`;
+  const hit = cget(key);
+  if (hit) return reply(res, hit, { 'X-Cache': 'hit' });
+  if (overQuota(id, 'here')) return json(res, 429, { error: 'günlük HERE hakkı doldu' }, { 'Retry-After': '3600' });
+  if (!hereAllowed()) return json(res, 402, { error: 'here_cap' });
+  const u = await once(key, async () => {
+    hereCount();
+    const items = await hereBrowse(HERE, { lat, lon, r: r * 1000 });
+    const body = Buffer.from(JSON.stringify({ items: items.map(compact).filter(Boolean), full: items.length >= 100 }));
+    return { status: 200, type: 'application/json; charset=utf-8', body, pass: {} };
+  }).catch((err) => ({ status: err.status === 429 ? 429 : 502, type: 'application/json', body: Buffer.from(JSON.stringify({ error: err.status ? 'HERE HTTP ' + err.status : 'HERE yanıt vermedi' })), pass: {} }));
+  if (u.status === 200) cset(key, u, 6 * 3600e3);
   reply(res, u, { 'X-Cache': 'miss' });
 }
 
@@ -325,8 +361,9 @@ async function occupancyRoute(req, res, id) {
   if (!stations.length) return json(res, 400, { error: 'geçersiz istasyon' });
   if (overQuota(id, 'occupancy')) return json(res, 429, { error: 'günlük doluluk hakkı doldu' }, { 'Retry-After': '3600' });
   const google = GOOGLE_PLACES ? { key: GOOGLE_PLACES, allow: () => googleAllowed(id), onCall: () => costs.add(id, 'google') } : null; // her başarılı Google çağrısı kullanıcıya yazılır
+  const here = HERE ? { key: HERE, allow: hereAllowed, onCall: hereCount } : null;
   const soc = Number.isFinite(Number(b.soc)) ? Number(b.soc) : null; // pil %: Google (ücretli) yalnızca düşük pilde sorulur
-  json(res, 200, { results: await lookupAll(stations, { google, soc, book: priceBook, community }) });
+  json(res, 200, { results: await lookupAll(stations, { google, here, soc, book: priceBook, community }) });
 }
 
 // Topluluk: şarj başladı/bitti (varlık) ve Dolu/Boş bildirimi. Okumak Premium (/v1/occupancy), katkı vermek her hesaba açık.
@@ -361,7 +398,7 @@ const community = createCommunity(store);
 const costs = createCosts(store, env);
 const devices = createDevices(store);
 const mailer = createMailer(env); // SMTP_USER/SMTP_PASS yoksa null
-const accounts = createAccounts({ onDelete: (uid) => { priceBook.forget(uid); community.forget(uid); costs.forget(uid); devices.forget(uid); }, onLink: (deviceId, uid, ip) => devices.link(deviceId, uid, ip), devicesOf: (uid) => devices.forUser(uid), costs, mailer, env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, ocm: !!OCM, overpass: true, occupancy: true }) });
+const accounts = createAccounts({ onDelete: (uid) => { priceBook.forget(uid); community.forget(uid); costs.forget(uid); devices.forget(uid); }, onLink: (deviceId, uid, ip) => devices.link(deviceId, uid, ip), devicesOf: (uid) => devices.forUser(uid), costs, mailer, env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, here: !!HERE, ocm: !!OCM, overpass: true, occupancy: true }) });
 
 const appFiles = createAppFiles({ dir: join(here, 'public'), send });
 
@@ -416,8 +453,9 @@ const server = http.createServer(async (req, res) => {
     if (limited(id.key) || (dev && id.kind !== 'user' && limited('d:' + dev))) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
     if (dev && id.kind === 'user') devices.link(dev, id.user.id, ip); // oturumlu istek: cihaz hesaba bağlanır (giriş öncesi anonim kayıt birleşir)
     const p = url.pathname;
-    if (p === '/health') return json(res, 200, { ok: true, mapbox: !!MAPBOX, ocm: !!OCM, overpass: true, occupancy: true, v: 3 });
+    if (p === '/health') return json(res, 200, { ok: true, mapbox: !!MAPBOX, here: !!HERE, ocm: !!OCM, overpass: true, occupancy: true, v: 3 });
     if (p.startsWith('/mapbox/')) return await mapbox(req, res, url, id);
+    if (p.startsWith('/here/')) return await hereStations(req, res, url, id);
     if (p.startsWith('/ocm/')) return await ocm(req, res, url, id);
     if (p === '/overpass') return await overpass(req, res, url, id);
     if (p === '/v1/occupancy' && req.method === 'POST') return await occupancyRoute(req, res, id);
@@ -436,5 +474,5 @@ const server = http.createServer(async (req, res) => {
 server.requestTimeout = 120000;
 server.headersTimeout = 15000;
 server.listen(PORT, HOST, () => {
-  console.log(`EV Co-Pilot ara sunucusu ${HOST}:${PORT} · Mapbox ${MAPBOX ? 'var' : 'yok'} · OpenChargeMap ${OCM ? 'var' : 'yok'} · Google girişi ${accounts.googleOn ? 'açık' : 'kapalı'} · doluluk: NDW${GOOGLE_PLACES ? ' + Google' : ''} · ${CODES.length} yönetici kodu`);
+  console.log(`EV Co-Pilot ara sunucusu ${HOST}:${PORT} · Mapbox ${MAPBOX ? 'var' : 'yok'} · OpenChargeMap ${OCM ? 'var' : 'yok'} · HERE ${HERE ? 'var' : 'yok'} · Google girişi ${accounts.googleOn ? 'açık' : 'kapalı'} · doluluk: NDW${HERE ? ' + HERE' : ''}${GOOGLE_PLACES ? ' + Google' : ''} · ${CODES.length} yönetici kodu`);
 });

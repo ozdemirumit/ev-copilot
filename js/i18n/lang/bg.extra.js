@@ -200,4 +200,9 @@ export default {
   "≈ {0} MB/saat; her {1} sn'de bir gönderilir.": "≈ {0} MB/час; изпраща се на всеки {1} с.",
   "{0} istasyonunda {1}. Plan güncellendi.": "На {0}: {1}. Планът е обновен.",
   "{0} istasyonunda {1}. Başka uygun istasyon yok, plan değişmedi.": "На {0}: {1}. Няма друга подходяща станция, планът не е променен.",
+  "HERE: {0} arama başarısız{1}": "HERE: неуспешни търсения: {0}{1}",
+  "HERE: {0} arama üst sınır nedeniyle yapılmadı": "HERE: търсения, пропуснати заради горната граница: {0}",
+  "(Mapbox/Overpass denendi)": "(опитан е Mapbox/Overpass)",
+  "HERE aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor": "Месечният лимит на HERE е изчерпан: използват се безплатни източници",
+  "Sunucuda HERE anahtarı yok": "Няма ключ за HERE на сървъра",
 };

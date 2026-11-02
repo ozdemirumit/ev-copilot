@@ -67,8 +67,8 @@ export function slotEl(s, lead = ' · ') {
     c.append(span(cm.report.status === 'full' ? '🔴 Dolu bildirildi' : '🟢 Boş bildirildi'), ' · ', span(ago(cm.report.at)));
     add(c);
   }
-  if (!first && sl.src === 'google') { // Google Places kuralı: Google verisi Google Maps adıyla belirtilir (çevrilmez, silinmez)
-    const g = span('Google Maps');
+  if (!first && (sl.src === 'google' || sl.src === 'here')) { // Google Places kuralı: Google verisi Google Maps adıyla belirtilir (çevrilmez, silinmez); HERE verisi de HERE adıyla
+    const g = span(sl.src === 'here' ? 'HERE' : 'Google Maps');
     g.translate = false;
     g.className = 'attrib';
     wrap.append(' · ', g);

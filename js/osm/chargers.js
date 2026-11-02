@@ -10,6 +10,7 @@ import { cached, cacheGet, cacheSet, TTL } from '../utils/cache.js';
 import { candidate, customRaw, dedupe, finalize, priced, summarize } from '../routing/chargerSource.js';
 import { mapboxKey } from '../mapbox/api.js';
 import { stationsAlong, stationsAround } from '../mapbox/chargers.js';
+import { hereOn, stationsAlong as hereAlong, stationsAround as hereAround } from '../here/chargers.js';
 
 // Herkese açık Overpass sunucuları; biri 429/406/hata verirse sıradakine geçilir (adil kullanım: paralel sorgu yok).
 const OVERPASS = [
@@ -225,9 +226,20 @@ export async function fetchChargers(pts, profile) {
   let lastErr = '';
   const take = (r) => { ctx.raw += r.raw; addDrop(ctx.drop, r.drop); r.out.forEach((s) => found.set(s.id, s)); };
 
-  // Mapbox anahtarı varsa istasyonlar Mapbox'tan (hızlı); anahtar reddedilirse Overpass'e düşülür
+  // Sunucuda HERE varsa istasyonlar önce HERE'den gelir (güç ve soket türü dahil; Mapbox hakkını harcamaz); olmazsa Mapbox, o da olmazsa Overpass
   let usedMapbox = false;
-  if (mapboxKey()) {
+  if (hereOn()) {
+    let r;
+    try { r = await hereAlong(pts); } catch (err) { r = { out: new Map(), raw: 0, calls: 0, failed: 0, skipped: 0, fatal: err }; }
+    ctx.calls += r.calls;
+    take({ out: [...r.out.values()], raw: r.raw, drop: {} });
+    if (r.failed) errors.push(`HERE: ${r.failed} arama başarısız${r.lastError ? ' — ' + r.lastError : ''}`);
+    if (r.skipped) errors.push(`HERE: ${r.skipped} arama üst sınır nedeniyle yapılmadı`);
+    if (r.fatal) errors.push(r.fatal.message + ' (Mapbox/Overpass denendi)');
+    usedMapbox = !r.fatal; // (adı eski: "ana kaynak kullanıldı")
+  }
+  // Mapbox anahtarı varsa istasyonlar Mapbox'tan (hızlı); anahtar reddedilirse Overpass'e düşülür
+  if (!usedMapbox && mapboxKey()) {
     let r;
     try { r = await stationsAlong(pts); } catch (err) { // anahtar/izin/aylık hak sorunu (kategori sorgusu dahil): plan durmasın, Overpass'e düşülür
       r = { out: new Map(), raw: 0, drop: {}, calls: 0, failed: 0, skipped: 0, fatal: err };
@@ -317,7 +329,14 @@ export async function fetchAround(lat, lon, radiusKm, force = false) {
     ran = true;
     const out = [];
     let usedMapbox = false;
-    if (mapboxKey()) {
+    if (hereOn()) {
+      const r = await hereAround(lat, lon, km).catch((err) => ({ out: new Map(), failed: 0, fatal: err }));
+      out.push(...r.out.values());
+      if (r.failed) errors.push(`HERE: ${r.failed} arama başarısız${r.lastError ? ' — ' + r.lastError : ''}`);
+      if (r.fatal) errors.push(r.fatal.message + ' (Mapbox/Overpass denendi)');
+      usedMapbox = !r.fatal;
+    }
+    if (!usedMapbox && mapboxKey()) {
       const r = await stationsAround(lat, lon, km);
       out.push(...r.out.values());
       if (r.failed) errors.push(`Mapbox: ${r.failed} arama başarısız${r.lastError ? ' — ' + r.lastError : ''}`);
