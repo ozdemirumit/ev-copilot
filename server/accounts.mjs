@@ -154,8 +154,12 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
     const nonce = byState.get(state);
     const p = nonce && pend.get(nonce);
     if (!p || p.exp < Date.now()) return page(res, 400, 'Süre doldu', 'Giriş isteğinin süresi doldu. Uygulamaya dönüp tekrar dene. (Sign-in request expired.)');
-    byState.delete(state);
-    const fail = (key) => { p.result = { status: 'error', error: key }; const [t, m] = ERR[key] || ERR.google; page(res, 400, t, m); };
+    // Aynı geri çağrı adresi ikinci kez yüklenebilir (sayfa yenileme, sekme geri yükleme, önizleme): Google kodu tek kullanımlıktır, bu yüzden sonuç yeniden gösterilir
+    if (p.identity && p.state === state) return confirmPage(res, p);
+    if (p.result) { if (p.result.status === 'ok') return page(res, 200, '✅ Giriş tamam', 'Uygulamaya dönebilirsin; kendiliğinden devam eder. (Signed in. You can return to the app.)'); const [t, m] = ERR[p.result.error] || ERR.google; return page(res, 400, t, m); }
+    if (p.busy) return page(res, 200, 'Giriş sürüyor', 'Birkaç saniye sonra bu sayfayı yenile. (Sign-in in progress, reload in a few seconds.)');
+    p.busy = true;
+    const fail = (key) => { p.busy = false; byState.delete(state); p.result = { status: 'error', error: key }; const [t, m] = ERR[key] || ERR.google; page(res, 400, t, m); };
     const code = url.searchParams.get('code');
     if (url.searchParams.get('error') || !code) return fail('google');
     let idt;
@@ -182,6 +186,7 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
     p.cid = rnd(16);
     p.tries = 0;
     byConfirm.set(p.cid, nonce);
+    p.busy = false;
     confirmPage(res, p);
   }
 
@@ -201,13 +206,14 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
     const nonce = byConfirm.get(cid);
     const p = nonce && pend.get(nonce);
     if (!p || !p.identity || p.exp < Date.now()) return page(res, 400, 'Süre doldu', 'Giriş isteğinin süresi doldu. Uygulamaya dönüp tekrar dene. (Sign-in request expired.)');
-    const fail = (key) => { byConfirm.delete(cid); delete p.identity; p.result = { status: 'error', error: key }; const [t, m] = ERR[key] || ERR.google; page(res, 400, t, m); };
+    const fail = (key) => { byConfirm.delete(cid); byState.delete(p.state); delete p.identity; p.result = { status: 'error', error: key }; const [t, m] = ERR[key] || ERR.google; page(res, 400, t, m); };
     if ((url.searchParams.get('code') || '').trim() !== loginCode(nonce)) {
       if (++p.tries >= 5) return fail('code');
       return confirmPage(res, p, 'Kod yanlış, tekrar dene. (Wrong code, try again.)');
     }
     const { sub, email, name } = p.identity;
     byConfirm.delete(cid);
+    byState.delete(p.state);
     delete p.identity;
     const out = signIn('google', sub, email, name, p.invite);
     if (out.error) { p.result = { status: 'error', error: out.error }; const [t, m] = ERR[out.error] || ERR.google; return page(res, 400, t, m); }
