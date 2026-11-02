@@ -242,4 +242,8 @@ export default {
   "Fotoğrafta kişi ve plaka görünmesin.": "Auf dem Foto sollen keine Personen oder Kennzeichen erkennbar sein.",
   "🗑 Sil": "🗑 Löschen",
   "Kaydedilemedi": "Konnte nicht gespeichert werden",
+  "Tümü": "Alle",
+  "Şarj markası": "Lade-Marke",
+  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçersen plan ve liste yalnızca seçtiğin markaları kullanır.": "Ist keine ausgewählt, werden alle Marken verwendet. Bei Auswahl nutzen Plan und Liste nur die gewählten Marken.",
+  "Marka tercihi açık: markaları genişlet ya da kaldır.": "Markenauswahl aktiv: Marken erweitern oder aufheben.",
 };

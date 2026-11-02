@@ -25,6 +25,7 @@ export function deviceId() {
 }
 
 const hasCreds = () => !!(getSession() || proxyCode());
+export const proxyReady = hasCreds; // hesapla giriş ya da yönetici kodu var mı
 
 /** Sunucu kullanılabilir mi ve istenen özelliği (mapbox | ocm | overpass) sağlıyor mu. */
 export const proxyHas = (what) => !!(hasCreds() && caps?.[what]);

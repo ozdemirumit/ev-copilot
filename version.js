@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.77.0';
+self.APP_VERSION = '0.78.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.78.0', date: '2026-11-02',
+    notes: [
+      'YENİ: İstasyonlar sekmesinde "Şarj markası" tercihi. Trugo, ZES, Eşarj, Astor, Voltrun, Sharz.net ve Tesla arasından bir ya da birkaçını seç; plan, istasyon listesi, harita ve "Yakınımdaki istasyonlar" yalnızca seçtiğin markaları kullanır (hiçbiri seçili değilse hepsi). Seçim kaydedilir ve hesabınla eşitlenir. YENİ: Tesla Supercharger istasyonları. Togg gibi diğer markalara açık ve CCS2 soketli Supercharger yerleri (Türkiye\u0027de 38, Avrupa genelinde 1600+) sunucu üzerinden supercharge.info topluluk verisinden okunur; Tesla uygulaması gerekir. Tesla fiyatı diğer markalar tarifesi olarak 13 TL/kWh varsayıldı (haber kaynaklı, istasyona göre değişebilir); operatör tablosundan düzenleyebilirsin. Tesla istasyonları için hesapla giriş gerekir. Sunucu güncellemesi gerekir.',
+    ],
+  },
   {
     v: '0.77.0', date: '2026-11-02',
     notes: [

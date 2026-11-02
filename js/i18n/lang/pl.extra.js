@@ -242,4 +242,8 @@ export default {
   "Fotoğrafta kişi ve plaka görünmesin.": "Unikaj osób i tablic rejestracyjnych na zdjęciu.",
   "🗑 Sil": "🗑 Usuń",
   "Kaydedilemedi": "Nie udało się zapisać",
+  "Tümü": "Wszystkie",
+  "Şarj markası": "Marka ładowania",
+  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçersen plan ve liste yalnızca seçtiğin markaları kullanır.": "Jeśli nic nie wybrano, używane są wszystkie marki. Po wyborze plan i lista używają tylko wybranych marek.",
+  "Marka tercihi açık: markaları genişlet ya da kaldır.": "Preferencja marki włączona: dodaj marki lub wyłącz ją.",
 };

@@ -9,7 +9,7 @@ import { toast } from '../ui/toast.js';
 
 export const SYNC_KEYS = [
   'places', 'recentDest', 'vehicle', 'consAdj', 'chargerMin', 'minStopAdd', 'tolerance', 'maxChargeTo', 'allowSlow', 'minArrival', 'cruise',
-  'planMode', 'voiceOn', 'lowSoc', 'speedAlert', 'headingUp', 'limitOn', 'operators', 'kCal', 'hist', 'customStations', 'stationOps', 'nearRadius', 'nearAc',
+  'planMode', 'voiceOn', 'lowSoc', 'speedAlert', 'headingUp', 'limitOn', 'operators', 'kCal', 'hist', 'customStations', 'stationOps', 'nearRadius', 'nearAc', 'brandPref',
 ];
 const SET = new Set(SYNC_KEYS);
 const PUSH_DELAY_MS = 4000;

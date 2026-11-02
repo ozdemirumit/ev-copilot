@@ -8,6 +8,7 @@ import { load } from '../utils/storage.js';
 import { proxyFetch, proxyHas } from '../net/proxy.js';
 import { cached, cacheGet, cacheSet, TTL } from '../utils/cache.js';
 import { candidate, customRaw, dedupe, finalize, priced, summarize } from '../routing/chargerSource.js';
+import { teslaAlong, teslaAround } from '../routing/tesla.js';
 import { mapboxKey } from '../mapbox/api.js';
 import { stationsAlong, stationsAround } from '../mapbox/chargers.js';
 import { hereOn, stationsAlong as hereAlong, stationsAround as hereAround } from '../here/chargers.js';
@@ -312,6 +313,11 @@ export async function fetchChargers(pts, profile) {
     if (ocmFailed) errors.push(`OpenChargeMap: ${ocmFailed} arama başarısız${ocmErr ? ' — ' + ocmErr : ''}`);
   }
 
+  // Tesla Supercharger (diğer markalara açık, CCS2): ayrı kaynaktan (supercharge.info, sunucu üzerinden); öteki kaynaklar Tesla kayıtlarını eler
+  const tesla = await teslaAlong(pts);
+  ctx.raw += tesla.length;
+  tesla.forEach((s) => found.set(s.id, s));
+
   const stations = finalize([...customRaw(), ...found.values()], profile);
   if (!found.size && failed && !usedMapbox) errors.unshift('İstasyon kaynağına ulaşılamadı: internet veya Overpass sunucusu');
   return { stations, errors, cached: ctx.calls === 0 && found.size > 0, summary: summarize(stations, profile, ctx) };
@@ -352,6 +358,7 @@ export async function fetchAround(lat, lon, radiusKm, force = false) {
     if (key) {
       try { out.push(...(await ocmQuery(lat, lon, km, key)).out); } catch (err) { errors.push(err.message); }
     }
+    out.push(...await teslaAround(lat, lon, km));
     return out;
   };
   const ckey = `nearO:${lat.toFixed(2)},${lon.toFixed(2)}:${km}`;

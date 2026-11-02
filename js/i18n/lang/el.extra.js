@@ -242,4 +242,8 @@ export default {
   "Fotoğrafta kişi ve plaka görünmesin.": "Αποφύγετε άτομα και πινακίδες στη φωτογραφία.",
   "🗑 Sil": "🗑 Διαγραφή",
   "Kaydedilemedi": "Αποτυχία αποθήκευσης",
+  "Tümü": "Όλα",
+  "Şarj markası": "Μάρκα φόρτισης",
+  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçersen plan ve liste yalnızca seçtiğin markaları kullanır.": "Αν δεν επιλεγεί καμία, χρησιμοποιούνται όλες οι μάρκες. Αν επιλέξετε, το πλάνο και η λίστα χρησιμοποιούν μόνο τις επιλεγμένες.",
+  "Marka tercihi açık: markaları genişlet ya da kaldır.": "Η προτίμηση μάρκας είναι ενεργή: προσθέστε μάρκες ή αφαιρέστε την.",
 };

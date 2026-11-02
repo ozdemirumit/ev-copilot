@@ -2,7 +2,8 @@
 // Düzenli güncelleme + düşük pil uyarısı: pil eşiğin altına inince (veya yetmeyecek görünürse) en yakın uygun
 // istasyon önerilir ve sesli söylenir.
 import { t } from '../i18n/index.js';
-import { getState, patch, effective } from '../state.js';
+import { getState, patch, effective, subscribe } from '../state.js';
+import { brandOk } from '../routing/planner.js';
 import { load, save } from '../utils/storage.js';
 import { VEHICLE, PLANNER } from '../config.js';
 import { haversineKm } from '../utils/geo.js';
@@ -64,7 +65,7 @@ function enrich(list) {
   }).sort((a, b) => a.distKm - b.distKm);
 }
 
-const visible = () => enrich(all).filter((s) => showAc || !s.slow);
+const visible = () => enrich(all).filter((s) => (showAc || !s.slow) && brandOk(s)); // brandOk: Şarj markası tercihi (İstasyonlar sekmesi)
 
 export async function refreshNearby({ force = false, silent = false } = {}) {
   const e = effective();
@@ -372,6 +373,8 @@ export function initNearby() {
   ac.checked = showAc;
   ac.addEventListener('change', () => { showAc = ac.checked; save('nearAc', showAc); render(); });
   $('near-refresh').addEventListener('click', () => refreshNearby({ force: true }));
+  let brandSig = (PLANNER.brands || []).join(',');
+  subscribe('route', () => { const b = (PLANNER.brands || []).join(','); if (b !== brandSig) { brandSig = b; render(); } }); // marka tercihi değişince liste yenilenir
   $('near-alert-close').addEventListener('click', () => { dismissedUntil = Date.now() + 10 * 60e3; showAlert(null); });
   render();
   setInterval(watch, 30000);

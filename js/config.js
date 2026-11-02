@@ -46,6 +46,7 @@ export const PLANNER = {
   baseKw: 40, // "hızlı DC" sayılma eşiği (istasyon sınıflandırması; sabit)
   minKw: load('minKw', 120), // kullanıcının seçtiği en düşük şarj gücü (Şarj planı filtresi: 40(AC)/60/100/120/150; varsayılan 120); bunun altı plana girmez
   allowSlow: load('allowSlow', true), // DC yetmediğinde yavaş AC/tipi belirsiz (herkese açık) istasyonlar yedek aday olsun
+  brands: load('brandPref', []), // tercih edilen şarj markaları (operatör kimlikleri); boşsa hepsi. Plan ve liste yalnızca bunları kullanır
   detourKwhPerKm: 0.2,
   detourKmh: 50,
 };
@@ -74,6 +75,7 @@ export const DEFAULT_OPERATORS = [
   { id: 'astor', name: 'Astor', price: 13.99, acPrice: 9.89, kw: 120, match: ['astor'] },
   { id: 'voltrun', name: 'Voltrun', price: 12.9, acPrice: 9.9, kw: 120, match: ['voltrun'] },
   { id: 'sharz', name: 'Sharz.net', price: 12.99, acPrice: 9.49, kw: 120, match: ['sharz'] },
+  { id: 'tesla', name: 'Tesla', price: 13, acPrice: 13, kw: 250, match: ['tesla supercharger'] }, // Supercharger, diğer markalar tarifesi (haberlerdeki son liste; Tesla uygulaması gerekir, istasyona göre değişebilir)
   { id: 'other', name: 'Diğer', price: 12.42, acPrice: 9.49, kw: 60, match: [] }, // Diğer: sayfanın DC ve AC ortalaması
 ];
 /** Önceki varsayılan fiyatlar (yer tutucu): kayıtlı fiyat bunlardan biriyse kullanıcı değiştirmemiştir, yeni varsayılana geçer. */

@@ -242,4 +242,8 @@ export default {
   "Fotoğrafta kişi ve plaka görünmesin.": "Keep people and license plates out of the photo.",
   "🗑 Sil": "🗑 Delete",
   "Kaydedilemedi": "Could not save",
+  "Tümü": "All",
+  "Şarj markası": "Charging brand",
+  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçersen plan ve liste yalnızca seçtiğin markaları kullanır.": "If none is selected, all brands are used. If you select some, the plan and the list use only those brands.",
+  "Marka tercihi açık: markaları genişlet ya da kaldır.": "Brand preference is on: add more brands or clear it.",
 };

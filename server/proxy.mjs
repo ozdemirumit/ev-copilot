@@ -21,6 +21,7 @@ import { hereBrowse, compact } from './here.mjs';
 import { createPriceBook } from './prices.mjs';
 import { createCommunity } from './community.mjs';
 import { createStationInfo, MAX_PHOTO_BYTES } from './stationinfo.mjs';
+import { createTesla } from './tesla.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -440,6 +441,7 @@ const store = openStore(env.DATA_DIR || join(here, 'data'));
 const priceBook = createPriceBook(store);
 const community = createCommunity(store);
 const stationInfo = createStationInfo(store, join(env.DATA_DIR || join(here, 'data'), 'photos'));
+const tesla = createTesla(env.DATA_DIR || join(here, 'data'));
 const costs = createCosts(store, env);
 const devices = createDevices(store);
 const mailer = createMailer(env); // SMTP_USER/SMTP_PASS yoksa null
@@ -508,6 +510,10 @@ const server = http.createServer(async (req, res) => {
     if (p === '/v1/presence' && req.method === 'POST') return await communityRoute(req, res, id, 'presence');
     if (p === '/v1/status' && req.method === 'POST') return await communityRoute(req, res, id, 'status');
     if (p.startsWith('/v1/station/')) return await stationInfoRoute(req, res, id, url);
+    if (p === '/v1/tesla' && req.method === 'GET') { // Togg'un kullanabildiği Tesla Supercharger'lar (günlük önbellek)
+      const l = await tesla.get();
+      return l ? json(res, 200, l, { 'Cache-Control': 'private, max-age=3600' }) : json(res, 503, { error: 'Tesla listesi şu an alınamıyor' });
+    }
     if (p === '/admin/summary' && req.method === 'GET' && id.admin) return json(res, 200, adminSummary());
     if (p === '/admin/devices' && req.method === 'GET' && id.admin) return json(res, 200, { stats: devices.stats(), devices: devices.list((u) => store.data.users[u]?.email || u) });
     if (await accounts.handleAuthed(req, res, url, id)) return;

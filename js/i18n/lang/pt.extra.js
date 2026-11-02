@@ -242,4 +242,8 @@ export default {
   "Fotoğrafta kişi ve plaka görünmesin.": "Evite pessoas e matrículas na foto.",
   "🗑 Sil": "🗑 Eliminar",
   "Kaydedilemedi": "Não foi possível guardar",
+  "Tümü": "Todas",
+  "Şarj markası": "Marca de carregamento",
+  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçersen plan ve liste yalnızca seçtiğin markaları kullanır.": "Se nenhuma estiver selecionada, todas as marcas são usadas. Se escolher, o plano e a lista usam apenas essas marcas.",
+  "Marka tercihi açık: markaları genişlet ya da kaldır.": "Preferência de marca ativa: alargue as marcas ou remova-a.",
 };

@@ -242,4 +242,8 @@ export default {
   "Fotoğrafta kişi ve plaka görünmesin.": "Evită persoanele și numerele de înmatriculare în poză.",
   "🗑 Sil": "🗑 Șterge",
   "Kaydedilemedi": "Nu s-a putut salva",
+  "Tümü": "Toate",
+  "Şarj markası": "Marcă de încărcare",
+  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçersen plan ve liste yalnızca seçtiğin markaları kullanır.": "Dacă nu este selectată nicio marcă, se folosesc toate. Dacă selectezi, planul și lista folosesc doar mărcile alese.",
+  "Marka tercihi açık: markaları genişlet ya da kaldır.": "Preferința de marcă este activă: extinde mărcile sau elimin-o.",
 };

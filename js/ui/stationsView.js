@@ -6,6 +6,7 @@ import { getOperators, persistOperators, resetOperators } from '../routing/opera
 import { repriceAndReplan, refetchStations } from '../routing/controller.js';
 import { setStationOperator } from '../routing/chargerSource.js';
 import { slotEl } from '../routing/slots.js';
+import { PLANNER } from '../config.js';
 
 const $ = (id) => document.getElementById(id);
 const MODE_TITLE = { fast: 'Hızlı', cheap: 'Ekonomik', opt: 'Optimum (süre + maliyet)' };
@@ -126,7 +127,41 @@ function renderOperators() {
   });
 }
 
+/** Tercih edilen şarj markaları: çoklu seçim, hiçbiri seçili değilse hepsi. Plan ve liste hemen yeniden hesaplanır (ağ çağrısı yok). */
+function initBrands() {
+  const box = $('brand-chips');
+  const paint = () => {
+    const sel = getState('route').brands || [];
+    box.replaceChildren();
+    const all = document.createElement('button');
+    all.type = 'button';
+    all.className = 'btn sm' + (sel.length ? '' : ' sel');
+    all.textContent = tr('Tümü');
+    all.setAttribute('aria-pressed', String(!sel.length));
+    all.addEventListener('click', () => setBrands([]));
+    box.append(all);
+    getOperators().filter((o) => o.id !== 'other').forEach((o) => {
+      const b = document.createElement('button');
+      const on = sel.includes(o.id);
+      b.type = 'button';
+      b.className = 'btn sm' + (on ? ' sel' : '');
+      b.textContent = o.name;
+      b.setAttribute('aria-pressed', String(on));
+      b.addEventListener('click', () => setBrands(on ? sel.filter((x) => x !== o.id) : [...sel, o.id]));
+      box.append(b);
+    });
+  };
+  const setBrands = (list) => {
+    PLANNER.brands = list;
+    save('brandPref', list);
+    patch('route', { brands: list }); // controller imzayı görür ve ağ çağrısı olmadan yeniden planlar
+  };
+  subscribe('route', paint);
+  paint();
+}
+
 export function initStationsView() {
+  initBrands();
   const chips = [...document.querySelectorAll('[data-sort]')];
   const paintChips = () => chips.forEach((c) => c.classList.toggle('sel', c.dataset.sort === getState('plan').mode));
 

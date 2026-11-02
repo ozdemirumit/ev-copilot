@@ -19,7 +19,7 @@ const INVITE = /^[A-Za-z0-9_-]{8,64}$/;
 /** Cihazlar arası eşitlenen yerel anahtarlar. Gizli olanlar (ABRP, API anahtarları, oturum, sunucu adresi) bilerek yok. */
 export const SYNC_KEYS = new Set([
   'places', 'recentDest', 'vehicle', 'consAdj', 'chargerMin', 'minStopAdd', 'tolerance', 'maxChargeTo', 'allowSlow', 'minArrival', 'cruise',
-  'planMode', 'voiceOn', 'lowSoc', 'speedAlert', 'headingUp', 'limitOn', 'operators', 'kCal', 'hist', 'customStations', 'stationOps', 'nearRadius', 'nearAc',
+  'planMode', 'voiceOn', 'lowSoc', 'speedAlert', 'headingUp', 'limitOn', 'operators', 'kCal', 'hist', 'customStations', 'stationOps', 'nearRadius', 'nearAc', 'brandPref',
 ]);
 const MAX_DOC = 450_000; // anahtar başına bayt
 const MAX_USER = 3_000_000; // kullanıcı başına toplam bayt

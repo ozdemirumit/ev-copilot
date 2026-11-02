@@ -242,4 +242,8 @@ export default {
   "Fotoğrafta kişi ve plaka görünmesin.": "Zorg dat er geen personen of kentekens op de foto staan.",
   "🗑 Sil": "🗑 Verwijderen",
   "Kaydedilemedi": "Opslaan mislukt",
+  "Tümü": "Alle",
+  "Şarj markası": "Laadmerk",
+  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçersen plan ve liste yalnızca seçtiğin markaları kullanır.": "Is er niets geselecteerd, dan worden alle merken gebruikt. Bij een keuze gebruiken plan en lijst alleen die merken.",
+  "Marka tercihi açık: markaları genişlet ya da kaldır.": "Merkvoorkeur actief: voeg merken toe of wis de keuze.",
 };
