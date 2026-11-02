@@ -173,5 +173,19 @@
  "Ses çıkmadı: {0} ({1} ses). Telefonda Metin okuma (TTS) motorunu ve ses paketini kontrol et.",
  "Ses çıkmadı: {0}",
  "Sesli uyarı denemesi.",
- "ses motoru yanıt vermedi"
+ "ses motoru yanıt vermedi",
+ "· %{0}'e ≈ {1} dk, {2} TL",
+ "Aday satırlarında süre/maliyet: varış pilinden %80'e (veya +10 puana) şarj.",
+ "Kaynak: {0} kayıt → {1} aday",
+ "· 100 km başına aday: {0}.",
+ "İstasyon",
+ "{0} — {1}",
+ "başlangıç",
+ "{0}. km'deki {1} istasyonu",
+ "sonraki aday istasyon {0}. km'de ({1} km)",
+ "varışa {0} km var",
+ "Uygun şarj zinciri bulunamadı: {0} sonrası: {1}; ama %{2} pille en fazla ~{3} km gidilebilir.",
+ "· yetmeyebilir",
+ "Aday",
+ "kafa +"
 ]

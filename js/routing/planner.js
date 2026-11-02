@@ -1,6 +1,7 @@
 import { VEHICLE, PLANNER as P } from '../config.js';
 import { chargeMinutes } from './chargeCurve.js';
 import { slotKind, isFresh } from './slots.js';
+import { t } from '../i18n/index.js';
 
 const BAT = VEHICLE.batteryNetKwh;
 
@@ -145,10 +146,10 @@ function explainBreak({ profile, cands, states, nodeKm, startKm, endKm, startSoc
   }
   const reach = Math.max(0, lo - fromKm);
   const nextKm = cands[last]?.km ?? endKm;
-  const where = last === 0 ? 'Başlangıçtan' : `${fromKm.toFixed(0)}. km'deki ${cands[last - 1].name} istasyonundan`;
-  const next = cands[last] ? `sonraki aday istasyon ${nextKm.toFixed(0)}. km'de (${(nextKm - fromKm).toFixed(0)} km)` : `varışa ${(endKm - fromKm).toFixed(0)} km var`;
-  return `Uygun şarj zinciri bulunamadı: ${where} sonra ${next}, ama %${Math.round(leave)} pille en fazla ~${reach.toFixed(0)} km gidilebilir. `
-    + `Bu aralıkta haritada istasyon eksik olabilir: İstasyon sekmesindeki "Kendi istasyonlarım"a bildiğin istasyonları ekle; ayrıca tüketimi, giriş pilini veya şarj hedefini gözden geçir (toplam tüketim ≈ %${need.toFixed(0)} pil, ${cands.length} aday istasyon).`;
+  const where = last === 0 ? t('başlangıç') : t("{0}. km'deki {1} istasyonu", fromKm.toFixed(0), cands[last - 1].name);
+  const next = cands[last] ? t("sonraki aday istasyon {0}. km'de ({1} km)", nextKm.toFixed(0), (nextKm - fromKm).toFixed(0)) : t('varışa {0} km var', (endKm - fromKm).toFixed(0));
+  return t('Uygun şarj zinciri bulunamadı: {0} sonrası: {1}; ama %{2} pille en fazla ~{3} km gidilebilir.', where, next, Math.round(leave), reach.toFixed(0)) + ' '
+    + t('Bu aralıkta haritada istasyon eksik olabilir: İstasyon sekmesindeki "Kendi istasyonlarım"a bildiğin istasyonları ekle; ayrıca tüketimi, giriş pilini veya şarj hedefini gözden geçir (toplam tüketim ≈ %{0} pil, {1} aday istasyon).', need.toFixed(0), cands.length);
 }
 
 /**

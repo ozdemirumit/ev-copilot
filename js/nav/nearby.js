@@ -1,6 +1,7 @@
 // "Yakınımdaki istasyonlar": konum etrafındaki herkese açık istasyonlar, fiyat/kW, tahmini varış pili ve maliyet.
 // Düzenli güncelleme + düşük pil uyarısı: pil eşiğin altına inince (veya yetmeyecek görünürse) en yakın uygun
 // istasyon önerilir ve sesli söylenir.
+import { t } from '../i18n/index.js';
 import { getState, patch, effective } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { VEHICLE, PLANNER } from '../config.js';
@@ -191,9 +192,9 @@ function render() {
       cell('span', 'tag ' + (s.reachable ? 'best' : ''), s.reachable ? `${fmtKm(s.distKm)} km` : 'Yetmeyebilir'),
       cell('span', '', `${s.opName} · ${s.slow ? 'AC/yavaş ' : ''}${s.kw} kW${s.uncertain ? '*' : ''} · ${s.price.toFixed(2)} TL/kWh`),
     );
-    const meta2 = cell('div', 'meta', `~${fmtKm(s.roadKm)} km yol`
-      + (s.arrive != null ? ` · varışta %${Math.max(0, s.arrive).toFixed(0)}` : '')
-      + ` · %${CHARGE_TO}'e ≈ ${Math.round(s.minutes)} dk, ${s.cost.toFixed(0)} TL`); // doluluk verisi yalnızca gelen istasyonda gösterilir (altta slotEl)
+    const meta2 = cell('div', 'meta', t('~{0} km yol', fmtKm(s.roadKm))
+      + (s.arrive != null ? ' ' + t('· varışta %{0}', Math.max(0, s.arrive).toFixed(0)) : '')
+      + ' ' + t("· %{0}'e ≈ {1} dk, {2} TL", CHARGE_TO, Math.round(s.minutes), s.cost.toFixed(0))); // parçalar ayrı çevrilir (tek dizge olarak desen eşleşmez) // doluluk verisi yalnızca gelen istasyonda gösterilir (altta slotEl)
     const slotNode = slotEl(s);
     if (slotNode) meta2.append(slotNode);
     const lp = livePrice(s);
@@ -256,7 +257,7 @@ function showAlert(title, stations = [], notes = []) {
     const info = document.createElement('span');
     info.textContent = s.name;
     info.append(cell('small', '', `${fmtKm(s.distKm)} km · ${s.kw} kW · ${s.price.toFixed(2)} TL/kWh`
-      + (s.arrive != null ? ` · varışta ~%${Math.max(0, s.arrive).toFixed(0)}` : '') + (s.reachable ? '' : ' · yetmeyebilir')
+      + (s.arrive != null ? ' ' + t('· varışta ~%{0}', Math.max(0, s.arrive).toFixed(0)) : '') + (s.reachable ? '' : ' ' + t('· yetmeyebilir'))
       + ''));
     const slotNode = slotEl(s);
     if (slotNode) info.lastElementChild.append(slotNode);

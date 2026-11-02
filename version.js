@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.73.3';
+self.APP_VERSION = '0.73.4';
 self.APP_CHANGELOG = [
+  {
+    v: '0.73.4', date: '2026-11-02',
+    notes: [
+      'Genel denetim: yabancı dilde bazı satırlar Türkçe kalıyordu (Yakınımdaki istasyonlar satırları, rotada durak ve rüzgâr satırları, İstasyon sekmesi açıklaması, şarj zinciri kurulamadı açıklaması, Aday etiketi); hepsi 11 dilde çevrildi.',
+      'Sunucu sağlamlaştırıldı: geçersiz adresle sunucuyu düşürme, disk yazma hatasında çökme, bekleyen girişlerle girişi kilitleme, aşırı büyük Overpass sorgusu ve önbellek şişmesi, günlüğe davet kodu yazılması gibi açıklar kapatıldı.',
+    ],
+  },
   {
     v: '0.73.3', date: '2026-11-02',
     notes: [

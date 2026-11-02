@@ -1,4 +1,4 @@
-import { tr } from '../i18n/index.js';
+import { tr, t } from '../i18n/index.js';
 import { progressKm } from '../routing/progress.js';
 import { getState, patch, subscribe } from '../state.js';
 import { load, save } from '../utils/storage.js';
@@ -52,12 +52,11 @@ function renderList() {
   const aheadCount = p.stations.filter(ahead).length;
   const sm = p.stationInfo?.summary;
   const smText = sm
-    ? ` Kaynak: ${sm.raw} kayıt → ${sm.kept} aday` + (Object.keys(sm.drop).length ? ` (elenen: ${Object.entries(sm.drop).map(([k, v]) => `${k} ${v}`).join(', ')})` : '')
-      + (sm.textCalls ? ` · yedek metin araması ${sm.textCalls} çağrı, ${sm.textFound} bulundu` : '')
-      + ` · 100 km başına aday: ${sm.bins.map((n, i) => `${i * 100}–${i * 100 + 100}: ${n}`).join(' · ')}.`
+    ? ' ' + t('Kaynak: {0} kayıt → {1} aday', sm.raw, sm.kept) + (Object.keys(sm.drop).length ? ` (${Object.entries(sm.drop).map(([k, v]) => `${tr(k)} ${v}`).join(', ')})` : '')
+      + ' ' + t('· 100 km başına aday: {0}.', sm.bins.map((n, i) => `${i * 100}–${i * 100 + 100}: ${n}`).join(' · '))
     : '';
-  hint.textContent = `${aheadCount} istasyon ileride, ${rows.length + planRows.length} tanesine ek şarj olmadan ulaşılabiliyor. `
-    + 'Aday satırlarında süre/maliyet: varış pilinden %80\'e (veya +10 puana) şarj.' + smText;
+  hint.textContent = t('{0} istasyon ileride, {1} tanesine ek şarj olmadan ulaşılabiliyor.', aheadCount, rows.length + planRows.length) + ' '
+    + t('Aday satırlarında süre/maliyet: varış pilinden %80\'e (veya +10 puana) şarj.') + smText;
 
   [...planRows, ...rows].forEach((r) => {
     const n = planned.get(r.station.id);

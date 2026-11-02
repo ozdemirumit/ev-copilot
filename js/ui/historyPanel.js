@@ -5,7 +5,7 @@ import { records, byBand, summary, clearHistory, relFactor } from '../physics/hi
 import { chargeLog, updateCharge } from '../physics/charging.js';
 import { getSession, proxyFetch } from '../net/proxy.js';
 import { toast } from './toast.js';
-import { tr } from '../i18n/index.js';
+import { tr, t } from '../i18n/index.js';
 
 const $ = (id) => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
@@ -135,7 +135,7 @@ function paint() {
   $('h-trip').textContent = fmt(s.trip);
   $('h-all').textContent = fmt(s.all) + (s.all ? ` (${s.all.n} ölçüm)` : '');
   const ki = getState('plan').kInfo;
-  $('h-k').textContent = ki ? `${ki.k.toFixed(2)} — ${ki.src}` : '—';
+  $('h-k').textContent = ki ? t('{0} — {1}', ki.k.toFixed(2), ki.src) : '—';
   const rel = $('h-rel');
   if (rel) {
     const refV = ki?.refV ?? null;
