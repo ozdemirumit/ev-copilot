@@ -205,4 +205,6 @@ export default {
   "(Mapbox/Overpass denendi)": "(s-a încercat Mapbox/Overpass)",
   "HERE aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor": "Limita lunară HERE s-a epuizat: se folosesc surse gratuite",
   "Sunucuda HERE anahtarı yok": "Nu există cheie HERE pe server",
+  "HERE anahtarı geçersiz": "Cheia HERE este invalidă",
+  "HERE yanıt vermedi": "HERE nu răspunde",
 };

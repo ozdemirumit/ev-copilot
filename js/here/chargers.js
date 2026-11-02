@@ -36,6 +36,11 @@ async function circle(lat, lon, r) {
   try { res = await proxyFetch(`/here/stations?lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}&r=${r}`, { signal: AbortSignal.timeout(20000) }); } catch { throw new HereError('Ara sunucuya ulaşılamadı', { fatal: true }); }
   if (res.status === 402) throw new HereError('HERE aylık hakkı doldu', { fatal: true });
   if (res.status === 501 || res.status === 401) throw new HereError(res.status === 501 ? 'Sunucuda HERE anahtarı yok' : 'Sunucu erişim kodu geçersiz', { fatal: true });
+  if (res.status === 502) { // sunucu HERE'den 401/403 aldıysa (anahtar iptal/süresi dolmuş) tek tek denemenin anlamı yok: diğer kaynağa geç
+    const j = await res.json().catch(() => null);
+    if (/HERE HTTP 40[13]/.test(j?.error || '')) throw new HereError('HERE anahtarı geçersiz', { fatal: true });
+    throw new HereError('HERE HTTP 502');
+  }
   if (!res.ok) throw new HereError(`HERE HTTP ${res.status}`);
   return res.json();
 }
@@ -63,6 +68,7 @@ async function run(circles) {
     }
   };
   await Promise.all(Array.from({ length: PARALLEL }, worker));
+  if (!ctx.fatal && ctx.failed && !ctx.out.size) ctx.fatal = new HereError('HERE yanıt vermedi', { fatal: true }); // hiç sonuç yok: Mapbox/Overpass'e düşülsün
   return ctx;
 }
 

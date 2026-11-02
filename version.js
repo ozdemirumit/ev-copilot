@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.74.0';
+self.APP_VERSION = '0.74.1';
 self.APP_CHANGELOG = [
+  {
+    v: '0.74.1', date: '2026-11-02',
+    notes: [
+      'DÜZELTME: HERE anahtarı iptal edilir, geçersiz olur ya da HERE hiç yanıt vermezse istasyon araması artık Mapbox veya Overpass kaynağına düşer. Önceden bu durumda plan istasyonsuz kalabiliyordu.',
+    ],
+  },
   {
     v: '0.74.0', date: '2026-11-02',
     notes: [

@@ -205,4 +205,6 @@ export default {
   "(Mapbox/Overpass denendi)": "(Mapbox/Overpass tried)",
   "HERE aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor": "HERE monthly allowance used up: using free sources",
   "Sunucuda HERE anahtarı yok": "No HERE key on the server",
+  "HERE anahtarı geçersiz": "HERE key is invalid",
+  "HERE yanıt vermedi": "HERE is not responding",
 };

@@ -205,4 +205,6 @@ export default {
   "(Mapbox/Overpass denendi)": "(Mapbox/Overpass versucht)",
   "HERE aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor": "HERE-Monatskontingent aufgebraucht: kostenlose Quellen werden genutzt",
   "Sunucuda HERE anahtarı yok": "Kein HERE-Schlüssel auf dem Server",
+  "HERE anahtarı geçersiz": "HERE-Schlüssel ungültig",
+  "HERE yanıt vermedi": "HERE antwortet nicht",
 };

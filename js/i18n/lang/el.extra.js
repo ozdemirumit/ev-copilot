@@ -205,4 +205,6 @@ export default {
   "(Mapbox/Overpass denendi)": "(δοκιμάστηκε Mapbox/Overpass)",
   "HERE aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor": "Το μηνιαίο όριο HERE εξαντλήθηκε: χρησιμοποιούνται δωρεάν πηγές",
   "Sunucuda HERE anahtarı yok": "Δεν υπάρχει κλειδί HERE στον διακομιστή",
+  "HERE anahtarı geçersiz": "Το κλειδί HERE δεν είναι έγκυρο",
+  "HERE yanıt vermedi": "Το HERE δεν ανταποκρίνεται",
 };

@@ -204,5 +204,7 @@
  "HERE: {0} arama üst sınır nedeniyle yapılmadı",
  "(Mapbox/Overpass denendi)",
  "HERE aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor",
- "Sunucuda HERE anahtarı yok"
+ "Sunucuda HERE anahtarı yok",
+ "HERE anahtarı geçersiz",
+ "HERE yanıt vermedi"
 ]
