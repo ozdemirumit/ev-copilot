@@ -18,7 +18,6 @@ import { createMailer } from './mailer.mjs';
 import { createAppFiles } from './appfiles.mjs';
 import { lookupAll } from './occupancy.mjs';
 import { hereBrowse, compact } from './here.mjs';
-import { createEpdk } from './epdk.mjs';
 import { createPriceBook } from './prices.mjs';
 import { createCommunity } from './community.mjs';
 
@@ -157,7 +156,6 @@ function adminSummary() {
     invites: inv,
     mapbox: { month: mbUsage().month, used: mbUsage().n, cap: MB_CAP },
     here: { month: hereUsage().month, used: hereUsage().n, cap: HERE_CAP },
-    epdk: epdk.status(),
     devices: devices.stats(),
     configured: { mapbox: !!MAPBOX, here: !!HERE, ocm: !!OCM, googlePlaces: !!GOOGLE_PLACES, googleLogin: !!accounts.googleOn, smtp: !!mailer, premiumRequired: String(env.PREMIUM_REQUIRED ?? '1') !== '0' },
     usageToday: byKind,
@@ -395,7 +393,6 @@ const clientIp = (req) => {
 
 process.on('unhandledRejection', (err) => console.error('yakalanmamış söz reddi:', scrub(String(err?.message || err)))); // tek bir hatalı istek süreci düşürmesin
 const store = openStore(env.DATA_DIR || join(here, 'data'));
-const epdk = createEpdk({ dir: env.DATA_DIR || join(here, 'data'), env }); // EPDK istasyon kaydı: haftalık indirilir, diske kaydedilir
 const priceBook = createPriceBook(store);
 const community = createCommunity(store);
 const costs = createCosts(store, env);
@@ -477,6 +474,5 @@ const server = http.createServer(async (req, res) => {
 server.requestTimeout = 120000;
 server.headersTimeout = 15000;
 server.listen(PORT, HOST, () => {
-  epdk.start();
   console.log(`EV Co-Pilot ara sunucusu ${HOST}:${PORT} · Mapbox ${MAPBOX ? 'var' : 'yok'} · OpenChargeMap ${OCM ? 'var' : 'yok'} · HERE ${HERE ? 'var' : 'yok'} · Google girişi ${accounts.googleOn ? 'açık' : 'kapalı'} · doluluk: NDW${HERE ? ' + HERE' : ''}${GOOGLE_PLACES ? ' + Google' : ''} · ${CODES.length} yönetici kodu`);
 });
