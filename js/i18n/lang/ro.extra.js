@@ -192,4 +192,5 @@ export default {
   "Kod yanlış girildi: girişi yeniden başlat": "Cod greșit: reia autentificarea",
   "Giriş kodun (Google'dan sonra tarayıcıda bu kod istenecek; aklında tut):": "Codul tău de autentificare (browserul îl va cere după Google; ține-l minte):",
   "🌐 Tarayıcıda devam et": "🌐 Continuă în browser",
+  "Mapbox aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor": "Limita lunară Mapbox s-a epuizat: se folosesc surse gratuite",
 };

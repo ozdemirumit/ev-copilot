@@ -192,4 +192,5 @@ export default {
   "Kod yanlış girildi: girişi yeniden başlat": "Въведен е грешен код: започнете влизането отново",
   "Giriş kodun (Google'dan sonra tarayıcıda bu kod istenecek; aklında tut):": "Вашият код за вход (браузърът ще го поиска след Google; запомнете го):",
   "🌐 Tarayıcıda devam et": "🌐 Продължи в браузъра",
+  "Mapbox aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor": "Месечният лимит на Mapbox е изчерпан: използват се безплатни източници",
 };

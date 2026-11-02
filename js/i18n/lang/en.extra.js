@@ -192,4 +192,5 @@ export default {
   "Kod yanlış girildi: girişi yeniden başlat": "Wrong code entered: start the sign-in again",
   "Giriş kodun (Google'dan sonra tarayıcıda bu kod istenecek; aklında tut):": "Your sign-in code (the browser will ask for it after Google; remember it):",
   "🌐 Tarayıcıda devam et": "🌐 Continue in browser",
+  "Mapbox aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor": "Mapbox monthly allowance used up: using free sources",
 };

@@ -38,6 +38,7 @@ export async function mbfetch(path, params = {}, { timeoutMs = 25000 } = {}) {
   let msg = '';
   try { msg = (await res.json()).message || ''; } catch { /* gövde yok */ }
   if (viaProxy && res.status === 401) throw new MapboxError('Sunucu erişim kodu geçersiz', { fatal: true, status: 401 });
+  if (viaProxy && res.status === 402) throw new MapboxError('Mapbox aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor', { fatal: true, status: 402 });
   if (viaProxy && res.status === 501) throw new MapboxError('Sunucuda Mapbox anahtarı yok', { fatal: true, status: 501 });
   if (res.status === 401) throw new MapboxError('Mapbox anahtarı geçersiz veya süresi dolmuş', { fatal: true, status: 401 });
   if (res.status === 403) throw new MapboxError('Mapbox erişimi reddetti: anahtarın kapsamını (Directions, Search) veya URL kısıtını kontrol et', { fatal: true, status: 403 });

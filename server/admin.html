@@ -145,7 +145,7 @@ function drawSum(root) {
   root.append(table(['Ayar', 'Durum'], [
     ['Google ile giriş', on(s.configured.googleLogin)], ['Mapbox anahtarı', on(s.configured.mapbox)], ['OpenChargeMap anahtarı', on(s.configured.ocm)],
     ['Google Places anahtarı', on(s.configured.googlePlaces)], ['E-posta gönderimi (SMTP)', on(s.configured.smtp)], ['Premium zorunlu (kapalıysa herkes Premium)', on(s.configured.premiumRequired)],
-    ['Genel adres', s.server.publicUrl || '–'], ['Çalışma süresi', dur(s.server.uptimeSec)], ['Bellek', s.server.memMb + ' MB'], ['Node', s.server.node],
+    ['Mapbox aylık arama (sunucu sayacı / sınır)', s.mapbox ? `${s.mapbox.used} / ${s.mapbox.cap} (${s.mapbox.month})` : '–'], ['Genel adres', s.server.publicUrl || '–'], ['Çalışma süresi', dur(s.server.uptimeSec)], ['Bellek', s.server.memMb + ' MB'], ['Node', s.server.node],
   ]));
   root.append(el('p', 'mut', 'Anahtar değerleri burada gösterilmez; yalnızca tanımlı olup olmadığı görünür.'));
 }

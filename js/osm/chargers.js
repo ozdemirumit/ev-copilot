@@ -134,6 +134,33 @@ export async function overpass(query, pref = 0) {
 
 const fmt = (p) => `${p.lat.toFixed(5)},${p.lon.toFixed(5)}`;
 
+/**
+ * İstasyonsuz kesimler: rotaya ≤ NEAR_KM uzakta olan istasyonların rotadaki km'leri alınır; ardışık iki istasyon (başlangıç ve varış dahil)
+ * arası GAP_FILL_KM'den uzunsa o aralık bir "boşluk"tur. Dönüş: [{ from, to }] (km).
+ */
+const GAP_FILL_KM = 60;
+const NEAR_KM = 5;
+export function coverageGaps(pts, stations) {
+  const total = pts.at(-1)?.km ?? 0;
+  const kms = [0, total];
+  const cosLat = Math.cos((pts[0].lat * Math.PI) / 180);
+  for (const st of stations) {
+    let best = Infinity;
+    let at = 0;
+    for (const p of pts) {
+      const dy = (p.lat - st.lat) * 111.2;
+      const dx = (p.lon - st.lon) * 111.2 * cosLat;
+      const d = dx * dx + dy * dy;
+      if (d < best) { best = d; at = p.km; }
+    }
+    if (best <= NEAR_KM * NEAR_KM) kms.push(at);
+  }
+  kms.sort((a, b) => a - b);
+  const holes = [];
+  for (let i = 1; i < kms.length; i++) if (kms[i] - kms[i - 1] > GAP_FILL_KM) holes.push({ from: kms[i - 1], to: kms[i] });
+  return holes;
+}
+
 /** Rota noktalarını SEG_KM'lik parçalara böl; her parçada çizgi noktaları STEP_KM aralıkla seyreltilir. */
 function segments(pts) {
   const total = pts.at(-1).km;
@@ -201,7 +228,10 @@ export async function fetchChargers(pts, profile) {
   // Mapbox anahtarı varsa istasyonlar Mapbox'tan (hızlı); anahtar reddedilirse Overpass'e düşülür
   let usedMapbox = false;
   if (mapboxKey()) {
-    const r = await stationsAlong(pts);
+    let r;
+    try { r = await stationsAlong(pts); } catch (err) { // anahtar/izin/aylık hak sorunu (kategori sorgusu dahil): plan durmasın, Overpass'e düşülür
+      r = { out: new Map(), raw: 0, drop: {}, calls: 0, failed: 0, skipped: 0, fatal: err };
+    }
     ctx.calls += r.calls;
     take({ out: [...r.out.values()], raw: r.raw, drop: r.drop });
     if (r.failed) errors.push(`Mapbox: ${r.failed} arama başarısız${r.lastError ? ' — ' + r.lastError : ''}`);
@@ -210,9 +240,8 @@ export async function fetchChargers(pts, profile) {
     usedMapbox = !r.fatal;
   }
 
-  if (!usedMapbox) {
-    // Parçalar paralel (en çok SEG_PARALLEL) ve farklı aynalardan başlayarak sorgulanır; gerçek sorguların başlangıçları arasında kısa aralık (adil kullanım)
-    const segs = segments(pts);
+  // Overpass parçaları paralel (en çok SEG_PARALLEL) ve farklı aynalardan başlayarak sorgulanır; gerçek sorguların başlangıçları arasında kısa aralık (adil kullanım)
+  const overpassSegs = async (segs) => {
     let nextSeg = 0;
     let dead = false;
     let lastStart = 0;
@@ -238,8 +267,18 @@ export async function fetchChargers(pts, profile) {
       }
     };
     await Promise.all(Array.from({ length: Math.min(SEG_PARALLEL, segs.length) }, segWorker));
-    if (failed) errors.push(`Overpass: ${failed} parça alınamadı${lastErr ? ' — ' + lastErr : ''}`);
+  };
+
+  if (!usedMapbox) await overpassSegs(segments(pts));
+  else {
+    // Mapbox bazı ülkelerde (ör. Yunanistan) istasyon vermez: rotada istasyonsuz uzun kesim kalırsa yalnızca o kesimler Overpass'ten tamamlanır
+    const holes = coverageGaps(pts, [...found.values()]);
+    if (holes.length) {
+      ctx.gapFill = holes.length;
+      await overpassSegs(segments(pts).filter((seg) => holes.some((h) => seg.at(-1).km > h.from && seg[0].km < h.to)));
+    }
   }
+  if (failed) errors.push(`Overpass: ${failed} parça alınamadı${lastErr ? ' — ' + lastErr : ''}`);
 
   const key = ocmKey();
   if (key) {

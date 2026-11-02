@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.73.7';
+self.APP_VERSION = '0.73.8';
 self.APP_CHANGELOG = [
+  {
+    v: '0.73.8', date: '2026-11-02',
+    notes: [
+      'DÜZELTME: Rota sayfasında şarj durakları görünmüyordu ve plan kartı yenilenmiyordu (v0.73.4 çeviri düzeltmesi bir değişkeni gölgelemişti); düzeltildi.',
+      'Mapbox bir ülkede istasyon vermezse (ör. Yunanistan) ya da hakkı dolarsa plan artık durmaz: rotada istasyonsuz 60 km üstü kesimler Overpass ten tamamlanır, Mapbox hatası tüm planı bozmaz. Sunucu Mapbox arama isteklerini aylık sayar (varsayılan 4800 sınır) ve sınırda 402 döner; uygulama Overpass ve OpenChargeMap e geçer. Sayaç yönetim panelinde görünür.',
+    ],
+  },
   {
     v: '0.73.7', date: '2026-11-02',
     notes: [

@@ -192,4 +192,5 @@ export default {
   "Kod yanlış girildi: girişi yeniden başlat": "Code erroné : relancez la connexion",
   "Giriş kodun (Google'dan sonra tarayıcıda bu kod istenecek; aklında tut):": "Votre code de connexion (le navigateur le demandera après Google ; retenez-le) :",
   "🌐 Tarayıcıda devam et": "🌐 Continuer dans le navigateur",
+  "Mapbox aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor": "Quota mensuel Mapbox épuisé : sources gratuites utilisées",
 };

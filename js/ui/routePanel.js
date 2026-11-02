@@ -1,4 +1,4 @@
-import { t } from '../i18n/index.js';
+import { t as tpl } from '../i18n/index.js'; // 't' bu dosyada başka yerlerde yerel değişken (p.totals) olarak kullanılır
 import { progressKm } from '../routing/progress.js';
 import { getState, patch, subscribe } from '../state.js';
 import { save } from '../utils/storage.js';
@@ -93,8 +93,8 @@ export function initRoutePanel() {
         const right = Object.assign(document.createElement('div'), { className: 'r', textContent: `${Math.round(s.minutes)} dk · ${s.cost.toFixed(0)} TL` });
         const meta = Object.assign(document.createElement('div'), {
           className: 'm',
-          textContent: t('{0} km kaldı ({1} {2} km) · {3} {4}{5} kW · %{6} → %{7}', Math.max(0, s.km - here).toFixed(0), fi > 0 || p.lastStopKm != null ? 'önceki duraktan' : 'yolculuk başından', (s.km - prevKm).toFixed(0), s.station.opName, s.station.slow ? 'AC/yavaş ' : '', s.station.kw, s.arriveSoc.toFixed(0), s.leaveSoc)
-            + (s.station.offKm > 0.3 ? ' ' + t('· sapma {0} km', s.station.offKm.toFixed(1)) : ''), // parçalar t() ile çevrilir (komşu {1} {2} yer tutucuları tek dizge deseninde karışır)
+          textContent: tpl('{0} km kaldı ({1} {2} km) · {3} {4}{5} kW · %{6} → %{7}', Math.max(0, s.km - here).toFixed(0), fi > 0 || p.lastStopKm != null ? 'önceki duraktan' : 'yolculuk başından', (s.km - prevKm).toFixed(0), s.station.opName, s.station.slow ? 'AC/yavaş ' : '', s.station.kw, s.arriveSoc.toFixed(0), s.leaveSoc)
+            + (s.station.offKm > 0.3 ? ' ' + tpl('· sapma {0} km', s.station.offKm.toFixed(1)) : ''), // parçalar t() ile çevrilir (komşu {1} {2} yer tutucuları tek dizge deseninde karışır)
         });
         const show = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost sm show', textContent: '📍 Haritada' });
         show.addEventListener('click', () => { showMap(); mapApi.showAt(s.station.lat, s.station.lon, 14); });
@@ -141,7 +141,7 @@ export function initRoutePanel() {
       const row = document.createElement('div');
       row.className = 'stop wx';
       const rain = r.rain >= 0.1 ? `🌧️ ${r.rain.toFixed(1)} mm/sa` : '☀️ yağış yok';
-      const wind = t('💨 {0} km/h ({1}{2})', r.windSpeed.toFixed(0), r.head >= 0 ? 'kafa +' : 'arka −', Math.abs(r.head).toFixed(0));
+      const wind = tpl('💨 {0} km/h ({1}{2})', r.windSpeed.toFixed(0), r.head >= 0 ? 'kafa +' : 'arka −', Math.abs(r.head).toFixed(0));
       row.append(
         Object.assign(document.createElement('div'), { className: 'num', textContent: r.km.toFixed(0) }),
         Object.assign(document.createElement('div'), { className: 't', textContent: `${r.temp.toFixed(0)} °C · ${rain}` }),

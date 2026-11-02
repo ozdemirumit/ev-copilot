@@ -192,4 +192,5 @@ export default {
   "Kod yanlış girildi: girişi yeniden başlat": "Verkeerde code ingevoerd: start het inloggen opnieuw",
   "Giriş kodun (Google'dan sonra tarayıcıda bu kod istenecek; aklında tut):": "Je inlogcode (de browser vraagt erom na Google; onthoud hem):",
   "🌐 Tarayıcıda devam et": "🌐 Doorgaan in de browser",
+  "Mapbox aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor": "Maandelijks Mapbox-tegoed op: gratis bronnen worden gebruikt",
 };

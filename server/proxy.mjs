@@ -152,6 +152,7 @@ function adminSummary() {
       active7d: users.filter((u) => u.lastLogin > now - 7 * 86400e3).length, new7d: users.filter((u) => u.createdAt > now - 7 * 86400e3).length,
     },
     invites: inv,
+    mapbox: { month: mbUsage().month, used: mbUsage().n, cap: MB_CAP },
     devices: devices.stats(),
     configured: { mapbox: !!MAPBOX, ocm: !!OCM, googlePlaces: !!GOOGLE_PLACES, googleLogin: !!accounts.googleOn, smtp: !!mailer, premiumRequired: String(env.PREMIUM_REQUIRED ?? '1') !== '0' },
     usageToday: byKind,
@@ -195,6 +196,19 @@ const MB_PATHS = [
   [/^\/search\/searchbox\/v1\/category\/[A-Za-z0-9_%-]{1,60}$/, 3600e3],
   [/^\/search\/searchbox\/v1\/list\/category$/, 24 * 3600e3],
 ];
+// Mapbox aylık arama sınırı (ücretsiz katman ≈ 5000 istek): sunucu yalnızca önbellekte olmayan, Mapbox'a giden arama (/search/) isteklerini sayar ve sınırda 402 döner;
+// uygulama o durumda istasyonları Overpass/OpenChargeMap'ten alır. Sayaç db.json'da kalıcıdır. MAPBOX_MONTH_USED_SEED="2026-11:4899" ayın başlangıç sayısını verir.
+const MB_CAP = Number(env.MAPBOX_MONTHLY_CAP || 4800);
+function mbUsage() {
+  const ym = new Date().toISOString().slice(0, 7);
+  const c = (store.data.counters ||= {});
+  if (c.mapbox?.month !== ym) {
+    const [sm, sn] = String(env.MAPBOX_MONTH_USED_SEED || '').split(':');
+    c.mapbox = { month: ym, n: sm === ym ? Number(sn) || 0 : 0 };
+    store.save();
+  }
+  return c.mapbox;
+}
 async function mapbox(req, res, url, id) {
   if (!MAPBOX) return json(res, 501, { error: 'Sunucuda Mapbox anahtarı yok' });
   const path = url.pathname.slice('/mapbox'.length);
@@ -208,9 +222,12 @@ async function mapbox(req, res, url, id) {
   const hit = rule[1] ? cget(key) : null;
   if (hit) return reply(res, hit, { 'X-Cache': 'hit' });
   if (overQuota(id, 'mapbox')) return json(res, 429, { error: 'günlük Mapbox hakkı doldu' }, { 'Retry-After': '3600' });
+  const isSearch = path.startsWith('/search/');
+  if (isSearch && mbUsage().n >= MB_CAP) return json(res, 402, { error: 'mapbox_cap' }); // aylık hak doldu: ücretli kullanıma geçmesin
   const u = await once(key, () => {
     const real = new URLSearchParams(q);
     real.set('access_token', MAPBOX);
+    if (isSearch) { mbUsage().n++; store.save(); }
     return upstream(`${MAPBOX_BASE}${path}?${real}`);
   });
   if (rule[1] && u.status === 200) cset(key, u, rule[1]);
