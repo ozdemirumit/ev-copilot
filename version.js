@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.73.9';
+self.APP_VERSION = '0.73.10';
 self.APP_CHANGELOG = [
+  {
+    v: '0.73.10', date: '2026-11-02',
+    notes: [
+      'ABRP (canlı telemetri köprüsü) de yalnızca Premium hesaplarda: Premium olmayan kullanıcıda menüde görünmez ve ABRP ye veri gönderimi durur (ayarlar silinmez, Premium dönünce kaldığı yerden sürer).',
+    ],
+  },
   {
     v: '0.73.9', date: '2026-11-02',
     notes: [

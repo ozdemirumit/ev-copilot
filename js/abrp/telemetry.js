@@ -100,6 +100,7 @@ const STALE_SOC_MS = 5 * 60 * 1000;
 
 async function send() {
   if (!getState('abrp').enabled) return;
+  if (!document.body.classList.contains('is-premium')) return setStatus('idle', 'Premium gerekli'); // ABRP köprüsü Premium'a özel (ayarlar silinmez, Premium dönünce sürer)
   const { lastOkAt } = getState('ocr');
   if (effective().source === 'live' && lastOkAt && Date.now() - lastOkAt > STALE_SOC_MS) {
     return setStatus('wait', 'Pil okuması eski — OCR / kamera kontrol et');

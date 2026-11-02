@@ -193,4 +193,5 @@ export default {
   "Giriş kodun (Google'dan sonra tarayıcıda bu kod istenecek; aklında tut):": "Ο κωδικός σύνδεσής σας (ο περιηγητής θα τον ζητήσει μετά το Google· θυμηθείτε τον):",
   "🌐 Tarayıcıda devam et": "🌐 Συνέχεια στον περιηγητή",
   "Mapbox aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor": "Το μηνιαίο όριο Mapbox εξαντλήθηκε: χρησιμοποιούνται δωρεάν πηγές",
+  "Premium gerekli": "Απαιτείται Premium",
 };

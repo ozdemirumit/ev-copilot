@@ -193,4 +193,5 @@ export default {
   "Giriş kodun (Google'dan sonra tarayıcıda bu kod istenecek; aklında tut):": "Il tuo codice di accesso (il browser lo chiederà dopo Google; ricordalo):",
   "🌐 Tarayıcıda devam et": "🌐 Continua nel browser",
   "Mapbox aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor": "Quota mensile Mapbox esaurita: uso fonti gratuite",
+  "Premium gerekli": "Serve Premium",
 };

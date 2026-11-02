@@ -193,4 +193,5 @@ export default {
   "Giriş kodun (Google'dan sonra tarayıcıda bu kod istenecek; aklında tut):": "Вашият код за вход (браузърът ще го поиска след Google; запомнете го):",
   "🌐 Tarayıcıda devam et": "🌐 Продължи в браузъра",
   "Mapbox aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor": "Месечният лимит на Mapbox е изчерпан: използват се безплатни източници",
+  "Premium gerekli": "Изисква се Premium",
 };
