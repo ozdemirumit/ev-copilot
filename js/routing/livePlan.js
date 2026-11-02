@@ -6,6 +6,7 @@ import { replanFrom } from './controller.js';
 import { fetchAvailability } from '../providers/index.js';
 import { slotKind } from './slots.js';
 import { speak } from '../advisor/voice.js';
+import { t } from '../i18n/index.js';
 import { proxyHas } from '../net/proxy.js';
 
 const BAT = VEHICLE.batteryNetKwh;
@@ -80,9 +81,13 @@ export async function refreshAvailability({ force = false } = {}) {
     }
     patch('plan', { availAt: Date.now() }); // listeleri yeniden çizdir
     if (worse) {
-      speak(`${worse.name} istasyonunda ${slotKind(worse) === 'out' ? 'şarj üniteleri arızalı' : 'şu an boş yuva yok'}. Plan güncelleniyor.`, { key: 'slot' + worse.id, cooldownMs: 10 * 60e3 });
       const e = effective();
+      const ids = () => getState('plan').stops.map((s) => s.station.id).join();
+      const before = ids();
       if (e.soc != null) replanFrom({ km, soc: e.soc, maxFirstStopKm: Infinity });
+      const changed = ids() !== before; // plan gerçekten değişti mi (dolu durak yerine başka istasyon seçildi mi)
+      const why = slotKind(worse) === 'out' ? 'şarj üniteleri arızalı' : 'şu an boş yuva yok';
+      speak(t(changed ? '{0} istasyonunda {1}. Plan güncellendi.' : '{0} istasyonunda {1}. Başka uygun istasyon yok, plan değişmedi.', worse.name, why), { key: 'slot' + worse.id, cooldownMs: 10 * 60e3 });
     }
   } finally {
     availBusy = false;

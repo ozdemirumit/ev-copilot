@@ -198,4 +198,6 @@ export default {
   "Favori için haritaya dokun": "Tap the map for the favorite",
   "Kayıtlı değil: Favoriler sekmesinden ekle": "Not saved: add it in the Favorites tab",
   "≈ {0} MB/saat; her {1} sn'de bir gönderilir.": "≈ {0} MB/hour; sent every {1} s.",
+  "{0} istasyonunda {1}. Plan güncellendi.": "At {0}: {1}. Plan updated.",
+  "{0} istasyonunda {1}. Başka uygun istasyon yok, plan değişmedi.": "At {0}: {1}. No other suitable station, plan unchanged.",
 };

@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.73.13';
+self.APP_VERSION = '0.73.14';
 self.APP_CHANGELOG = [
+  {
+    v: '0.73.14', date: '2026-11-02',
+    notes: [
+      'DÜZELTME: Planlı şarj istasyonu dolu çıkınca Plan güncelleniyor diyordu ama plan değişmiyordu (planlayıcı dolu istasyona yalnızca 20 dk bekleme eklediği için aynı istasyonu seçmeye devam ediyordu). Artık taze bilgiye göre dolu olan yakın istasyonlar önce hiç aday sayılmaz, plan başka istasyonla yeniden kurulur; başka uygun zincir yoksa dolu olan bekleme süresiyle yine kullanılır. Sesli uyarı da gerçek sonucu söyler: Plan güncellendi ya da Başka uygun istasyon yok, plan değişmedi.',
+    ],
+  },
   {
     v: '0.73.13', date: '2026-11-02',
     notes: [

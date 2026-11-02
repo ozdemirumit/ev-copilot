@@ -198,4 +198,6 @@ export default {
   "Favori için haritaya dokun": "Πατήστε στον χάρτη για το αγαπημένο",
   "Kayıtlı değil: Favoriler sekmesinden ekle": "Δεν έχει αποθηκευτεί: προσθέστε το στην καρτέλα Αγαπημένα",
   "≈ {0} MB/saat; her {1} sn'de bir gönderilir.": "≈ {0} MB/ώρα· αποστολή κάθε {1} δ.",
+  "{0} istasyonunda {1}. Plan güncellendi.": "Στον {0}: {1}. Το πλάνο ενημερώθηκε.",
+  "{0} istasyonunda {1}. Başka uygun istasyon yok, plan değişmedi.": "Στον {0}: {1}. Δεν υπάρχει άλλος κατάλληλος σταθμός, το πλάνο δεν άλλαξε.",
 };

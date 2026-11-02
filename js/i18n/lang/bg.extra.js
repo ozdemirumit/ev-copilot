@@ -198,4 +198,6 @@ export default {
   "Favori için haritaya dokun": "Докоснете картата за любимото място",
   "Kayıtlı değil: Favoriler sekmesinden ekle": "Не е запазено: добавете го в раздел Любими",
   "≈ {0} MB/saat; her {1} sn'de bir gönderilir.": "≈ {0} MB/час; изпраща се на всеки {1} с.",
+  "{0} istasyonunda {1}. Plan güncellendi.": "На {0}: {1}. Планът е обновен.",
+  "{0} istasyonunda {1}. Başka uygun istasyon yok, plan değişmedi.": "На {0}: {1}. Няма друга подходяща станция, планът не е променен.",
 };

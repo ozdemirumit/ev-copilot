@@ -198,4 +198,6 @@ export default {
   "Favori için haritaya dokun": "Atinge harta pentru favorit",
   "Kayıtlı değil: Favoriler sekmesinden ekle": "Nesalvat: adaugă-l în fila Favorite",
   "≈ {0} MB/saat; her {1} sn'de bir gönderilir.": "≈ {0} MB/oră; trimis la fiecare {1} s.",
+  "{0} istasyonunda {1}. Plan güncellendi.": "La {0}: {1}. Plan actualizat.",
+  "{0} istasyonunda {1}. Başka uygun istasyon yok, plan değişmedi.": "La {0}: {1}. Nicio altă stație potrivită, planul rămâne neschimbat.",
 };

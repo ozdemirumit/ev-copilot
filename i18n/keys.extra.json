@@ -197,5 +197,7 @@
  "🗺️ Haritadan seç",
  "Favori için haritaya dokun",
  "Kayıtlı değil: Favoriler sekmesinden ekle",
- "≈ {0} MB/saat; her {1} sn'de bir gönderilir."
+ "≈ {0} MB/saat; her {1} sn'de bir gönderilir.",
+ "{0} istasyonunda {1}. Plan güncellendi.",
+ "{0} istasyonunda {1}. Başka uygun istasyon yok, plan değişmedi."
 ]

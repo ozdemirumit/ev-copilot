@@ -41,18 +41,25 @@ const detourMin = (s) => ((s.offKm * 2) / P.detourKmh) * 60;
  *  - forceFirstId: ilk durak bu istasyon olmak zorundadır (kullanıcı "Git" ile seçti).
  */
 export function planRoute(args) {
-  const strict = solve(args, P.minStopAdd);
-  // Çok kısıtlı rotada (az/uzak istasyon) "en az ekleme" kuralı çözümü engelliyorsa kuralsız yeniden dene.
-  return strict.feasible || !P.minStopAdd ? strict : solve(args, 0);
+  const attempt = (a) => {
+    const strict = solve(a, P.minStopAdd);
+    // Çok kısıtlı rotada (az/uzak istasyon) "en az ekleme" kuralı çözümü engelliyorsa kuralsız yeniden dene.
+    return strict.feasible || !P.minStopAdd ? strict : solve(a, 0);
+  };
+  // Önce yakındaki, taze bilgiye göre DOLU istasyonlar hiç kullanılmadan planla (dolu durağa gitmek yerine başka istasyon seçilsin);
+  // başka uygun zincir yoksa dolu olanlar (bekleme süresiyle) yeniden aday olur.
+  const noFull = attempt({ ...args, skipFull: true });
+  return noFull.feasible ? noFull : attempt(args);
 }
 
 /** Eşik altına düşme cezası: puan başına ≈ 7 dk veya 20 TL (hızlı modda 3 dk). */
 const dipPenalty = (mode, pts) => Math.max(0, pts) * (mode === 'fast' ? 3 : 20);
 
-function solve({ profile, stations, startKm = 0, startSoc, minArrival, mode = 'opt', k = 1, maxFirstStopKm = Infinity, forceFirstId = null }, minAdd) {
+function solve({ profile, stations, startKm = 0, startSoc, minArrival, mode = 'opt', k = 1, maxFirstStopKm = Infinity, forceFirstId = null, skipFull = false }, minAdd) {
   const tol = P.tolerance;
   const endKm = profile.totalKm;
-  const cands = stations.filter((s) => s.km > startKm + 0.5 && s.km < endKm - 0.5 && usable(s)).sort((a, b) => a.km - b.km);
+  const fullNear = (s) => skipFull && s.id !== forceFirstId && isFresh(s) && slotKind(s) === 'full' && s.km - startKm <= WAIT_NEAR_KM; // yakın ve taze bilgiye göre dolu
+  const cands = stations.filter((s) => s.km > startKm + 0.5 && s.km < endKm - 0.5 && usable(s) && !fullNear(s)).sort((a, b) => a.km - b.km);
   const levels = [];
   for (let l = P.minChargeTo; l <= P.maxChargeTo; l += P.chargeStep) levels.push(l);
 
