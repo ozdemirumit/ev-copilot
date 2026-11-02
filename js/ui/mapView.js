@@ -9,7 +9,7 @@ import { showTab } from './tabs.js';
 /** Harita çizim API'si; initMap() çağrılınca dolar (routing/controller.js, nav/* kullanır). Harita henüz yüklenmediyse çizimler sıraya alınır. */
 export const mapApi = {
   drawRoute() {}, drawStations() {}, drawNearby() {}, setPoint() {}, follow() {}, navView() {},
-  setSatellite() {}, isSatellite: () => false, hasRoute: () => false, cancelPick() {}, pickBar() {}, // initMap doldurur (pickBar'ı ui/shell.js)
+  setSatellite() {}, isSatellite: () => false, hasRoute: () => false, cancelPick() {}, pickBar() {}, pickPlace() {}, // initMap doldurur (pickBar'ı ui/shell.js)
   snap: () => null, // navigator.js: konumu rotaya yapıştırır
   drawPlaces() {}, // ui/places.js kayıtlı yerleri çizer
   cam() {}, // nav/navigator.js: her karede araç + kamera (akıcı navigasyon)
@@ -112,7 +112,9 @@ export function initMap() {
     mapApi.pickBar(mode);
     if (mode) showTab('map'); // sayfa kapanır, harita görünür
   }
-  mapApi.cancelPick = () => { setPickMode(null); showTab('route'); };
+  let placeCb = null; // Favoriler: haritadan seçilen noktayı geri çağırır (ui/places.js)
+  mapApi.pickPlace = (cb) => { placeCb = cb; setPickMode('place'); };
+  mapApi.cancelPick = () => { const was = pickMode; placeCb = null; setPickMode(null); showTab(was === 'place' ? 'favs' : 'route'); };
 
   const inputFor = (kind) => (kind === 'start' ? startInput : endInput);
 
@@ -140,6 +142,14 @@ export function initMap() {
     if (!pickMode) return;
     const kind = pickMode;
     const pt = { lat: p.lat, lon: p.lon };
+    if (kind === 'place') { // Favoriler için nokta seçimi: rota kutularına dokunmaz
+      const cb = placeCb;
+      placeCb = null;
+      setPickMode(null);
+      showTab('favs');
+      cb?.(pt);
+      return;
+    }
     setPoint(kind, pt);
     reverseLabel(pt.lat, pt.lon).then((label) => { // okunur ad gelince kutuyu güncelle
       if (label && getState('route')[kind] === pt) { pt.label = label; inputFor(kind).value = label; }

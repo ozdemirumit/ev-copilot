@@ -194,4 +194,8 @@ export default {
   "🌐 Tarayıcıda devam et": "🌐 Continuă în browser",
   "Mapbox aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor": "Limita lunară Mapbox s-a epuizat: se folosesc surse gratuite",
   "Premium gerekli": "Necesită Premium",
+  "🗺️ Haritadan seç": "🗺️ Alege pe hartă",
+  "Favori için haritaya dokun": "Atinge harta pentru favorit",
+  "Kayıtlı değil: Favoriler sekmesinden ekle": "Nesalvat: adaugă-l în fila Favorite",
+  "≈ {0} MB/saat; her {1} sn'de bir gönderilir.": "≈ {0} MB/oră; trimis la fiecare {1} s.",
 };

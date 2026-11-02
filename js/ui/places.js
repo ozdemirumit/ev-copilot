@@ -6,6 +6,7 @@ import { mapApi } from './mapView.js';
 import { toast } from './toast.js';
 import { showTab } from './tabs.js';
 import { tr } from '../i18n/index.js';
+import { reverseLabel } from '../providers/index.js';
 
 const KEY = 'places';
 const SLOTS = [
@@ -47,7 +48,7 @@ export function initPlaces() {
       const p = all[slot.id];
       const b = el('button', 'chip' + (p?.lat == null ? ' empty' : ''), `${slot.icon} ${p?.lat == null ? tr(slot.name) : tr(nameOf(slot, p))}`);
       b.type = 'button';
-      b.title = p?.lat == null ? 'Kayıtlı değil: Yerleri düzenle\'den ekle' : `${lastField === 'start' ? 'Başlangıç' : 'Varış'} yap`;
+      b.title = p?.lat == null ? 'Kayıtlı değil: Favoriler sekmesinden ekle' : `${lastField === 'start' ? 'Başlangıç' : 'Varış'} yap`;
       b.addEventListener('click', () => {
         const cur = read()[slot.id];
         if (cur?.lat == null) return showTab('favs'); // kayıtlı değil: Favoriler sekmesinde kaydedilir
@@ -89,6 +90,14 @@ export function initPlaces() {
         update(slot.id, { lat: pt.lat, lon: pt.lon });
         toast(`${nameOf(slot, read()[slot.id])} kaydedildi`);
       };
+      mk('🗺️ Haritadan seç', () => mapApi.pickPlace(async (pt) => { // sayfa kapanır, haritaya dokunulan nokta bu yuvaya kaydedilir
+        update(slot.id, { lat: pt.lat, lon: pt.lon });
+        toast(`${nameOf(slot, read()[slot.id])} kaydedildi`);
+        if (!slot.fixed && !read()[slot.id]?.name) { // ad boşsa adres adı önerilir (sonradan değiştirilebilir)
+          const label = await reverseLabel(pt.lat, pt.lon).catch(() => null);
+          if (label && !read()[slot.id]?.name && read()[slot.id]?.lat === pt.lat) update(slot.id, { name: String(label).slice(0, 24) });
+        }
+      }), 'btn primary sm');
       mk('Varışı kaydet', fromRoute('end'));
       mk('Başlangıcı kaydet', fromRoute('start'));
       mk('📍 Konumum', () => {

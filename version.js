@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.73.10';
+self.APP_VERSION = '0.73.11';
 self.APP_CHANGELOG = [
+  {
+    v: '0.73.11', date: '2026-11-02',
+    notes: [
+      'Rota sayfasından Yerleri düzenle düğmesi kaldırıldı (Favoriler alt menüde). Favoriler sayfasında her yer için Haritadan seç düğmesi eklendi: haritaya dokunulan nokta Ev, İş ya da favori olarak kaydedilir (favori adı boşsa adres adı önerilir).',
+      'ABRP gönderim aralığı seçimi kaldırıldı, aralık sabit 60 saniye (eski kayıtlı seçim yok sayılır).',
+    ],
+  },
   {
     v: '0.73.10', date: '2026-11-02',
     notes: [

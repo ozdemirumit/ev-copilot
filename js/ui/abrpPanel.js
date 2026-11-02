@@ -37,21 +37,12 @@ export function initAbrpPanel() {
 
   fields.forEach((f) => els[f].addEventListener('change', persist));
 
-  // Gönderim aralığı: büyük aralık = daha az veri. Tahmini veri kullanımı seçimle birlikte gösterilir.
-  const sel = document.getElementById('abrp-interval');
-  ABRP.intervalOptionsS.forEach((s) => {
-    const o = document.createElement('option');
-    o.value = String(s);
-    o.textContent = `${s} sn${s === ABRP.intervalMs / 1000 ? ' (önerilen)' : ''}`;
-    sel.append(o);
-  });
-  sel.value = String(getIntervalMs() / 1000);
+  // Gönderim aralığı sabit (60 sn): tahmini veri kullanımı gösterilir.
   const paintRate = () => {
-    const s = Number(sel.value);
+    const s = getIntervalMs() / 1000;
     const mbPerHour = (ABRP.bytesPerPacket * 3600) / s / 1048576;
-    document.getElementById('abrp-rate').textContent = `≈ ${mbPerHour.toFixed(2)} MB/saat sürüşte; araç duruyorken en az ${ABRP.parkedIntervalMs / 1000} sn'de bir gönderilir.`;
+    document.getElementById('abrp-rate').textContent = `≈ ${mbPerHour.toFixed(2)} MB/saat; her ${s} sn'de bir gönderilir.`;
   };
-  sel.addEventListener('change', () => { save('abrpInterval', Number(sel.value)); paintRate(); });
   paintRate();
 
   els.enabled.addEventListener('change', () => {

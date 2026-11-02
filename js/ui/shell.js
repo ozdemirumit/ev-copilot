@@ -82,7 +82,7 @@ export function initShell() {
   const text = $('pick-text');
   mapApi.pickBar = (mode) => {
     bar.classList.toggle('hidden', !mode);
-    if (mode) text.textContent = mode === 'start' ? 'Başlangıç için haritaya dokun' : 'Varış için haritaya dokun';
+    if (mode) text.textContent = mode === 'start' ? 'Başlangıç için haritaya dokun' : mode === 'place' ? 'Favori için haritaya dokun' : 'Varış için haritaya dokun';
   };
   $('pick-cancel').addEventListener('click', () => mapApi.cancelPick());
 

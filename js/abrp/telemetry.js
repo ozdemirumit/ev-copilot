@@ -115,8 +115,8 @@ async function send() {
   await Promise.all(jobs);
 }
 
-/** Kullanıcının seçtiği aralık (sn → ms). */
-export const getIntervalMs = () => (load('abrpInterval', ABRP.intervalMs / 1000) || ABRP.intervalMs / 1000) * 1000;
+/** Gönderim aralığı (ms): sabit 60 sn (eskiden seçilebilirdi; kayıtlı eski seçim yok sayılır). */
+export const getIntervalMs = () => ABRP.intervalMs;
 
 /** Bir sonraki gönderime kadar bekleme: araç duruyorsa (hız < 1 km/h) en az parkedIntervalMs, veri tasarrufu için. */
 function nextDelay() {

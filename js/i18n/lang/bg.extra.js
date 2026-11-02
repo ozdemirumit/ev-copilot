@@ -194,4 +194,8 @@ export default {
   "🌐 Tarayıcıda devam et": "🌐 Продължи в браузъра",
   "Mapbox aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor": "Месечният лимит на Mapbox е изчерпан: използват се безплатни източници",
   "Premium gerekli": "Изисква се Premium",
+  "🗺️ Haritadan seç": "🗺️ Избор на картата",
+  "Favori için haritaya dokun": "Докоснете картата за любимото място",
+  "Kayıtlı değil: Favoriler sekmesinden ekle": "Не е запазено: добавете го в раздел Любими",
+  "≈ {0} MB/saat; her {1} sn'de bir gönderilir.": "≈ {0} MB/час; изпраща се на всеки {1} с.",
 };

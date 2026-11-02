@@ -194,4 +194,8 @@ export default {
   "🌐 Tarayıcıda devam et": "🌐 Continua nel browser",
   "Mapbox aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor": "Quota mensile Mapbox esaurita: uso fonti gratuite",
   "Premium gerekli": "Serve Premium",
+  "🗺️ Haritadan seç": "🗺️ Scegli sulla mappa",
+  "Favori için haritaya dokun": "Tocca la mappa per il preferito",
+  "Kayıtlı değil: Favoriler sekmesinden ekle": "Non salvato: aggiungilo nella scheda Preferiti",
+  "≈ {0} MB/saat; her {1} sn'de bir gönderilir.": "≈ {0} MB/ora; inviato ogni {1} s.",
 };

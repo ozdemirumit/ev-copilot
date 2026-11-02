@@ -51,9 +51,8 @@ export const PLANNER = {
 
 export const ABRP = {
   endpoint: 'https://api.iternio.com/1/tlm/send',
-  intervalMs: 10000, // varsayılan gönderim aralığı (ABRP tüketim kalibrasyonu için ~10 sn önerir); kullanıcı ayarlar
+  intervalMs: 60000, // sabit gönderim aralığı (veri tasarrufu; seçenek kaldırıldı)
   parkedIntervalMs: 30000, // araç duruyorken (hız < 1 km/h) en az bu aralıkla gönder
-  intervalOptionsS: [5, 10, 15, 30, 60],
   bytesPerPacket: 1130, // ölçülen: ≈ 780 B giden + 350 B gelen (veri tahmini için)
 };
 
