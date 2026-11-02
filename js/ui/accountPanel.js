@@ -4,12 +4,12 @@ import { syncNow, syncState } from '../account/sync.js';
 import { toast } from './toast.js';
 import { sharingOn, setSharing } from '../account/community.js';
 import { getPlan, refreshCaps } from '../net/proxy.js';
-import { locale, tr } from '../i18n/index.js';
+import { locale, tr, t } from '../i18n/index.js';
 
 const $ = (id) => document.getElementById(id);
 const ERRORS = {
   invite_required: 'Davet gerekli', invite_invalid: 'Davet geçersiz', invite_used: 'Davet kullanılmış', invite_expired: 'Davetin süresi dolmuş',
-  invite_revoked: 'Davet iptal edilmiş', disabled: 'Hesap kapalı', timeout: 'Giriş zaman aşımına uğradı',
+  invite_revoked: 'Davet iptal edilmiş', disabled: 'Hesap kapalı', code: 'Kod yanlış girildi: girişi yeniden başlat', timeout: 'Giriş zaman aşımına uğradı',
 };
 
 export function initAccountPanel() {
@@ -54,10 +54,10 @@ export function initAccountPanel() {
     if (waiting) return;
     const code = invite.value.trim();
     if (code && !setPendingInvite(code)) return toast('Davet kodu geçersiz');
-    const { url, done } = startGoogleSignIn(code); // tarayıcı sekmesi tıklamada açılır
+    const { url, done, code: pin } = startGoogleSignIn(code); // tarayıcı sekmesi tıklamada açılır
     waiting = true;
     $('acc-google').disabled = true;
-    out.textContent = tr('Tarayıcıda Google ile giriş yap, sonra buraya dön…');
+    out.textContent = tr('Tarayıcıda Google ile giriş yap, sonra buraya dön…') + ' ' + t('Tarayıcı kodu sorunca şunu gir: {0}', pin);
     link.href = url;
     link.classList.remove('hidden');
     done.then(() => { toast('Giriş yapıldı'); out.textContent = ''; })

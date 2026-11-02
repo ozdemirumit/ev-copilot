@@ -188,4 +188,6 @@ export default {
   "· yetmeyebilir": "· haalt het misschien niet",
   "Aday": "Kandidaat",
   "kafa +": "tegen +",
+  "Tarayıcı kodu sorunca şunu gir: {0}": "Als de browser om een code vraagt, voer in: {0}",
+  "Kod yanlış girildi: girişi yeniden başlat": "Verkeerde code ingevoerd: start het inloggen opnieuw",
 };

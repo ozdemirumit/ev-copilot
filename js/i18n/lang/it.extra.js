@@ -188,4 +188,6 @@ export default {
   "· yetmeyebilir": "· potrebbe non bastare",
   "Aday": "Candidata",
   "kafa +": "contrario +",
+  "Tarayıcı kodu sorunca şunu gir: {0}": "Quando il browser chiede un codice, inserisci: {0}",
+  "Kod yanlış girildi: girişi yeniden başlat": "Codice errato: riavvia l'accesso",
 };

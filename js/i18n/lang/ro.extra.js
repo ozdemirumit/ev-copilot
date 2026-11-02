@@ -188,4 +188,6 @@ export default {
   "· yetmeyebilir": "· poate nu ajunge",
   "Aday": "Candidată",
   "kafa +": "din față +",
+  "Tarayıcı kodu sorunca şunu gir: {0}": "Când browserul cere un cod, introdu: {0}",
+  "Kod yanlış girildi: girişi yeniden başlat": "Cod greșit: reia autentificarea",
 };

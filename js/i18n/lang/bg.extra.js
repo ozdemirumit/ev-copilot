@@ -188,4 +188,6 @@ export default {
   "· yetmeyebilir": "· може да не стигне",
   "Aday": "Кандидат",
   "kafa +": "насрещен +",
+  "Tarayıcı kodu sorunca şunu gir: {0}": "Когато браузърът поиска код, въведете: {0}",
+  "Kod yanlış girildi: girişi yeniden başlat": "Въведен е грешен код: започнете влизането отново",
 };

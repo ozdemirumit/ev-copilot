@@ -188,4 +188,6 @@ export default {
   "· yetmeyebilir": "· reicht evtl. nicht",
   "Aday": "Kandidat",
   "kafa +": "Gegenwind +",
+  "Tarayıcı kodu sorunca şunu gir: {0}": "Wenn der Browser nach einem Code fragt, gib ein: {0}",
+  "Kod yanlış girildi: girişi yeniden başlat": "Falscher Code eingegeben: Anmeldung neu starten",
 };

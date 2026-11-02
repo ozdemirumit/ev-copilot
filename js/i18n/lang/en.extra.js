@@ -188,4 +188,6 @@ export default {
   "· yetmeyebilir": "· may not reach",
   "Aday": "Candidate",
   "kafa +": "headwind +",
+  "Tarayıcı kodu sorunca şunu gir: {0}": "When the browser asks for a code, enter: {0}",
+  "Kod yanlış girildi: girişi yeniden başlat": "Wrong code entered: start the sign-in again",
 };

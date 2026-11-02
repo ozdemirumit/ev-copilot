@@ -188,4 +188,6 @@ export default {
   "· yetmeyebilir": "· może nie wystarczyć",
   "Aday": "Kandydat",
   "kafa +": "czołowy +",
+  "Tarayıcı kodu sorunca şunu gir: {0}": "Gdy przeglądarka poprosi o kod, wpisz: {0}",
+  "Kod yanlış girildi: girişi yeniden başlat": "Wpisano zły kod: rozpocznij logowanie od nowa",
 };

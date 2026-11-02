@@ -188,4 +188,6 @@ export default {
   "· yetmeyebilir": "· μπορεί να μην φτάνει",
   "Aday": "Υποψήφιος",
   "kafa +": "αντίθετος +",
+  "Tarayıcı kodu sorunca şunu gir: {0}": "Όταν ο περιηγητής ζητήσει κωδικό, πληκτρολογήστε: {0}",
+  "Kod yanlış girildi: girişi yeniden başlat": "Λάθος κωδικός: ξεκινήστε ξανά τη σύνδεση",
 };

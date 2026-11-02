@@ -187,5 +187,7 @@
  "Uygun şarj zinciri bulunamadı: {0} sonrası: {1}; ama %{2} pille en fazla ~{3} km gidilebilir.",
  "· yetmeyebilir",
  "Aday",
- "kafa +"
+ "kafa +",
+ "Tarayıcı kodu sorunca şunu gir: {0}",
+ "Kod yanlış girildi: girişi yeniden başlat"
 ]

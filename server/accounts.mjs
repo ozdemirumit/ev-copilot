@@ -6,6 +6,14 @@ import { createHash, randomBytes } from 'node:crypto';
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 const rnd = (n = 32) => randomBytes(n).toString('base64url');
 const NONCE = /^[A-Za-z0-9_-]{22,64}$/;
+/** Giriş onay kodu: nonce'tan türetilen 4 hane (uygulama aynı işlevle hesaplar ve ekranda gösterir; tarayıcıda girilmeden giriş tamamlanmaz). Gizli değildir:
+ *  amaç, bir başkasının başlattığı girişe kurbanın habersizce onay vermesini (nonce'u saldırganın seçtiği oturum kaçırma) engellemektir. */
+export function loginCode(nonce) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < nonce.length; i++) { h ^= nonce.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return String(h % 10000).padStart(4, '0');
+}
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const INVITE = /^[A-Za-z0-9_-]{8,64}$/;
 
 /** Cihazlar arası eşitlenen yerel anahtarlar. Gizli olanlar (ABRP, API anahtarları, oturum, sunucu adresi) bilerek yok. */
@@ -116,8 +124,9 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
   // ---------- giriş akışı (tarayıcıda Google, uygulama nonce ile yoklar) ----------
   const pend = new Map(); // nonce → { state, invite, exp, result }
   const byState = new Map(); // state → nonce
+  const byConfirm = new Map(); // onay kimliği → nonce
   setInterval(() => {
-    for (const [n, p] of pend) if (p.exp < Date.now()) { pend.delete(n); byState.delete(p.state); }
+    for (const [n, p] of pend) if (p.exp < Date.now()) { pend.delete(n); byState.delete(p.state); if (p.cid) byConfirm.delete(p.cid); }
   }, 60000).unref();
 
   const page = (res, status, title, msg) => send(res, status, `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EV Co-Pilot</title>`
@@ -132,6 +141,7 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
     invite_email: ['Davet başka bir hesap için', 'Bu davet belirli bir e-posta adresine yazılmış. Davetin gönderildiği Google hesabıyla giriş yap. (This invitation is for a different Google account.)'],
     invite_revoked: ['Davet iptal edilmiş', 'Yeni bir davet iste. (Invitation revoked.)'],
     disabled: ['Hesap kapalı', 'Bu hesap yönetici tarafından kapatılmış. (Account disabled.)'],
+    code: ['Kod yanlış', 'Çok fazla yanlış kod girildi. Uygulamaya dönüp girişi yeniden başlat. (Too many wrong codes. Start the sign-in again in the app.)'],
     google: ['Giriş tamamlanamadı', 'Google girişi başarısız oldu. Uygulamaya dönüp tekrar dene. (Google sign-in failed.)'],
   };
 
@@ -167,8 +177,40 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
     const aud = Array.isArray(idt?.aud) ? idt.aud : [idt?.aud];
     const checks = { iss: !!idt && /^(https:\/\/)?accounts\.google\.com$/.test(idt.iss), aud: aud.includes(G_ID), exp: !!idt && idt.exp * 1000 > Date.now(), sub: !!idt?.sub, email: !!idt?.email, verified: idt?.email_verified !== false };
     if (!idt || Object.values(checks).some((v) => !v)) { console.error('google: kimlik belirteci doğrulanamadı', JSON.stringify(checks)); return fail('google'); }
-    const out = signIn('google', String(idt.sub), String(idt.email), String(idt.name || idt.email).slice(0, 80), p.invite);
-    if (out.error) return fail(out.error);
+    // Hesap hemen açılmaz: giriş, uygulamada gösterilen 4 haneli kod tarayıcıda girilince tamamlanır (başkasının başlattığı girişi habersizce onaylamayı önler)
+    p.identity = { sub: String(idt.sub), email: String(idt.email), name: String(idt.name || idt.email).slice(0, 80) };
+    p.cid = rnd(16);
+    p.tries = 0;
+    byConfirm.set(p.cid, nonce);
+    confirmPage(res, p);
+  }
+
+  function confirmPage(res, p, error = '') {
+    send(res, 200, `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EV Co-Pilot</title>`
+      + `<style>body{font:16px system-ui,sans-serif;background:#0b0f14;color:#e8eef5;display:grid;place-items:center;min-height:100vh;margin:0;padding:24px;text-align:center}main{max-width:420px}h1{font-size:22px}p{color:#a9b6c6;line-height:1.5}b{color:#e8eef5}.err{color:#ff8a8a}input{font:inherit;font-size:28px;letter-spacing:8px;text-align:center;width:9ch;padding:10px;border-radius:12px;border:1px solid #2c3a49;background:#1b2530;color:#e8eef5}button{display:block;margin:16px auto 0;font:inherit;padding:12px 22px;border-radius:12px;border:1px solid #2c3a49;background:#1b2530;color:#2ee6a6;font-weight:600}</style></head>`
+      + `<body><main><h1>🔐 Giriş kodunu gir</h1><p>Hesap: <b>${esc(p.identity.email)}</b><br>Girişi başlattığın uygulamada gösterilen <b>4 haneli kodu</b> yaz. (Enter the 4-digit code shown in the app where you started sign-in.)</p>`
+      + `<p>Bu girişi sen başlatmadıysan ya da uygulamada kod görmediysen sayfayı kapat: biri seni kandırmaya çalışıyor olabilir. (If you did not start this sign-in, close this page.)</p>`
+      + (error ? `<p class="err">${esc(error)}</p>` : '')
+      + `<form method="get" action="/auth/confirm" autocomplete="off"><input type="hidden" name="c" value="${esc(p.cid)}"><input name="code" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autofocus required><button type="submit">Girişi tamamla</button></form></main></body></html>`,
+    { 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'", 'Referrer-Policy': 'no-referrer', 'Cache-Control': 'no-store' });
+  }
+
+  /** Onay adımı: kod doğruysa giriş tamamlanır (davet kullanılır, hesap açılır, oturum verilir). */
+  function confirmLogin(req, res, url) {
+    const cid = url.searchParams.get('c') || '';
+    const nonce = byConfirm.get(cid);
+    const p = nonce && pend.get(nonce);
+    if (!p || !p.identity || p.exp < Date.now()) return page(res, 400, 'Süre doldu', 'Giriş isteğinin süresi doldu. Uygulamaya dönüp tekrar dene. (Sign-in request expired.)');
+    const fail = (key) => { byConfirm.delete(cid); delete p.identity; p.result = { status: 'error', error: key }; const [t, m] = ERR[key] || ERR.google; page(res, 400, t, m); };
+    if ((url.searchParams.get('code') || '').trim() !== loginCode(nonce)) {
+      if (++p.tries >= 5) return fail('code');
+      return confirmPage(res, p, 'Kod yanlış, tekrar dene. (Wrong code, try again.)');
+    }
+    const { sub, email, name } = p.identity;
+    byConfirm.delete(cid);
+    delete p.identity;
+    const out = signIn('google', sub, email, name, p.invite);
+    if (out.error) { p.result = { status: 'error', error: out.error }; const [t, m] = ERR[out.error] || ERR.google; return page(res, 400, t, m); }
     p.result = { status: 'ok', session: makeSession(out.user.id), user: publicUser(out.user) };
     page(res, 200, '✅ Giriş tamam', 'Uygulamaya dönebilirsin; kendiliğinden devam eder. (Signed in. You can return to the app.)');
   }
@@ -197,6 +239,7 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
       return true;
     }
     if (p === '/auth/google/callback' && req.method === 'GET') { await googleCallback(req, res, url); return true; }
+    if (p === '/auth/confirm' && req.method === 'GET') { confirmLogin(req, res, url); return true; }
     if (p === '/v1/auth/poll' && req.method === 'GET') {
       const nonce = url.searchParams.get('nonce') || '';
       const e = NONCE.test(nonce) ? pend.get(nonce) : null;

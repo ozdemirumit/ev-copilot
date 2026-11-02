@@ -44,13 +44,20 @@ export function listenInviteDeepLink() {
   App.getLaunchUrl?.().then((r) => r?.url && take(r.url)).catch(() => {});
 }
 
+/** Giriş onay kodu (4 hane): nonce'tan türetilir (server/accounts.mjs loginCode ile aynı işlev); tarayıcıdaki sayfa bu kodu ister. */
+export function loginCode(nonce) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < nonce.length; i++) { h ^= nonce.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return String(h % 10000).padStart(4, '0');
+}
+
 function newNonce() {
   const b = new Uint8Array(24);
   crypto.getRandomValues(b);
   return btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-/** Girişi başlat. Tıklama işleyicisinde, ilk iş olarak çağrılmalı (tarayıcı sekmesi açılabilsin). Dönüş: { url, done: Promise<user> }. */
+/** Girişi başlat. Tıklama işleyicisinde, ilk iş olarak çağrılmalı (tarayıcı sekmesi açılabilsin). Dönüş: { url, code (tarayıcıda girilecek 4 hane), done: Promise<user> }. */
 export function startGoogleSignIn(invite = pendingInvite()) {
   const nonce = newNonce();
   const url = `${proxyBase()}/auth/google?nonce=${nonce}${invite ? '&invite=' + encodeURIComponent(invite) : ''}`;
@@ -76,7 +83,7 @@ export function startGoogleSignIn(invite = pendingInvite()) {
     }
     throw Object.assign(new Error('timeout'), { code: 'timeout' });
   })();
-  return { url, done };
+  return { url, code: loginCode(nonce), done };
 }
 
 export async function signOut() {
