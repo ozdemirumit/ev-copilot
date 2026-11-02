@@ -13,6 +13,7 @@ import { mapApi } from '../ui/mapView.js';
 import { toast } from '../ui/toast.js';
 import { rememberDest } from '../ui/recentDest.js';
 import { projectSteps } from '../nav/steps.js';
+import { t as tpl } from '../i18n/index.js';
 
 const WX_STEP_KM = 50;
 let raw = null; // { pts, elevations, elevSource, wx } — profil ayarları değişince yeniden kurmak için
@@ -87,7 +88,7 @@ function applyPlan(out, extra = {}) {
     ...extra,
     kInfo,
     status: result.feasible ? 'ready' : 'infeasible',
-    text: result.feasible ? '' : result.reason,
+    text: result.feasible ? '' : result.reason + (PLANNER.minKw > PLANNER.baseKw ? ' ' + tpl('En az şarj gücü filtresi {0} kW: düşürmeyi (AC) dene.', PLANNER.minKw) : ''),
     stops: result.stops,
     totals: result.totals || null,
     ranking,

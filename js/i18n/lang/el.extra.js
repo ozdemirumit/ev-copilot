@@ -209,4 +209,5 @@ export default {
   "HERE yanıt vermedi": "Το HERE δεν ανταποκρίνεται",
   "Plan {0} sn sürdü: rota {1} · rakım/hava {2} · istasyon {3} · hesap {4}": "Το πλάνο χρειάστηκε {0} δ: διαδρομή {1} · υψόμετρο/καιρός {2} · σταθμοί {3} · υπολογισμός {4}",
   "En az şarj gücü (kW)": "Ελάχιστη ισχύς φόρτισης (kW)",
+  "En az şarj gücü filtresi {0} kW: düşürmeyi (AC) dene.": "Φίλτρο ελάχιστης ισχύος {0} kW: δοκίμασε να το μειώσεις (AC).",
 };

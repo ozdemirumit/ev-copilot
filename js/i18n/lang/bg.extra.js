@@ -209,4 +209,5 @@ export default {
   "HERE yanıt vermedi": "HERE не отговаря",
   "Plan {0} sn sürdü: rota {1} · rakım/hava {2} · istasyon {3} · hesap {4}": "Планът отне {0} с: маршрут {1} · надморска височина/време {2} · станции {3} · изчисление {4}",
   "En az şarj gücü (kW)": "Минимална мощност на зареждане (kW)",
+  "En az şarj gücü filtresi {0} kW: düşürmeyi (AC) dene.": "Филтър минимална мощност {0} kW: опитай да го намалиш (AC).",
 };

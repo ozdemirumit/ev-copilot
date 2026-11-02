@@ -26,7 +26,7 @@ const store = {
     minStopAdd: load('minStopAdd', 15), // durakta en az eklenen pil puanı
     tolerance: load('tolerance', 3), // eşik toleransı ± puan
     allowSlow: load('allowSlow', true), // yavaş AC/belirsiz istasyonlar yedek aday
-    minKw: load('minKw', 40), // plana girecek en düşük şarj gücü (kW): 40 (hepsi) / 60 / 100 / 150
+    minKw: load('minKw', 120), // plana girecek en düşük şarj gücü (kW): 40 (AC, hepsi) / 60 / 100 / 120 / 150; varsayılan 120
   },
   // OCR ayarları ve okuma durumu.
   ocr: { ...DEFAULT_CAMERA, ...load('camera', {}), raw: null, accepted: null, status: 'idle', rawSpeed: null, speedStatus: 'idle', lastOkAt: 0 },

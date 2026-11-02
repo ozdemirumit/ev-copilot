@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.75.0';
+self.APP_VERSION = '0.75.1';
 self.APP_CHANGELOG = [
+  {
+    v: '0.75.1', date: '2026-11-02',
+    notes: [
+      'DEĞİŞTİ: En az şarj gücü filtresinde varsayılan 120 kW oldu ve 120 seçeneği eklendi (AC, 60, 100, 120, 150). Filtre değişince şarj planı baştan hesaplanır (yalnızca liste süzülmez). Seçilen güçte uygun zincir kurulamazsa plan metni filtreyi düşürmeyi önerir.',
+    ],
+  },
   {
     v: '0.75.0', date: '2026-11-02',
     notes: [

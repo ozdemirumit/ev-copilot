@@ -209,4 +209,5 @@ export default {
   "HERE yanıt vermedi": "HERE não responde",
   "Plan {0} sn sürdü: rota {1} · rakım/hava {2} · istasyon {3} · hesap {4}": "Plano em {0} s: rota {1} · altitude/clima {2} · estações {3} · cálculo {4}",
   "En az şarj gücü (kW)": "Potência de carregamento mínima (kW)",
+  "En az şarj gücü filtresi {0} kW: düşürmeyi (AC) dene.": "Filtro de potência mínima {0} kW: tente baixá-lo (AC).",
 };
