@@ -90,8 +90,11 @@ export function initRoutePanel() {
         : '';
       const thr = getState('route').minArrivalSoc;
       const dip = t.arriveSoc < thr - 0.5 ? ` — eşiğin ${(thr - t.arriveSoc).toFixed(0)} puan altı, tolerans içinde` : '';
+      const hasPrice = stops.some((s) => !s.station.foreign); // liste fiyatı yalnızca Türkiye'deki duraklar için var
       status.textContent = stops.length
-        ? `Varışta tahmini pil %${t.arriveSoc.toFixed(0)} (eşik %${thr}${dip}) · şarj ${hm(t.chargeMin)} · ${t.cost.toFixed(0)} TL${gapNote}`
+        ? (hasPrice
+          ? `Varışta tahmini pil %${t.arriveSoc.toFixed(0)} (eşik %${thr}${dip}) · şarj ${hm(t.chargeMin)} · ${t.cost.toFixed(0)} TL${gapNote}`
+          : `Varışta tahmini pil %${t.arriveSoc.toFixed(0)} (eşik %${thr}${dip}) · şarj ${hm(t.chargeMin)}${gapNote}`)
         : `Şarj gerekmiyor — varışta tahmini pil %${t.arriveSoc.toFixed(0)} (eşik %${thr}${dip}).${gapNote}`;
       stops.forEach((s, i) => {
         // Parantez: bir önceki şarj durağına (ilk duraksa yolculuğun başına / geçilen son durağa) olan mesafe
@@ -101,7 +104,7 @@ export function initRoutePanel() {
         row.className = 'stop';
         const num = Object.assign(document.createElement('div'), { className: 'num', textContent: String(i + 1) });
         const title = Object.assign(document.createElement('div'), { className: 't', textContent: s.station.name });
-        const right = Object.assign(document.createElement('div'), { className: 'r', textContent: `${Math.round(s.minutes)} dk · ${s.cost.toFixed(0)} TL` });
+        const right = Object.assign(document.createElement('div'), { className: 'r', textContent: s.station.foreign ? `${Math.round(s.minutes)} dk` : `${Math.round(s.minutes)} dk · ${s.cost.toFixed(0)} TL` });
         const meta = Object.assign(document.createElement('div'), {
           className: 'm',
           textContent: tpl('{0} km kaldı ({1} {2} km) · {3} {4}{5} kW · %{6} → %{7}', Math.max(0, s.km - here).toFixed(0), fi > 0 || p.lastStopKm != null ? 'önceki duraktan' : 'yolculuk başından', (s.km - prevKm).toFixed(0), s.station.opName, s.station.slow ? 'AC/yavaş ' : '', s.station.kw, s.arriveSoc.toFixed(0), s.leaveSoc)

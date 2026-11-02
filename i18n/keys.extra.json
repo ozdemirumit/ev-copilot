@@ -213,5 +213,12 @@
  "⏱️ Hızlı",
  "💰 Ekonomik",
  "Hızlı",
- "Ekonomik"
+ "Ekonomik",
+ "Varışta tahmini pil %{0} (eşik %{1}{2}) · şarj {3}{4}",
+ "{0} · {1}{2} kW{3} · {4} km ileride · varış %{5} → %{6}",
+ "{0} · {1}{2} kW{3}",
+ "· %{0}'e ≈ {1} dk",
+ "{0} km · {1} kW",
+ "Pil yüzde {0}. En yakın şarj istasyonu {1}, {2} kilometre. {3} kilovat.{4}",
+ "Fiyat bilgisi yok (liste fiyatı yalnızca Türkiye için)"
 ]

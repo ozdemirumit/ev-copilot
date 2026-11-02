@@ -4,6 +4,7 @@
 import { PLANNER } from '../config.js';
 import { operatorById } from './operators.js';
 import { haversineKm } from '../utils/geo.js';
+import { inTurkey } from './region.js';
 import { load, save } from '../utils/storage.js';
 
 const AC_FALLBACK_KW = 11; // yalnızca AC/gücü bilinmeyen istasyonda varsayılan güç (aracın AC şarj sınırına yakın)
@@ -46,11 +47,15 @@ export function setStationOperator(stationId, opId) {
   save(OVERRIDE_KEY, o);
 }
 
-/** Operatörü (varsa kullanıcı düzeltmesiyle) uygulayıp fiyat/kW'yi ata. */
+/**
+ * Operatörü (varsa kullanıcı düzeltmesiyle) uygulayıp fiyat/kW'yi ata. Liste fiyatı yalnızca Türkiye içindir: dışındaki istasyonda (foreign)
+ * gerçek tarife bilinmez, bu yüzden price 0 kalır (plan sıralamasında fiyat etkisiz) ve arayüz fiyat göstermez; canlı fiyat (slots.price) varsa o gösterilir.
+ */
 export function priced(s) {
   const ov = overrides()[s.id];
   const op = operatorById(ov || s.opId);
-  return { ...s, opId: ov || s.opId, opRaw: s.opRaw ?? s.opId, corrected: !!ov, opName: op.name, price: s.slow ? (op.acPrice ?? op.price) : op.price, kw: ov ? op.kw : (s.srcKw ?? op.kw) };
+  const foreign = !inTurkey(s.lat, s.lon);
+  return { ...s, opId: ov || s.opId, opRaw: s.opRaw ?? s.opId, corrected: !!ov, opName: op.name, foreign, price: foreign ? 0 : s.slow ? (op.acPrice ?? op.price) : op.price, kw: ov ? op.kw : (s.srcKw ?? op.kw) };
 }
 
 /**

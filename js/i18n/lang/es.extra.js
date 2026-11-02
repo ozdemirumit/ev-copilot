@@ -214,4 +214,11 @@ export default {
   "💰 Ekonomik": "💰 Económica",
   "Hızlı": "Rápida",
   "Ekonomik": "Económica",
+  "Varışta tahmini pil %{0} (eşik %{1}{2}) · şarj {3}{4}": "Batería estimada al llegar: {0}% (umbral {1}%{2}) · carga {3}{4}",
+  "{0} · {1}{2} kW{3} · {4} km ileride · varış %{5} → %{6}": "{0} · {1}{2} kW{3} · a {4} km · llegada {5}% → {6}%",
+  "{0} · {1}{2} kW{3}": "{0} · {1}{2} kW{3}",
+  "· %{0}'e ≈ {1} dk": "· hasta el {0}% ≈ {1} min",
+  "{0} km · {1} kW": "{0} km · {1} kW",
+  "Pil yüzde {0}. En yakın şarj istasyonu {1}, {2} kilometre. {3} kilovat.{4}": "Batería al {0} por ciento. La estación de carga más cercana es {1}, a {2} km. {3} kilovatios.{4}",
+  "Fiyat bilgisi yok (liste fiyatı yalnızca Türkiye için)": "Sin datos de precio (las tarifas de lista solo cubren Turquía)",
 };

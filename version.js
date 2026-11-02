@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.75.2';
+self.APP_VERSION = '0.76.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.76.0', date: '2026-11-02',
+    notes: [
+      'DEĞİŞTİ: Türkiye dışındaki şarj istasyonlarında tahmini TL fiyat artık gösterilmez (liste fiyatı yalnızca Türkiye için geçerliydi; Yunanistan ve Avrupa ülkelerinde yanıltıcı TL rakamı çıkıyordu). İstasyon kartı Fiyat bilgisi yok der; plan, istasyon listesi, harita ipucu ve sesli uyarı bu istasyonlar için TL yazmaz. Gerçek canlı fiyat (şimdilik Hollanda, NDW) varsa € olarak yine gösterilir. Yurt dışı duraklarda plan fiyatı hesaba katmaz: Ekonomik mod orada süreye göre seçer.',
+    ],
+  },
   {
     v: '0.75.2', date: '2026-11-02',
     notes: [

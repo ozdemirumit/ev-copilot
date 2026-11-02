@@ -214,4 +214,11 @@ export default {
   "💰 Ekonomik": "💰 Economică",
   "Hızlı": "Rapidă",
   "Ekonomik": "Economică",
+  "Varışta tahmini pil %{0} (eşik %{1}{2}) · şarj {3}{4}": "Baterie estimată la sosire {0}% (prag {1}%{2}) · încărcare {3}{4}",
+  "{0} · {1}{2} kW{3} · {4} km ileride · varış %{5} → %{6}": "{0} · {1}{2} kW{3} · peste {4} km · la sosire {5}% → {6}%",
+  "{0} · {1}{2} kW{3}": "{0} · {1}{2} kW{3}",
+  "· %{0}'e ≈ {1} dk": "· până la {0}% ≈ {1} min",
+  "{0} km · {1} kW": "{0} km · {1} kW",
+  "Pil yüzde {0}. En yakın şarj istasyonu {1}, {2} kilometre. {3} kilovat.{4}": "Baterie {0} la sută. Cea mai apropiată stație de încărcare: {1}, la {2} kilometri. {3} kilowați.{4}",
+  "Fiyat bilgisi yok (liste fiyatı yalnızca Türkiye için)": "Fără date despre preț (prețurile de listă acoperă doar Turcia)",
 };

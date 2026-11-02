@@ -319,7 +319,7 @@ export function initMap() {
   mapApi.drawNearby = (list, focusId = null) => whenMap(() => {
     nearMarks.forEach(unmark);
     nearMarks = list.map((s) => {
-      return marker(s, stationPin(s, { focus: s.id === focusId }), `${s.name} · ${s.kw} kW · ${s.price.toFixed(2)} TL/kWh`);
+      return marker(s, stationPin(s, { focus: s.id === focusId }), s.foreign ? `${s.name} · ${s.kw} kW` : `${s.name} · ${s.kw} kW · ${s.price.toFixed(2)} TL/kWh`);
     });
   });
 

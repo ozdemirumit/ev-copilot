@@ -65,7 +65,7 @@ function open(s) {
   head.append(btn('✕', close, 'sheet-x'));
   const meta = el('div', 'small muted');
   meta.append(el('span', '', s.opName || ''), ' · ', el('span', '', `${s.slow ? tr('AC/yavaş') + ' ' : ''}${s.kw} kW${s.uncertain ? '*' : ''}`));
-  const price = el('div', 'sc-price', s.price != null ? `${s.price.toFixed(2)} TL/kWh (tahmini)` : '');
+  const price = el('div', 'sc-price', s.foreign ? 'Fiyat bilgisi yok (liste fiyatı yalnızca Türkiye için)' : s.price != null ? `${s.price.toFixed(2)} TL/kWh (tahmini)` : '');
   const live = el('div', 'stack sc-live');
   const acts = el('div', 'row wrap');
   acts.append(btn('🧭 Git', () => { close(); goToStation(s); }, 'btn primary sm'));
@@ -81,7 +81,7 @@ function open(s) {
       if (ok) { s.slots = { ...(s.slots || { total: null, available: null, out: 0 }), checked: Date.now(), community: { busy: s.slots?.community?.busy ?? 0, report: { status, at: Date.now() } } }; paintLive(live, s, 'done'); }
     };
     acts.append(btn('🔴 Dolu', () => say('full')), btn('🟢 Boş', () => say('free')));
-    acts.append(btn('💳 Fiyat bildir', async () => {
+    if (!s.foreign) acts.append(btn('💳 Fiyat bildir', async () => { // TL fiyat bildirimi yalnızca Türkiye'de
       const v = prompt(tr('Bu istasyonun kWh fiyatı (TL)?'));
       if (v == null) return;
       const p = Number(String(v).replace(',', '.'));

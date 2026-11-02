@@ -190,11 +190,11 @@ function render() {
     meta1.className = 'meta';
     meta1.append(
       cell('span', 'tag ' + (s.reachable ? 'best' : ''), s.reachable ? `${fmtKm(s.distKm)} km` : 'Yetmeyebilir'),
-      cell('span', '', `${s.opName} · ${s.slow ? 'AC/yavaş ' : ''}${s.kw} kW${s.uncertain ? '*' : ''} · ${s.price.toFixed(2)} TL/kWh`),
+      cell('span', '', `${s.opName} · ${s.slow ? 'AC/yavaş ' : ''}${s.kw} kW${s.uncertain ? '*' : ''}` + (s.foreign ? '' : ` · ${s.price.toFixed(2)} TL/kWh`)),
     );
     const meta2 = cell('div', 'meta', t('~{0} km yol', fmtKm(s.roadKm))
       + (s.arrive != null ? ' ' + t('· varışta %{0}', Math.max(0, s.arrive).toFixed(0)) : '')
-      + ' ' + t("· %{0}'e ≈ {1} dk, {2} TL", CHARGE_TO, Math.round(s.minutes), s.cost.toFixed(0))); // parçalar ayrı çevrilir (tek dizge olarak desen eşleşmez) // doluluk verisi yalnızca gelen istasyonda gösterilir (altta slotEl)
+      + ' ' + (s.foreign ? t("· %{0}'e ≈ {1} dk", CHARGE_TO, Math.round(s.minutes)) : t("· %{0}'e ≈ {1} dk, {2} TL", CHARGE_TO, Math.round(s.minutes), s.cost.toFixed(0)))); // parçalar ayrı çevrilir (tek dizge olarak desen eşleşmez) // doluluk verisi yalnızca gelen istasyonda gösterilir (altta slotEl)
     const slotNode = slotEl(s);
     if (slotNode) meta2.append(slotNode);
     const lp = livePrice(s);
@@ -256,7 +256,7 @@ function showAlert(title, stations = [], notes = []) {
     row.className = 'near-row';
     const info = document.createElement('span');
     info.textContent = s.name;
-    info.append(cell('small', '', `${fmtKm(s.distKm)} km · ${s.kw} kW · ${s.price.toFixed(2)} TL/kWh`
+    info.append(cell('small', '', `${fmtKm(s.distKm)} km · ${s.kw} kW` + (s.foreign ? '' : ` · ${s.price.toFixed(2)} TL/kWh`)
       + (s.arrive != null ? ' ' + t('· varışta ~%{0}', Math.max(0, s.arrive).toFixed(0)) : '') + (s.reachable ? '' : ' ' + t('· yetmeyebilir'))
       + ''));
     const slotNode = slotEl(s);
@@ -342,10 +342,10 @@ function checkLow() {
   if (!bands.has(band) && !waitOcc) {
     bands.add(band);
     const pr = best.slots?.price;
-    const priceTxt = pr?.kwh != null ? `${pr.kwh.toFixed(2).replace('.', ',')} ${pr.currency === 'EUR' ? 'euro' : pr.currency === 'TRY' ? 'lira' : pr.currency}` : `${best.price.toFixed(1).replace('.', ',')} lira`;
+    const priceTxt = pr?.kwh != null ? `${pr.kwh.toFixed(2).replace('.', ',')} ${pr.currency === 'EUR' ? 'euro' : pr.currency === 'TRY' ? 'lira' : pr.currency}` : best.foreign ? null : `${best.price.toFixed(1).replace('.', ',')} lira`; // yurt dışında canlı fiyat yoksa fiyat söylenmez
     const free = slotKind(best) === 'free' && best.slots.available != null ? ` ${best.slots.available} boş soket var.` : '';
     const dropped = premium && elimCount > 0 ? ` ${elimCount} dolu istasyon elendi.` : '';
-    speak(`Pil yüzde ${soc}. En yakın şarj istasyonu ${best.name}, ${fmtKm(best.distKm)} kilometre. ${best.kw} kilovat, kilovat saati ${priceTxt}.${free}${dropped}`, { key: 'low' + band, cooldownMs: 0, interrupt: true });
+    speak(`Pil yüzde ${soc}. En yakın şarj istasyonu ${best.name}, ${fmtKm(best.distKm)} kilometre. ${best.kw} kilovat${priceTxt ? `, kilovat saati ${priceTxt}` : ''}.${free}${dropped}`, { key: 'low' + band, cooldownMs: 0, interrupt: true });
   }
 }
 
