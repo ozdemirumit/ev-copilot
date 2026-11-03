@@ -229,7 +229,7 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
   ok('admin.html anahtarı olmayan seçenek "(anahtar yok)" notlu ve pasif', html.includes('(anahtar yok)') && html.includes('disabled'));
   ok('admin.html Mapbox/Google harita anahtarı durum satırları', html.includes('Mapbox harita anahtarı') && html.includes('Google harita anahtarı') && html.includes('configured.mapboxMap') && html.includes('configured.googleMap'));
   ok('admin.html "Fatura" başlığı', html.includes('Fatura'));
-  ok('admin.html Mapbox hesap bağlantısı', html.includes('https://account.mapbox.com/'));
+  ok('admin.html Mapbox hesap bağlantısı', html.includes('https://console.mapbox.com/'));
   ok('admin.html Google Cloud faturalama bağlantısı', html.includes('https://console.cloud.google.com/billing'));
   ok('admin.html Google Maps Platform kullanım/kota bağlantısı', html.includes('https://console.cloud.google.com/google/maps-apis/metrics'));
   ok('fatura bağlantıları yeni sekmede ve noopener ile açılır', html.includes("'_blank'") && html.includes('noopener'));
