@@ -4,6 +4,7 @@ node_modules/
 *.apk
 *.aab
 server/.env
+server/.env.totp-yedek
 server/*.log
 server/data/
 server/public/

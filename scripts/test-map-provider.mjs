@@ -1462,5 +1462,304 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
   }
 }
 
+// ---- Bölüm 10: Yönetim TOTP ikinci adımı (ADMIN_TOTP_SECRET, /admin/auth, /admin/login, X-Admin-Token, yerel CLI muafiyeti, kilit, kurulum betiği) ----
+// Gizli anahtar olarak RFC 6238'in herkese açık test anahtarı kullanılır ("12345678901234567890"); gerçek anahtar/kod yok. Sunucular 8787 DIŞINDA,
+// geçici DATA_DIR ile alt süreç olarak çalışır; kurulum betiği yalnızca geçici bir env dosyasına (--env) yazar. Çıktıda anahtar/belirteç yazdırılmaz.
+{
+  const { spawnSync } = await import('node:child_process');
+  const { readFileSync, existsSync } = await import('node:fs');
+  const ROOT = fileURLToPath(new URL('..', import.meta.url));
+  const SECRET = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+  const CODE = 'test-dummy-access-code-0123456789';
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  let T = null;
+  try { T = await import('../server/totp.mjs'); } catch (e) { ok('Bölüm 10: server/totp.mjs yüklenir (' + e.code + ')', false); }
+
+  // (a) birim: base32, RFC 6238 vektörleri, pencere, tekrar oynatma, belirteç, kilit (enjekte saat)
+  if (T) {
+    try {
+      const key = T.base32Decode(SECRET);
+      ok('(10a) base32 çözümü RFC anahtarı', key?.toString('ascii') === '12345678901234567890');
+      ok('(10a) base32 kodlama geri döner', T.base32Encode(Buffer.from('12345678901234567890')) === SECRET);
+      ok('(10a) RFC 6238 SHA-1 T=59 → 287082', T.totpAt(key, 59) === '287082');
+      ok('(10a) RFC 6238 SHA-1 T=1111111109 → 081804', T.totpAt(key, 1111111109) === '081804');
+      ok('(10a) RFC 6238 SHA-1 T=1234567890 → 005924', T.totpAt(key, 1234567890) === '005924');
+      ok('(10a) RFC 6238 SHA-1 T=1111111111/2000000000/20000000000', T.totpAt(key, 1111111111) === '050471' && T.totpAt(key, 2000000000) === '279037' && T.totpAt(key, 20000000000) === '353130');
+      ok('(10a) base32: küçük harf ve boşluk kabul', T.base32Decode(SECRET.toLowerCase().replace(/(.{4})/g, '$1 '))?.equals(key));
+      ok('(10a) base32: geçersiz karakter (0/1/8/!) red', ['GEZDGNBVGY3TQOJ0', 'GEZDGNBVGY3TQOJ1', 'GEZDGNBVGY3TQOJ8', 'GEZDGNBV!Y3TQOJQ'].every((s) => T.base32Decode(s) === null));
+      ok('(10a) base32: geçersiz uzunluk red (1/3/6 karakter)', ['M', 'MYM', 'MZXW6Y'].every((s) => T.base32Decode(s) === null));
+      ok('(10a) base32: artık bitler sıfır değilse red (MZ), sıfırsa kabul (MY)', T.base32Decode('MZ') === null && T.base32Decode('MY')?.toString() === 'f');
+      ok('(10a) base32: doğru dolgu kabul, yanlış dolgu red', T.base32Decode('MY======')?.toString() === 'f' && T.base32Decode('MY=') === null && T.base32Decode('M=Y') === null);
+      ok('(10a) parseSecret: boş/tanımsız/kısa (<16 bayt) → null, RFC anahtarı 20 bayt', T.parseSecret('') === null && T.parseSecret(undefined) === null && T.parseSecret('MY') === null && T.parseSecret(SECRET)?.length === 20);
+      ok('(10a) createAdminAuth: geçersiz/boş anahtar → null (TOTP kapalı)', T.createAdminAuth('') === null && T.createAdminAuth('NOT*BASE32') === null && T.createAdminAuth(undefined) === null);
+
+      let clock = 1111111109 * 1000;
+      const mk = (o = {}) => T.createAdminAuth(SECRET, { now: () => clock, ...o });
+      const at = (s) => T.totpAt(key, s);
+      ok('(10a) şimdiki adımın kodu kabul', mk().matchTotp('081804') !== null);
+      ok('(10a) pencere: -1 ve +1 adım kabul', mk().matchTotp(at(1111111109 - 30)) !== null && mk().matchTotp(at(1111111109 + 30)) !== null);
+      ok('(10a) pencere: -2 ve +2 adım red', mk().matchTotp(at(1111111109 - 60)) === null && mk().matchTotp(at(1111111109 + 60)) === null);
+      ok('(10a) biçim: 5/7 hane, harf, sayı türü red; boşluklu "081 804" kabul', ['08180', '0818045', 'abcdef', '08180a', '', null].every((c) => mk().matchTotp(c) === null) && mk().matchTotp(81804) === null && mk().matchTotp('081 804') !== null);
+      {
+        const a = mk();
+        const st = a.matchTotp('081804');
+        ok('(10a) matchTotp kodu tüketmez (tekrar çağrı yine eşleşir)', st !== null && a.matchTotp('081804') === st);
+        a.consume(st);
+        ok('(10a) tekrar oynatma: kullanılan adımın kodu red', a.matchTotp('081804') === null);
+        ok('(10a) tekrar oynatma: daha eski adımın kodu da red, sonraki adım kabul', a.matchTotp(at(1111111109 - 30)) === null && a.matchTotp(at(1111111109 + 30)) !== null);
+      }
+      {
+        const a = mk({ ttlMs: 1000 });
+        const { token, expiresAt } = a.issueToken();
+        ok('(10a) belirteç 32 bayt base64url, bitiş = şimdi + TTL', /^[A-Za-z0-9_-]{43}$/.test(token) && expiresAt === clock + 1000);
+        ok('(10a) belirteç geçerli; bozuk/yanlış belirteç geçersiz', a.tokenValid(token) && !a.tokenValid(token.slice(0, -1) + (token.endsWith('A') ? 'B' : 'A')) && !a.tokenValid('') && !a.tokenValid(undefined) && !a.tokenValid(token + 'x'));
+        const t2 = a.issueToken().token;
+        a.revoke(t2);
+        ok('(10a) revoke: çıkış yapılan belirteç geçersiz, diğeri geçerli', !a.tokenValid(t2) && a.tokenValid(token));
+        clock += 1000;
+        ok('(10a) TTL dolunca belirteç geçersiz', !a.tokenValid(token));
+        clock = 1111111109 * 1000;
+      }
+      {
+        const a = mk();
+        const toks = Array.from({ length: 21 }, () => a.issueToken().token);
+        ok('(10a) en çok 20 canlı belirteç: 21.de en eskisi düşer', !a.tokenValid(toks[0]) && a.tokenValid(toks[1]) && a.tokenValid(toks[20]) && a.stats().tokens === 20);
+      }
+      {
+        const a = mk();
+        for (let i = 0; i < 4; i++) a.fail('1.1.1.1');
+        ok('(10a) kilit: 4 yanlış → hâlâ açık', a.gate('1.1.1.1') === 0);
+        a.fail('1.1.1.1');
+        const w = a.gate('1.1.1.1');
+        ok('(10a) kilit: 5. yanlışta adres 1 saat kapalı', w === 3600 && a.gate('2.2.2.2') === 0);
+        clock += 3600e3 + 1000;
+        ok('(10a) kilit: 1 saat sonra açılır', a.gate('1.1.1.1') === 0);
+        clock = 1111111109 * 1000;
+      }
+      {
+        const a = mk();
+        for (let i = 0; i < 4; i++) a.fail('3.3.3.3');
+        a.success('3.3.3.3');
+        for (let i = 0; i < 4; i++) a.fail('3.3.3.3');
+        ok('(10a) başarılı giriş adresin sayacını sıfırlar', a.gate('3.3.3.3') === 0);
+      }
+      {
+        const a = mk();
+        for (let i = 0; i < 24; i++) a.fail('10.0.0.' + i);
+        ok('(10a) genel sınır: 24 yanlış (farklı adresler) → açık', a.gate('9.9.9.9') === 0);
+        a.fail('10.0.1.1');
+        ok('(10a) genel sınır: 25. yanlışta tüm adreslere 10 dk 429', a.gate('9.9.9.9') === 600);
+        clock += 600e3 + 1000;
+        ok('(10a) genel sınır: 10 dk sonra açılır', a.gate('9.9.9.9') === 0);
+        clock = 1111111109 * 1000;
+      }
+    } catch (e) {
+      ok('Bölüm 10 (a) çalıştı: ' + e.message, false);
+    }
+  }
+
+  // (b) sunucu: alt süreçler (18781-18785)
+  const children = [], dirs = [], logs = [], responses = [], tokensSeen = [];
+  async function start(port, extra = {}) {
+    const dir = mkdtempSync(join(tmpdir(), 'totp-test-')); dirs.push(dir);
+    writeFileSync(join(dir, 'db.json'), JSON.stringify({ users: {}, invites: {}, docs: {}, sessions: {} }));
+    const blank = Object.fromEntries(['MAPBOX_TOKEN', 'OCM_KEY', 'HERE_API_KEY', 'GOOGLE_PLACES_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SMTP_USER', 'SMTP_PASS', 'PUBLIC_URL', 'ADMIN_EMAILS', 'GOOGLE_MAPS_BROWSER_KEY', 'MAPBOX_MAP_TOKEN', 'GOOGLE_MAP_ID', 'MAP_DAILY_PER_USER', 'MAP_DAILY_TOTAL', 'TRUST_PROXY', 'PREMIUM_REQUIRED', 'ADMIN_TOTP_SECRET', 'ADMIN_TOKEN_TTL_SEC'].map((k) => [k, '']));
+    const child = spawn(process.execPath, ['server/proxy.mjs'], { cwd: ROOT, env: { ...process.env, ...blank, PREMIUM_REQUIRED: '1', PORT: String(port), HOST: '127.0.0.1', DATA_DIR: dir, ACCESS_CODES: CODE, ...extra }, stdio: ['ignore', 'pipe', 'pipe'] });
+    children.push(child);
+    let out = ''; logs.push(() => out);
+    child.stdout.on('data', (d) => { out += d; });
+    child.stderr.on('data', (d) => { out += d; });
+    for (let i = 0; i < 100 && !out.includes('ara sunucusu'); i++) await sleep(100);
+    if (!out.includes('ara sunucusu')) throw new Error('sunucu başlamadı');
+    const call = async (method, path, { headers = {}, body, raw } = {}) => {
+      const h = { ...headers };
+      if (body !== undefined || raw !== undefined) h['Content-Type'] = 'application/json';
+      const r = await fetch(`http://127.0.0.1:${port}${path}`, { method, headers: h, body: raw !== undefined ? raw : body === undefined ? undefined : JSON.stringify(body) });
+      const text = await r.text();
+      let j = null; try { j = JSON.parse(text); } catch {}
+      responses.push({ path, text, login: path === '/admin/login' && r.status === 200 });
+      return { status: r.status, text, json: j, headers: r.headers };
+    };
+    return { call, log: () => out };
+  }
+  const XFF = { 'X-Forwarded-For': '203.0.113.5' };
+  const C = { 'X-Access-Code': CODE };
+  const key = T?.base32Decode(SECRET);
+  const nowCode = (d = 0) => T.hotp(key, Math.floor(Date.now() / 30000) + d);
+  const wrongCode = () => { const w = new Set([-1, 0, 1].map(nowCode)); let c = 0; while (w.has(String(c).padStart(6, '0'))) c++; return String(c).padStart(6, '0'); };
+  const untilSafe = async () => { const r = Date.now() % 30000; if (r > 24000) await sleep(30000 - r + 300); }; // adım sınırına yakınsa yeni adımı bekle
+  const login = (S, ip, body) => S.call('POST', '/admin/login', { headers: ip ? { 'X-Forwarded-For': ip } : {}, body });
+
+  if (T) try {
+    let r, r2, r3, r4;
+    // --- TOTP açık (TRUST_PROXY=1: adres X-Forwarded-For'dan, kilit adres başına denenebilsin) ---
+    const S = await start(18781, { ADMIN_TOTP_SECRET: SECRET, TRUST_PROXY: '1' });
+    r = await S.call('GET', '/admin/auth');
+    ok('(10b) GET /admin/auth (kimliksiz) → {totp:true}', r.status === 200 && r.text === '{"totp":true}');
+    r = await S.call('GET', '/admin/summary', { headers: { ...C, ...XFF } });
+    ok('(10b) dış istek (X-Forwarded-For) yalnızca kodla /admin/summary → 401 totp_required', r.status === 401 && r.json?.error === 'totp_required');
+    r = await S.call('GET', '/admin/summary', { headers: C });
+    ok('(10b) yerel istek (vekil başlığı yok) kodla /admin/summary → 200 (CLI muafiyeti)', r.status === 200 && !!r.json?.users);
+    const PH = { Forwarded: 'for=203.0.113.5', 'X-Real-IP': '203.0.113.5', 'CF-Connecting-IP': '203.0.113.5', Via: '1.1 caddy', 'X-Forwarded-Host': 'evcopilot.example', 'X-Forwarded-Proto': 'https', 'X-Forwarded-For': '' };
+    const ph = [];
+    for (const [k, v] of Object.entries(PH)) ph.push((await S.call('GET', '/admin/summary', { headers: { ...C, [k]: v } })).json?.error === 'totp_required');
+    ok('(10b) her vekil başlığı (Forwarded, X-Real-IP, CF-Connecting-IP, Via, X-Forwarded-Host/Proto, boş XFF) isteği yerel saymaz', ph.every(Boolean));
+    r = await S.call('GET', '/admin/users', { headers: { ...C, ...XFF } });
+    r2 = await S.call('POST', '/admin/invites', { headers: { ...C, ...XFF }, body: { label: 'x' } });
+    r3 = await S.call('POST', '/admin/restart', { headers: { ...C, ...XFF } });
+    r4 = await S.call('GET', '/admin/devices', { headers: { ...C, ...XFF } });
+    ok('(10b) diğer /admin/* (users, invites, restart, devices) dışarıdan kodla → 401 totp_required', [r, r2, r3, r4].every((x) => x.status === 401 && x.json?.error === 'totp_required'));
+    r = await S.call('GET', '/health', { headers: { ...C, ...XFF } });
+    r2 = await S.call('GET', '/v1/map/config', { headers: { ...C, ...XFF } });
+    ok('(10b) uygulama yolları (/health, /v1/map/config) dışarıdan kodla yine 200', r.status === 200 && r2.status === 200);
+    r = await login(S, '198.51.100.7', { code: CODE, totp: wrongCode() });
+    ok('(10b) giriş: yanlış TOTP → 401 kod yanlış', r.status === 401 && r.text === '{"error":"kod yanlış"}');
+    await untilSafe();
+    const keep = nowCode(0);
+    r2 = await login(S, '198.51.100.7', { code: CODE + 'x', totp: keep });
+    ok('(10b) giriş: yanlış erişim kodu + doğru TOTP → aynı genel mesaj (hangi adımın yanlış olduğu belli olmaz)', r2.status === 401 && r2.text === r.text);
+    r = await login(S, '198.51.100.8', { code: CODE, totp: 'abcdef' });
+    ok('(10b) giriş: rakam olmayan TOTP → 401', r.status === 401 && r.json?.error === 'kod yanlış');
+    r = await S.call('POST', '/admin/login', { headers: { 'X-Forwarded-For': '198.51.100.9' }, raw: '{"code":' });
+    r2 = await S.call('POST', '/admin/login', { headers: { 'X-Forwarded-For': '198.51.100.9' }, raw: '[1,2]' });
+    ok('(10b) giriş: bozuk JSON ve dizi gövde → 400', r.status === 400 && r2.status === 400);
+    r = await S.call('POST', '/admin/login', { headers: { 'X-Forwarded-For': '198.51.100.9' }, raw: JSON.stringify({ code: CODE, totp: '000000', pad: 'x'.repeat(3000) }) });
+    ok('(10b) giriş: büyük gövde → 413', r.status === 413);
+    r = await S.call('GET', '/admin/login', { headers: { 'X-Forwarded-For': '198.51.100.9' } });
+    ok('(10b) GET /admin/login → 405', r.status === 405);
+    r = await login(S, '198.51.100.10', { code: CODE, totp: keep });
+    const tok = r.json?.token;
+    if (tok) tokensSeen.push(tok);
+    ok('(10b) giriş başarılı: {token, expiresAt} (32 bayt base64url, ~12 sa) — yanlış erişim kodlu deneme kodu tüketmedi', r.status === 200 && /^[A-Za-z0-9_-]{43}$/.test(tok || '') && Math.abs(r.json.expiresAt - (Date.now() + 12 * 3600e3)) < 60e3 && JSON.stringify(Object.keys(r.json)) === '["token","expiresAt"]');
+    r = await login(S, '198.51.100.10', { code: CODE, totp: keep });
+    ok('(10b) tekrar oynatma: aynı geçerli kod ikinci kez → 401', r.status === 401 && r.json?.error === 'kod yanlış');
+    const T1 = { 'X-Admin-Token': tok, ...XFF };
+    r = await S.call('GET', '/admin/summary', { headers: T1 });
+    r2 = await S.call('GET', '/admin/users', { headers: T1 });
+    r3 = await S.call('POST', '/admin/map', { headers: T1, body: { default: 'osm' } });
+    ok('(10b) X-Admin-Token + X-Forwarded-For → /admin/summary, /admin/users, POST /admin/map 200', r.status === 200 && !!r.json?.users && r2.status === 200 && r3.status === 200);
+    r = await S.call('GET', '/health', { headers: T1 });
+    ok('(10b) belirteç uygulama yollarını açmaz (/health → 401)', r.status === 401);
+    r = await S.call('GET', '/admin/summary', { headers: { 'X-Admin-Token': 'A'.repeat(43), ...XFF } });
+    r2 = await S.call('GET', '/admin/summary', { headers: { 'X-Admin-Token': tok + 'x', ...XFF } });
+    ok('(10b) geçersiz belirteç → 401', r.status === 401 && r2.status === 401);
+    r = await login(S, '198.51.100.10', { code: CODE, totp: nowCode(1) });
+    if (r.json?.token) tokensSeen.push(r.json.token);
+    ok('(10b) sonraki adımın kodu (+1) kabul, yeni belirteç farklı', r.status === 200 && r.json?.token && r.json.token !== tok);
+    const tok2 = r.json?.token;
+    r = await S.call('POST', '/admin/logout', { headers: { 'X-Admin-Token': tok2, ...XFF } });
+    r2 = await S.call('GET', '/admin/summary', { headers: { 'X-Admin-Token': tok2, ...XFF } });
+    r3 = await S.call('GET', '/admin/summary', { headers: T1 });
+    ok('(10b) POST /admin/logout belirteci sunucuda geçersiz kılar (diğer belirteç etkilenmez)', r.status === 200 && r2.status === 401 && r3.status === 200);
+    // adres kilidi: 5 yanlış → 1 saat 429
+    const L = '192.0.2.44';
+    const lk = [];
+    for (let i = 0; i < 5; i++) lk.push((await login(S, L, { code: CODE, totp: wrongCode() })).status);
+    r = await login(S, L, { code: CODE, totp: nowCode(0) });
+    const ra = Number(r.headers.get('retry-after'));
+    ok('(10b) kilit: 5 yanlış (401) → 6. deneme 429, Retry-After ≈ 3600', lk.every((s) => s === 401) && r.status === 429 && ra > 3500 && ra <= 3600);
+    r = await login(S, '192.0.2.45', { code: CODE, totp: wrongCode() });
+    ok('(10b) kilit yalnızca o adresi etkiler (başka adres → 401, 429 değil)', r.status === 401);
+    r = await S.call('GET', '/admin/summary', { headers: { 'X-Admin-Token': tok, 'X-Forwarded-For': L } });
+    ok('(10b) giriş kilidi geçerli belirteci ve eski 10/10 kilidini etkilemez', r.status === 200);
+    ok('(10b) açılış günlüğü TOTP açık der', /TOTP açık/.test(S.log()));
+
+    // --- genel sınır: 7 adres × 4 yanlış = 28 → 25.den sonra herkese 429 ---
+    const G = await start(18782, { ADMIN_TOTP_SECRET: SECRET, TRUST_PROXY: '1' });
+    const gs = [];
+    for (let a = 0; a < 7; a++) for (let i = 0; i < 4; i++) gs.push((await login(G, '10.1.0.' + a, { code: CODE, totp: wrongCode() })).status);
+    r = await login(G, '10.9.9.9', { code: CODE, totp: nowCode(0) });
+    const gra = Number(r.headers.get('retry-after'));
+    ok('(10b) genel sınır: ilk 25 yanlış 401, sonrası 429; yeni adrese de 429 (Retry-After ≈ 600)', gs.slice(0, 25).every((s) => s === 401) && gs.slice(25).every((s) => s === 429) && r.status === 429 && gra > 500 && gra <= 600);
+    r = await G.call('GET', '/admin/summary', { headers: C });
+    ok('(10b) genel giriş sınırı yerel CLI erişimini etkilemez', r.status === 200);
+
+    // --- belirteç süresi (ADMIN_TOKEN_TTL_SEC=1) ---
+    const E = await start(18783, { ADMIN_TOTP_SECRET: SECRET, ADMIN_TOKEN_TTL_SEC: '1' });
+    await untilSafe();
+    r = await login(E, null, { code: CODE, totp: nowCode(0) });
+    const et = r.json?.token;
+    if (et) tokensSeen.push(et);
+    r2 = await E.call('GET', '/admin/summary', { headers: { 'X-Admin-Token': et, ...XFF } });
+    await sleep(1300);
+    r3 = await E.call('GET', '/admin/summary', { headers: { 'X-Admin-Token': et, ...XFF } });
+    ok('(10b) belirteç süresi: TTL içinde 200, dolunca 401', r.status === 200 && r2.status === 200 && r3.status === 401);
+
+    // --- TOTP kapalı (tanımsız) ve geçersiz anahtar: bugünkü davranış ---
+    const U = await start(18784, {});
+    r = await U.call('GET', '/admin/auth');
+    r2 = await U.call('GET', '/admin/summary', { headers: { ...C, ...XFF } });
+    r3 = await U.call('POST', '/admin/login', { body: { code: CODE, totp: '000000' } });
+    ok('(10b) ADMIN_TOTP_SECRET yok → /admin/auth {totp:false}, dışarıdan kodla /admin/summary 200, /admin/login eskisi gibi (401 giriş gerekli)', r.text === '{"totp":false}' && r2.status === 200 && r3.status === 401 && r3.json?.error === 'giriş gerekli');
+    ok('(10b) ADMIN_TOTP_SECRET yok → açılış günlüğünde TOTP sözü yok', !/TOTP/.test(U.log()));
+    const BAD = 'NOT*BASE32*SECRET';
+    const V = await start(18785, { ADMIN_TOTP_SECRET: BAD });
+    r = await V.call('GET', '/admin/auth');
+    r2 = await V.call('GET', '/admin/summary', { headers: { ...C, ...XFF } });
+    ok('(10b) geçersiz ADMIN_TOTP_SECRET → TOTP kapalı (bugünkü davranış) ve uyarı, değer yazılmaz', r.text === '{"totp":false}' && r2.status === 200 && /ADMIN_TOTP_SECRET geçersiz/.test(V.log()) && !V.log().includes(BAD));
+  } catch (e) {
+    ok('Bölüm 10 (b) çalıştı: ' + e.message, false);
+  } finally {
+    for (const c of children) { try { c.kill(); } catch {} }
+    await sleep(300);
+    for (const d of dirs) { try { rmSync(d, { recursive: true, force: true }); } catch {} }
+  }
+  if (T) {
+    const allLogs = logs.map((f) => f()).join('\n');
+    ok('(10b) sunucu çıktısında TOTP anahtarı ve belirteç yok', logs.length >= 5 && !allLogs.includes(SECRET) && tokensSeen.length >= 3 && tokensSeen.every((t) => !allLogs.includes(t)));
+    ok('(10b) hiçbir yanıtta anahtar yok; belirteç yalnızca giriş yanıtında', responses.length > 20 && responses.every((x) => !x.text.includes(SECRET)) && tokensSeen.every((t) => responses.filter((x) => x.text.includes(t)).every((x) => x.login)));
+  }
+
+  // (c) admin.html içerik denetimi
+  {
+    const html = readFileSync(fileURLToPath(new URL('../server/admin.html', import.meta.url)), 'utf8');
+    ok("(10c) admin.html '/admin/auth' ve '/admin/login' çağırır", html.includes("'/admin/auth'") && html.includes("'/admin/login'"));
+    ok('(10c) admin.html ikinci alan "Doğrulama kodu (6 hane)"', html.includes('Doğrulama kodu (6 hane)'));
+    const inp = /<input[^>]*id="totp"[^>]*>/.exec(html)?.[0] || '';
+    ok('(10c) TOTP alanı: inputmode numeric, autocomplete one-time-code, maxlength 6', /inputmode="numeric"/.test(inp) && /autocomplete="one-time-code"/.test(inp) && /maxlength="6"/.test(inp));
+    ok('(10c) admin.html X-Admin-Token gönderir ve adm_t oturum anahtarını kullanır', html.includes("'X-Admin-Token'") && html.includes("'adm_t'"));
+    ok("(10c) admin.html Çıkış'ta '/admin/logout' çağırır", html.includes("'/admin/logout'"));
+    ok('(10c) süre dolunca mesaj: "Oturum süresi doldu, tekrar giriş yap"', html.includes('Oturum süresi doldu, tekrar giriş yap'));
+    ok('(10c) TOTP açıkken erişim kodu saklanmaz (adm yalnızca !TOTP dalında yazılır, açılışta silinir)', /if \(!TOTP\)[^\n]*sessionStorage\.setItem\('adm',/.test(html) && (html.match(/sessionStorage\.setItem\('adm',/g) || []).length === 1 && html.includes("sessionStorage.removeItem('adm')"));
+    ok('(10c) admin.html innerHTML / outerHTML / insertAdjacentHTML / document.write kullanmaz', !/innerHTML|outerHTML|insertAdjacentHTML|document\.write/.test(html));
+  }
+
+  // (d) kurulum betiği: yalnızca geçici env dosyası (--env), sahte erişim kodu; çıktı yakalanır, yazdırılmaz
+  {
+    const dir = mkdtempSync(join(tmpdir(), 'totp-setup-'));
+    try {
+      const envFile = join(dir, 'test.env');
+      const orig = `# deneme\r\nACCESS_CODES=${CODE}\r\nPORT=18999\r\n`;
+      writeFileSync(envFile, orig);
+      const run = (...args) => spawnSync(process.execPath, ['server/totp-setup.mjs', '--env', envFile, ...args], { cwd: ROOT, encoding: 'utf8', timeout: 30000 });
+      let p = run();
+      const txt = readFileSync(envFile, 'utf8');
+      const sec = /^ADMIN_TOTP_SECRET=([A-Z2-7]+)\r$/m.exec(txt)?.[1] || '';
+      ok('(10d) kurulum: çıkış 0, ADMIN_TOTP_SECRET 32 karakter base32 (20 bayt)', p.status === 0 && sec.length === 32 && T?.base32Decode(sec)?.length === 20);
+      ok('(10d) kurulum: diğer satırlar ve CRLF korunur', txt.startsWith(orig) && !/[^\r]\n/.test(txt));
+      ok('(10d) kurulum: yedek dosyası eski içerikle', existsSync(envFile + '.totp-yedek') && readFileSync(envFile + '.totp-yedek', 'utf8') === orig);
+      const uri = `otpauth://totp/EV%20Co-Pilot%20Y%C3%B6netim?secret=${sec}&issuer=EV%20Co-Pilot&algorithm=SHA1&digits=6&period=30`;
+      ok('(10d) çıktı: otpauth URI (aynı anahtar) ve 4\'lü gruplar', !!sec && p.stdout.includes(uri) && p.stdout.includes(sec.match(/.{4}/g).join(' ')));
+      ok('(10d) çıktı: Microsoft Authenticator adımları (Diğer hesap, Kodu el ile gir) ve kapatma yolu', p.stdout.includes('Microsoft Authenticator') && p.stdout.includes('Diğer hesap') && p.stdout.includes('Kodu el ile gir') && /sil/.test(p.stdout));
+      ok('(10d) çıktı erişim kodunu içermez', !p.stdout.includes(CODE) && !p.stderr.includes(CODE));
+      p = run();
+      ok('(10d) --force olmadan mevcut anahtar üzerine yazılmaz (çıkış ≠ 0, dosya aynı, anahtar yazdırılmaz)', p.status !== 0 && readFileSync(envFile, 'utf8') === txt && !p.stdout.includes(sec) && !p.stderr.includes(sec));
+      p = run('--force');
+      const txt2 = readFileSync(envFile, 'utf8');
+      const sec2 = /^ADMIN_TOTP_SECRET=([A-Z2-7]+)\r$/m.exec(txt2)?.[1] || '';
+      ok('(10d) --force yeni anahtar yazar (tek satır, farklı), yedek önceki içerik', p.status === 0 && sec2.length === 32 && sec2 !== sec && (txt2.match(/^ADMIN_TOTP_SECRET=/gm) || []).length === 1 && readFileSync(envFile + '.totp-yedek', 'utf8') === txt);
+      const env2 = join(dir, 'empty.env');
+      writeFileSync(env2, `ACCESS_CODES=${CODE}\nADMIN_TOTP_SECRET=\nPORT=1\n`);
+      p = spawnSync(process.execPath, ['server/totp-setup.mjs', '--env', env2], { cwd: ROOT, encoding: 'utf8', timeout: 30000 });
+      const t3 = readFileSync(env2, 'utf8').split('\n');
+      ok('(10d) boş ADMIN_TOTP_SECRET= satırı --force gerekmeden yerinde doldurulur (LF korunur)', p.status === 0 && t3.length === 4 && /^ADMIN_TOTP_SECRET=[A-Z2-7]{32}$/.test(t3[1]) && t3[2] === 'PORT=1');
+    } catch (e) {
+      ok('Bölüm 10 (d) çalıştı: ' + e.message, false);
+    } finally {
+      try { rmSync(dir, { recursive: true, force: true }); } catch {}
+    }
+  }
+}
+
 console.log(`\n${pass} geçti, ${fail} kaldı`);
 process.exit(fail ? 1 : 0);

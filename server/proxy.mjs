@@ -24,6 +24,7 @@ import { createStationInfo, MAX_PHOTO_BYTES } from './stationinfo.mjs';
 import { createTesla } from './tesla.mjs';
 import { createMaps } from './maps.mjs';
 import { parsePoints, pointsKey, hereSpeedLimits, createLru, MAX_CACHE_ITEM } from './speedlimits.mjs';
+import { createAdminAuth } from './totp.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -70,6 +71,18 @@ const authOk = (code) => {
   for (const c of CODE_HASHES) if (timingSafeEqual(h, c)) ok = true; // hepsi karşılaştırılır (süre sabit)
   return ok;
 };
+
+// ---------- yönetim ikinci adımı (TOTP, isteğe bağlı) ----------
+// ADMIN_TOTP_SECRET (base32) tanımlı ve geçerliyse /admin/* yolları yalnızca şunlara açılır: POST /admin/login (erişim kodu + 6 haneli kod) ile alınan
+// X-Admin-Token belirteci, yönetici Google hesabı ya da YEREL istek (aynı makinedeki komut satırı betikleri: premium/restart/invite.mjs).
+// Tanımsız ya da geçersizse hiçbir şey değişmez. Ayrıntı: server/README.md "Yönetim ekranı: ikinci adım (TOTP)".
+const ADMIN_TTL_SEC = Math.min(43200, Math.max(1, Math.floor(Number(env.ADMIN_TOKEN_TTL_SEC) || 43200))); // belirteç ömrü (en çok 12 sa; kısa değer yalnızca test için)
+const adminAuth = createAdminAuth(env.ADMIN_TOTP_SECRET, { ttlMs: ADMIN_TTL_SEC * 1000 });
+if (String(env.ADMIN_TOTP_SECRET || '').trim() && !adminAuth) console.error('UYARI: ADMIN_TOTP_SECRET geçersiz (base32, en az 16 bayt olmalı): yönetim ikinci adımı KAPALI. Yeniden üret: node server/totp-setup.mjs --force');
+if (adminAuth) setInterval(() => adminAuth.sweep(), 600e3).unref();
+// Yerel istek: soket adresi loopback VE hiçbir vekil başlığı yok. Caddy/cloudflared her dış isteğe X-Forwarded-For ekler; istemci kendini yalnızca DAHA AZ yerel gösterebilir.
+const PROXY_HEADERS = ['x-forwarded-for', 'forwarded', 'x-real-ip', 'cf-connecting-ip', 'via', 'x-forwarded-host', 'x-forwarded-proto'];
+const isLocal = (req) => /^(::1|127\.0\.0\.1|::ffff:127\.0\.0\.1)$/.test(req.socket.remoteAddress || '') && PROXY_HEADERS.every((h) => req.headers[h] === undefined);
 
 // ---------- sınırlar ----------
 const hits = new Map(); // ip → { min, n }
@@ -189,7 +202,7 @@ async function readJson(req, max) {
 }
 
 // ---------- yardımcılar ----------
-const scrub = (s) => { let t = s; for (const secret of [MAPBOX, OCM, GOOGLE_PLACES, HERE, env.MAPBOX_MAP_TOKEN, env.GOOGLE_MAPS_BROWSER_KEY]) if (secret) t = t.split(secret).join('***'); return t; };
+const scrub = (s) => { let t = s; for (const secret of [MAPBOX, OCM, GOOGLE_PLACES, HERE, env.MAPBOX_MAP_TOKEN, env.GOOGLE_MAPS_BROWSER_KEY, env.ADMIN_TOTP_SECRET]) if (secret) t = t.split(secret).join('***'); return t; };
 function send(res, status, body, headers = {}) {
   const buf = Buffer.isBuffer(body) ? body : Buffer.from(typeof body === 'string' ? body : JSON.stringify(body));
   res.writeHead(status, { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...headers, 'Content-Length': buf.length });
@@ -474,6 +487,27 @@ async function priceRoute(req, res, id) {
   json(res, r.ok ? 200 : 400, r);
 }
 
+// ---------- yönetim girişi (TOTP açıkken) ----------
+// POST /admin/login { code, totp } → { token, expiresAt }. İki adım da her zaman denetlenir; hangisinin yanlış olduğu söylenmez.
+// Adres başına 5 yanlışta 1 saat, tüm adreslerde 10 dk içinde 25 yanlışta 10 dk 429 (eski 10/10 kilidinden ayrı). Gövde en çok 1 KB.
+async function adminLogin(req, res, ip) {
+  if (req.method !== 'POST') return json(res, 405, { error: 'yalnızca POST' }, { Allow: 'POST' });
+  const wait = adminAuth.gate(ip);
+  if (wait) return json(res, 429, { error: 'çok fazla yanlış deneme, sonra dene' }, { 'Retry-After': String(wait) });
+  if (Number(req.headers['content-length']) > 1024) return json(res, 413, { error: 'gövde çok büyük' });
+  const raw = await readBytes(req, 1024);
+  if (!raw) return json(res, 413, { error: 'gövde çok büyük' });
+  let b;
+  try { b = JSON.parse(raw.toString('utf8')); } catch { return json(res, 400, { error: 'geçersiz gövde' }); }
+  if (!b || typeof b !== 'object' || Array.isArray(b)) return json(res, 400, { error: 'geçersiz gövde' });
+  const codeOk = authOk(typeof b.code === 'string' ? b.code : '');
+  const step = adminAuth.matchTotp(typeof b.totp === 'string' ? b.totp : ''); // kod yanlış olsa da hesaplanır (süre farkı yok)
+  if (!codeOk || step === null) { adminAuth.fail(ip); return json(res, 401, { error: 'kod yanlış' }); }
+  adminAuth.consume(step); // bu adımın kodu bir daha kabul edilmez
+  adminAuth.success(ip);
+  return json(res, 200, adminAuth.issueToken());
+}
+
 // ---------- sunucu ----------
 const clientIp = (req) => {
   const raw = req.socket.remoteAddress || '?';
@@ -532,6 +566,14 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, html, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff',
         'Content-Security-Policy': "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'" });
     }
+    if (pp === '/admin/auth' && req.method === 'GET') { // yönetim sayfası 2. adımı sorması gerekip gerekmediğini öğrenir (gizli bilgi yok)
+      if (limited(ip)) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
+      return json(res, 200, { totp: !!adminAuth });
+    }
+    if (adminAuth && pp === '/admin/login') {
+      if (limited(ip)) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
+      return await adminLogin(req, res, ip);
+    }
     const dev = devices.valid(req.headers['x-device-id']);
     if (pp === '/v1/config' || pp === '/v1/auth/poll' || pp.startsWith('/auth/') || pp.startsWith('/i/')) {
       if (limited(ip) || (dev && limited('d:' + dev))) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
@@ -539,11 +581,14 @@ const server = http.createServer(async (req, res) => {
       if (await accounts.handlePublic(req, res, url, ip)) return;
     }
     const code = req.headers['x-access-code'];
+    const adminTok = !!adminAuth && pp.startsWith('/admin') && adminAuth.tokenValid(req.headers['x-admin-token']); // belirteç yalnızca /admin/* yollarını açar
     let id = null;
     if (code && authOk(code)) id = { kind: 'legacy', admin: true, key: 'c:' + ip };
+    else if (adminTok) id = { kind: 'legacy', admin: true, key: 'c:' + ip };
     else { const u = accounts.userFromRequest(req); if (u) id = { kind: 'user', user: u, admin: !!u.admin, key: u.id }; }
     if (!id) { if (code || accounts.hasCredentials(req)) noteFail(ip); return json(res, 401, { error: 'giriş gerekli' }); }
     if (limited(id.key) || (dev && id.kind !== 'user' && limited('d:' + dev))) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
+    if (adminAuth && id.kind === 'legacy' && pp.startsWith('/admin') && !adminTok && !isLocal(req)) return json(res, 401, { error: 'totp_required' }); // dışarıdan yalnızca erişim koduyla yönetim yok
     if (dev && id.kind === 'user') devices.link(dev, id.user.id, ip); // oturumlu istek: cihaz hesaba bağlanır (giriş öncesi anonim kayıt birleşir)
     const p = url.pathname;
     if (p === '/health') return json(res, 200, { ok: true, mapbox: !!MAPBOX, here: !!HERE, ocm: !!OCM, overpass: true, occupancy: true, v: 3 });
@@ -566,6 +611,7 @@ const server = http.createServer(async (req, res) => {
       if (cfg.provider !== 'osm' && !mapAllowed(id)) return json(res, 429, { error: 'günlük harita hakkı doldu' }, { 'Retry-After': '3600' });
       return json(res, 200, cfg, { 'Cache-Control': 'no-store' });
     }
+    if (adminAuth && p === '/admin/logout' && req.method === 'POST' && id.admin) { adminAuth.revoke(req.headers['x-admin-token']); return json(res, 200, { ok: true }); } // yönetim sayfası Çıkış
     if (p === '/admin/map' && id.admin && (req.method === 'GET' || req.method === 'POST')) {
       if (req.method === 'GET') return json(res, 200, { default: maps.getDefault(), available: maps.available() });
       const b = await readJson(req, 500);
@@ -594,5 +640,5 @@ server.requestTimeout = 120000;
 server.headersTimeout = 15000;
 tesla.get().catch(() => {}); // ilk kullanıcı beklemesin: açılışta Tesla listesi (diskte yoksa) önceden alınır
 server.listen(PORT, HOST, () => {
-  console.log(`EV Co-Pilot ara sunucusu ${HOST}:${PORT} · Mapbox ${MAPBOX ? 'var' : 'yok'} · OpenChargeMap ${OCM ? 'var' : 'yok'} · HERE ${HERE ? 'var' : 'yok'} · Google girişi ${accounts.googleOn ? 'açık' : 'kapalı'} · doluluk: NDW${HERE ? ' + HERE' : ''}${GOOGLE_PLACES ? ' + Google' : ''} · ${CODES.length} yönetici kodu`);
+  console.log(`EV Co-Pilot ara sunucusu ${HOST}:${PORT} · Mapbox ${MAPBOX ? 'var' : 'yok'} · OpenChargeMap ${OCM ? 'var' : 'yok'} · HERE ${HERE ? 'var' : 'yok'} · Google girişi ${accounts.googleOn ? 'açık' : 'kapalı'} · doluluk: NDW${HERE ? ' + HERE' : ''}${GOOGLE_PLACES ? ' + Google' : ''} · ${CODES.length} yönetici kodu${adminAuth ? ' · yönetim 2. adım: TOTP açık' : ''}`);
 });

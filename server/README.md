@@ -61,6 +61,23 @@ Telefonda hiçbir anahtar yazılmaz. Kullanıcı davet linkine dokunur, Google i
 
 **Gizlilik:** sunucu e-posta, ad, ayarlar, konum içeren yolculuk ve şarj geçmişi saklar. Google Play için gizlilik politikası ve hesap silme (uygulamada "Hesabı sil") gerekir.
 
+## Yönetim ekranı: ikinci adım (TOTP, Microsoft Authenticator)
+İsteğe bağlıdır. `server\.env` içinde `ADMIN_TOTP_SECRET` yoksa (ya da geçersizse) yönetim ekranı ve `/admin/*` eskisi gibi yalnızca erişim koduyla çalışır.
+
+**Kurulum (bir kez, kendi terminalinde):**
+1. `node server\totp-setup.mjs` → 20 baytlık rastgele bir anahtar üretir, `server\.env` içine `ADMIN_TOTP_SECRET=...` yazar (diğer satırlara dokunmaz, erişim kodlarını ekrana yazmaz; önce `server\.env.totp-yedek` yedeğini alır, Windows'ta yalnızca SYSTEM/Yöneticiler/sen okuyabilir) ve anahtarı **yalnızca o an** ekrana yazar. Zaten anahtar varsa `--force` olmadan üzerine yazmaz.
+2. Microsoft Authenticator: **+ (Hesap ekle) > Diğer hesap (Google, Facebook vb.) > "Kodu el ile gir"** → Hesap adı `EV Co-Pilot Yönetim`, Gizli anahtar: ekrandaki 4'lü gruplar (boşluklu ya da boşluksuz). Betik ayrıca `otpauth://` adresini yazar (başka doğrulayıcılar için); QR üretmek için bir web sitesine yapıştırma, anahtar sızar.
+3. `node server\restart.mjs` → açılış satırında "yönetim 2. adım: TOTP açık" yazar.
+
+**Giriş:** `/yonetim` sayfası açılışta `GET /admin/auth` (`{ totp: true|false }`, gizli bilgi yok) sorar; TOTP açıksa erişim kodunun yanında "Doğrulama kodu (6 hane)" alanı çıkar. Sayfa `POST /admin/login { code, totp }` ile giriş yapar; dönen `{ token, expiresAt }` belirteci yalnızca o sekmede (`sessionStorage`) tutulur ve her istekte `X-Admin-Token` başlığıyla gider. Erişim kodu sayfada saklanmaz. Belirteç **12 saat** geçerlidir (`ADMIN_TOKEN_TTL_SEC` ile kısaltılabilir, uzatılamaz); sunucuda yalnızca SHA-256 özeti bellekte durur (en çok 20 canlı oturum; sunucu yeniden başlarsa herkes çıkar). Süre dolunca sayfa "Oturum süresi doldu, tekrar giriş yap" der. Çıkış düğmesi `POST /admin/logout` ile belirteci sunucuda da siler.
+- Kod: RFC 6238 (HMAC-SHA1, 6 hane, 30 sn), ±1 adım saat kayması tolere edilir, karşılaştırmalar sabit sürelidir. **Her kod bir kez kullanılır:** başarılı girişte kullanılan adımın (ve öncekilerin) kodu bir daha kabul edilmez; aynı 30 sn içinde ikinci giriş için yeni kodu bekle.
+- Yanlış girişte hangi adımın yanlış olduğu söylenmez (`401 {"error":"kod yanlış"}`). **Kilit:** aynı adresten 5 yanlış → o adrese 1 saat `429`; tüm adreslerden 10 dk içinde 25 yanlış → giriş uç noktası herkese 10 dk `429` (`Retry-After` ile). Bu kilit eski "10 yanlış kodda 10 dk" kilidinden ayrıdır ve yalnızca `/admin/login` için geçerlidir. Gövde en çok 1 KB; bozuk JSON `400`.
+- TOTP açıkken `/admin/*` yolları (`/admin/auth` ve `/admin/login` dışında) yalnızca şunlarla açılır: geçerli `X-Admin-Token`, **yönetici Google hesabı** (`ADMIN_EMAILS`, eskisi gibi) ya da **yerel istek**. Dışarıdan yalnızca `X-Access-Code` ile gelen yönetim isteği `401 {"error":"totp_required"}` alır. Erişim kodu uygulama yollarında (`/health`, `/v1/*`, `/mapbox/*` …) eskisi gibi çalışır.
+- **Yerel istek (komut satırı muafiyeti):** soket adresi 127.0.0.1/::1 VE hiçbir vekil başlığı (`X-Forwarded-For`, `Forwarded`, `X-Real-IP`, `CF-Connecting-IP`, `Via`, `X-Forwarded-Host`, `X-Forwarded-Proto`) yoksa. Caddy (ve cloudflared) her dış isteğe `X-Forwarded-For` ekler, bu yüzden dışarıdan gelen istek hiçbir zaman yerel sayılmaz. Bu bilgisayardaki `premium.mjs`, `restart.mjs`, `invite.mjs` değişmeden çalışır. (Caddy'nin yapılandırmasından `X-Forwarded-For` kaldırılırsa dış istekler yerel görünür: kaldırma.)
+- Anahtar, kodlar ve belirteçler günlüğe yazılmaz; istek günlüğü yalnızca adres, yöntem, yol, durum ve süreyi yazar.
+
+**Telefonu kaybedersen / kapatmak için:** `server\.env` içindeki `ADMIN_TOTP_SECRET` satırını sil (ya da değerini boşalt) ve `node server\restart.mjs` çalıştır: yönetim ekranı yeniden yalnızca erişim koduyla açılır. Yeni telefonla yeniden açmak için `node server\totp-setup.mjs --force` (eski kayıt çalışmaz olur). Anahtar sızdıysa aynı şekilde `--force` ile yenile; erişim kodu da sızdıysa `ACCESS_CODES`'u da değiştir.
+
 ## Android uygulamasını internetten kurdurmak
 Sunucu kurulum sayfasını ve APK'yı kendisi sunar: **`https://evcopilot.duckdns.org/app`** (herkese açık; telefon tarayıcısında açılır, APK'yı indirir, kurulum adımları sayfada yazar). Davet sayfasında (`/i/KOD`) da "Android uygulamasını indir" düğmesi vardır; yani kişiye tek bir davet linki göndermek yeter.
 

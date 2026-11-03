@@ -49,8 +49,10 @@ code{background:var(--chip);padding:1px 5px;border-radius:5px;word-break:break-a
 <body>
 <div id="login" class="card hidden">
   <h1 style="font-size:18px;margin:0">🔌 EV Co-Pilot Yönetim</h1>
-  <span class="mut">Yönetici erişim kodunu gir (<code>server\.env</code> içindeki <code>ACCESS_CODES</code> değerlerinden biri). Kod yalnızca bu sekmede tutulur.</span>
+  <span class="mut" id="hint1">Yönetici erişim kodunu gir (<code>server\.env</code> içindeki <code>ACCESS_CODES</code> değerlerinden biri). Kod yalnızca bu sekmede tutulur.</span>
+  <span class="mut hidden" id="hint2">Yönetici erişim kodunu ve Microsoft Authenticator'daki 6 haneli doğrulama kodunu gir. Erişim kodu saklanmaz; giriş bu sekmede en çok 12 saat geçerli bir oturum açar.</span>
   <input id="code" type="password" autocomplete="off" placeholder="Yönetici kodu">
+  <label id="totpbox" class="hidden" style="display:grid;gap:4px"><span class="mut">Doğrulama kodu (6 hane)</span><input id="totp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="123456"></label>
   <button class="pri" id="go">Giriş</button>
   <span id="loginerr" class="chip bad hidden"></span>
 </div>
@@ -77,8 +79,14 @@ code{background:var(--chip);padding:1px 5px;border-radius:5px;word-break:break-a
 'use strict';
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+// TOTP kapalıyken (eski davranış) erişim kodu bu sekmede 'adm' altında tutulur ve her istekte X-Access-Code olarak gider.
+// TOTP açıkken kod yalnızca POST /admin/login'e bir kez gider; dönen oturum belirteci 'adm_t' altında tutulur ve X-Admin-Token olarak gider.
 let CODE = '';
-try { CODE = sessionStorage.getItem('adm') || ''; } catch {}
+let TOKEN = '';
+let TOTP = false;
+try { CODE = sessionStorage.getItem('adm') || ''; TOKEN = sessionStorage.getItem('adm_t') || ''; } catch {}
+const authed = () => (TOTP ? !!TOKEN : !!CODE);
+const EXPIRED = 'Oturum süresi doldu, tekrar giriş yap';
 let D = { sum: null, users: [], inv: [], cost: null, dev: null };
 let tab = 'sum';
 let q = '';
@@ -86,10 +94,13 @@ let q = '';
 function toast(t) { const x = $('toast'); x.textContent = t; x.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => x.classList.remove('show'), 2800); }
 
 async function api(path, method = 'GET', body) {
-  const r = await fetch(path, { method, headers: { 'X-Access-Code': CODE, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  const auth = TOTP ? { 'X-Admin-Token': TOKEN } : { 'X-Access-Code': CODE };
+  const r = await fetch(path, { method, headers: { ...auth, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401 && TOTP) { logout(EXPIRED); throw new Error(EXPIRED); }
+  if (r.status === 401 && j.error === 'totp_required') { logout(); throw new Error('Sunucu doğrulama kodu istiyor: sayfayı yenile'); }
   if (r.status === 401) { logout(); throw new Error('Kod geçersiz'); }
   if (r.status === 429) throw new Error('Çok fazla istek ya da yanlış kod, biraz sonra dene');
-  const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || 'Hata ' + r.status);
   return j;
 }
@@ -101,8 +112,18 @@ const kb = (b) => (b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.round((
 const ago = (t) => { if (!t) return 'hiç'; const d = (Date.now() - t) / 86400e3; return d < 1 / 24 ? 'şimdi' : d < 1 ? Math.round(d * 24) + ' sa önce' : Math.round(d) + ' gün önce'; };
 const dur = (s) => (s > 86400 ? Math.floor(s / 86400) + ' gün ' : '') + Math.floor((s % 86400) / 3600) + ' sa';
 
-function logout() { CODE = ''; try { sessionStorage.removeItem('adm'); } catch {} show(); }
-function show() { $('login').classList.toggle('hidden', !!CODE); $('app').classList.toggle('hidden', !CODE); }
+function loginErr(t) { $('loginerr').textContent = t; $('loginerr').classList.remove('hidden'); }
+function logout(msg) {
+  if (TOTP && TOKEN && !msg) fetch('/admin/logout', { method: 'POST', headers: { 'X-Admin-Token': TOKEN } }).catch(() => {}); // Çıkış: belirteç sunucuda da geçersiz olur
+  CODE = ''; TOKEN = '';
+  try { sessionStorage.removeItem('adm'); sessionStorage.removeItem('adm_t'); } catch {}
+  if (msg) loginErr(msg);
+  show();
+}
+function show() {
+  $('login').classList.toggle('hidden', authed()); $('app').classList.toggle('hidden', !authed());
+  $('totpbox').classList.toggle('hidden', !TOTP); $('hint1').classList.toggle('hidden', TOTP); $('hint2').classList.toggle('hidden', !TOTP);
+}
 
 async function load() {
   try {
@@ -316,18 +337,42 @@ $('tabs').addEventListener('click', (e) => {
   for (const t of ['sum', 'users', 'inv', 'dev', 'cost']) $('t-' + t).classList.toggle('hidden', t !== tab);
 });
 $('refresh').onclick = load;
-$('logout').onclick = logout;
+$('logout').onclick = () => logout();
+let busy = false;
 async function login() {
-  const v = $('code').value.trim(); if (!v) return;
-  CODE = v; $('loginerr').classList.add('hidden');
-  try { await api('/admin/summary'); try { sessionStorage.setItem('adm', CODE); } catch {} $('code').value = ''; show(); load(); }
-  catch (e) { CODE = ''; $('loginerr').textContent = e.message; $('loginerr').classList.remove('hidden'); }
+  const v = $('code').value.trim(); if (!v || busy) return;
+  $('loginerr').classList.add('hidden');
+  if (TOTP) { // erişim kodu + doğrulama kodu → oturum belirteci; erişim kodu saklanmaz
+    const t = $('totp').value.replace(/\s+/g, '');
+    if (!/^\d{6}$/.test(t)) return loginErr('Doğrulama kodu 6 rakam olmalı');
+    busy = true;
+    let r, j = {};
+    try { r = await fetch('/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: v, totp: t }) }); j = await r.json().catch(() => ({})); }
+    catch { busy = false; return loginErr('Sunucuya ulaşılamadı'); }
+    busy = false;
+    $('totp').value = '';
+    if (r.status === 429) return loginErr('Çok fazla yanlış deneme; ' + Math.ceil((Number(r.headers.get('Retry-After')) || 600) / 60) + ' dk sonra dene');
+    if (!r.ok || !j.token) return loginErr(r.status === 401 ? 'Kod ya da doğrulama kodu yanlış (her doğrulama kodu bir kez kullanılır)' : j.error || 'Hata ' + r.status);
+    $('code').value = '';
+    TOKEN = j.token; try { sessionStorage.setItem('adm_t', TOKEN); } catch {}
+    show(); load();
+    return;
+  }
+  CODE = v;
+  try { await api('/admin/summary'); if (!TOTP) try { sessionStorage.setItem('adm', CODE); } catch {} $('code').value = ''; show(); load(); }
+  catch (e) { CODE = ''; loginErr(e.message); }
 }
 $('go').onclick = login;
 $('code').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
-show();
-if (CODE) load();
-setInterval(() => { if (CODE && !document.hidden) load(); }, 60000);
+$('totp').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+async function init() { // sunucu ikinci adım istiyor mu? (eski sunucuda yol yoksa: hayır)
+  try { const r = await fetch('/admin/auth'); const j = r.ok ? await r.json() : {}; TOTP = j.totp === true; } catch {}
+  if (TOTP) { CODE = ''; try { sessionStorage.removeItem('adm'); } catch {} }
+  show();
+  if (authed()) load();
+}
+init();
+setInterval(() => { if (authed() && !document.hidden) load(); }, 60000);
 </script>
 </body>
 </html>
