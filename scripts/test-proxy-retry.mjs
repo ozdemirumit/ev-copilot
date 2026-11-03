@@ -27,6 +27,7 @@ const fakeToastEl = { textContent: '', classList: { add() {}, remove() {} } };
 let script = [];
 let calls = [];
 const resp = (status, body = '{}') => new Response(body, { status, headers: { 'Content-Type': 'application/json' } });
+const caddy = (status) => new Response('', { status }); // Caddy tarzı 502/503/504: gövdesiz, JSON içerik türü yok
 const netErr = (m = 'Failed to fetch') => new TypeError(m);
 globalThis.fetch = async (url, init = {}) => {
   calls.push({ url: String(url), init, signal: init.signal });
@@ -55,7 +56,7 @@ const NOJ = { jitterMs: 0 };
   ok('istek ara sunucu adresine ve kimlik başlıklarıyla gider', calls[0].url === 'http://proxy.test/x' && calls[0].init.headers.get('X-Device-Id') === 'd_abcdefghijklmnopqrstu');
 }
 {
-  reset(); run([resp(502), resp(200)]);
+  reset(); run([caddy(502), resp(200)]);
   const r = await proxyFetchRetry('/x', {}, { timeoutMs: 1000, ...NOJ });
   ok('502 sonra 200: yeniden denenir ve 200 döner', r.status === 200 && calls.length === 2 && sleeps.length === 1);
 }
@@ -65,7 +66,7 @@ const NOJ = { jitterMs: 0 };
   ok('ağ hatası iki kez sonra 200: üç çağrı', r.status === 200 && calls.length === 3 && sleeps.length === 2);
 }
 for (const st of [503, 504]) {
-  reset(); run([resp(st), resp(200)]);
+  reset(); run([caddy(st), resp(200)]);
   const r = await proxyFetchRetry('/x', {}, { timeoutMs: 1000, ...NOJ });
   ok(`${st} yeniden denenir`, r.status === 200 && calls.length === 2);
 }
@@ -74,8 +75,25 @@ for (const st of [400, 401, 402, 403, 404, 429, 500, 501]) {
   const r = await proxyFetchRetry('/x', {}, { timeoutMs: 1000, ...NOJ });
   ok(`${st} yeniden DENENMEZ (tam bir çağrı)`, r.status === st && calls.length === 1 && sleeps.length === 0);
 }
+for (const st of [502, 503, 504]) {
+  reset(); run([resp(st, JSON.stringify({ error: 'HERE HTTP 401' })), resp(200)]);
+  const r = await proxyFetchRetry('/x', {}, { timeoutMs: 1000, ...NOJ });
+  ok(`JSON hatalı ${st} (bizim Node sunucumuzdan) yeniden DENENMEZ: tek çağrı, uyku ve olay yok`, r.status === st && calls.length === 1 && sleeps.length === 0 && events.length === 0);
+  const j = await r.json();
+  ok(`JSON ${st}: gövde çağırana olduğu gibi döner`, j.error === 'HERE HTTP 401');
+}
 {
-  reset(); run([resp(502)]);
+  reset(); run([new Response('Bad Gateway', { status: 502, headers: { 'Content-Type': 'text/plain' } }), resp(200)]);
+  const r = await proxyFetchRetry('/x', {}, { timeoutMs: 1000, ...NOJ });
+  ok('düz metin 502 yeniden denenir', r.status === 200 && calls.length === 2);
+}
+{
+  reset(); run([new Response('<html>502</html>', { status: 502, headers: { 'Content-Type': 'text/html' } }), resp(200)]);
+  const r = await proxyFetchRetry('/x', {}, { timeoutMs: 1000, ...NOJ });
+  ok('HTML 502 yeniden denenir', r.status === 200 && calls.length === 2);
+}
+{
+  reset(); run([caddy(502)]);
   const r = await proxyFetchRetry('/x', {}, { timeoutMs: 1000, ...NOJ });
   ok('tükenince son 502 olduğu gibi döner (1 + 3 deneme)', r.status === 502 && calls.length === 4 && sleeps.length === 3);
 }
@@ -100,7 +118,7 @@ for (const st of [400, 401, 402, 403, 404, 429, 500, 501]) {
 
 // ================= 2. deneme başına yeni zaman aşımı sinyali =================
 {
-  reset(); run([resp(502)]);
+  reset(); run([caddy(502)]);
   await proxyFetchRetry('/x', {}, { timeoutMs: 5000, ...NOJ });
   const sigs = calls.map((c) => c.signal);
   ok('her deneme kendi sinyalini taşır (4 ayrı sinyal)', sigs.every(Boolean) && new Set(sigs).size === 4);
@@ -109,7 +127,7 @@ for (const st of [400, 401, 402, 403, 404, 429, 500, 501]) {
 {
   // Sinyal denemeler arasında yeniden kullanılsaydı süresi dolan sinyal sonraki denemeyi bozardı: sahte uyku sinyali "süresi dolmuş" yapar
   reset();
-  run([resp(502), resp(502), resp(200)]);
+  run([caddy(502), caddy(502), resp(200)]);
   const slow = (ms) => { sleeps.push(ms); return new Promise((r) => setTimeout(r, 60)); };
   const r = await proxyFetchRetry('/x', {}, { timeoutMs: 30, retries: 3, delayMs: 10, ...NOJ, sleep: slow });
   ok('timeoutMs (30 ms) denemeler arası bekleme (60 ms) süresini aşsa da sonraki deneme iptal edilmemiş sinyalle başlar', r.status === 200 && calls.length === 3);
@@ -123,7 +141,7 @@ for (const st of [400, 401, 402, 403, 404, 429, 500, 501]) {
 
 // ================= 3. çağıran iptal ederse yeniden denenmez =================
 {
-  reset(); run([resp(502), resp(200)]);
+  reset(); run([caddy(502), resp(200)]);
   const ctrl = new AbortController();
   const sl = (ms) => { sleeps.push(ms); ctrl.abort(); return new Promise((r) => setTimeout(r, 20)); }; // bekleme sırasında kullanıcı iptal eder
   let thrown = null;
@@ -140,25 +158,25 @@ for (const st of [400, 401, 402, 403, 404, 429, 500, 501]) {
 
 // ================= 4. gecikmeler =================
 {
-  reset(); run([resp(502)]);
+  reset(); run([caddy(502)]);
   await proxyFetchRetry('/x', {}, { timeoutMs: 1000, ...NOJ });
   ok('varsayılan gecikme 4000 ms, 3 kez (jitter 0)', JSON.stringify(sleeps) === '[4000,4000,4000]');
 }
 {
-  reset(); run([resp(502)]);
+  reset(); run([caddy(502)]);
   await proxyFetchRetry('/x', {}, { timeoutMs: 1000 });
   ok('varsayılan jitter ±500 ms içinde (3500–4500)', sleeps.length === 3 && sleeps.every((m) => m >= 3500 && m <= 4500) && sleeps.some((m) => m !== 4000));
   ok('toplam bekleme ≤ 13,5 sn (15 sn sınırı içinde)', sleeps.reduce((a, b) => a + b, 0) <= 13500);
 }
 {
-  reset(); run([resp(502)]);
+  reset(); run([caddy(502)]);
   await proxyFetchRetry('/x', {}, { timeoutMs: 1000, retries: 2, delayMs: 1000, ...NOJ });
   ok('retries ve delayMs ayarlanabilir', JSON.stringify(sleeps) === '[1000,1000]' && calls.length === 3);
 }
 
 // ================= 5. ortak kapı =================
 {
-  reset(); run([resp(502)]);
+  reset(); run([caddy(502)]);
   const N = 6;
   const rs = await Promise.all(Array.from({ length: N }, () => proxyFetchRetry('/x', {}, { timeoutMs: 1000, ...NOJ })));
   ok('paralel N çağrı: hepsi son 502 ile döner', rs.every((r) => r.status === 502));
@@ -170,28 +188,75 @@ for (const st of [400, 401, 402, 403, 404, 429, 500, 501]) {
   ok('tükenmiş kesintide yeni çağrılar tek denemeyle döner (uyku yok, 10 çağrı = 10 istek)', calls.length === 10 && sleeps.length === 0, `calls=${calls.length}`);
   ok('soğuma süresinde yeni olay yok', events.filter((e) => e === 'proxy-retrying').length === 1);
   // soğuma bitince yeni bir deneme turu başlar
-  const realNow = Date.now;
-  Date.now = () => realNow() + 25000;
+  const realNow = retryTuning.now;
+  retryTuning.now = () => realNow() + 25000;
   try {
     calls.length = 0;
     await proxyFetchRetry('/x', {}, { timeoutMs: 1000, ...NOJ });
     ok('soğuma (20 sn) bitince yeni tur: 4 deneme ve yeni olay', calls.length === 4 && sleeps.length === 3 && events.filter((e) => e === 'proxy-retrying').length === 2);
-  } finally { Date.now = realNow; }
+  } finally { retryTuning.now = realNow; }
 }
 {
   // Kesinti sürerken ortada başarı olursa kapı sıfırlanır; sonraki kesinti yeniden dener
-  reset(); run([resp(502), resp(200)]);
+  reset(); run([caddy(502), resp(200)]);
   await proxyFetchRetry('/x', {}, { timeoutMs: 1000, ...NOJ });
   ok('başarıdan sonra kapı temiz: ilk tur 1 olay', events.length === 1);
   run([resp(200)]);
   await proxyFetchRetry('/x', {}, { timeoutMs: 1000, ...NOJ });
-  run([resp(503), resp(200)]);
+  run([caddy(503), resp(200)]);
   const r = await proxyFetchRetry('/x', {}, { timeoutMs: 1000, ...NOJ });
-  ok('toparlanma sonrası yeni kesinti yeniden denenir ve ikinci olayı gönderir', r.status === 200 && events.length === 2);
+  ok('toparlanma sonrası yeni kesinti yeniden denenir (olay 20 sn sınırı nedeniyle tekrar gönderilmez)', r.status === 200 && calls.length === 2 && events.length === 1, `events=${events.length}`);
+  // 20 sn sonra yeni kesinti olayı yeniden gönderir
+  const realNow = retryTuning.now;
+  retryTuning.now = () => realNow() + 21000;
+  try {
+    run([caddy(502), resp(200)]);
+    await proxyFetchRetry('/x', {}, { timeoutMs: 1000, ...NOJ });
+    ok('olay sıklığı: 20 sn sonra başlayan yeni tur olayı yeniden gönderir', events.length === 2, `events=${events.length}`);
+  } finally { retryTuning.now = realNow; }
+}
+{
+  // M2: tur yeniden başlasa da (kapı sıfırlanıp yeniden kesinti) olay en çok 20 sn'de bir
+  reset();
+  for (let i = 0; i < 4; i++) {
+    run([caddy(503), resp(200)]);
+    await proxyFetchRetry('/x', {}, { timeoutMs: 1000, ...NOJ });
+  }
+  ok('olay sıklığı: 4 ardışık ayrı kesinti turu → tek olay (toast)', events.length === 1, `events=${events.length}`);
+}
+{
+  // M1: ara sıfırlamada eski zamanlayıcı yeni turu bozmamalı
+  reset(); run([caddy(502)]);
+  let release;
+  const slowSleep = (ms) => { sleeps.push(ms); return new Promise((r) => { release = r; }); };
+  const first = proxyFetchRetry('/a', {}, { timeoutMs: 1000, ...NOJ, sleep: slowSleep }); // zamanlayıcı bekliyor
+  await new Promise((r) => setTimeout(r, 5));
+  resetRetryGate(); // başka istek başarıyla döndü → kapı sıfırlandı (zamanlayıcı hâlâ beklemede)
+  // yeni tur: kendi zamanlayıcısı
+  let release2;
+  const slowSleep2 = (ms) => { sleeps.push(ms); return new Promise((r) => { release2 = r; }); };
+  run([caddy(502)]);
+  const second = proxyFetchRetry('/b', {}, { timeoutMs: 1000, ...NOJ, sleep: slowSleep2 });
+  await new Promise((r) => setTimeout(r, 5));
+  release(); // ESKİ zamanlayıcı şimdi dolar: yeni turun sayacını artırmamalı, yeni bekleyeni uyandırmamalı
+  await new Promise((r) => setTimeout(r, 5));
+  // eski zamanlayıcı dolunca yeni turun ortak zamanlayıcısı silinmemeli: üçüncü gelen çağrı YENİ zamanlayıcı kurmadan ona katılır
+  const third = proxyFetchRetry('/c', {}, { timeoutMs: 1000, ...NOJ, sleep: (ms) => { sleeps.push(ms); return new Promise(() => {}); } });
+  await new Promise((r) => setTimeout(r, 5));
+  ok('eski zamanlayıcı dolunca yeni turun ortak zamanlayıcısı bozulmaz (toplam 2 uyku, üçüncü çağrı katıldı)', sleeps.length === 2, `sleeps=${sleeps.length}`);
+  const callsB = () => calls.filter((c) => c.url.endsWith('/b')).length;
+  ok('eski zamanlayıcı dolsa da yeni turun bekleyeni uyanmaz (hâlâ tek /b çağrısı)', callsB() === 1, `b=${callsB()}`);
+  release2();
+  await new Promise((r) => setTimeout(r, 5));
+  ok('yeni turun kendi zamanlayıcısı dolunca yeniden dener', callsB() === 2, `b=${callsB()}`);
+  // turu bitir: kalan beklemeleri serbest bırak
+  for (let i = 0; i < 6; i++) { release?.(); release2?.(); await new Promise((r) => setTimeout(r, 5)); }
+  await Promise.allSettled([first, second]);
+  void third; // üçüncü çağrı ortak zamanlayıcıya katıldı; test sonunda süreç çıkışıyla biter
 }
 {
   // Aynı turda gelen farklı kalan hak: geç gelen çağrı turun kalanına katılır, sınırı aşmaz
-  reset(); run([resp(502)]);
+  reset(); run([caddy(502)]);
   const a = proxyFetchRetry('/a', {}, { timeoutMs: 1000, ...NOJ, sleep: (ms) => { sleeps.push(ms); return new Promise((r) => setTimeout(r, 15)); } });
   await new Promise((r) => setTimeout(r, 20));
   const b = proxyFetchRetry('/b', {}, { timeoutMs: 1000, ...NOJ });
@@ -203,7 +268,7 @@ for (const st of [400, 401, 402, 403, 404, 429, 500, 501]) {
 {
   const { watchProxyRetry } = await import('../js/ui/statusBadges.js');
   watchProxyRetry();
-  reset(); run([resp(502)]);
+  reset(); run([caddy(502)]);
   fakeToastEl.textContent = '';
   await Promise.all(Array.from({ length: 4 }, () => proxyFetchRetry('/x', {}, { timeoutMs: 1000, ...NOJ })));
   ok('toast: "Sunucuya ulaşılamıyor, yeniden deneniyor…" gösterilir', fakeToastEl.textContent === 'Sunucuya ulaşılamıyor, yeniden deneniyor…', fakeToastEl.textContent);
@@ -225,17 +290,20 @@ for (const st of [400, 401, 402, 403, 404, 429, 500, 501]) {
   {
     reset(); run([resp(502, JSON.stringify({ error: 'HERE HTTP 403' }))]);
     const r = await around();
-    ok('HERE 502 + HERE 40x: yine fatal "HERE anahtarı geçersiz" (yeniden deneme tükendikten sonra)', r.fatal?.fatal === true && r.fatal.message === 'HERE anahtarı geçersiz' && calls.length === 4, `${r.fatal?.message} calls=${calls.length}`);
+    ok('HERE 502 + HERE 40x (JSON): hemen fatal "HERE anahtarı geçersiz", yeniden deneme yok (1 çağrı)', r.fatal?.fatal === true && r.fatal.message === 'HERE anahtarı geçersiz' && calls.length === 1 && sleeps.length === 0 && events.length === 0, `${r.fatal?.message} calls=${calls.length}`);
   }
   {
-    reset(); run([resp(502, JSON.stringify({ error: 'HERE HTTP 429' })), resp(200, JSON.stringify({ items: [item] }))]);
+    reset(); run([caddy(502), resp(200, JSON.stringify({ items: [item] }))]);
     const r = await around();
     ok('HERE geçici 502 önce yeniden denenir, sonra 200 ile sonuç gelir', !r.fatal && r.out.size === 1 && calls.length === 2 && r.failed === 0, `calls=${calls.length} failed=${r.failed}`);
   }
   {
     reset(); run([resp(502, JSON.stringify({ error: 'HERE HTTP 500' }))]);
-    const r = await around();
-    ok('HERE 502 (40x değil) tükenince eski yol: HERE HTTP 502 + hiç sonuç yoksa fatal "HERE yanıt vermedi"', r.failed === 1 && r.lastError === 'HERE HTTP 502' && r.fatal?.message === 'HERE yanıt vermedi' && calls.length === 4);
+    let r = await around();
+    ok('HERE 502 JSON (40x değil): yeniden denenmez, eski yol: HERE HTTP 502 + hiç sonuç yoksa fatal "HERE yanıt vermedi"', r.failed === 1 && r.lastError === 'HERE HTTP 502' && r.fatal?.message === 'HERE yanıt vermedi' && calls.length === 1);
+    reset(); run([caddy(502)]);
+    r = await around();
+    ok('HERE Caddy 502 tükenince (4 deneme) aynı eski yol', r.failed === 1 && r.lastError === 'HERE HTTP 502' && r.fatal?.message === 'HERE yanıt vermedi' && calls.length === 4);
   }
   {
     reset(); run([netErr()]);
@@ -243,7 +311,7 @@ for (const st of [400, 401, 402, 403, 404, 429, 500, 501]) {
     ok('HERE ağ hatası tükenince fatal "Ara sunucuya ulaşılamadı"', r.fatal?.fatal === true && r.fatal.message === 'Ara sunucuya ulaşılamadı' && calls.length === 4);
   }
   {
-    reset(); run([resp(502), resp(200, JSON.stringify({ items: [item] }))]);
+    reset(); run([caddy(502), resp(200, JSON.stringify({ items: [item] }))]);
     const rs = await Promise.all([lat += 1, lat += 1, lat += 1].map((la) => H.stationsAround(la, 30, 20)));
     ok('HERE: üç paralel daire kesintide tek ortak zamanlayıcıyla toparlanır', rs.every((r) => !r.fatal && r.out.size === 1) && sleeps.length === 1, `sleeps=${sleeps.length}`);
   }
@@ -253,14 +321,14 @@ for (const st of [400, 401, 402, 403, 404, 429, 500, 501]) {
 {
   const O = await import('../js/osm/chargers.js');
   {
-    reset(); run([resp(502), resp(200, JSON.stringify({ elements: [{ id: 1 }] }))]);
+    reset(); run([caddy(502), resp(200, JSON.stringify({ elements: [{ id: 1 }] }))]);
     const els = await O.overpass('q1');
     ok('Overpass ara sunucu kolu: 502 sonra 200 → yeniden denenir, doğrudan sunucuya düşülmez', els.length === 1 && calls.length === 2 && calls.every((c) => c.url === 'http://proxy.test/overpass'));
     ok('Overpass: POST gövdesi her denemede aynı', calls.every((c) => String(c.init.body) === 'data=q1' && c.init.method === 'POST'));
   }
   {
     reset();
-    run([(url) => (url.startsWith('http://proxy.test') ? resp(502) : resp(200, JSON.stringify({ elements: [{ id: 7 }, { id: 8 }] })))]);
+    run([(url) => (url.startsWith('http://proxy.test') ? caddy(502) : resp(200, JSON.stringify({ elements: [{ id: 7 }, { id: 8 }] })))]);
     const els = await O.overpass('q2');
     const urls = calls.map((c) => c.url);
     ok('Overpass: ara sunucu tükenince (4 deneme) halka açık sunuculara düşer ve sonuç alır', els.length === 2 && urls.slice(0, 4).every((u) => u === 'http://proxy.test/overpass') && urls[4] === 'https://overpass-api.de/api/interpreter' && urls.length === 5, JSON.stringify(urls));
@@ -277,7 +345,7 @@ for (const st of [400, 401, 402, 403, 404, 429, 500, 501]) {
     ok('Overpass: ara sunucu 429 yeniden denenmez (doğrudan sunucuya düşer)', calls[0].url === 'http://proxy.test/overpass' && calls[1].url.startsWith('https://overpass') && Array.isArray(els));
   }
   {
-    reset(); run([resp(503), resp(200, '[]')]);
+    reset(); run([caddy(503), resp(200, '[]')]);
     const r = await O.testOcm();
     ok('OpenChargeMap ara sunucu kolu: 503 sonra 200 → yeniden denenir', r.ok === true && calls.length === 2 && calls[0].url.startsWith('http://proxy.test/ocm/poi'), JSON.stringify(r));
   }
@@ -287,7 +355,7 @@ for (const st of [400, 401, 402, 403, 404, 429, 500, 501]) {
     ok('OpenChargeMap 401 yeniden denenmez, ileti aynı', r.ok === false && r.text === 'Sunucu erişim kodu geçersiz' && calls.length === 1);
   }
   {
-    reset(); run([resp(502)]);
+    reset(); run([caddy(502)]);
     const r = await O.testOcm();
     ok('OpenChargeMap 502 tükenince eski ileti: OpenChargeMap HTTP 502', r.ok === false && r.text === 'OpenChargeMap HTTP 502' && calls.length === 4);
   }
@@ -301,13 +369,13 @@ for (const st of [400, 401, 402, 403, 404, 429, 500, 501]) {
   {
     reset();
     let cat = 0;
-    run([(url) => (url.includes('/list/category') ? resp(200, '{}') : (cat++ === 0 ? resp(502) : resp(200, JSON.stringify({ features: [feat] }))))]);
+    run([(url) => (url.includes('/list/category') ? resp(200, '{}') : (cat++ === 0 ? caddy(502) : resp(200, JSON.stringify({ features: [feat] }))))]);
     const r = await M.stationsAround(40.2, 30.2, 5);
     const catCalls = calls.filter((c) => c.url.includes('/category/') && !c.url.includes('/list/'));
     ok('Mapbox istasyon araması: 502 sonra 200 → yeniden denenir, kutu başarısız sayılmaz', r.failed === 0 && !r.fatal && r.out.size === 1 && catCalls.length === 2, `failed=${r.failed} fatal=${r.fatal?.message} cat=${catCalls.length}`);
   }
   {
-    reset(); run([resp(502), resp(200, '{}')]);
+    reset(); run([caddy(502), resp(200, '{}')]);
     let err = null;
     try { await A.mbfetch('/directions/v5/mapbox/driving/1,1;2,2', {}); } catch (e) { err = e; }
     ok('mbfetch varsayılan: yeniden deneme YOK (rota/coğrafi kodlama) → 502 hatası, 1 çağrı', err?.status === 502 && calls.length === 1 && sleeps.length === 0);
@@ -319,7 +387,7 @@ for (const st of [400, 401, 402, 403, 404, 429, 500, 501]) {
     ok('mbfetch varsayılan: ağ hatası yeniden denenmez → fatal "Ara sunucuya ulaşılamadı"', err?.fatal === true && err.message === 'Ara sunucuya ulaşılamadı' && calls.length === 1);
   }
   {
-    reset(); run([resp(502), resp(200, '{"ok":1}')]);
+    reset(); run([caddy(502), resp(200, '{"ok":1}')]);
     const j = await A.mbfetch('/search/x', {}, { retry: true });
     ok('mbfetch { retry: true }: 502 sonra 200 → yeniden denenir', j.ok === 1 && calls.length === 2);
   }
