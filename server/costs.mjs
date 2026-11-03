@@ -1,5 +1,7 @@
 // Kullanıcı başına dış sağlayıcı istek kaydı: gün gün istek sayısı (db.json içinde kalıcı, günlük yedeklere girer). Yalnızca üst sunucuya GERÇEKTEN giden istekler yazılır
-// (önbellek isabeti, kota/kimlik reddi yazılmaz); normal kullanıcı, yönetici hesabı ve yönetici erişim kodu ('code') dahil. Türler (KINDS):
+// (önbellek isabeti, kota/kimlik reddi yazılmaz); normal kullanıcı, yönetici hesabı ve yönetici erişim kodu ('code') dahil.
+// Zamanlama: istek GÖNDERİLİRKEN sayılır, yanıtı beklenmez; bu yüzden hata/zaman aşımı da sayılır (HERE aylık sayacı hereCount gibi). İstisna: doluluk sorgusundaki HERE ve Google çağrıları yalnızca başarılı yanıttan sonra sayılır.
+// Overpass istemci isteği başına bir kez sayılır (yanıt vermeyen aynadan sonra birden çok ayna denense de). Türler (KINDS):
 //   google      Google Places doluluk çağrısı (ücretli; tahmini USD yalnızca bunun için)
 //   here        HERE Browse: istasyon araması ve doluluk sorgusu      slimit  HERE Routing: Premium yol hız limiti
 //   mapbox      Mapbox API vekili (rota, arama)                         ocm     OpenChargeMap   overpass  Overpass

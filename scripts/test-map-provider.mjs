@@ -2120,6 +2120,25 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
   ok('(11c) Maliyet: tüm sağlayıcılar (c.kinds, c.totals, r.usage), TOPLAM satırı, fatura notu', html.includes('c.totals') && html.includes('r.usage') && html.includes('TOPLAM') && html.includes('kendi fatura panellerinde'));
   ok('(11c) CSV yeni sütunları içerir', html.includes("'_bugun'") && html.includes("'_ay'") && html.includes("'_toplam'"));
   ok('(11c) admin.html innerHTML / outerHTML / insertAdjacentHTML kullanmaz', !/innerHTML|outerHTML|insertAdjacentHTML|document\.write/.test(html));
+
+  // (d) düzeltmeler: kota sayacı başlıkları, kalıcı "here" etiketi, CSV hijyeni, belgeler
+  const Q = '(kota sayacı, bellek içi, yeniden başlatınca sıfırlanır)';
+  ok('(11d) iki bugünkü-istek tablosu başlığı kota sayacı notlu', html.includes(`'Bugünkü istekler ${Q}'`) && html.includes(`'Kullanıcı başına bugünkü istekler ${Q}'`));
+  ok('(11d) kullanıcı başına tablonun hemen üstünde açıklama ve Maliyet sekmesine yönlendirme', /Kullanıcı başına bugünkü istekler[^\n]*\n[^\n]*reddedilen istekler de sayılır[^\n]*\n[^\n]*Maliyet sekmesinde/.test(html));
+  ok('(11d) kalıcı here türü "HERE (istasyon + doluluk)" (Özet kartları ve Maliyet), Maliyet notu doluluğu anar', html.includes("'HERE (istasyon + doluluk)'") && (html.match(/provName/g) || []).length >= 4 && /HERE sütunu doluluk sorgularını da içerir/.test(html));
+  ok('(11d) CSV: UTF-8 BOM ve CRLF', html.includes("'\\uFEFF' + lines.join('\\r\\n')"));
+  const m = /^function csvCell\(v\) \{.*\}$/m.exec(html);
+  ok('(11d) admin.html tek satırlık csvCell(v) içerir ve CSV hücreleri ondan geçer', !!m && (html.match(/csvCell/g) || []).length >= 3 && html.includes('.map(csvCell).join'));
+  if (m) {
+    const csvCell = new Function(m[0] + '; return csvCell;')();
+    ok('(11d) csvCell: tırnak içine alır, iç tırnağı ikiler', csvCell('a,"b"') === '"a,""b"""' && csvCell('x@test.invalid') === '"x@test.invalid"');
+    ok('(11d) csvCell: = + - @ sekme CR ile başlayan metne kesme işareti ekler (formül enjeksiyonu)', ['=1+1', '+1', '-1', '@SUM(A1)', '\tx', '\rx'].every((s) => csvCell(s) === '"\'' + s.replace(/"/g, '""') + '"') && csvCell('=HYPERLINK("x")') === '"\'=HYPERLINK(""x"")"');
+    ok('(11d) csvCell: sayılar olduğu gibi, null/undefined boş', csvCell(42) === '42' && csvCell(0.04) === '0.04' && csvCell(null) === '""' && csvCell(undefined) === '""');
+  }
+  const readme = readFileSync(fileURLToPath(new URL('../server/README.md', import.meta.url)), 'utf8');
+  const costsSrc = readFileSync(fileURLToPath(new URL('../server/costs.mjs', import.meta.url)), 'utf8');
+  const sentRule = (t) => /istek GÖNDERİLİRKEN sayılır/.test(t) && /hata\/zaman aşımı da sayılır/.test(t) && /doluluk[^.]*yalnızca başarılı/.test(t) && /Overpass[^.]*birden çok ayna/.test(t);
+  ok('(11d) README ve costs.mjs başlığı: gönderilirken sayılır (hata dahil), doluluk HERE/Google yalnızca başarıda, Overpass istek başına bir', sentRule(readme) && sentRule(costsSrc));
 }
 
 console.log(`\n${pass} geçti, ${fail} kaldı`);
