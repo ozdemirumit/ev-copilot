@@ -732,6 +732,25 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
     window.gm_authFailure();
     ok('ret sonrası tekrar gm_authFailure → onAuthFail artmaz', fails === 1);
 
+    // Düzeltme 1: 'maps' modülü (importLibrary) hiç gelmezse de kütüphane süresi içinde reddeder (openAdapter catch → OpenFreeMap)
+    gm = fakeGm(); gm.importLibrary = () => new Promise(() => {});
+    t0 = Date.now();
+    const stall = await G.createGoogleMap(fakeEl('div'), KEY, 'm', { loadLib: async () => gm, libTimeoutMs: 50 }).then(() => null, (e) => e);
+    ok("importLibrary('maps') hiç sonuçlanmazsa süre içinde anlaşılır Türkçe hatayla reddeder", stall instanceof Error && /zamanında yüklenemedi/.test(stall.message) && Date.now() - t0 < 1000 && gm.maps.length === 0);
+    gm = fakeGm(); const il = gm.importLibrary; gm.importLibrary = (n) => new Promise((r) => setTimeout(() => r(il(n)), 30));
+    const slowOk = await G.createGoogleMap(fakeEl('div'), KEY, 'm', { loadLib: async () => gm, libTimeoutMs: 1000 }).then((x) => x, (e) => e);
+    ok("süre içinde gelen importLibrary('maps') normal açılır", slowOk?.name === 'google');
+
+    // Düzeltme 2: 'idle' ve gm_authFailure aynı görevde → açılmış sayılmaz: ret, onAuthFail bir kez, alt öğe kaldırılır
+    fails = 0; gm = fakeGm({ autoIdle: false }); window.google = { maps: gm };
+    const cont3 = fakeEl('div');
+    const p3 = G.createGoogleMap(cont3, KEY, 'DEMO_MAP_ID', { onAuthFail: () => fails++ });
+    await tick();
+    gm.maps.at(-1).fire('idle'); window.gm_authFailure();
+    const r3 = await p3.then(() => null, (e) => e);
+    ok("'idle' ile aynı anda gm_authFailure → createGoogleMap reddeder (anahtar reddedildi)", r3 instanceof Error && /anahtar reddedildi/.test(r3.message));
+    ok("'idle' ile aynı anda gm_authFailure → onAuthFail bir kez, alt öğe kaldırılır, dinleyiciler temizlenir", fails === 1 && cont3.children.length === 0 && gm.maps.at(-1).cleared === true);
+
     // (c) trafik: her aralık ayrı çizgi; boş dizi hepsini kaldırır. Rota çizgisi: line() → { remove }
     gm = fakeGm(); window.google = { maps: gm };
     a = await G.createGoogleMap(fakeEl('div'), KEY);
@@ -789,6 +808,11 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
     ok('fit(points, pad) → fitBounds(bounds, pad)', fb?.[1].pts.length === 2 && fb[1].pts[0].lng === 29 && fb[2] === 60);
     m.fire('idle');
     ok('fit sonrası zoom en çok 16', m.zoom === 16);
+    const FP = [{ lat: 40, lon: 29 }, { lat: 41, lon: 30 }];
+    a.fit(FP, 60); a.fit(FP, 60); a.fit(FP, 60);
+    ok('art arda fit(): zoom sınırı dinleyicisi birikmez (tek idle dinleyicisi)', (m._h?.idle || []).length === 1);
+    m.fire('idle');
+    ok('idle sonrası fit dinleyicisi kalmaz, zoom yine 16', (m._h?.idle || []).length === 0 && m.zoom === 16);
     let clicked = null; a.onClick((pt) => { clicked = pt; });
     m.fire('click', { latLng: new gm.LatLng(40.5, 29.5) });
     ok('onClick { lat, lon } verir', clicked?.lat === 40.5 && clicked?.lon === 29.5);

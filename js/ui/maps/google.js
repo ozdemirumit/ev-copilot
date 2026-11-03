@@ -35,7 +35,9 @@ export function loadGoogleMaps(key) {
  *   loadLib: testler için yükleyici.
  */
 export async function createGoogleMap(container, key, mapId = 'DEMO_MAP_ID', { onAuthFail, libTimeoutMs = 25000, loadLib = loadGoogleMaps } = {}) {
-  // Kimlik hatası: Google genel window.gm_authFailure işlevini çağırır. Tek bildirim için bir kez işlenir.
+  // Kimlik hatası: Google sayfa genelindeki window.gm_authFailure işlevini (bağımsız değişkensiz) çağırır; hangi haritanın olduğunu söylemez.
+  // Bu yüzden her createGoogleMap çağrısı onu kendi işleyicisiyle değiştirir (sayfada aynı anda tek Google haritası açılır; son çağrı geçerli).
+  // İşleyici tek seferliktir (authFailed): Google birden çok kez çağırsa da onAuthFail ve ret bir kez olur.
   let authFailed = false;
   let rejectAuth;
   const authFail = new Promise((_, reject) => { rejectAuth = reject; });
@@ -47,12 +49,17 @@ export async function createGoogleMap(container, key, mapId = 'DEMO_MAP_ID', { o
     rejectAuth(new Error('Google haritası yüklenemedi (anahtar reddedildi)'));
   };
 
-  // Betik yanıt vermeden asılı kalırsa onerror dakikalarca gelmeyebilir: süre dolunca reddet (çağıran OpenFreeMap'e düşer).
+  // Betik yanıt vermeden asılı kalırsa onerror dakikalarca gelmeyebilir; 'maps' modülünün indirilmesi (importLibrary) de asılı kalabilir.
+  // İkisi tek süre sınırı altında: süre dolunca reddet (çağıran OpenFreeMap'e düşer).
   // Önbellekteki yükleme sözüne dokunulmaz: geç de olsa yüklenirse sonraki çağrı onu kullanır.
   let timer;
   const deadline = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('Google Haritalar kütüphanesi zamanında yüklenemedi')), libTimeoutMs); });
-  const gm = await Promise.race([loadLib(key), deadline, authFail]).finally(() => clearTimeout(timer));
-  const { Map: GMap } = await gm.importLibrary('maps');
+  const loadMapsLib = async () => {
+    const ns = await loadLib(key);
+    const { Map } = await ns.importLibrary('maps');
+    return { gm: ns, GMap: Map };
+  };
+  const { gm, GMap } = await Promise.race([loadMapsLib(), deadline, authFail]).finally(() => clearTimeout(timer));
 
   // Harita kendi alt öğesine kurulur: açılış başarısızsa bu öğe kaldırılır, Google'ın hata yazısı sonradan açılan OpenFreeMap'in üstüne düşmez.
   const host = document.createElement('div');
@@ -71,6 +78,9 @@ export async function createGoogleMap(container, key, mapId = 'DEMO_MAP_ID', { o
       }),
       authFail,
     ]);
+    // 'idle' ile gm_authFailure aynı görevde gelirse yarışı 'idle' kazanabilir: anahtar reddedilmiş haritayı açılmış sayma
+    // (yoksa çağıran "gösterildi" demeden onAuthFail almış olur ve bozuk harita ekranda kalır).
+    if (authFailed) throw new Error('Google haritası yüklenemedi (anahtar reddedildi)');
   } catch (err) {
     try { gm.event.clearInstanceListeners(map); } catch { /* yarım harita: temizlik hatası yoksayılır */ }
     host.remove();
@@ -101,6 +111,7 @@ export async function createGoogleMap(container, key, mapId = 'DEMO_MAP_ID', { o
   const path = (coords) => coords.map(([lon, lat]) => ({ lat, lng: lon }));
   let routeLine = null;
   let trafficLines = [];
+  let fitCap = null; // fit() sonrası zoom sınırı dinleyicisi (en çok bir tane)
 
   return {
     name: 'google',
@@ -144,7 +155,9 @@ export async function createGoogleMap(container, key, mapId = 'DEMO_MAP_ID', { o
       const b = new gm.LatLngBounds();
       points.forEach((p) => b.extend({ lat: p.lat, lng: p.lon }));
       map.fitBounds(b, pad);
-      gm.event.addListenerOnce(map, 'idle', () => { if (map.getZoom() > 16) map.setZoom(16); }); // motordaki maxZoom: 16
+      // motordaki maxZoom: 16. Art arda fit() çağrılarında dinleyici birikmesin: öncekini kaldır, tek dinleyici kalsın.
+      fitCap?.remove();
+      fitCap = gm.event.addListenerOnce(map, 'idle', () => { fitCap = null; if (map.getZoom() > 16) map.setZoom(16); });
     },
     moveTo({ center, zoom, heading, tilt }, animate = false) {
       // Takipte yalnızca merkez değişiyorsa panTo akıcı kaydırır; diğer durumlarda moveCamera (Google'da kamera anında konur)
