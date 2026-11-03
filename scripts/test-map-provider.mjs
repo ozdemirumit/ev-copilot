@@ -351,5 +351,179 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
   }
 }
 
+// ---- Bölüm 5: js/ui/maps/mapbox.js (Mapbox bağdaştırıcısı) ve mapEngine.js yük/yedek mantığı ----
+// Ağ yok: window.mapboxgl sahte bir kütüphanedir (olay yayan sahte Map); betik yükleyici sahte document ile denenir.
+{
+  const { readFileSync } = await import('node:fs');
+  const src = (p) => readFileSync(fileURLToPath(new URL('../' + p, import.meta.url)), 'utf8');
+  const saved = Object.fromEntries(['window', 'document'].map((k) => [k, Object.getOwnPropertyDescriptor(globalThis, k)]));
+  const def = (k, v) => Object.defineProperty(globalThis, k, { value: v, configurable: true, writable: true });
+  const tick = (ms = 10) => new Promise((r) => setTimeout(r, ms));
+  const origError = console.error, logged = []; // beklenen harita hataları çıktıyı kirletmesin; kaydedilir
+  console.error = (...x) => logged.push(x);
+
+  // Sahte kütüphane: maps[] oluşturulan haritaları tutar; cfg.autoLoad=false ise 'load' kendiliğinden gelmez.
+  function fakeLib(cfg = { autoLoad: true }) {
+    const maps = [];
+    class Map {
+      constructor(opts) {
+        this.opts = opts; this.handlers = {}; this.controls = []; this.sources = {}; this.layers = []; this.styles = [opts.style];
+        this.removed = false; this.installs = 0;
+        maps.push(this);
+        if (cfg.autoLoad) setTimeout(() => this.fire('load'), 0);
+      }
+      on(ev, fn) { (this.handlers[ev] ??= []).push(fn); return this; }
+      once(ev, fn) { const w = (e) => { this.off(ev, w); fn(e); }; return this.on(ev, w); }
+      off(ev, fn) { this.handlers[ev] = (this.handlers[ev] || []).filter((f) => f !== fn); return this; }
+      fire(ev, e = {}) { if (!this.removed) for (const f of [...(this.handlers[ev] || [])]) f(e); }
+      addControl(c, pos) { this.controls.push({ c, pos }); }
+      getSource(id) { return this.sources[id]; }
+      addSource(id, s) {
+        if (this.sources[id]) throw new Error('kaynak zaten var: ' + id);
+        if (id === 'route') this.installs++;
+        this.sources[id] = { ...s, setData(d) { this.data = d; } };
+      }
+      addLayer(l, before) { this.layers.push(l.id); }
+      setLayoutProperty() {}
+      // Gerçek kütüphane gibi: stil değişince kaynak/katmanlar silinir, 'style.load' daha sonra (eşzamansız) gelir
+      setStyle(style, o) { this.styles.push(style); this.lastStyleOpts = o; this.sources = {}; this.layers = []; setTimeout(() => this.fire('style.load'), 5); }
+      remove() { this.removed = true; }
+      getCanvas() { return { style: {} }; }
+    }
+    class AttributionControl { constructor(o) { this.o = o; } }
+    class Marker {}
+    return { Map, AttributionControl, Marker, maps, accessToken: null };
+  }
+  const container = () => ({ querySelector: () => null });
+
+  // Sahte document: script eklenince cfg.script 'error' ise onerror, 'load' ise window.mapboxgl kurulup onload çağrılır
+  const appended = [];
+  const docCfg = { script: 'error', lib: null };
+  def('window', {});
+  def('document', {
+    createElement: (tag) => ({ tagName: tag.toUpperCase(), remove() {} }),
+    head: { append(el) { appended.push(el); if (el.tagName === 'SCRIPT') setTimeout(() => { if (docCfg.script === 'load') { window.mapboxgl = docCfg.lib; el.onload?.(); } else el.onerror?.(); }, 0); } },
+  });
+
+  try {
+    const MB = await import('../js/ui/maps/mapbox.js');
+    const ENG = await import('../js/ui/maps/mapEngine.js');
+    const METHODS = ['setSatellite', 'marker', 'traffic', 'line', 'fit', 'moveTo', 'onClick', 'onDragStart', 'cursor', 'resize', 'bearing', 'installLayers'];
+
+    // (a) kütüphane betiği yüklenemezse reddeder (gerçek yükleyici, sahte document)
+    let rejected = await throws(() => MB.createMapboxMap(container(), 'pk.test-dummy'));
+    const script = appended.find((e) => e.tagName === 'SCRIPT'), css = appended.find((e) => e.tagName === 'LINK');
+    ok('(a) Mapbox betiği yüklenemezse createMapboxMap reddeder', rejected);
+    ok('betik Mapbox CDN, sürüm sabit (v3.x.y), @latest yok', /^https:\/\/api\.mapbox\.com\/mapbox-gl-js\/v3\.\d+\.\d+\/mapbox-gl\.js$/.test(script?.src || '') && !/latest/.test(script.src));
+    ok('stil dosyası aynı sürümün mapbox-gl.css\'i', css?.href === script?.src.replace(/\.js$/, '.css') && css?.rel === 'stylesheet');
+    docCfg.script = 'load'; docCfg.lib = fakeLib();
+    const retry = await MB.createMapboxMap(container(), 'pk.test-dummy').catch((e) => e);
+    ok('başarısız yüklemeden sonra yeniden denenir (önbelleğe alınmış ret yok)', retry?.name === 'mapbox' && appended.filter((e) => e.tagName === 'SCRIPT').length === 2);
+    ok('stil dosyası bir kez eklenir', appended.filter((e) => e.tagName === 'LINK').length === 1);
+    ok('enjekte edilen yükleyici reddederse createMapboxMap reddeder', await throws(() => MB.createMapboxMap(container(), 'pk.test-dummy', { loadLib: () => Promise.reject(new Error('yok')) })));
+
+    // Temel: ad, yöntemler, belirteç, koyu stil, atıf, mercator
+    let lib = fakeLib(); window.mapboxgl = lib;
+    let a = await MB.createMapboxMap(container(), 'pk.test-dummy');
+    let m = lib.maps.at(-1);
+    ok("adapter.name === 'mapbox'", a.name === 'mapbox');
+    ok('OpenFreeMap bağdaştırıcısıyla aynı yöntemler', METHODS.every((k) => typeof a[k] === 'function'));
+    ok('mapboxgl.accessToken = token', lib.accessToken === 'pk.test-dummy');
+    ok('koyu stil mapbox://styles/mapbox/dark-v11', m.opts.style === 'mapbox://styles/mapbox/dark-v11');
+    ok('mercator izdüşümü (küre değil; zoom ölçeği OpenFreeMap ile aynı)', m.opts.projection === 'mercator');
+    ok('Mapbox atfı görünür: kompakt AttributionControl eklenir, logo kapatılmaz', m.controls.some(({ c }) => c instanceof lib.AttributionControl && c.o.compact === true) && m.opts.logo !== false && !('customAttribution' in m.opts && !m.opts.customAttribution));
+
+    // (b) 401/403 → onAuthFail tam bir kez; 404 → hiç
+    let fails = 0;
+    lib = fakeLib(); window.mapboxgl = lib;
+    a = await MB.createMapboxMap(container(), 'pk.test-dummy', { onAuthFail: () => fails++ });
+    m = lib.maps.at(-1);
+    m.fire('error', { error: { status: 404, url: 'https://api.mapbox.com/x' } });
+    ok('(b) 404 → onAuthFail çağrılmaz, hata konsola yazılır (bugünkü günlük korunur)', fails === 0 && logged.some((x) => x[0]?.status === 404));
+    m.fire('error', { error: { status: 401 } }); m.fire('error', { error: { status: 403 } }); m.fire('error', { error: { status: 401 } });
+    ok('(b) 401 + 403 + 401 → onAuthFail tam bir kez', fails === 1);
+    m.fire('error', { error: new Error('başka hata') }); m.fire('error', {});
+    ok('durumsuz hata çökertmez, onAuthFail artmaz', fails === 1);
+    fails = 0; lib = fakeLib(); window.mapboxgl = lib;
+    await MB.createMapboxMap(container(), 'pk.test-dummy', { onAuthFail: () => fails++ });
+    lib.maps.at(-1).fire('error', { error: { status: 403 } });
+    ok('(b) yalnızca 403 → onAuthFail bir kez', fails === 1);
+    fails = 0; lib = fakeLib(); window.mapboxgl = lib;
+    await MB.createMapboxMap(container(), 'pk.test-dummy');
+    let threw = false; try { lib.maps.at(-1).fire('error', { error: { status: 401 } }); } catch { threw = true; }
+    ok('onAuthFail verilmeden 401 çökertmez', !threw);
+
+    // Yükleme öncesi kimlik hatası: hızlı ret (25 sn beklenmez), onAuthFail bir kez, harita kaldırılır (WebGL bağlamı bırakılır)
+    fails = 0; lib = fakeLib({ autoLoad: false }); window.mapboxgl = lib;
+    let t0 = Date.now();
+    const p = MB.createMapboxMap(container(), 'pk.test-dummy', { onAuthFail: () => fails++ });
+    await tick(); m = lib.maps.at(-1);
+    m.fire('error', { error: { status: 401 } });
+    rejected = await p.then(() => false, () => true);
+    ok('yükleme öncesi 401 → hemen reddeder', rejected && Date.now() - t0 < 1000);
+    ok('yükleme öncesi 401 → onAuthFail bir kez ve map.remove()', fails === 1 && m.removed === true);
+    fails = 0; lib = fakeLib({ autoLoad: false }); window.mapboxgl = lib;
+    const p404 = MB.createMapboxMap(container(), 'pk.test-dummy', { onAuthFail: () => fails++ });
+    await tick(); m = lib.maps.at(-1);
+    m.fire('error', { error: { status: 404 } });
+    let settled = false; p404.then(() => { settled = true; }, () => { settled = true; });
+    await tick(30);
+    ok('yükleme öncesi 404 → reddetmez (yükleme sürer), onAuthFail yok', !settled && fails === 0 && !m.removed);
+    m.fire('load'); await p404;
+    ok('404 sonrası load gelirse harita açılır', settled === true);
+
+    // Motor: yükleme zaman aşımı → reddet ve map.remove(); varsayılan 25 sn
+    lib = fakeLib({ autoLoad: false });
+    t0 = Date.now();
+    rejected = await ENG.createVectorMap(lib, container(), { name: 'osm', timeoutMs: 60 }).then(() => false, () => true);
+    ok('motor: zaman aşımında reddeder ve map.remove() çağrılır', rejected && lib.maps[0].removed === true && Date.now() - t0 < 1000);
+    ok('motor: varsayılan yükleme süresi 25 sn, mapbox.js kendi süresini koymaz', /timeoutMs\s*=\s*25000/.test(src('js/ui/maps/mapEngine.js')) && !/timeoutMs/.test(src('js/ui/maps/mapbox.js')));
+    lib = fakeLib();
+    a = await ENG.createVectorMap(lib, container(), { name: 'osm' });
+    ok('motor: başarılı yüklemede harita kaldırılmaz', a.name === 'osm' && lib.maps[0].removed === false);
+
+    // (c) Uydu stil değişimi: installLayers yeniden çağrılır, rota ve trafik verisi korunur (Review Focus 5)
+    lib = fakeLib(); window.mapboxgl = lib;
+    a = await MB.createMapboxMap(container(), 'pk.test-dummy');
+    m = lib.maps.at(-1);
+    const C1 = [[29.0, 41.0], [29.1, 41.05], [29.2, 41.1]], C2 = [[32.8, 39.9], [32.9, 39.95]];
+    a.line(C1);
+    a.traffic(C1, [{ from: 0, to: 5, lvl: 'heavy' }]);
+    const trafficBefore = JSON.stringify(m.getSource('traffic').data);
+    ok('(c) başlangıçta rota ve trafik kaynağı', m.installs === 1 && JSON.stringify(m.getSource('route').data.geometry.coordinates) === JSON.stringify(C1) && m.getSource('traffic').data.features.length === 1);
+    a.setSatellite(true);
+    ok('(c) setSatellite(true) → setStyle(satellite-streets-v12, { diff:false })', m.styles.at(-1) === 'mapbox://styles/mapbox/satellite-streets-v12' && m.lastStyleOpts?.diff === false);
+    threw = false; try { a.line(C2); a.traffic(C2, []); a.traffic(C1, [{ from: 0, to: 5, lvl: 'heavy' }]); } catch { threw = true; }
+    ok('(c) stil yüklenirken line()/traffic() çökmez', !threw);
+    await tick(30);
+    ok('(c) style.load sonrası installLayers yeniden: rota kaynağı yeniden eklendi', m.installs === 2 && !!m.getSource('route') && m.layers.includes('route-line') && m.layers.includes('traffic-line'));
+    ok('(c) rota verisi korunur (stil değişirken verilen son çizgi)', JSON.stringify(m.getSource('route').data.geometry.coordinates) === JSON.stringify(C2));
+    ok('(c) trafik verisi korunur', JSON.stringify(m.getSource('traffic').data) === trafficBefore);
+    ok('(c) trafik çizgisi rota çizgisinin üstünde', m.layers.indexOf('traffic-line') > m.layers.indexOf('route-line'));
+    a.setSatellite(false); await tick(30);
+    ok('(c) setSatellite(false) → dark-v11, rota ve trafik yine yerinde', m.styles.at(-1) === 'mapbox://styles/mapbox/dark-v11' && m.installs === 3 && JSON.stringify(m.getSource('route').data.geometry.coordinates) === JSON.stringify(C2) && JSON.stringify(m.getSource('traffic').data) === trafficBefore);
+    const nStyles = m.styles.length;
+    a.setSatellite(false);
+    ok('(c) aynı durum için setStyle tekrar çağrılmaz (açılıştaki setSatellite(false) stil yüklemez)', m.styles.length === nStyles);
+    const ln = a.line(C1); a.setSatellite(true); await tick(30); ln.remove();
+    ok('(c) uydu açıkken rota kaldırılınca boşalır', m.getSource('route').data.features?.length === 0);
+    a.setSatellite(false); await tick(30);
+    ok('(c) kaldırılan rota stil değişiminde geri gelmez', m.getSource('route').data.features?.length === 0);
+
+    // Bağlantılar: mapView mapbox dalı ve sw.js SHELL
+    const mv = src('js/ui/mapView.js'), sw = src('sw.js'), mbs = src('js/ui/maps/mapbox.js');
+    ok("mapView mapbox dalı createMapboxMap(mapEl, cfg.token, { onAuthFail })", /import \{ createMapboxMap \} from '\.\/maps\/mapbox\.js'/.test(mv) && /createMapboxMap\(mapEl, cfg\.token, \{ onAuthFail/.test(mv));
+    ok('mapView onAuthFail → forceOsm + sayfa yenileme', /forceOsm\(\)/.test(mv) && /location\.reload\(\)/.test(mv));
+    ok('mapView google dalı Task 7\'ye dek OpenFreeMap', /cfg\.provider === 'google'\) return await createMapLibreMap\(mapEl\)/.test(mv));
+    ok("sw.js SHELL './js/ui/maps/mapbox.js' içerir", sw.includes("'./js/ui/maps/mapbox.js'"));
+    ok('mapbox.js gerçek belirteç içermez', !/pk\.[A-Za-z0-9_-]{20,}/.test(mbs) && !/sk\./.test(mbs));
+  } catch (e) {
+    ok('Bölüm 5 çalıştı: ' + e.message, false);
+  } finally {
+    console.error = origError;
+    for (const [k, d] of Object.entries(saved)) { if (d) Object.defineProperty(globalThis, k, d); else delete globalThis[k]; }
+  }
+}
+
 console.log(`\n${pass} geçti, ${fail} kaldı`);
 process.exit(fail ? 1 : 0);

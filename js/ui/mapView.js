@@ -4,6 +4,7 @@ import { toast } from './toast.js';
 import { attachSearch } from './placeSearch.js';
 import { reverseLabel } from '../providers/index.js';
 import { createMapLibreMap } from './maps/maplibre.js';
+import { createMapboxMap } from './maps/mapbox.js';
 import { resolveProvider, forceOsm } from '../net/mapConfig.js';
 import { showTab } from './tabs.js';
 
@@ -49,7 +50,7 @@ function stationPin(s, { planned = false, num = 0, focus = false } = {}) {
  */
 export function initMap() {
   const mapEl = document.getElementById('map');
-  let adapter = null; // hazır harita bağdaştırıcısı (maps/maplibre.js; ileride mapbox.js / google.js)
+  let adapter = null; // hazır harita bağdaştırıcısı (maps/maplibre.js | maps/mapbox.js; ileride google.js)
   let booting = null;
   const queue = [];
   const readyHooks = []; // harita hazır olunca bir kez çalışacak güncellemeler (sıraya alınması gereksiz olanlar)
@@ -60,17 +61,29 @@ export function initMap() {
 
   /** Sunucunun seçtiği sağlayıcının bağdaştırıcısı (js/net/mapConfig.js). Seçili sağlayıcı açılamazsa bu cihaz oturumunda
    *  OpenFreeMap zorlanır (forceOsm), tek bildirim gösterilir ve OpenFreeMap açılır. OpenFreeMap hatası bugünkü gibi yukarı iletilir. */
+  let fellBack = false; // bildirim bu açılışta bir kez
+  const fallBackToOsm = () => {
+    forceOsm();
+    if (!fellBack) { fellBack = true; toast('Seçili harita açılamadı, OpenFreeMap kullanılıyor'); } // tek bildirim
+  };
   async function openAdapter() {
     const cfg = await resolveProvider();
     if (cfg.provider !== 'osm') {
       try {
-        // Sağlayıcı bağdaştırıcıları: Mapbox (Task 5) ve Google (Task 7) buraya bağlanır; o zamana dek ikisi de OpenFreeMap açar.
-        if (cfg.provider === 'mapbox') return await createMapLibreMap(mapEl);
+        if (cfg.provider === 'mapbox') {
+          // Belirteç reddedildi (401/403). Harita açıldıktan sonraysa: bayrak + bildirim, kısa süre sonra yenile (bayrak varken
+          // açılış doğrudan OpenFreeMap: döngü yok). Açılış sırasındaysa söz zaten reddedilir ve aşağıdaki catch OpenFreeMap açar.
+          let shown = false;
+          const onAuthFail = () => { fallBackToOsm(); if (shown) setTimeout(() => location.reload(), 1500); };
+          const a = await createMapboxMap(mapEl, cfg.token, { onAuthFail });
+          shown = true;
+          return a;
+        }
+        // Google bağdaştırıcısı (Task 7) buraya bağlanır; o zamana dek OpenFreeMap açar.
         if (cfg.provider === 'google') return await createMapLibreMap(mapEl);
       } catch {
-        forceOsm();
+        fallBackToOsm();
         mapEl.replaceChildren(); // yarım kalan haritanın tuvali OpenFreeMap'in üstünde kalmasın
-        toast('Seçili harita açılamadı, OpenFreeMap kullanılıyor');
       }
     }
     return createMapLibreMap(mapEl);

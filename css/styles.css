@@ -407,9 +407,9 @@ body.navmode .fabs { bottom: calc(var(--nav-h) + var(--safe-b) + 92px); }
 .spin.focus { transform: scale(1.3); }
 .spin.focus path { stroke: #fff; stroke-width: 3.5; }
 
-/* MapLibre atıf kutusu: alt çubuğun altında */
-.maplibregl-ctrl-bottom-left { bottom: calc(var(--safe-b) + 2px) !important; left: 6px !important; z-index: 2; }
-.maplibregl-ctrl-attrib { font-size: 10px; }
+/* MapLibre / Mapbox atıf kutusu (Mapbox'ta logo da burada, gizlenmez): alt çubuğun altında */
+.maplibregl-ctrl-bottom-left, .mapboxgl-ctrl-bottom-left { bottom: calc(var(--safe-b) + 2px) !important; left: 6px !important; z-index: 2; }
+.maplibregl-ctrl-attrib, .mapboxgl-ctrl-attrib { font-size: 10px; }
 
 @media (min-width: 760px) {
   main { left: 50%; right: auto; width: min(760px, calc(100vw - 16px)); transform: translateX(-50%); }

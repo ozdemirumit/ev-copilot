@@ -7,18 +7,32 @@ export const ZOOM_OFFSET = 1;
 
 const EMPTY = { type: 'FeatureCollection', features: [] };
 
-export async function createVectorMap(lib, container, { mapOptions = {}, name, satellite, onError } = {}) {
+// onError(e): kütüphanenin 'error' olayları; isFatal(e) true dönerse yükleme bitmeden gelen hata yüklemeyi hemen bitirir (ör. Mapbox 401/403).
+// Yükleme başarısızsa (zaman aşımı / ölümcül hata) map.remove() çağrılır: WebGL bağlamı ve dinleyiciler bırakılır.
+export async function createVectorMap(lib, container, { mapOptions = {}, name, satellite, onError, isFatal, timeoutMs = 25000 } = {}) {
   const map = new lib.Map({
     container, center: [35.0, 39.0], zoom: 6 - ZOOM_OFFSET, maxPitch: 60,
     attributionControl: false, // atıf aşağıda kompakt denetimle eklenir (OSM atfı ODbL gereği zorunlu)
     ...mapOptions,
   });
-  if (onError) map.on('error', onError); // dinleyici yalnızca istenirse: yoksa kütüphane hatayı bugünkü gibi konsola yazar
+  let failLoad = null; // yükleme sürerken ölümcül hatayı yükleme sözüne iletir
+  if (onError) {
+    // dinleyici yalnızca istenirse: yoksa kütüphane hatayı bugünkü gibi konsola yazar
+    map.on('error', (e) => { onError(e); if (failLoad && isFatal?.(e)) failLoad(new Error('Harita yüklenemedi (anahtar reddedildi)')); });
+  }
   map.addControl(new lib.AttributionControl({ compact: true }), 'bottom-left'); // atıf zorunlu; alt çubuğun altında durur
-  await new Promise((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error('Harita yüklenemedi (internet?)')), 25000);
-    map.once('load', () => { clearTimeout(t); resolve(); });
-  });
+  try {
+    await new Promise((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error('Harita yüklenemedi (internet?)')), timeoutMs);
+      failLoad = (err) => { clearTimeout(t); reject(err); };
+      map.once('load', () => { clearTimeout(t); resolve(); });
+    });
+  } catch (err) {
+    try { map.remove(); } catch { /* yarım harita: kaldırma hatası yoksayılır */ }
+    throw err;
+  } finally {
+    failLoad = null;
+  }
 
   // Kompakt atıf kutusu açık başlar ve haritayı kaplar: kapalı başlat (ⓘ düğmesiyle açılır, atıf erişilebilir kalır)
   const attrib = container.querySelector('.maplibregl-ctrl-attrib, .mapboxgl-ctrl-attrib');
@@ -60,11 +74,10 @@ export async function createVectorMap(lib, container, { mapOptions = {}, name, s
         remove: () => m.remove(),
       };
     },
+    // Stil değişirken (uydu) kaynak geçici olarak yoktur: veri yine saklanır ve 'style.load' ile installLayers onu uygular.
     /** spans: [{ from, to, lvl }] (km). Her aralık, rota koordinatlarından kesilip ayrı çizgi olur. */
     traffic(coords, spans) {
-      const src = map.getSource('traffic');
-      if (!src) return;
-      if (!spans?.length) { trafficData = EMPTY; return src.setData(trafficData); }
+      if (!spans?.length) { trafficData = EMPTY; return map.getSource('traffic')?.setData(trafficData); }
       const cum = [0];
       for (let i = 1; i < coords.length; i++) {
         const dLat = ((coords[i][1] - coords[i - 1][1]) * Math.PI) / 180;
@@ -79,12 +92,12 @@ export async function createVectorMap(lib, container, { mapOptions = {}, name, s
         return { type: 'Feature', properties: { lvl: s.lvl }, geometry: { type: 'LineString', coordinates: coords.slice(i0, i1 + 1) } };
       }).filter((f) => f.geometry.coordinates.length >= 2);
       trafficData = { type: 'FeatureCollection', features };
-      src.setData(trafficData);
+      map.getSource('traffic')?.setData(trafficData);
     },
     line(coords) {
       routeData = { type: 'Feature', geometry: { type: 'LineString', coordinates: coords }, properties: {} };
-      map.getSource('route').setData(routeData);
-      return { remove: () => { routeData = EMPTY; map.getSource('route').setData(EMPTY); } };
+      map.getSource('route')?.setData(routeData);
+      return { remove: () => { routeData = EMPTY; map.getSource('route')?.setData(EMPTY); } };
     },
     fit(points, pad) {
       const lons = points.map((p) => p.lon);
