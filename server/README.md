@@ -118,6 +118,15 @@ Planlı duraklar için dolu/boş soket sayısı ve kWh fiyatı. Uygulama bunu 5 
 - Kota: kullanıcı başına günde 600 doluluk isteği (`OCCUPANCY_DAILY_PER_USER`).
 - Yeni ülke eklemek: `occupancy.mjs` içine aynı çıktı biçimiyle (`{ src, total, available, out, at, price }`) bir adaptör yazılır ve `lookupAll` içinde ülke kutusuna bağlanır. Avrupa'daki başka ulusal erişim noktaları (AFIR) OCPI ya da DATEX II sunar; erişim koşulları ülkeye göre değişir.
 
+## Harita sağlayıcısı (`GET /v1/map/config`)
+Haritayı herkes için OpenFreeMap (anahtarsız) çizer. Premium hesaplar için yönetici isteğe bağlı olarak Mapbox ya da Google Maps seçebilir; seçim sunucuda tutulur (`db.json`: varsayılan `settings.mapDefault`, kullanıcı başına `mapProvider`), uygulama yalnızca sağlayıcı ADINI saklar.
+- **İki anahtar (`.env`):** `MAPBOX_MAP_TOKEN` (herkese açık `pk.` belirteci; `sk.` gizli belirteç kabul edilmez, yapılandırılmamış sayılır) ve `GOOGLE_MAPS_BROWSER_KEY` (Maps JavaScript API; isteğe bağlı `GOOGLE_MAP_ID`). Bunlar tarayıcıya gider, bu yüzden sunucu içi `MAPBOX_TOKEN` ve `GOOGLE_PLACES_KEY` ile **ayrı anahtarlar** kullan. Anahtar yoksa o sağlayıcı seçilemez ve her şey bugünkü gibi çalışır.
+- **Kısıtlar (sahibi yapar):** iki anahtarı da kendi panelinde uygulamanın adresine kısıtla: `https://ozdemirumit.github.io/*` (Mapbox: belirteç URL kısıtı; Google: HTTP yönlendiren kısıtı + yalnızca Maps JavaScript API). Sunucu bunu yapamaz; kısıtsız anahtar çalınıp başka sitede kullanılabilir.
+- **Google kotası:** Google Cloud'da Maps JavaScript API için **günlük kota sınırı** koy ve bütçe uyarısı kur (fatura üst sınırı).
+- **Uç noktalar:** `GET /v1/map/config` (kimlik şart) osm için `{provider:'osm'}`; Premium'a seçili sağlayıcının anahtarını döner (`Cache-Control: no-store`). Premium olmayan hesap ve anonim cihaz anahtar ALAMAZ; anahtarı kalkmış sağlayıcı sessizce osm'ye düşer. Yönetici: `GET/POST /admin/map` (`{default}`), `POST /admin/users/:id/map` (`{provider: 'osm'|'mapbox'|'google'|null}`, null = varsayılanı izle); `/admin/summary` yalnızca anahtarın tanımlı olup olmadığını (`configured.mapboxMap`, `configured.googleMap`) ve `map.default`'u gösterir, anahtar değerini asla.
+- **Günlük hak:** yalnızca anahtar dönen çağrılar sayılır (osm sayılmaz): kullanıcı başına `MAP_DAILY_PER_USER` (varsayılan 100), tüm kullanıcılar için `MAP_DAILY_TOTAL` (varsayılan 3000, sunucu yeniden başlayınca sıfırlanır); aşılırsa `429 günlük harita hakkı doldu`, uygulama OpenFreeMap'e döner. Yönetici ve eski erişim kodu kullanıcı başı sınırdan muaftır, toplam tavana tabidir.
+- Anahtarlar `scrub` kapsamındadır (üst sunucu yanıtlarında ve hata günlüğünde `***` olur).
+
 ## Premium üyelik
 Canlı doluluk ve canlı kWh fiyatı (`POST /v1/occupancy`) yalnızca Premium hesaplara açıktır; ücretsiz hesapta sunucu `402 premium_required` döndürür, uygulama ipucu gösterir. Yönetici hesapları (`ADMIN_EMAILS`) ve yönetici erişim kodu her zaman erişir.
 - Kullanıcı kaydında `premiumUntil` (ms) tutulur; `/v1/me` ve giriş yanıtı `premium` ve `premiumUntil` döndürür. Uygulama açılışta, öne gelince (en çok 5 dk'da bir) ve her 30 dk'da planı tazeler.

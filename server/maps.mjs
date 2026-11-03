@@ -4,7 +4,12 @@
 export const PROVIDERS = ['osm', 'mapbox', 'google'];
 
 export function createMaps(store, env = {}) {
-  const keyOf = (p) => (p === 'mapbox' ? env.MAPBOX_MAP_TOKEN : p === 'google' ? env.GOOGLE_MAPS_BROWSER_KEY : '') || '';
+  // Güvenlik: tarayıcıya yalnızca herkese açık Mapbox belirteci ("pk.") gider; "sk." gizli belirteç yanlışlıkla konsa bile yapılandırılmamış sayılır.
+  const keyOf = (p) => {
+    if (p === 'mapbox') { const t = String(env.MAPBOX_MAP_TOKEN || ''); return t.startsWith('pk.') ? t : ''; }
+    if (p === 'google') return String(env.GOOGLE_MAPS_BROWSER_KEY || '');
+    return '';
+  };
   const usable = (p) => p === 'osm' || !!keyOf(p);
 
   const available = () => ({ mapbox: !!keyOf('mapbox'), google: !!keyOf('google') });

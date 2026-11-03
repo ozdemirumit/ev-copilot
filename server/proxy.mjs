@@ -22,6 +22,7 @@ import { createPriceBook } from './prices.mjs';
 import { createCommunity } from './community.mjs';
 import { createStationInfo, MAX_PHOTO_BYTES } from './stationinfo.mjs';
 import { createTesla } from './tesla.mjs';
+import { createMaps } from './maps.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -117,7 +118,19 @@ const once = (k, fn) => {
 };
 
 // ---------- kullanıcı başına günlük kota (Mapbox faturasını ve ortak Overpass'i korur) ----------
-const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 40), here: Number(env.HERE_DAILY_PER_USER || 800), price: 20, presence: 60, status: 30, sinfo: 600, srate: 60, sfac: 120, sphoto: 15 };
+const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 40), here: Number(env.HERE_DAILY_PER_USER || 800), price: 20, presence: 60, status: 30, sinfo: 600, srate: 60, sfac: 120, sphoto: 15, map: Number(env.MAP_DAILY_PER_USER || 100) };
+const MAP_TOTAL = Number(env.MAP_DAILY_TOTAL || 3000); // tüm kullanıcılar için günlük harita anahtarı verme tavanı (Mapbox/Google faturasını korur)
+let mapToday = { d: '', n: 0 };
+/** Harita anahtarı döndürmeden önce: toplam ve kullanıcı başı günlük hak. Yalnızca anahtar dönen çağrılar sayılır (osm sayılmaz). */
+function mapAllowed(id) {
+  const d = new Date().toISOString().slice(0, 10);
+  if (mapToday.d !== d) mapToday = { d, n: 0 };
+  if (mapToday.n >= MAP_TOTAL || overQuota(id, 'map')) return false;
+  mapToday.n++;
+  return true;
+}
+/** Hesabın harita sağlayıcısı için Premium sayılması: hesapsız eski erişim kodu Premium'dur, hesaplı kullanıcı isPremium'a göre. */
+const premiumOk = (id) => id.kind !== 'user' || accounts.isPremium(id.user);
 const GOOGLE_TOTAL = Number(env.GOOGLE_DAILY_TOTAL || 150); // tüm kullanıcılar için günlük Google çağrısı tavanı (fatura üst sınırı)
 let gToday = { d: '', n: 0 };
 function googleAllowed(id) {
@@ -159,7 +172,8 @@ function adminSummary() {
     mapbox: { month: mbUsage().month, used: mbUsage().n, cap: MB_CAP },
     here: { month: hereUsage().month, used: hereUsage().n, cap: HERE_CAP },
     devices: devices.stats(),
-    configured: { mapbox: !!MAPBOX, here: !!HERE, ocm: !!OCM, googlePlaces: !!GOOGLE_PLACES, googleLogin: !!accounts.googleOn, smtp: !!mailer, premiumRequired: String(env.PREMIUM_REQUIRED ?? '1') !== '0' },
+    map: { default: maps.getDefault() },
+    configured: { mapbox: !!MAPBOX, mapboxMap: maps.available().mapbox, googleMap: maps.available().google, here: !!HERE, ocm: !!OCM, googlePlaces: !!GOOGLE_PLACES, googleLogin: !!accounts.googleOn, smtp: !!mailer, premiumRequired: String(env.PREMIUM_REQUIRED ?? '1') !== '0' },
     usageToday: byKind,
     google: { callsToday: gToday.d === today() ? gToday.n : 0, dailyCap: GOOGLE_TOTAL, unitUsd: costs.unit, usd: tot },
   };
@@ -174,7 +188,7 @@ async function readJson(req, max) {
 }
 
 // ---------- yardımcılar ----------
-const scrub = (s) => { let t = s; for (const secret of [MAPBOX, OCM, GOOGLE_PLACES, HERE]) if (secret) t = t.split(secret).join('***'); return t; };
+const scrub = (s) => { let t = s; for (const secret of [MAPBOX, OCM, GOOGLE_PLACES, HERE, env.MAPBOX_MAP_TOKEN, env.GOOGLE_MAPS_BROWSER_KEY]) if (secret) t = t.split(secret).join('***'); return t; };
 function send(res, status, body, headers = {}) {
   const buf = Buffer.isBuffer(body) ? body : Buffer.from(typeof body === 'string' ? body : JSON.stringify(body));
   res.writeHead(status, { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...headers, 'Content-Length': buf.length });
@@ -438,6 +452,7 @@ const clientIp = (req) => {
 
 process.on('unhandledRejection', (err) => console.error('yakalanmamış söz reddi:', scrub(String(err?.message || err)))); // tek bir hatalı istek süreci düşürmesin
 const store = openStore(env.DATA_DIR || join(here, 'data'));
+const maps = createMaps(store, env);
 const priceBook = createPriceBook(store);
 const community = createCommunity(store);
 const stationInfo = createStationInfo(store, join(env.DATA_DIR || join(here, 'data'), 'photos'));
@@ -513,6 +528,26 @@ const server = http.createServer(async (req, res) => {
     if (p === '/v1/tesla' && req.method === 'GET') { // Togg'un kullanabildiği Tesla Supercharger'lar (günlük önbellek)
       const l = await tesla.get();
       return l ? json(res, 200, l, { 'Cache-Control': 'private, max-age=3600' }) : json(res, 503, { error: 'Tesla listesi şu an alınamıyor' });
+    }
+    if (p === '/v1/map/config' && req.method === 'GET') { // harita sağlayıcısı: Premium değilse ya da anahtar yoksa osm (anahtarsız); anahtar yalnızca seçili sağlayıcınınki, yalnızca Premium'a
+      const cfg = maps.config(id.kind === 'user' ? id.user : null, premiumOk(id)); // eski erişim kodunda kullanıcı nesnesi yok
+      if (cfg.provider !== 'osm' && !mapAllowed(id)) return json(res, 429, { error: 'günlük harita hakkı doldu' }, { 'Retry-After': '3600' });
+      return json(res, 200, cfg, { 'Cache-Control': 'no-store' });
+    }
+    if (p === '/admin/map' && id.admin && (req.method === 'GET' || req.method === 'POST')) {
+      if (req.method === 'GET') return json(res, 200, { default: maps.getDefault(), available: maps.available() });
+      const b = await readJson(req, 500);
+      try { maps.setDefault(b?.default); } catch (e) { return json(res, 400, { error: e.message }); }
+      return json(res, 200, { ok: true, default: maps.getDefault() });
+    }
+    const um = /^\/admin\/users\/(u_[A-Za-z0-9_-]+)\/map$/.exec(p);
+    if (um && req.method === 'POST' && id.admin) { // kullanıcı bazlı sağlayıcı seçimi (null: varsayılanı izle)
+      const target = store.data.users[um[1]];
+      if (!target) return json(res, 404, { error: 'kullanıcı yok' });
+      const b = await readJson(req, 500);
+      if (!b || b.provider === undefined) return json(res, 400, { error: 'geçersiz gövde' });
+      try { maps.setUser(target, b.provider); } catch (e) { return json(res, 400, { error: e.message }); }
+      return json(res, 200, { ok: true, provider: target.mapProvider ?? null });
     }
     if (p === '/admin/summary' && req.method === 'GET' && id.admin) return json(res, 200, adminSummary());
     if (p === '/admin/devices' && req.method === 'GET' && id.admin) return json(res, 200, { stats: devices.stats(), devices: devices.list((u) => store.data.users[u]?.email || u) });

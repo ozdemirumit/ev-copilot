@@ -399,7 +399,7 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
       const di = /^\/admin\/invites\/(i_[A-Za-z0-9_-]+)$/.exec(p);
       if (di && req.method === 'DELETE') { if (data.invites[di[1]]) data.invites[di[1]].revoked = true; store.save(); json(res, 200, { ok: true }); return true; }
       if (p === '/admin/users' && req.method === 'GET') {
-        json(res, 200, { users: Object.values(data.users).map((u) => ({ id: u.id, email: u.email, name: u.name, admin: u.admin, disabled: u.disabled, createdAt: u.createdAt, lastLogin: u.lastLogin, premiumUntil: u.premiumUntil || null, bytes: usedBytes(u.id), trips: Object.keys(data.history?.[u.id]?.trips || {}).length, charges: Object.keys(data.history?.[u.id]?.charges || {}).length, google: costs?.summary(u.id) || null, devices: devicesOf(u.id).length, firstDevice: devicesOf(u.id).reduce((m, d) => Math.min(m, d.firstSeen), Infinity) })) });
+        json(res, 200, { users: Object.values(data.users).map((u) => ({ id: u.id, email: u.email, name: u.name, admin: u.admin, disabled: u.disabled, createdAt: u.createdAt, lastLogin: u.lastLogin, premiumUntil: u.premiumUntil || null, mapProvider: u.mapProvider || null, bytes: usedBytes(u.id), trips: Object.keys(data.history?.[u.id]?.trips || {}).length, charges: Object.keys(data.history?.[u.id]?.charges || {}).length, google: costs?.summary(u.id) || null, devices: devicesOf(u.id).length, firstDevice: devicesOf(u.id).reduce((m, d) => Math.min(m, d.firstSeen), Infinity) })) });
         return true;
       }
       if (p === '/admin/costs' && req.method === 'GET') { // kullanıcı başına ücretli çağrılar (Google): bugün / bu ay / toplam, çağrı ve tahmini USD
