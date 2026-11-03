@@ -128,3 +128,4 @@ Mapbox ve Google haritaları tarayıcıda çizildiği için tarayıcı bir anaht
    (Esri döşemesini başka sağlayıcının haritasına karıştırmak şart sorunu çıkarabilir).
 8. **Sürümleme (benim kararım).** Önce sunucu + yönetim ekranı + seçici + Mapbox (v0.79.0), sonra Google (v0.80.0); ikisi bağımsız. Anahtarlar
    tanımlı değilken uygulama %100 bugünkü gibi çalışır; yönetim ekranında seçenekler pasif ve "anahtar yok" notlu görünür.
+9. Mapbox/Google kimlik hatası harita AÇILIRKEN gelirse aynı sayfa yüklemesinde OpenFreeMap'e düşülür (yenileme yok); harita gösterildikten SONRA gelirse bayrak + bildirim + yenileme.

@@ -396,14 +396,16 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
   }
   const container = () => ({ querySelector: () => null });
 
-  // Sahte document: script eklenince cfg.script 'error' ise onerror, 'load' ise window.mapboxgl kurulup onload çağrılır
+  // Sahte document: script eklenince cfg.script 'error' ise onerror, 'load' ise window.mapboxgl kurulup onload çağrılır,
+  // 'hang' ise hiçbir şey olmaz (asılı kalan CDN; öğe docCfg.hung'da saklanır)
   const appended = [];
-  const docCfg = { script: 'error', lib: null };
+  const docCfg = { script: 'error', lib: null, hung: null };
   def('window', {});
   def('document', {
     createElement: (tag) => ({ tagName: tag.toUpperCase(), remove() {} }),
-    head: { append(el) { appended.push(el); if (el.tagName === 'SCRIPT') setTimeout(() => { if (docCfg.script === 'load') { window.mapboxgl = docCfg.lib; el.onload?.(); } else el.onerror?.(); }, 0); } },
+    head: { append(el) { appended.push(el); if (el.tagName !== 'SCRIPT') return; if (docCfg.script === 'hang') { docCfg.hung = el; return; } setTimeout(() => { if (docCfg.script === 'load') { window.mapboxgl = docCfg.lib; el.onload?.(); } else el.onerror?.(); }, 0); } },
   });
+  const nScripts = () => appended.filter((e) => e.tagName === 'SCRIPT').length;
 
   try {
     const MB = await import('../js/ui/maps/mapbox.js');
@@ -416,11 +418,25 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
     ok('(a) Mapbox betiği yüklenemezse createMapboxMap reddeder', rejected);
     ok('betik Mapbox CDN, sürüm sabit (v3.x.y), @latest yok', /^https:\/\/api\.mapbox\.com\/mapbox-gl-js\/v3\.\d+\.\d+\/mapbox-gl\.js$/.test(script?.src || '') && !/latest/.test(script.src));
     ok('stil dosyası aynı sürümün mapbox-gl.css\'i', css?.href === script?.src.replace(/\.js$/, '.css') && css?.rel === 'stylesheet');
-    docCfg.script = 'load'; docCfg.lib = fakeLib();
-    const retry = await MB.createMapboxMap(container(), 'pk.test-dummy').catch((e) => e);
-    ok('başarısız yüklemeden sonra yeniden denenir (önbelleğe alınmış ret yok)', retry?.name === 'mapbox' && appended.filter((e) => e.tagName === 'SCRIPT').length === 2);
+    // Asılı kalan CDN (onerror hiç gelmez): kütüphane süresi dolunca reddedilir; önbellekteki yükleme bozulmaz, geç yükleme kullanılır
+    docCfg.script = 'hang';
+    let t0h = Date.now();
+    const hang1 = await MB.createMapboxMap(container(), 'pk.test-dummy', { libTimeoutMs: 60 }).then(() => null, (e) => e);
+    ok('asılı kalan betik: kütüphane süresi dolunca anlaşılır Türkçe hatayla reddeder', hang1 instanceof Error && /zamanında yüklenemedi/.test(hang1.message) && Date.now() - t0h < 1000);
+    ok('başarısız yüklemeden sonra yeniden denenir (önbelleğe alınmış ret yok)', nScripts() === 2 && !!docCfg.hung);
+    docCfg.lib = fakeLib();
+    const late = MB.createMapboxMap(container(), 'pk.test-dummy', { libTimeoutMs: 2000 });
+    await tick();
+    ok('süre dolması önbellekteki yüklemeyi silmez: ikinci çağrı yeni betik eklemez', nScripts() === 2);
+    window.mapboxgl = docCfg.lib; docCfg.hung.onload();
+    const lateA = await late.catch((e) => e);
+    ok('geç gelen başarılı yükleme bekleyen çağrıya ulaşır', lateA?.name === 'mapbox' && docCfg.lib.maps.length === 1);
     ok('stil dosyası bir kez eklenir', appended.filter((e) => e.tagName === 'LINK').length === 1);
     ok('enjekte edilen yükleyici reddederse createMapboxMap reddeder', await throws(() => MB.createMapboxMap(container(), 'pk.test-dummy', { loadLib: () => Promise.reject(new Error('yok')) })));
+    t0h = Date.now();
+    const never = await MB.createMapboxMap(container(), 'pk.test-dummy', { loadLib: () => new Promise(() => {}), libTimeoutMs: 50 }).then(() => null, (e) => e);
+    ok('enjekte yükleyici hiç sonuçlanmazsa süre içinde reddeder (openAdapter catch → OpenFreeMap)', never instanceof Error && /zamanında yüklenemedi/.test(never.message) && Date.now() - t0h < 1000);
+    ok('kütüphane süresi varsayılanı 25 sn', /libTimeoutMs = 25000/.test(src('js/ui/maps/mapbox.js')));
 
     // Temel: ad, yöntemler, belirteç, koyu stil, atıf, mercator
     let lib = fakeLib(); window.mapboxgl = lib;
@@ -431,7 +447,8 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
     ok('mapboxgl.accessToken = token', lib.accessToken === 'pk.test-dummy');
     ok('koyu stil mapbox://styles/mapbox/dark-v11', m.opts.style === 'mapbox://styles/mapbox/dark-v11');
     ok('mercator izdüşümü (küre değil; zoom ölçeği OpenFreeMap ile aynı)', m.opts.projection === 'mercator');
-    ok('Mapbox atfı görünür: kompakt AttributionControl eklenir, logo kapatılmaz', m.controls.some(({ c }) => c instanceof lib.AttributionControl && c.o.compact === true) && m.opts.logo !== false && !('customAttribution' in m.opts && !m.opts.customAttribution));
+    ok('Mapbox atfı görünür: kompakt AttributionControl haritaya eklenir', m.controls.some(({ c, pos }) => c instanceof lib.AttributionControl && c.o.compact === true && pos === 'bottom-left'));
+    ok('Mapbox logosu/atfı gizleyen seçenek verilmez (logo kütüphane varsayılanı)', !['logo', 'logoPosition', 'customAttribution'].some((k) => k in m.opts) && m.opts.attributionControl === false);
 
     // (b) 401/403 → onAuthFail tam bir kez; 404 → hiç
     let fails = 0;
@@ -477,7 +494,7 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
     t0 = Date.now();
     rejected = await ENG.createVectorMap(lib, container(), { name: 'osm', timeoutMs: 60 }).then(() => false, () => true);
     ok('motor: zaman aşımında reddeder ve map.remove() çağrılır', rejected && lib.maps[0].removed === true && Date.now() - t0 < 1000);
-    ok('motor: varsayılan yükleme süresi 25 sn, mapbox.js kendi süresini koymaz', /timeoutMs\s*=\s*25000/.test(src('js/ui/maps/mapEngine.js')) && !/timeoutMs/.test(src('js/ui/maps/mapbox.js')));
+    ok('motor: varsayılan yükleme süresi 25 sn, mapbox.js kendi süresini koymaz', /timeoutMs\s*=\s*25000/.test(src('js/ui/maps/mapEngine.js')) && !/timeoutMs\s*:/.test(src('js/ui/maps/mapbox.js')));
     lib = fakeLib();
     a = await ENG.createVectorMap(lib, container(), { name: 'osm' });
     ok('motor: başarılı yüklemede harita kaldırılmaz', a.name === 'osm' && lib.maps[0].removed === false);

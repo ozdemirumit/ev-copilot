@@ -47,11 +47,16 @@ const isAuthError = (e) => e?.error?.status === 401 || e?.error?.status === 403;
 /**
  * @param {HTMLElement} container
  * @param {string} token herkese açık Mapbox belirteci ("pk."); yalnızca bellekte
- * @param {{ onAuthFail?: () => void, loadLib?: () => Promise<any> }} [o] onAuthFail: stil/karo/sprite isteği 401/403 alınca
- *   bir kez çağrılır (404 vb. çağrılmaz). Yükleme bitmeden gelirse ayrıca söz hemen reddedilir. loadLib: testler için yükleyici.
+ * @param {{ onAuthFail?: () => void, loadLib?: () => Promise<any>, libTimeoutMs?: number }} [o] onAuthFail: stil/karo/sprite
+ *   isteği 401/403 alınca bir kez çağrılır (404 vb. çağrılmaz). Yükleme bitmeden gelirse ayrıca söz hemen reddedilir.
+ *   loadLib: testler için yükleyici. libTimeoutMs: kütüphane yükleme süresi (varsayılan 25 sn; harita yüklemesi ayrıca 25 sn).
  */
-export async function createMapboxMap(container, token, { onAuthFail, loadLib = loadMapboxGL } = {}) {
-  const mb = await loadLib();
+export async function createMapboxMap(container, token, { onAuthFail, loadLib = loadMapboxGL, libTimeoutMs = 25000 } = {}) {
+  // CDN yanıt vermeden asılı kalırsa betiğin onerror'ı dakikalarca gelmeyebilir: süre dolunca reddet (çağıran OpenFreeMap'e düşer).
+  // Önbellekteki yükleme sözüne dokunulmaz: geç de olsa yüklenirse sonraki çağrı onu kullanır.
+  let timer;
+  const deadline = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('Mapbox kütüphanesi zamanında yüklenemedi')), libTimeoutMs); });
+  const mb = await Promise.race([loadLib(), deadline]).finally(() => clearTimeout(timer));
   mb.accessToken = token;
   let authFailed = false;
   const onError = (e) => {
