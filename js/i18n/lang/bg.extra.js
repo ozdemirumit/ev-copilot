@@ -256,4 +256,5 @@ export default {
   "Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)": "Ограничението на скоростта се чете по време на шофиране (Premium: HERE; иначе Mapbox, после OpenStreetMap)",
   "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Проверката на ограничението на скоростта е включена (Premium: HERE, резервно OpenStreetMap)",
   "Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin": "Батерията е неизвестна: приети са 80 %. Можеш да я промениш с плъзгача „Текуща батерия“",
+  "Sunucuya ulaşılamıyor, yeniden deneniyor…": "Сървърът е недостъпен, опитвам отново…",
 };

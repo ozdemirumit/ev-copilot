@@ -256,4 +256,5 @@ export default {
   "Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)": "The road speed limit is read while driving (Premium: HERE; otherwise Mapbox, then OpenStreetMap)",
   "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Road speed limit check is on (Premium: HERE, OpenStreetMap as fallback)",
   "Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin": "Battery unknown: 80% assumed. You can change it with the Current battery slider",
+  "Sunucuya ulaşılamıyor, yeniden deneniyor…": "Server unreachable, retrying…",
 };

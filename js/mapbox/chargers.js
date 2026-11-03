@@ -35,7 +35,7 @@ export async function categoryId() {
   const hit = cacheGet('mbcat');
   if (hit) return hit;
   try {
-    const ids = collectIds(await mbfetch('/search/searchbox/v1/list/category', { limit: 1000 }));
+    const ids = collectIds(await mbfetch('/search/searchbox/v1/list/category', { limit: 1000 }, { retry: true }));
     const found = ids.find((id) => /charging_station/i.test(id)) || ids.find((id) => /ev_?charg|charg/i.test(id));
     if (found) { cacheSet('mbcat', found, CAT_TTL_MS); return found; }
   } catch (err) {
@@ -90,7 +90,7 @@ async function run(boxes) {
       ctx.calls++;
       return mbfetch(`/search/searchbox/v1/category/${encodeURIComponent(cat)}`, {
         bbox: bbox.map((x) => x.toFixed(5)).join(','), proximity: `${b.lon.toFixed(5)},${b.lat.toFixed(5)}`, limit: LIMIT, exclude_fields: 'photos,reviews',
-      });
+      }, { retry: true }); // istasyon araması: sunucu kısa süre kapalıysa yeniden dener
     }, { persist: false });
     const feats = json.features || [];
     ctx.raw += feats.length;

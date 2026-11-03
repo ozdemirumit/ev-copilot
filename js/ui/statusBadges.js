@@ -1,4 +1,5 @@
 import { getState, subscribe } from '../state.js';
+import { toast } from './toast.js';
 
 const GPS = {
   off: ['GPS: kapalı', ''],
@@ -21,7 +22,13 @@ function set(el, [text, cls]) {
   el.className = 'badge ' + cls + (el.id === 'bd-sim' ? ' test' : '');
 }
 
+/** Ağ katmanı (net/proxy.js) sunucu kısa süre kapalıyken 'proxy-retrying' olayı gönderir (kesinti başına bir kez): tek toast gösterilir. */
+export function watchProxyRetry() {
+  document.addEventListener('proxy-retrying', () => toast('Sunucuya ulaşılamıyor, yeniden deneniyor…', 5000));
+}
+
 export function initStatusBadges() {
+  watchProxyRetry();
   const gps = document.getElementById('bd-gps');
   const ocr = document.getElementById('bd-ocr');
 

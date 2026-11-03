@@ -1,7 +1,7 @@
 // Mapbox REST çağrıları (isteğe bağlı: anahtar girilirse trafikli rota, trafik uyarısı ve istasyon araması Mapbox'tan gelir).
 // Anahtar yalnızca bu cihazın LocalStorage'ında durur (`mbKey`); herkese açık "pk." anahtarı olmalı, gizli "sk." anahtarı kabul edilmez.
 import { load } from '../utils/storage.js';
-import { proxyBase, proxyFetch, proxyHas } from '../net/proxy.js';
+import { proxyBase, proxyFetch, proxyFetchRetry, proxyHas } from '../net/proxy.js';
 
 export const mapboxKey = () => (proxyHas('mapbox') ? 'proxy' : load('mbKey', '')); // ara sunucuda anahtar varsa o kullanılır (anahtar telefona yazılmaz)
 export const MB_VALID = /^pk\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}$/;
@@ -15,8 +15,11 @@ export class MapboxError extends Error {
   }
 }
 
-/** GET api.mapbox.com{path}?params. Anahtar sorguda gider (Mapbox başlıkla kabul etmez) ve hata iletilerine asla yazılmaz. */
-export async function mbfetch(path, params = {}, { timeoutMs = 25000 } = {}) {
+/**
+ * GET api.mapbox.com{path}?params. Anahtar sorguda gider (Mapbox başlıkla kabul etmez) ve hata iletilerine asla yazılmaz.
+ * `retry: true` (yalnızca istasyon araması): ara sunucu kısa süre kapalıysa (ağ hatası, 502/503/504) 4 sn arayla birkaç kez yeniden dener; rota ve adres aramasında kapalıdır.
+ */
+export async function mbfetch(path, params = {}, { timeoutMs = 25000, retry = false } = {}) {
   const key = mapboxKey();
   if (!key) throw new MapboxError('Mapbox anahtarı yok', { fatal: true });
   const viaProxy = proxyHas('mapbox');
@@ -25,7 +28,8 @@ export async function mbfetch(path, params = {}, { timeoutMs = 25000 } = {}) {
   let res;
   try {
     if (viaProxy) {
-      res = await proxyFetch(`/mapbox${path}?${q}`, { signal: AbortSignal.timeout(timeoutMs) }); // anahtarı sunucu ekler
+      const url = `/mapbox${path}?${q}`; // anahtarı sunucu ekler
+      res = retry ? await proxyFetchRetry(url, {}, { timeoutMs }) : await proxyFetch(url, { signal: AbortSignal.timeout(timeoutMs) });
     } else {
       q.set('access_token', key);
       res = await fetch(`https://api.mapbox.com${path}?${q}`, { signal: AbortSignal.timeout(timeoutMs) });

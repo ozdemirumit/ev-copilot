@@ -256,4 +256,5 @@ export default {
   "Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)": "El límite de velocidad de la vía se lee mientras conduces (Premium: HERE; si no, Mapbox y después OpenStreetMap)",
   "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Control del límite de velocidad de la vía activado (Premium: HERE, respaldo OpenStreetMap)",
   "Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin": "Batería desconocida: se asumió el 80 %. Puedes cambiarla con el control «Batería actual»",
+  "Sunucuya ulaşılamıyor, yeniden deneniyor…": "Servidor inaccesible, reintentando…",
 };

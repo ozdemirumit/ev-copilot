@@ -256,4 +256,5 @@ export default {
   "Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)": "Το όριο ταχύτητας δρόμου διαβάζεται κατά την οδήγηση (Premium: HERE· αλλιώς Mapbox, μετά OpenStreetMap)",
   "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Ο έλεγχος ορίου ταχύτητας δρόμου είναι ενεργός (Premium: HERE, εφεδρικά OpenStreetMap)",
   "Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin": "Άγνωστη μπαταρία: υποτέθηκε 80 %. Μπορείς να την αλλάξεις με το ρυθμιστικό «Τρέχουσα μπαταρία»",
+  "Sunucuya ulaşılamıyor, yeniden deneniyor…": "Ο διακομιστής δεν είναι προσβάσιμος, γίνεται νέα προσπάθεια…",
 };

@@ -3,7 +3,7 @@
 import { classify } from '../routing/operators.js';
 import { candidate } from '../routing/chargerSource.js';
 import { cached } from '../utils/cache.js';
-import { proxyFetch, proxyHas } from '../net/proxy.js';
+import { proxyFetchRetry, proxyHas } from '../net/proxy.js';
 
 const R_KM = 20; // her dairenin yarıçapı (sunucu en çok 40 km kabul eder)
 const SPACING_KM = 30; // daire merkezleri arası (daireler örtüşür)
@@ -33,7 +33,7 @@ export function fromHere(f) {
 
 async function circle(lat, lon, r) {
   let res;
-  try { res = await proxyFetch(`/here/stations?lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}&r=${r}`, { signal: AbortSignal.timeout(20000) }); } catch { throw new HereError('Ara sunucuya ulaşılamadı', { fatal: true }); }
+  try { res = await proxyFetchRetry(`/here/stations?lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}&r=${r}`, {}, { timeoutMs: 20000 }); } catch { throw new HereError('Ara sunucuya ulaşılamadı', { fatal: true }); }
   if (res.status === 402) throw new HereError('HERE aylık hakkı doldu', { fatal: true });
   if (res.status === 501 || res.status === 401) throw new HereError(res.status === 501 ? 'Sunucuda HERE anahtarı yok' : 'Sunucu erişim kodu geçersiz', { fatal: true });
   if (res.status === 502) { // sunucu HERE'den 401/403 aldıysa (anahtar iptal/süresi dolmuş) tek tek denemenin anlamı yok: diğer kaynağa geç

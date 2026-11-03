@@ -5,7 +5,7 @@ import { PLANNER } from '../config.js';
 import { classify } from '../routing/operators.js';
 import { haversineKm } from '../utils/geo.js';
 import { load } from '../utils/storage.js';
-import { proxyFetch, proxyHas } from '../net/proxy.js';
+import { proxyFetchRetry, proxyHas } from '../net/proxy.js';
 import { cached, cacheGet, cacheSet, TTL } from '../utils/cache.js';
 import { candidate, customRaw, dedupe, finalize, priced, summarize } from '../routing/chargerSource.js';
 import { teslaAlong, teslaAround } from '../routing/tesla.js';
@@ -102,7 +102,7 @@ const DEAD_MS = 10 * 60e3;
 export async function overpass(query, pref = 0) {
   if (proxyHas('overpass')) { // ara sunucu: ortak önbellek ve sıralı istek; ulaşılamazsa halka açık sunuculara düşülür
     try {
-      const res = await proxyFetch('/overpass', { method: 'POST', body: new URLSearchParams({ data: query }), signal: AbortSignal.timeout(60000) });
+      const res = await proxyFetchRetry('/overpass', { method: 'POST', body: new URLSearchParams({ data: query }) }, { timeoutMs: 60000 }); // sunucu kısa süre kapalıysa yeniden dener, olmazsa doğrudan sunuculara düşer
       if (res.ok) {
         const j = await res.json();
         if (!(j.remark && /runtime error|timed out|out of memory/i.test(j.remark) && !(j.elements || []).length)) return j.elements || [];
@@ -193,7 +193,7 @@ async function ocmQuery(lat, lon, km, key) {
   const q = `output=json&compact=true&verbose=false&maxresults=250&distanceunit=KM&distance=${km}&latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}`;
   const viaProxy = proxyHas('ocm');
   const res = viaProxy
-    ? await proxyFetch(`/ocm/poi?${q}`, { signal: AbortSignal.timeout(30000) }) // anahtarı sunucu ekler
+    ? await proxyFetchRetry(`/ocm/poi?${q}`, {}, { timeoutMs: 30000 }) // anahtarı sunucu ekler
     : await fetch(`https://api.openchargemap.io/v3/poi/?${q}&key=${encodeURIComponent(key)}`, { signal: AbortSignal.timeout(30000) }); // anahtar sorguda: basit GET (ön istek yok)
   if (!res.ok) throw new Error(viaProxy && res.status === 401 ? 'Sunucu erişim kodu geçersiz' : res.status === 401 || res.status === 403 ? 'OpenChargeMap anahtarı reddedildi' : `OpenChargeMap HTTP ${res.status}`);
   const list = await res.json();

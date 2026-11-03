@@ -255,5 +255,6 @@
  "HERE hız limiti alınamadı; OpenStreetMap kullanılıyor (etiketi olmayan yolda bilinmez)",
  "Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)",
  "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)",
- "Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin"
+ "Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin",
+ "Sunucuya ulaşılamıyor, yeniden deneniyor…"
 ]

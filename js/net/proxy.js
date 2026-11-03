@@ -45,6 +45,78 @@ export function proxyFetch(path, init = {}) {
   return fetch(proxyBase() + path, { ...init, headers });
 }
 
+// ---- Kısa süreli sunucu kesintisinde yeniden deneme (istasyon araması) ----
+// Sunucu yeniden başlarken (~10 sn) Caddy 502 verir ya da tarayıcı "Failed to fetch" görür. Yalnızca bu GEÇİCİ durumlar yeniden denenir:
+// ağ hatası (TypeError) ve HTTP 502/503/504. Başka durum (401, 402, 403, 404, 429, 501…), zaman aşımı ve çağıranın iptali ASLA yeniden denenmez.
+// ORTAK KAPI (gate): istasyon araması onlarca paralel istek atar; her biri kendi 12 sn'lik döngüsünü çalıştırırsa kapalı sunucuya yük biner
+// ve bekleme çarpılır. Bu yüzden kesinti tek bir ortak "tur" olarak ele alınır:
+//   - ilk başarısız istek turu başlatır (tek 'proxy-retrying' olayı → arayüz tek toast gösterir);
+//   - tur boyunca TEK ortak zamanlayıcı çalışır, bekleyen tüm istekler aynı anda uyanıp yeniden dener (en çok `retries` uyanış ≈ 12 sn);
+//   - hak bitince kapı "down" olur ve 20 sn boyunca yeni istekler yeniden DENEMEZ (tek deneme, bugünkü davranış); bir istek başarırsa kapı sıfırlanır.
+// Böylece bir aramanın toplam ek beklemesi ~13,5 sn'yi (3 × 4 sn ± 0,5) aşmaz ve tükenince mevcut hata yolu çalışır.
+const RETRY_STATUS = new Set([502, 503, 504]);
+const DOWN_COOLDOWN_MS = 20000; // hak tükenince bu süre yeni istekler yeniden denemez
+const STALE_MS = 30000; // tur bu kadar süredir sessizse (istekler bitti/iptal edildi) eski sayılır, yenisi başlar
+const gate = { phase: 'ok', ticks: 0, wait: null, downUntil: 0, lastFail: 0 }; // phase: ok | retrying | down
+export const retryTuning = { sleep: (ms) => new Promise((r) => setTimeout(r, ms)) }; // testler uykuyu değiştirir
+export function resetRetryGate() { Object.assign(gate, { phase: 'ok', ticks: 0, wait: null, downUntil: 0, lastFail: 0 }); }
+
+const isNetworkError = (err) => err?.name === 'TypeError'; // fetch ağ hatası ("Failed to fetch"); TimeoutError / AbortError değildir
+const abortError = (signal) => signal?.reason ?? new DOMException('Aborted', 'AbortError');
+
+function combine(a, b) {
+  if (!a || !b) return a || b;
+  if (typeof AbortSignal.any === 'function') return AbortSignal.any([a, b]);
+  const c = new AbortController();
+  for (const s of [a, b]) { if (s.aborted) c.abort(s.reason); else s.addEventListener('abort', () => c.abort(s.reason), { once: true }); }
+  return c.signal;
+}
+
+/** Ortak kapıdan yeniden deneme izni iste. true: ortak bekleme bitti, yeniden dene. false: vazgeç (hak tükendi / soğuma). */
+async function gateWait(o, signal) {
+  const now = Date.now();
+  if (gate.phase === 'down') { if (now < gate.downUntil) return false; resetRetryGate(); }
+  if (gate.phase === 'retrying' && now - gate.lastFail > STALE_MS) resetRetryGate();
+  gate.lastFail = now;
+  if (gate.phase === 'ok') {
+    gate.phase = 'retrying'; gate.ticks = 0;
+    if (typeof document !== 'undefined' && typeof CustomEvent === 'function') document.dispatchEvent(new CustomEvent('proxy-retrying')); // arayüz tek toast gösterir
+  }
+  if (gate.ticks >= o.retries) { gate.phase = 'down'; gate.downUntil = now + DOWN_COOLDOWN_MS; gate.wait = null; return false; }
+  if (!gate.wait) {
+    const ms = Math.max(0, o.delayMs + (Math.random() * 2 - 1) * o.jitterMs);
+    gate.wait = Promise.resolve(o.sleep(ms)).then(() => { gate.ticks++; gate.wait = null; });
+  }
+  if (!signal) { await gate.wait; return true; }
+  if (signal.aborted) throw abortError(signal);
+  let onAbort;
+  const aborted = new Promise((_, rej) => { onAbort = () => rej(abortError(signal)); signal.addEventListener('abort', onAbort, { once: true }); });
+  try { await Promise.race([gate.wait, aborted]); } finally { signal.removeEventListener('abort', onAbort); }
+  return true;
+}
+
+/**
+ * proxyFetch + yalnızca geçici sunucu kesintisinde yeniden deneme (ağ hatası, 502/503/504). Her denemeye TAZE zaman aşımı sinyali verilir
+ * (timeoutMs); çağıran init.signal verirse iptali denemeler arasında da geçerlidir. Dönüş: son Response (son 502/503/504 olduğu gibi) ya da son ağ hatası fırlatılır.
+ */
+export async function proxyFetchRetry(path, init = {}, { timeoutMs, retries = 3, delayMs = 4000, jitterMs = 500, sleep = retryTuning.sleep } = {}) {
+  const o = { retries, delayMs, jitterMs, sleep };
+  const outer = init.signal;
+  for (let attempt = 0; ; attempt++) {
+    let res = null;
+    let err = null;
+    try {
+      const own = timeoutMs ? AbortSignal.timeout(timeoutMs) : null;
+      res = await proxyFetch(path, { ...init, signal: combine(own, outer) });
+    } catch (e) { err = e; }
+    if (res && !RETRY_STATUS.has(res.status)) { if (gate.phase !== 'ok') resetRetryGate(); return res; } // sunucu ayakta: kapı sıfırlanır
+    if (err && !isNetworkError(err)) throw err; // zaman aşımı, iptal ya da beklenmeyen hata
+    if (outer?.aborted) throw abortError(outer);
+    if (attempt >= retries || !(await gateWait(o, outer))) { if (err) throw err; return res; }
+    try { res?.body?.cancel?.().catch(() => {}); } catch { /* gövde zaten kilitli */ } // atılan 502 gövdesi serbest kalsın
+  }
+}
+
 /** Herkese açık yapılandırma (giriş sağlayıcıları). Sunucuya ulaşılamazsa null. */
 export async function serverConfig() {
   try {
