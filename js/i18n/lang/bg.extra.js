@@ -244,6 +244,6 @@ export default {
   "Kaydedilemedi": "Не може да се запази",
   "Tümü": "Всички",
   "Şarj markası": "Марка зареждане",
-  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçersen plan ve liste yalnızca seçtiğin markaları kullanır.": "Ако няма избрана, се използват всички марки. Ако изберете, планът и списъкът ползват само избраните марки.",
-  "Marka tercihi açık: markaları genişlet ya da kaldır.": "Предпочитанието за марка е включено: добавете марки или го изчистете.",
+  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçtiğin markalar önceliklidir; şarj yetmezse plan gerektiğinde başka markaları da kullanır.": "Ако няма избрана, се използват всички марки. Избраните са с предимство; ако зареждането не стига, планът ползва при нужда и други марки.",
+  "tercih dışı": "извън предпочитанията",
 };

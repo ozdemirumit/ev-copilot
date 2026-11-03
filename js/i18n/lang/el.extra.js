@@ -244,6 +244,6 @@ export default {
   "Kaydedilemedi": "Αποτυχία αποθήκευσης",
   "Tümü": "Όλα",
   "Şarj markası": "Μάρκα φόρτισης",
-  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçersen plan ve liste yalnızca seçtiğin markaları kullanır.": "Αν δεν επιλεγεί καμία, χρησιμοποιούνται όλες οι μάρκες. Αν επιλέξετε, το πλάνο και η λίστα χρησιμοποιούν μόνο τις επιλεγμένες.",
-  "Marka tercihi açık: markaları genişlet ya da kaldır.": "Η προτίμηση μάρκας είναι ενεργή: προσθέστε μάρκες ή αφαιρέστε την.",
+  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçtiğin markalar önceliklidir; şarj yetmezse plan gerektiğinde başka markaları da kullanır.": "Αν δεν επιλεγεί καμία, χρησιμοποιούνται όλες οι μάρκες. Οι επιλεγμένες έχουν προτεραιότητα· αν η φόρτιση δεν αρκεί, το πλάνο χρησιμοποιεί και άλλες μάρκες όταν χρειάζεται.",
+  "tercih dışı": "εκτός προτίμησης",
 };

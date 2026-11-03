@@ -244,6 +244,6 @@ export default {
   "Kaydedilemedi": "Opslaan mislukt",
   "Tümü": "Alle",
   "Şarj markası": "Laadmerk",
-  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçersen plan ve liste yalnızca seçtiğin markaları kullanır.": "Is er niets geselecteerd, dan worden alle merken gebruikt. Bij een keuze gebruiken plan en lijst alleen die merken.",
-  "Marka tercihi açık: markaları genişlet ya da kaldır.": "Merkvoorkeur actief: voeg merken toe of wis de keuze.",
+  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçtiğin markalar önceliklidir; şarj yetmezse plan gerektiğinde başka markaları da kullanır.": "Is er niets geselecteerd, dan worden alle merken gebruikt. Gekozen merken hebben voorrang; is laden niet genoeg, dan gebruikt het plan zo nodig ook andere merken.",
+  "tercih dışı": "niet voorkeur",
 };

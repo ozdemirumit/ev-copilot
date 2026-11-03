@@ -88,14 +88,15 @@ function applyPlan(out, extra = {}) {
     ...extra,
     kInfo,
     status: result.feasible ? 'ready' : 'infeasible',
-    text: result.feasible ? '' : result.reason + (PLANNER.minKw > PLANNER.baseKw ? ' ' + tpl('En az şarj gücü filtresi {0} kW: düşürmeyi (AC) dene.', PLANNER.minKw) : '') + (PLANNER.brands?.length ? ' ' + tpl('Marka tercihi açık: markaları genişlet ya da kaldır.') : ''),
+    text: result.feasible ? '' : result.reason + (PLANNER.minKw > PLANNER.baseKw ? ' ' + tpl('En az şarj gücü filtresi {0} kW: düşürmeyi (AC) dene.', PLANNER.minKw) : ''),
     stops: result.stops,
     totals: result.totals || null,
     ranking,
   });
   const pl = getState('plan');
   const from = (pl.fromKm ?? 0) - 0.3;
-  mapApi.drawStations(pl.stations.filter((s) => s.km > from && shown(s)), result.stops); // geride kalan istasyonlar haritadan da çıkar
+  const planned = new Set(result.stops.map((x) => x.station.id));
+  mapApi.drawStations(pl.stations.filter((s) => s.km > from && shown(s, planned)), result.stops); // geride kalan istasyonlar haritadan da çıkar
 }
 
 /** İstasyonları getir ve plan durumuna yaz; hata/önbellek bilgisi İstasyon sekmesinde kalıcı gösterilir. */
@@ -212,7 +213,7 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
     restoreSim();
     if (prev.profile && prev.status !== 'loading') {
       patch('plan', { ...prev }); // eski plan ve istasyonlar geri gelir
-      mapApi.drawStations(prev.stations.filter((s) => s.km > (prev.fromKm ?? 0) - 0.3 && shown(s)), prev.stops);
+      mapApi.drawStations(prev.stations.filter((s) => s.km > (prev.fromKm ?? 0) - 0.3 && shown(s, new Set(prev.stops.map((x) => x.station.id)))), prev.stops);
       toast('Yeni rota alınamadı, mevcut plan korundu: ' + err.message, 5000);
     } else {
       patch('plan', { status: 'error', text: err.message });

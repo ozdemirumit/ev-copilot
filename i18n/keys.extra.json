@@ -244,6 +244,6 @@
  "Kaydedilemedi",
  "Tümü",
  "Şarj markası",
- "Hiçbiri seçili değilse tüm markalar kullanılır. Seçersen plan ve liste yalnızca seçtiğin markaları kullanır.",
- "Marka tercihi açık: markaları genişlet ya da kaldır."
+ "Hiçbiri seçili değilse tüm markalar kullanılır. Seçtiğin markalar önceliklidir; şarj yetmezse plan gerektiğinde başka markaları da kullanır.",
+ "tercih dışı"
 ]

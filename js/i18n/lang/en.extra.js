@@ -244,6 +244,6 @@ export default {
   "Kaydedilemedi": "Could not save",
   "Tümü": "All",
   "Şarj markası": "Charging brand",
-  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçersen plan ve liste yalnızca seçtiğin markaları kullanır.": "If none is selected, all brands are used. If you select some, the plan and the list use only those brands.",
-  "Marka tercihi açık: markaları genişlet ya da kaldır.": "Brand preference is on: add more brands or clear it.",
+  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçtiğin markalar önceliklidir; şarj yetmezse plan gerektiğinde başka markaları da kullanır.": "If none is selected, all brands are used. Your selected brands come first; if charging is not enough, the plan also uses other brands when needed.",
+  "tercih dışı": "not preferred",
 };

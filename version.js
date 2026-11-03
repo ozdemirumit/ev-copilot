@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.78.0';
+self.APP_VERSION = '0.78.1';
 self.APP_CHANGELOG = [
+  {
+    v: '0.78.1', date: '2026-11-03',
+    notes: [
+      'DEĞİŞTİ: Şarj markası tercihi artık kesin filtre değil, öncelik. Rota planı önce seçtiğin markaları kullanır; şarj yetmezse (seçili markada yeterli istasyon yoksa) gerektiği kadar başka marka da plana girer ve listede "tercih dışı" etiketiyle görünür. Tercih edilen markalar istasyon listesinde önce gelir; haritada plandaki duraklar tercih dışı olsa da çizilir. DÜZELTİLDİ: Marka düğmeleri ekrana sığmıyordu, artık alt satıra sarılıyor.',
+    ],
+  },
   {
     v: '0.78.0', date: '2026-11-02',
     notes: [

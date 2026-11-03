@@ -244,6 +244,6 @@ export default {
   "Kaydedilemedi": "Konnte nicht gespeichert werden",
   "Tümü": "Alle",
   "Şarj markası": "Lade-Marke",
-  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçersen plan ve liste yalnızca seçtiğin markaları kullanır.": "Ist keine ausgewählt, werden alle Marken verwendet. Bei Auswahl nutzen Plan und Liste nur die gewählten Marken.",
-  "Marka tercihi açık: markaları genişlet ya da kaldır.": "Markenauswahl aktiv: Marken erweitern oder aufheben.",
+  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçtiğin markalar önceliklidir; şarj yetmezse plan gerektiğinde başka markaları da kullanır.": "Ist keine ausgewählt, werden alle Marken verwendet. Gewählte Marken haben Vorrang; reicht die Ladung nicht, nutzt der Plan bei Bedarf auch andere Marken.",
+  "tercih dışı": "nicht bevorzugt",
 };

@@ -172,6 +172,8 @@ input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; }
 /* ---------- Stations ---------- */
 .chips { display: flex; gap: 8px; }
 .chips .btn { flex: 1; }
+.chips.wrap { flex-wrap: wrap; }
+.chips.wrap .btn { flex: 1 1 auto; min-width: 72px; }
 .station { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; }
 .station + .station { margin-top: 10px; }
 .station .name { font-weight: 600; }

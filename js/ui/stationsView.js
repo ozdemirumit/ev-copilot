@@ -7,6 +7,7 @@ import { repriceAndReplan, refetchStations } from '../routing/controller.js';
 import { setStationOperator } from '../routing/chargerSource.js';
 import { slotEl } from '../routing/slots.js';
 import { PLANNER } from '../config.js';
+import { brandOk } from '../routing/planner.js';
 
 const $ = (id) => document.getElementById(id);
 const MODE_TITLE = { fast: 'Hızlı', cheap: 'Ekonomik', opt: 'Optimum (süre + maliyet)' };
@@ -68,7 +69,7 @@ function renderList() {
     const meta = document.createElement('div');
     meta.className = 'meta';
     meta.append(
-      text('span', 'tag ' + (n ? 'best' : ''), n ? `Planda #${n}` : 'Aday'),
+      text('span', 'tag ' + (n ? 'best' : ''), (n ? `Planda #${n}` : 'Aday') + (brandOk(r.station) ? '' : ' · ' + tr('tercih dışı'))),
       text('span', '', r.station.foreign
         ? `${r.station.opName} · ${r.station.slow ? 'AC/yavaş ' : ''}${r.station.kw} kW${r.station.uncertain ? '*' : ''} · ${Math.max(0, r.station.km - here).toFixed(0)} km ileride · varış %${r.arrive.toFixed(0)} → %${Math.round(r.to)}`
         : `${r.station.opName} · ${r.station.slow ? 'AC/yavaş ' : ''}${r.station.kw} kW${r.station.uncertain ? '*' : ''} · ${r.station.price.toFixed(2)} TL/kWh · ${Math.max(0, r.station.km - here).toFixed(0)} km ileride · varış %${r.arrive.toFixed(0)} → %${Math.round(r.to)}`),

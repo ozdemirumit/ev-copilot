@@ -14,10 +14,12 @@ export function metric(mode, minutes, cost) {
 
 /** Planlanabilir istasyon: hızlı DC (≥ minKw) veya yedek olarak izin verilmişse yavaş AC/belirsiz. */
 export const meetsPower = (s) => s.kw >= P.minKw || (P.allowSlow && s.slow && P.minKw <= P.baseKw); // güç filtresi (40+ dışında) açıkken yavaş yedek aday olmaz
-export const brandOk = (s) => !P.brands?.length || P.brands.includes(s.opId); // tercih edilen marka filtresi (boş = hepsi)
-/** Haritada/listede gösterilecek istasyon: güç filtresi (AC = hepsi) ve marka tercihi. */
-export const shown = (s) => (P.minKw <= P.baseKw || meetsPower(s)) && brandOk(s);
-export const usable = (s) => meetsPower(s) && brandOk(s) && !(isFresh(s) && slotKind(s) === 'out'); // tamamen arızalı (taze bilgi) istasyon aday olmaz
+export const brandOk = (s) => !P.brands?.length || P.brands.includes(s.opId); // tercih edilen marka (boş = hepsi). Tercih yumuşaktır: tercih dışı marka yalnızca gerektiğinde kullanılır
+const PREF_PENALTY = 1e5; // tercih dışı her durak için ceza (hızlı modda dk, öbürlerinde TL): önce tercih dışı durak sayısı en aza iner, sonra mod ölçütü
+const offPref = (s) => (brandOk(s) ? 0 : PREF_PENALTY);
+/** Haritada gösterilecek istasyon: güç filtresi (AC = hepsi) ve marka tercihi (plandaki duraklar tercih dışı olsa da çizilir). */
+export const shown = (s, planned) => (P.minKw <= P.baseKw || meetsPower(s)) && (brandOk(s) || !!planned?.has(s.id));
+export const usable = (s) => meetsPower(s) && !(isFresh(s) && slotKind(s) === 'out'); // tamamen arızalı (taze bilgi) istasyon aday olmaz
 
 /**
  * Hızlı DC istasyon bulunmayan uzun rota aralıkları (km). Veri eksikliğini (özellikle açık kaynak istasyon kaydının seyrek olduğu bölgeler)
@@ -98,7 +100,7 @@ function solve({ profile, stations, startKm = 0, startSoc, minArrival, mode = 'o
           if (L < arrive + Math.max(3, minAdd)) return;
           const mins = chargeMinutes(s.kw, arrive, L);
           const cost = (((L - arrive) / 100) * BAT / P.billedEff) * s.price;
-          const m = st.metric + dip + metric(mode, mins + P.stopOverheadMin + detourMin(s) + waitMin(s, startKm), cost);
+          const m = st.metric + dip + offPref(s) + metric(mode, mins + P.stopOverheadMin + detourMin(s) + waitMin(s, startKm), cost);
           if (!states[j][li] || m < states[j][li].metric) {
             states[j][li] = { leave: L, metric: m, prev: [n, si], arrive, mins, cost };
           }
@@ -176,7 +178,7 @@ export function rankStations({ profile, stations, startKm = 0, startSoc, k = 1, 
     const to = Math.max(target, Math.min(P.maxChargeTo, arrive + 10));
     const minutes = chargeMinutes(s.kw, arrive, to) + P.stopOverheadMin + detourMin(s);
     const cost = (((to - arrive) / 100) * BAT / P.billedEff) * s.price;
-    rows.push({ station: s, arrive, to, minutes, cost, score: metric(mode, minutes, cost) });
+    rows.push({ station: s, arrive, to, minutes, cost, score: metric(mode, minutes, cost) + offPref(s) }); // tercih edilen markalar listede önce
   }
   return rows.sort((a, b) => a.score - b.score);
 }

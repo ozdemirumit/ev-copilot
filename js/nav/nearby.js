@@ -65,7 +65,11 @@ function enrich(list) {
   }).sort((a, b) => a.distKm - b.distKm);
 }
 
-const visible = () => enrich(all).filter((s) => (showAc || !s.slow) && brandOk(s)); // brandOk: Şarj markası tercihi (İstasyonlar sekmesi)
+const visible = () => {
+  const list = enrich(all).filter((s) => showAc || !s.slow);
+  const pref = list.filter(brandOk); // Şarj markası tercihi (İstasyonlar sekmesi); tercih edilen markada hiç istasyon yoksa hepsi gösterilir
+  return pref.length ? pref : list;
+};
 
 export async function refreshNearby({ force = false, silent = false } = {}) {
   const e = effective();

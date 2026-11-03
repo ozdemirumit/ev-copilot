@@ -244,6 +244,6 @@ export default {
   "Kaydedilemedi": "Impossibile salvare",
   "Tümü": "Tutte",
   "Şarj markası": "Marchio di ricarica",
-  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçersen plan ve liste yalnızca seçtiğin markaları kullanır.": "Se nessuna è selezionata, si usano tutti i marchi. Se ne scegli, il piano e l'elenco usano solo quelli.",
-  "Marka tercihi açık: markaları genişlet ya da kaldır.": "Preferenza di marchio attiva: amplia i marchi o rimuovila.",
+  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçtiğin markalar önceliklidir; şarj yetmezse plan gerektiğinde başka markaları da kullanır.": "Se nessuna è selezionata, si usano tutti i marchi. Quelli scelti hanno la priorità; se la ricarica non basta, il piano usa anche altri marchi quando serve.",
+  "tercih dışı": "non preferito",
 };
