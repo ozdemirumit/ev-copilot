@@ -236,5 +236,120 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
   ok('admin.html anahtar değeri içermez', !/pk\.[A-Za-z0-9_.-]{8,}/.test(html) && !html.includes('pk.test-dummy') && !/AIza[0-9A-Za-z_-]{10,}/.test(html));
 }
 
+// ---- Bölüm 4: js/net/mapConfig.js (istemci sağlayıcı çözümü) ----
+// Tarayıcı nesneleri sahte: localStorage / sessionStorage / document / fetch globalThis üzerine konur, modül sonra import edilir.
+// Kimlik (hasCreds) proxy.js'in okuduğu saklı oturumla (evcp.session) verilir; fetch sahtesi her çağrıyı kaydeder.
+{
+  let everLeaked = false; // herhangi bir anda depoya sahte anahtar yazıldı mı (sıfırlamalar arasında da izlenir)
+  const mkStore = () => {
+    const m = new Map();
+    return {
+      getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => { if (/pk\.test-dummy|gk-dummy/.test(String(v))) everLeaked = true; m.set(k, String(v)); }, removeItem: (k) => m.delete(k),
+      clear: () => m.clear(), key: (i) => [...m.keys()][i] ?? null, get length() { return m.size; }, dump: () => [...m.values()].join('\n'),
+    };
+  };
+  // Özgün tanımlar okunmadan (Node'un yerleşik localStorage alıcısı uyarı basar) tanımlayıcılarıyla saklanır, sonda geri konur.
+  const saved = Object.fromEntries(['localStorage', 'sessionStorage', 'document', 'fetch'].map((k) => [k, Object.getOwnPropertyDescriptor(globalThis, k)]));
+  const ls = mkStore(), ss = mkStore();
+  const def = (k, v) => Object.defineProperty(globalThis, k, { value: v, configurable: true, writable: true });
+  def('localStorage', ls); def('sessionStorage', ss); def('document', { dispatchEvent() {}, addEventListener() {} });
+  let calls = [], reply = null; // reply: (url, init) => Promise<Response>
+  def('fetch', (url, init) => { calls.push(String(url)); return reply(url, init); });
+  const json = (status, body) => () => Promise.resolve(new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } }));
+  const tick = (ms = 20) => new Promise((r) => setTimeout(r, ms));
+  const SECRET = /pk\.test-dummy|gk-dummy/;
+  const leaked = () => SECRET.test(ls.dump()) || SECRET.test(ss.dump());
+  const reset = ({ creds = true, provider = null } = {}) => {
+    ls.clear(); ss.clear(); calls = []; reply = json(200, { provider: 'osm' });
+    if (creds) ls.setItem('evcp.session', JSON.stringify({ token: 'T'.repeat(30) }));
+    if (provider) ls.setItem('evcp.mapProvider', JSON.stringify(provider));
+  };
+
+  try {
+    const M = await import('../js/net/mapConfig.js');
+    const R = (o) => M.resolveProvider(o);
+
+    reset();
+    ok('savedProvider() varsayılan osm', M.savedProvider() === 'osm');
+    ok('osmForced() başta false', M.osmForced() === false);
+
+    reset({ provider: 'mapbox' }); M.forceOsm();
+    let r = await R();
+    ok('bayrak varken fetch çağrılmaz, osm', M.osmForced() === true && JSON.stringify(r) === '{"provider":"osm"}' && calls.length === 0);
+
+    reset({ creds: false, provider: 'mapbox' });
+    r = await R(); await tick();
+    ok('oturum/kimlik yok → fetch çağrılmaz, osm (Review Focus 1)', JSON.stringify(r) === '{"provider":"osm"}' && calls.length === 0);
+
+    reset({ provider: 'osm' });
+    let release; reply = () => new Promise((res) => { release = () => res(new Response('{"provider":"mapbox","token":"pk.test-dummy"}', { status: 200 })); });
+    r = await R();
+    ok('saklı osm → fetch beklenmeden osm döner', JSON.stringify(r) === '{"provider":"osm"}' && calls.length === 1 && M.savedProvider() === 'osm');
+    ok('arka plan isteği /v1/map/config', calls[0]?.endsWith('/v1/map/config'));
+    release(); await tick();
+    ok('arka planda saklı ad config sağlayıcısına güncellenir (mapbox)', M.savedProvider() === 'mapbox');
+    ok('arka plan güncellemesi belirteci saklamaz', !leaked());
+
+    reset({ provider: 'mapbox' }); reply = json(200, { provider: 'mapbox', token: 'pk.test-dummy' });
+    r = await R();
+    ok('saklı mapbox + yanıt mapbox → o yanıt döner', JSON.stringify(r) === '{"provider":"mapbox","token":"pk.test-dummy"}' && calls.length === 1);
+    ok('mapbox yanıtı sonrası saklı ad mapbox, belirteç cihazda yok', M.savedProvider() === 'mapbox' && !leaked());
+
+    reset({ provider: 'mapbox' }); reply = json(200, { provider: 'google', key: 'gk-dummy', mapId: 'mid' });
+    r = await R();
+    ok('saklı mapbox + yanıt google → google yanıtı, saklı ad google', JSON.stringify(r) === '{"provider":"google","key":"gk-dummy","mapId":"mid"}' && M.savedProvider() === 'google' && !leaked());
+
+    reset({ provider: 'mapbox' }); reply = json(200, { provider: 'osm' });
+    r = await R();
+    ok('Premium bitti: saklı mapbox + yanıt osm → osm ve savedProvider() osm (Review Focus 2)', JSON.stringify(r) === '{"provider":"osm"}' && M.savedProvider() === 'osm');
+
+    reset({ provider: 'mapbox' }); reply = () => new Promise(() => {}); // hiç dönmeyen istek
+    let t0 = Date.now();
+    r = await R();
+    let dt = Date.now() - t0;
+    ok(`saklı mapbox + fetch 3 sn'den uzun → osm (varsayılan zaman aşımı, ${dt} ms)`, JSON.stringify(r) === '{"provider":"osm"}' && dt >= 2900 && dt < 4500);
+    ok('zaman aşımında saklı ad değişmez', M.savedProvider() === 'mapbox');
+
+    reset({ provider: 'google' }); reply = () => new Promise(() => {});
+    t0 = Date.now(); r = await R({ timeoutMs: 80 }); dt = Date.now() - t0;
+    ok('timeoutMs parametresi uygulanır', JSON.stringify(r) === '{"provider":"osm"}' && dt < 1000);
+
+    reset({ provider: 'mapbox' }); reply = () => Promise.reject(new TypeError('ağ yok'));
+    r = await R();
+    ok('saklı mapbox + fetch reddeder → osm', JSON.stringify(r) === '{"provider":"osm"}');
+
+    reset({ provider: 'mapbox' }); reply = json(429, { error: 'günlük harita hakkı doldu' });
+    r = await R();
+    ok('saklı mapbox + 429 → osm', JSON.stringify(r) === '{"provider":"osm"}');
+
+    reset({ provider: 'mapbox' }); reply = json(401, { error: 'yetkisiz' });
+    r = await R();
+    ok('saklı mapbox + 401 → osm', JSON.stringify(r) === '{"provider":"osm"}');
+
+    reset({ provider: 'mapbox' }); reply = json(200, { provider: 'mapbox' }); // belirteçsiz bozuk yanıt
+    r = await R();
+    ok('belirteçsiz mapbox yanıtı → osm', JSON.stringify(r) === '{"provider":"osm"}');
+
+    reset({ provider: 'mapbox' }); reply = () => Promise.resolve(new Response('bozuk', { status: 200 }));
+    r = await R();
+    ok('JSON olmayan yanıt → osm', JSON.stringify(r) === '{"provider":"osm"}');
+
+    reset({ provider: 'zzz' });
+    ok('bilinmeyen saklı ad → savedProvider() osm', M.savedProvider() === 'osm');
+
+    // Yavaş yanıt zaman aşımından sonra gelirse: harita osm açılır, ama çekilen ad yine kaydedilir (sonraki açılış için)
+    reset({ provider: 'google' });
+    reply = () => new Promise((res) => setTimeout(() => res(new Response('{"provider":"osm"}', { status: 200 })), 150));
+    r = await R({ timeoutMs: 40 }); await tick(250);
+    ok('geç gelen yanıt adı yine kaydeder (osm)', JSON.stringify(r) === '{"provider":"osm"}' && M.savedProvider() === 'osm');
+
+    ok('hiçbir yolda token/key localStorage/sessionStorage içine yazılmadı', !everLeaked && !leaked());
+  } catch (e) {
+    ok('Bölüm 4 çalıştı: ' + e.message, false);
+  } finally {
+    for (const [k, d] of Object.entries(saved)) { if (d) Object.defineProperty(globalThis, k, d); else delete globalThis[k]; }
+  }
+}
+
 console.log(`\n${pass} geçti, ${fail} kaldı`);
 process.exit(fail ? 1 : 0);

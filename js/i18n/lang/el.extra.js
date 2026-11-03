@@ -246,4 +246,5 @@ export default {
   "Şarj markası": "Μάρκα φόρτισης",
   "Hiçbiri seçili değilse tüm markalar kullanılır. Seçtiğin markalar önceliklidir; şarj yetmezse plan gerektiğinde başka markaları da kullanır.": "Αν δεν επιλεγεί καμία, χρησιμοποιούνται όλες οι μάρκες. Οι επιλεγμένες έχουν προτεραιότητα· αν η φόρτιση δεν αρκεί, το πλάνο χρησιμοποιεί και άλλες μάρκες όταν χρειάζεται.",
   "tercih dışı": "εκτός προτίμησης",
+  "Seçili harita açılamadı, OpenFreeMap kullanılıyor": "Ο επιλεγμένος χάρτης δεν άνοιξε, χρησιμοποιείται το OpenFreeMap",
 };

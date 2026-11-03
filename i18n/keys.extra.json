@@ -245,5 +245,6 @@
  "Tümü",
  "Şarj markası",
  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçtiğin markalar önceliklidir; şarj yetmezse plan gerektiğinde başka markaları da kullanır.",
- "tercih dışı"
+ "tercih dışı",
+ "Seçili harita açılamadı, OpenFreeMap kullanılıyor"
 ]

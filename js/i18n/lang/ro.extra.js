@@ -246,4 +246,5 @@ export default {
   "Şarj markası": "Marcă de încărcare",
   "Hiçbiri seçili değilse tüm markalar kullanılır. Seçtiğin markalar önceliklidir; şarj yetmezse plan gerektiğinde başka markaları da kullanır.": "Dacă nu este selectată nicio marcă, se folosesc toate. Mărcile alese au prioritate; dacă încărcarea nu ajunge, planul folosește la nevoie și alte mărci.",
   "tercih dışı": "în afara preferințelor",
+  "Seçili harita açılamadı, OpenFreeMap kullanılıyor": "Harta selectată nu a putut fi deschisă, se folosește OpenFreeMap",
 };

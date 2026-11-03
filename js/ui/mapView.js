@@ -4,6 +4,7 @@ import { toast } from './toast.js';
 import { attachSearch } from './placeSearch.js';
 import { reverseLabel } from '../providers/index.js';
 import { createMapLibreMap } from './maps/maplibre.js';
+import { resolveProvider, forceOsm } from '../net/mapConfig.js';
 import { showTab } from './tabs.js';
 
 /** Harita çizim API'si; initMap() çağrılınca dolar (routing/controller.js, nav/* kullanır). Harita henüz yüklenmediyse çizimler sıraya alınır. */
@@ -48,7 +49,7 @@ function stationPin(s, { planned = false, num = 0, focus = false } = {}) {
  */
 export function initMap() {
   const mapEl = document.getElementById('map');
-  let adapter = null; // hazır harita bağdaştırıcısı (maps/maplibre.js)
+  let adapter = null; // hazır harita bağdaştırıcısı (maps/maplibre.js; ileride mapbox.js / google.js)
   let booting = null;
   const queue = [];
   const readyHooks = []; // harita hazır olunca bir kez çalışacak güncellemeler (sıraya alınması gereksiz olanlar)
@@ -57,12 +58,30 @@ export function initMap() {
 
   remove('noTiles'); // eski "Haritayı gizle (veri tasarrufu)" seçimi kaldırıldı: kayıtlı değer temizlenir, harita her zaman açılır
 
+  /** Sunucunun seçtiği sağlayıcının bağdaştırıcısı (js/net/mapConfig.js). Seçili sağlayıcı açılamazsa bu cihaz oturumunda
+   *  OpenFreeMap zorlanır (forceOsm), tek bildirim gösterilir ve OpenFreeMap açılır. OpenFreeMap hatası bugünkü gibi yukarı iletilir. */
+  async function openAdapter() {
+    const cfg = await resolveProvider();
+    if (cfg.provider !== 'osm') {
+      try {
+        // Sağlayıcı bağdaştırıcıları: Mapbox (Task 5) ve Google (Task 7) buraya bağlanır; o zamana dek ikisi de OpenFreeMap açar.
+        if (cfg.provider === 'mapbox') return await createMapLibreMap(mapEl);
+        if (cfg.provider === 'google') return await createMapLibreMap(mapEl);
+      } catch {
+        forceOsm();
+        mapEl.replaceChildren(); // yarım kalan haritanın tuvali OpenFreeMap'in üstünde kalmasın
+        toast('Seçili harita açılamadı, OpenFreeMap kullanılıyor');
+      }
+    }
+    return createMapLibreMap(mapEl);
+  }
+
   boot = async () => {
     if (adapter) return;
     booting ??= (async () => {
       try {
         note(''); // uyarı katmanı kalksın: harita boş bir kapta kurulur
-        adapter = await createMapLibreMap(mapEl);
+        adapter = await openAdapter();
         adapter.onClick(onMapClick);
         adapter.onDragStart(() => { lastDrag = Date.now(); lastFollow = null; });
         queue.splice(0).forEach((fn) => fn());

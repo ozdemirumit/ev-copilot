@@ -246,4 +246,5 @@ export default {
   "Şarj markası": "Marca de carregamento",
   "Hiçbiri seçili değilse tüm markalar kullanılır. Seçtiğin markalar önceliklidir; şarj yetmezse plan gerektiğinde başka markaları da kullanır.": "Se nenhuma estiver selecionada, todas as marcas são usadas. As escolhidas têm prioridade; se o carregamento não chegar, o plano usa também outras marcas quando necessário.",
   "tercih dışı": "fora da preferência",
+  "Seçili harita açılamadı, OpenFreeMap kullanılıyor": "Não foi possível abrir o mapa selecionado, a usar o OpenFreeMap",
 };

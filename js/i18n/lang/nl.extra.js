@@ -246,4 +246,5 @@ export default {
   "Şarj markası": "Laadmerk",
   "Hiçbiri seçili değilse tüm markalar kullanılır. Seçtiğin markalar önceliklidir; şarj yetmezse plan gerektiğinde başka markaları da kullanır.": "Is er niets geselecteerd, dan worden alle merken gebruikt. Gekozen merken hebben voorrang; is laden niet genoeg, dan gebruikt het plan zo nodig ook andere merken.",
   "tercih dışı": "niet voorkeur",
+  "Seçili harita açılamadı, OpenFreeMap kullanılıyor": "Geselecteerde kaart kon niet worden geopend, OpenFreeMap wordt gebruikt",
 };
