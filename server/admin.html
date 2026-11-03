@@ -211,8 +211,8 @@ function drawUsers(root) {
       a.append(dn, dg, dt, ds);
       if (u.premiumUntil > Date.now()) { const r = el('button', 'sm bad', 'Premium kaldır'); r.onclick = () => confirm(u.email + ' için Premium kaldırılsın mı?') && act(() => api('/admin/premium', 'POST', { userId: u.id, days: 0 }), 'Premium kaldırıldı'); a.append(r); }
     }
-    let mp = '–';
-    if (!u.admin) { mp = mapSelect(u.mapProvider, true); mp.onchange = () => act(() => api(`/admin/users/${u.id}/map`, 'POST', { provider: mp.value || null }), 'Harita seçimi kaydedildi'); }
+    const mp = mapSelect(u.mapProvider, true); // yönetici hesapları da seçilebilir (kendi hesabında denemek için)
+    mp.onchange = () => act(() => api(`/admin/users/${u.id}/map`, 'POST', { provider: mp.value || null }), 'Harita seçimi kaydedildi');
     const t = el('button', 'sm ' + (u.disabled ? '' : 'bad'), u.disabled ? 'Aç' : 'Kapat');
     t.onclick = () => (u.disabled || confirm(u.email + ' hesabı kapatılsın mı? (oturumları sonlanır)')) && act(() => api(`/admin/users/${u.id}/${u.disabled ? 'enable' : 'disable'}`, 'POST'), u.disabled ? 'Hesap açıldı' : 'Hesap kapatıldı');
     a.append(t);

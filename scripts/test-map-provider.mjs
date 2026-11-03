@@ -227,6 +227,7 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
   ok("admin.html '/admin/map' uç noktasını çağırır", html.includes("'/admin/map'"));
   ok("admin.html kullanıcı başı '/map' uç noktasını çağırır", html.includes('/admin/users/${u.id}/map') || (html.includes('/admin/users/') && html.includes('/map`')));
   ok('admin.html mapProvider ile başlar', html.includes('u.mapProvider'));
+  ok('admin.html yönetici satırlarında da harita seçici gösterir', !html.includes('if (!u.admin) { mp = mapSelect'));
   ok('admin.html "Premium için varsayılan harita" seçicisi', html.includes('Premium için varsayılan harita'));
   ok('admin.html anahtarı olmayan seçenek "(anahtar yok)" notlu ve pasif', html.includes('(anahtar yok)') && html.includes('disabled'));
   ok('admin.html Mapbox/Google harita anahtarı durum satırları', html.includes('Mapbox harita anahtarı') && html.includes('Google harita anahtarı') && html.includes('configured.mapboxMap') && html.includes('configured.googleMap'));
