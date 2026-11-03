@@ -22,7 +22,7 @@
 - Her sağlayıcı kendi uydusunu kullanır (Mapbox uydu stili, Google `hybrid`); Esri yalnızca OpenFreeMap'te.
 - Fatura: yönetim ekranında yalnızca bağlantılar, sayaç yok. `server/costs.mjs` değişmez.
 - Çalışma kuralları: `node scripts/check.mjs` commit öncesi; istemci değişikliği `APP_VERSION` artırır ve `version.js` en üstüne kayıt ekler (kaydı betikle yaz, dizide kesme işareti `\u0027`, ters eğik çizgi yok); yeni JS dosyaları `sw.js` SHELL'e; yeni metinler 11 dile (`i18n/keys.extra.json` + `js/i18n/lang/*.extra.js`, doğrulama `node scripts/i18n-validate.mjs <kod>:extra`); sunucu kodu/`.env` değişince `node server\restart.mjs`; `.claude-flow/`, `.swarm/`, `android/.idea/` git'e eklenmez; commit mesajı `vX.Y.Z: ...` + `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`.
-- Testler repoya girmez: `C:\Users\umito\AppData\Local\Temp\claude\D--AI-Codes-Claude-Code-MBRP\3ea17ff0-b200-456f-b4ae-3adc8daf9463\scratchpad\t_map.mjs` (aşağıda `T_MAP`). Bash'te `export PATH="/c/Program Files/nodejs:$PATH"`.
+- Testler repoda: tek dosya `scripts/test-map-provider.mjs` (sıfır bağımlılık, `T_MAP` bu dosyadır; her görev kendi bölümünü ekler, `node scripts/test-map-provider.mjs` hepsini çalıştırır). Bash'te `export PATH="/c/Program Files/nodejs:$PATH"`.
 
 ## Review Focus
 
