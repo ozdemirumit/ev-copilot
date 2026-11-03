@@ -124,6 +124,17 @@ function table(heads, rows, numCols = []) {
 }
 const chip = (t, cls = '') => el('span', 'chip ' + cls, t);
 
+// Harita sağlayıcısı seçenekleri: anahtarı tanımsız Mapbox/Google pasif ve "(anahtar yok)" notlu (sunucu da reddeder)
+const MAP_NAMES = { osm: 'OpenFreeMap', mapbox: 'Mapbox', google: 'Google' };
+function mapSelect(value, withDefault) {
+  const sel = el('select'); const cfg = D.sum?.configured || {};
+  const has = { osm: true, mapbox: !!cfg.mapboxMap, google: !!cfg.googleMap };
+  const opts = (withDefault ? [[ '', 'Varsayılan' ]] : []).concat(Object.keys(MAP_NAMES).map((p) => [p, MAP_NAMES[p] + (has[p] ? '' : ' (anahtar yok)')]));
+  for (const [v, t] of opts) { const o = el('option', '', t); o.value = v; if (v && !has[v]) o.disabled = true; sel.append(o); }
+  sel.value = value || ''; sel.style.maxWidth = '100%';
+  return sel;
+}
+
 function drawSum(root) {
   const s = D.sum; root.replaceChildren();
   const g = el('div', 'grid');
@@ -140,14 +151,31 @@ function drawSum(root) {
   root.append(el('h2', '', 'Bugünkü istekler (kullanıcı başına kota sayacı)'));
   const k = Object.entries(s.usageToday).sort();
   root.append(table(['Tür', 'Adet'], k.map(([a, b]) => [a, b]), [1]));
+  root.append(el('h2', '', 'Harita sağlayıcısı'));
+  const mrow = el('div', 'row');
+  const msel = mapSelect(s.map?.default || 'osm', false);
+  msel.onchange = () => act(() => api('/admin/map', 'POST', { default: msel.value }), 'Varsayılan harita: ' + MAP_NAMES[msel.value]);
+  mrow.append(el('span', '', 'Premium için varsayılan harita:'), msel);
+  root.append(mrow, el('p', 'mut', 'Kullanıcıya özel seçim (Kullanıcılar sekmesi) varsayılanı geçer. Premium olmayan hesap her zaman OpenFreeMap kullanır. Değişiklik, uygulamanın bir sonraki açılışında geçerli olur.'));
   root.append(el('h2', '', 'Yapılandırma ve sunucu'));
   const on = (b) => chip(b ? 'açık' : 'kapalı', b ? 'ok' : 'warn');
   root.append(table(['Ayar', 'Durum'], [
-    ['Google ile giriş', on(s.configured.googleLogin)], ['Mapbox anahtarı', on(s.configured.mapbox)], ['HERE anahtarı', on(s.configured.here)], ['OpenChargeMap anahtarı', on(s.configured.ocm)],
+    ['Google ile giriş', on(s.configured.googleLogin)], ['Mapbox anahtarı', on(s.configured.mapbox)], ['Mapbox harita anahtarı', on(s.configured.mapboxMap)], ['Google harita anahtarı', on(s.configured.googleMap)], ['HERE anahtarı', on(s.configured.here)], ['OpenChargeMap anahtarı', on(s.configured.ocm)],
     ['Google Places anahtarı', on(s.configured.googlePlaces)], ['E-posta gönderimi (SMTP)', on(s.configured.smtp)], ['Premium zorunlu (kapalıysa herkes Premium)', on(s.configured.premiumRequired)],
     ['Mapbox aylık arama (sunucu sayacı / sınır)', s.mapbox ? `${s.mapbox.used} / ${s.mapbox.cap} (${s.mapbox.month})` : '–'], ['HERE aylık istek (sunucu sayacı / sınır)', s.here ? `${s.here.used} / ${s.here.cap} (${s.here.month})` : '–'], ['Genel adres', s.server.publicUrl || '–'], ['Çalışma süresi', dur(s.server.uptimeSec)], ['Bellek', s.server.memMb + ' MB'], ['Node', s.server.node],
   ]));
   root.append(el('p', 'mut', 'Anahtar değerleri burada gösterilmez; yalnızca tanımlı olup olmadığı görünür.'));
+  root.append(el('h2', '', 'Fatura (harici paneller)'));
+  const bill = el('div', 'card');
+  const links = el('div', 'acts');
+  for (const [t, href] of [['Mapbox hesap ve kullanım', 'https://account.mapbox.com/'], ['Google Cloud faturalama', 'https://console.cloud.google.com/billing'], ['Google Maps Platform kullanım ve kota', 'https://console.cloud.google.com/google/maps-apis/metrics']]) {
+    const a = el('a', '', t); a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    a.style.cssText = 'display:inline-block;padding:5px 10px;border:1px solid var(--line);border-radius:8px;color:inherit;text-decoration:none';
+    links.append(a);
+  }
+  bill.append(links, el('p', 'mut', 'Harita sağlayıcılarının fatura ve kullanım bilgisi bu panellerdedir; yeni sekmede açılır, ilgili hesapla giriş yapmış olmalısın. Burada sayaç ya da tutar gösterilmez.'));
+  bill.lastChild.style.marginBottom = '0';
+  root.append(bill);
 }
 
 function plan(u) {
@@ -182,12 +210,14 @@ function drawUsers(root) {
       a.append(dn, dg, dt, ds);
       if (u.premiumUntil > Date.now()) { const r = el('button', 'sm bad', 'Premium kaldır'); r.onclick = () => confirm(u.email + ' için Premium kaldırılsın mı?') && act(() => api('/admin/premium', 'POST', { userId: u.id, days: 0 }), 'Premium kaldırıldı'); a.append(r); }
     }
+    let mp = '–';
+    if (!u.admin) { mp = mapSelect(u.mapProvider, true); mp.onchange = () => act(() => api(`/admin/users/${u.id}/map`, 'POST', { provider: mp.value || null }), 'Harita seçimi kaydedildi'); }
     const t = el('button', 'sm ' + (u.disabled ? '' : 'bad'), u.disabled ? 'Aç' : 'Kapat');
     t.onclick = () => (u.disabled || confirm(u.email + ' hesabı kapatılsın mı? (oturumları sonlanır)')) && act(() => api(`/admin/users/${u.id}/${u.disabled ? 'enable' : 'disable'}`, 'POST'), u.disabled ? 'Hesap açıldı' : 'Hesap kapatıldı');
     a.append(t);
-    return [who, plnode, ago(u.lastLogin), fmtDate(u.createdAt) + (u.devices ? ` · ${u.devices} cihaz` : ''), `${u.trips ?? 0} / ${u.charges ?? 0}`, kb(u.bytes), u.google ? `${usd(u.google.usd.month)} / ${usd(u.google.usd.total)}` : '–', a];
+    return [who, plnode, ago(u.lastLogin), fmtDate(u.createdAt) + (u.devices ? ` · ${u.devices} cihaz` : ''), `${u.trips ?? 0} / ${u.charges ?? 0}`, kb(u.bytes), mp, u.google ? `${usd(u.google.usd.month)} / ${usd(u.google.usd.total)}` : '–', a];
   });
-  root.append(table(['Kullanıcı', 'Plan', 'Son giriş', 'Kayıt', 'Yolculuk / şarj', 'Veri', 'Google ay / toplam', 'İşlem'], rows, [4, 5, 6]));
+  root.append(table(['Kullanıcı', 'Plan', 'Son giriş', 'Kayıt', 'Yolculuk / şarj', 'Veri', 'Harita', 'Google ay / toplam', 'İşlem'], rows, [4, 5, 7]));
 }
 
 function drawInv(root) {

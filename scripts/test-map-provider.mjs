@@ -218,5 +218,23 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
   ok('sunucu çıktısında (stdout/stderr) pk.test-dummy geçmez', logs.length >= 2 && logs.every((f) => !f().includes('pk.test-dummy')));
 }
 
+// ---- Bölüm 3: server/admin.html içerik denetimi (Yönetim ekranı: harita seçimi ve fatura bağlantıları) ----
+{
+  const { readFileSync } = await import('node:fs');
+  const html = readFileSync(fileURLToPath(new URL('../server/admin.html', import.meta.url)), 'utf8');
+  ok("admin.html '/admin/map' uç noktasını çağırır", html.includes("'/admin/map'"));
+  ok("admin.html kullanıcı başı '/map' uç noktasını çağırır", html.includes('/admin/users/${u.id}/map') || (html.includes('/admin/users/') && html.includes('/map`')));
+  ok('admin.html mapProvider ile başlar', html.includes('u.mapProvider'));
+  ok('admin.html "Premium için varsayılan harita" seçicisi', html.includes('Premium için varsayılan harita'));
+  ok('admin.html anahtarı olmayan seçenek "(anahtar yok)" notlu ve pasif', html.includes('(anahtar yok)') && html.includes('disabled'));
+  ok('admin.html Mapbox/Google harita anahtarı durum satırları', html.includes('Mapbox harita anahtarı') && html.includes('Google harita anahtarı') && html.includes('configured.mapboxMap') && html.includes('configured.googleMap'));
+  ok('admin.html "Fatura" başlığı', html.includes('Fatura'));
+  ok('admin.html Mapbox hesap bağlantısı', html.includes('https://account.mapbox.com/'));
+  ok('admin.html Google Cloud faturalama bağlantısı', html.includes('https://console.cloud.google.com/billing'));
+  ok('admin.html Google Maps Platform kullanım/kota bağlantısı', html.includes('https://console.cloud.google.com/google/maps-apis/metrics'));
+  ok('fatura bağlantıları yeni sekmede ve noopener ile açılır', html.includes("'_blank'") && html.includes('noopener'));
+  ok('admin.html anahtar değeri içermez', !/pk\.[A-Za-z0-9_.-]{8,}/.test(html) && !html.includes('pk.test-dummy') && !/AIza[0-9A-Za-z_-]{10,}/.test(html));
+}
+
 console.log(`\n${pass} geçti, ${fail} kaldı`);
 process.exit(fail ? 1 : 0);
