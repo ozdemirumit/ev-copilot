@@ -7,7 +7,7 @@ self.APP_CHANGELOG = [
   {
     v: '0.81.0', date: '2026-11-03',
     notes: [
-      'YENİ: Navigasyonda 3B/2B düğmesi. 3B açıkken harita eğilir ve binalar yüksekliğiyle çizilir; 2B görünümde düz harita. Binalar, kullanıcıya atanan harita sağlayıcısından gelir (OpenFreeMap, Mapbox, Google).',
+      'YENİ: Navigasyonda 3B/2B düğmesi. 3B açıkken harita eğilir ve binalar yüksekliğiyle çizilir; 2B görünümde düz harita. Navigasyon artık kuzey-yukarı kipte de varsayılan olarak eğik (3B) açılır; düz görünüm için 2B düğmesine dokun. Binalar, kullanıcıya atanan harita sağlayıcısından gelir (OpenFreeMap, Mapbox, Google).',
     ],
   },
   {

@@ -472,6 +472,11 @@ body.navmode .fabs { bottom: calc(var(--nav-h) + var(--safe-b) + 92px); }
   .nh-cell b { font-size: 20px; }
   body.navmode .fabs { bottom: calc(var(--nav-h) + var(--safe-b) + 70px); }
 }
+/* Navigasyonda en çok 6 yüzen düğme (uydu, 3B, ortala, tüm rota, karartma, durdur): kısa ekranda (yatay telefon, küçük pencere)
+   tek sütun üst çubuğun altına taşar; iki sütuna dizilir (3 satır), düğme boyutu (dokunma alanı) küçülmez. */
+@media (max-height: 600px) {
+  body.navmode .fabs { display: grid; grid-template-columns: repeat(2, auto); border-radius: 24px; }
+}
 @media (max-height: 520px) and (min-width: 640px) {
   main { left: 8px; right: auto; width: 400px; transform: none; }
   .dock { left: 8px; right: auto; width: 400px; max-width: none; transform: none; }

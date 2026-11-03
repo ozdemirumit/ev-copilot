@@ -23,11 +23,18 @@ export function initShell() {
   sat.addEventListener('click', () => { mapApi.setSatellite(!mapApi.isSatellite()); paintSat(); });
   paintSat();
 
-  // 3B/2B görünüm: yalnızca navigasyonda görünür; şu anki kipi yazar (3B / 2B), dokununca değiştirir (seçim cihazda saklanır)
+  // 3B/2B görünüm: yalnızca navigasyonda görünür; şu anki kipi yazar (3B / 2B), dokununca değiştirir (seçim cihazda saklanır).
+  // 'nav' her güncellemede çağrılır: durum (görünür, 3B) değişmediyse DOM'a yazılmaz. Metin karşılaştırılmaz, çünkü i18n yazılan
+  // "3B"yi diğer dillerde "3D"ye çevirir (ek sözlük).
   const d3 = $('fab-3d');
+  let painted3d = null;
   const paint3d = () => {
     const on = mapApi.is3d();
-    d3.classList.toggle('hidden', !getState('nav').active);
+    const active = !!getState('nav').active;
+    const st = `${active}|${on}`;
+    if (st === painted3d) return;
+    painted3d = st;
+    d3.classList.toggle('hidden', !active);
     d3.classList.toggle('on', on);
     d3.setAttribute('aria-pressed', String(on));
     d3.textContent = on ? '3B' : '2B';

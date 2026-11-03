@@ -1,6 +1,6 @@
 // Harita bağdaştırıcısı: MapLibre GL JS (yerel vendor/maplibre kopyası, BSD-3) + OpenFreeMap vektör karoları (OpenStreetMap verisi,
 // anahtarsız). Gövde ortak vektör-harita motorundadır (mapEngine.js); burada kütüphane yükleme, stil ve Esri uydu stratejisi kalır.
-import { createVectorMap, buildingsLayer } from './mapEngine.js';
+import { createVectorMap, buildingsLayer, BUILDINGS_3D } from './mapEngine.js';
 
 const STYLE = 'https://tiles.openfreemap.org/styles/dark';
 const VENDOR = new URL('../../../vendor/maplibre/', import.meta.url).href;
@@ -30,10 +30,12 @@ function esriSatellite() {
   ];
   let satReady = false;
   let visible = false;
+  // 3B binalar zaten çiziliyorsa uydu onların altına girer (yoksa görüntü binaları örter); her durumda rota çizgisinin altında.
   const addLayers = (map) => {
+    const before = map.getLayer(BUILDINGS_3D) ? BUILDINGS_3D : 'route-line';
     for (const [id, path, attribution] of SAT_LAYERS) {
       map.addSource(id, { type: 'raster', tiles: [`${ESRI}${path}/{z}/{y}/{x}`], tileSize: 256, maxzoom: 18, attribution });
-      map.addLayer({ id, type: 'raster', source: id, layout: { visibility: visible ? 'visible' : 'none' } }, 'route-line');
+      map.addLayer({ id, type: 'raster', source: id, layout: { visibility: visible ? 'visible' : 'none' } }, before);
     }
   };
   return {

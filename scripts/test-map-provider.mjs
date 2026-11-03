@@ -916,6 +916,17 @@ function fakeGm(cfg = { autoIdle: true }) {
     osm.setSatellite(true); osm.setBuildings3d(true);
     ok('(a) Esri uydu açıkken de bina katmanı rota çizgisinin altında', ext(m).length === 1 && m.layers.indexOf(ext(m)[0]) < m.layers.indexOf('route-line'));
     osm.setBuildings3d(false); osm.setSatellite(false);
+    // Ters sıra: önce 3B, sonra uydu İLK kez açılır → Esri katmanları binaların altına girmeli (binaları örtmemeli)
+    lib = fakeLib({ base: ['openmaptiles'], baseLayers: ['building'] });
+    window.maplibregl = lib;
+    const osm2 = await ML.createMapLibreMap(container());
+    const m2 = lib.maps.at(-1);
+    osm2.setBuildings3d(true); osm2.setSatellite(true);
+    const bi = m2.layers.indexOf(ext(m2)[0]);
+    ok('(a) önce 3B sonra uydu: Esri katmanları 3B binaların altında, binalar rota çizgisinin altında', bi > m2.layers.indexOf('sat') && bi > m2.layers.indexOf('sat-roads') && bi > m2.layers.indexOf('sat-places') && m2.layers.indexOf('sat') >= 0 && bi < m2.layers.indexOf('route-line'));
+    osm2.setBuildings3d(false); osm2.setBuildings3d(true);
+    const bi2 = m2.layers.indexOf(ext(m2)[0]);
+    ok('(a) uydu açıkken 3B kapat/aç: binalar yine Esri üstünde, rota altında', bi2 > m2.layers.indexOf('sat-places') && bi2 < m2.layers.indexOf('route-line'));
     // Stilde kaynak yoksa (beklenmedik stil) katman eklenmez, çökmez
     lib = fakeLib(); window.maplibregl = lib;
     const bare = await ML.createMapLibreMap(container());
@@ -985,6 +996,10 @@ function fakeGm(cfg = { autoIdle: true }) {
     const b3 = /<button[^>]*id="fab-3d"[^>]*>/.exec(fabs)?.[0] || '';
     ok('index.html: #fab-3d .fabs içinde, başlangıçta gizli, aria-pressed ve Türkçe aria-label/title', /class="hidden"/.test(b3) && /aria-pressed="(true|false)"/.test(b3) && /aria-label="3B\/2B görünüm"/.test(b3) && /title="3B\/2B görünüm"/.test(b3));
     ok('shell: #fab-3d yalnızca navigasyonda görünür, 3B/2B yazar, mapApi.set3d ile değiştirir', /\$\('fab-3d'\)/.test(sh) && /'3B' : '2B'/.test(sh) && /mapApi\.set3d\(/.test(sh));
+    ok('shell: paint3d durum değişmediyse DOM\'a yazmaz', /if \(st === painted3d\) return;/.test(sh));
+    const kx = JSON.parse(src('i18n/keys.extra.json'));
+    const dicts = await Promise.all(['de', 'en', 'es', 'fr', 'it', 'nl', 'pl', 'pt', 'ro', 'bg', 'el'].map(async (c) => (await import(`../js/i18n/lang/${c}.extra.js`)).default));
+    ok('i18n: "3B"/"2B" ek sözlükte, 11 dilde "3D"/"2D"', kx.includes('3B') && kx.includes('2B') && dicts.every((dd) => dd['3B'] === '3D' && dd['2B'] === '2D'));
     ok("sw.js SHELL './js/ui/navCamera.js' içerir", sw.includes("'./js/ui/navCamera.js'"));
   } catch (e) {
     ok('Bölüm 8 çalıştı: ' + e.message, false);

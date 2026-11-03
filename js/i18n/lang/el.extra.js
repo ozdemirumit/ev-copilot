@@ -249,4 +249,6 @@ export default {
   "Seçili harita açılamadı, OpenFreeMap kullanılıyor": "Ο επιλεγμένος χάρτης δεν άνοιξε, χρησιμοποιείται το OpenFreeMap",
   "3B/2B görünüm": "Προβολή 3D/2D",
   "Harita gidiş yönüne dönsün (yön yukarı)": "Περιστροφή χάρτη προς την κατεύθυνση κίνησης (πορεία προς τα πάνω)",
+  "3B": "3D",
+  "2B": "2D",
 };

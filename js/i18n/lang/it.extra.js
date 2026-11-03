@@ -249,4 +249,6 @@ export default {
   "Seçili harita açılamadı, OpenFreeMap kullanılıyor": "Impossibile aprire la mappa selezionata, viene usato OpenFreeMap",
   "3B/2B görünüm": "Vista 3D/2D",
   "Harita gidiş yönüne dönsün (yön yukarı)": "Ruota la mappa nella direzione di marcia (direzione verso l'alto)",
+  "3B": "3D",
+  "2B": "2D",
 };
