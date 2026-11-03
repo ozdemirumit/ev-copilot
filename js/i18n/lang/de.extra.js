@@ -255,4 +255,5 @@ export default {
   "HERE hız limiti alınamadı; OpenStreetMap kullanılıyor (etiketi olmayan yolda bilinmez)": "HERE-Tempolimits nicht verfügbar; OpenStreetMap wird verwendet (auf Straßen ohne Tag unbekannt)",
   "Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)": "Das Tempolimit wird während der Fahrt gelesen (Premium: HERE; sonst Mapbox, danach OpenStreetMap)",
   "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Tempolimit-Prüfung an (Premium: HERE, Reserve OpenStreetMap)",
+  "Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin": "Akkustand unbekannt: 80 % angenommen. Du kannst ihn mit dem Regler „Aktueller Akku“ ändern",
 };

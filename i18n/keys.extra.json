@@ -254,5 +254,6 @@
  "Bu yolun hız limiti: {0} km/s · Kaynak: {1}",
  "HERE hız limiti alınamadı; OpenStreetMap kullanılıyor (etiketi olmayan yolda bilinmez)",
  "Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)",
- "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)"
+ "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)",
+ "Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin"
 ]

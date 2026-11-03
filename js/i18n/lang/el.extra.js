@@ -255,4 +255,5 @@ export default {
   "HERE hız limiti alınamadı; OpenStreetMap kullanılıyor (etiketi olmayan yolda bilinmez)": "Τα όρια ταχύτητας HERE δεν είναι διαθέσιμα· χρησιμοποιείται το OpenStreetMap (άγνωστο σε δρόμο χωρίς ετικέτα)",
   "Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)": "Το όριο ταχύτητας δρόμου διαβάζεται κατά την οδήγηση (Premium: HERE· αλλιώς Mapbox, μετά OpenStreetMap)",
   "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Ο έλεγχος ορίου ταχύτητας δρόμου είναι ενεργός (Premium: HERE, εφεδρικά OpenStreetMap)",
+  "Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin": "Άγνωστη μπαταρία: υποτέθηκε 80 %. Μπορείς να την αλλάξεις με το ρυθμιστικό «Τρέχουσα μπαταρία»",
 };

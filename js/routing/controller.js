@@ -11,6 +11,7 @@ import { kForSpeed, relFactor, overall } from '../physics/history.js';
 import { PHYSICS, PLANNER } from '../config.js';
 import { mapApi } from '../ui/mapView.js';
 import { toast } from '../ui/toast.js';
+import { setManual } from '../physics/socEstimate.js';
 import { rememberDest } from '../ui/recentDest.js';
 import { projectSteps } from '../nav/steps.js';
 import { t as tpl } from '../i18n/index.js';
@@ -135,7 +136,10 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
   if (!start || !end) return toast('Önce başlangıç ve varış seç');
   const e = effective();
   startSoc = e.soc ?? 80;
-  if (e.soc == null) toast('Pil okunamadı: %80 varsayıldı');
+  if (e.soc == null) { // ne kamera okudu ne de elle girildi: "Mevcut pil" sürgüsünün gösterdiği %80 elle girilmiş sayılır; plan, HUD ve navigasyon aynı değeri kullanır
+    setManual(80);
+    toast('Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin');
+  }
   const prev = { ...getState('plan') }; // internet yoksa/rota alınamazsa mevcut (kayıtlı) plan bozulmasın
   const resumeSim = !!from && getState('sim').enabled && getState('sim').play; // yeniden rota (kritik pil, rotadan çıkış): simülasyon oynuyorsa yeni rota kurulunca devam eder
   const restoreSim = () => { if (resumeSim && getState('sim').enabled) patch('sim', { play: true }); };

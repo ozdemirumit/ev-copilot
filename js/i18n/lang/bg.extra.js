@@ -255,4 +255,5 @@ export default {
   "HERE hız limiti alınamadı; OpenStreetMap kullanılıyor (etiketi olmayan yolda bilinmez)": "Ограниченията на скоростта от HERE не са налични; използва се OpenStreetMap (непознато за пътища без етикет)",
   "Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)": "Ограничението на скоростта се чете по време на шофиране (Premium: HERE; иначе Mapbox, после OpenStreetMap)",
   "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Проверката на ограничението на скоростта е включена (Premium: HERE, резервно OpenStreetMap)",
+  "Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin": "Батерията е неизвестна: приети са 80 %. Можеш да я промениш с плъзгача „Текуща батерия“",
 };

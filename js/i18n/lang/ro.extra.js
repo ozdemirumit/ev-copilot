@@ -255,4 +255,5 @@ export default {
   "HERE hız limiti alınamadı; OpenStreetMap kullanılıyor (etiketi olmayan yolda bilinmez)": "Limitele de viteză HERE nu sunt disponibile; se folosește OpenStreetMap (necunoscută pe drumurile fără etichetă)",
   "Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)": "Limita de viteză a drumului se citește în timpul mersului (Premium: HERE; altfel Mapbox, apoi OpenStreetMap)",
   "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Verificarea limitei de viteză a drumului este activă (Premium: HERE, rezervă OpenStreetMap)",
+  "Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin": "Baterie necunoscută: s-a presupus 80 %. O poți schimba cu glisorul „Baterie curentă”",
 };

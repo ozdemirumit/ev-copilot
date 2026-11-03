@@ -255,4 +255,5 @@ export default {
   "HERE hız limiti alınamadı; OpenStreetMap kullanılıyor (etiketi olmayan yolda bilinmez)": "HERE-maximumsnelheden niet beschikbaar; OpenStreetMap wordt gebruikt (onbekend op wegen zonder tag)",
   "Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)": "De wegmaximumsnelheid wordt tijdens het rijden uitgelezen (Premium: HERE; anders Mapbox, daarna OpenStreetMap)",
   "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Controle op wegmaximumsnelheid aan (Premium: HERE, reserve OpenStreetMap)",
+  "Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin": "Accu onbekend: 80 % aangenomen. Je kunt dit wijzigen met de schuifregelaar ‘Huidige accu’",
 };

@@ -255,4 +255,5 @@ export default {
   "HERE hız limiti alınamadı; OpenStreetMap kullanılıyor (etiketi olmayan yolda bilinmez)": "HERE speed limits unavailable; using OpenStreetMap (unknown on untagged roads)",
   "Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)": "The road speed limit is read while driving (Premium: HERE; otherwise Mapbox, then OpenStreetMap)",
   "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Road speed limit check is on (Premium: HERE, OpenStreetMap as fallback)",
+  "Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin": "Battery unknown: 80% assumed. You can change it with the Current battery slider",
 };
