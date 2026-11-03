@@ -2,7 +2,7 @@
 // Değer yolda kendiliğinden düşer (physics/socEstimate.js); kamera okuyunca o değer geçerli olur.
 import { getState, patch, subscribe, effective } from '../state.js';
 import { VEHICLE } from '../config.js';
-import { setManual, isOnline } from '../physics/socEstimate.js';
+import { setManual, isOnline, manualLocked } from '../physics/socEstimate.js';
 import { toast } from './toast.js';
 
 const $ = (id) => document.getElementById(id);
@@ -45,7 +45,7 @@ export function initSocBar() {
 
   let lastToast = 0;
   const blocked = () => {
-    if (getState('sim').enabled || !isOnline()) return false;
+    if (getState('sim').enabled || !manualLocked()) return false;
     if (Date.now() - lastToast > 8000) { lastToast = Date.now(); toast('Pil kameradan canlı okunuyor: elle ayar gerekmez'); }
     return true;
   };

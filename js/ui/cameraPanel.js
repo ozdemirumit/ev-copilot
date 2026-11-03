@@ -3,7 +3,7 @@ import { load, save } from '../utils/storage.js';
 import { persistCamera } from './roiBox.js';
 import { startCamera, stopCamera, zoomRange, setZoom } from '../sensors/camera.js';
 import { startOcr, stopOcr, startPreview, stopPreview } from '../sensors/ocr.js';
-import { setManual, isOnline } from '../physics/socEstimate.js';
+import { setManual, manualLocked } from '../physics/socEstimate.js';
 import { toast } from './toast.js';
 
 const STATUS_TEXT = {
@@ -124,7 +124,7 @@ export function initCameraPanel() {
   // Manuel pil kalibrasyonu: gerçek sensör değerini (live.soc) ±1 değiştirir ve outlier referansını sıfırlar.
   const bump = (d) => {
     if (getState('sim').enabled) return toast('Test Modu açık — pili Test sekmesinden değiştir');
-    if (isOnline()) return toast('Pil kameradan canlı okunuyor: elle ayar gerekmez'); // kamera okuyorsa değer değiştirilemez
+    if (manualLocked()) return toast('Pil kameradan canlı okunuyor: elle ayar gerekmez'); // kamera sorunsuz okuyorsa değer değiştirilemez; kapalıysa ya da okuyamıyorsa serbest
     const cur = getState('live').soc;
     const next = Math.min(100, Math.max(0, (cur ?? 50) + d));
     setManual(next); // yol alındıkça düşer, kamera okuyunca o değer geçerli olur
