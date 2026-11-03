@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.81.0';
+self.APP_VERSION = '0.82.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.82.0', date: '2026-11-03',
+    notes: [
+      'YENİ: Premium için yol hız limiti artık HERE verisinden (güncel, şehir içi dahil) alınıyor; HERE bilmiyorsa Mapbox, o da bilmiyorsa OpenStreetMap kullanılır, hiçbiri yoksa tahmin yapılmaz. Limit kaynağı durum satırında görünür.',
+    ],
+  },
   {
     v: '0.81.0', date: '2026-11-03',
     notes: [

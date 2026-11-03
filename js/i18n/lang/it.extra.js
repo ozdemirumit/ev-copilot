@@ -251,4 +251,8 @@ export default {
   "Harita gidiş yönüne dönsün (yön yukarı)": "Ruota la mappa nella direzione di marcia (direzione verso l'alto)",
   "3B": "3D",
   "2B": "2D",
+  "Bu yolun hız limiti: {0} km/s · Kaynak: {1}": "Limite di velocità di questa strada: {0} km/h · Fonte: {1}",
+  "HERE hız limiti alınamadı; OpenStreetMap kullanılıyor (etiketi olmayan yolda bilinmez)": "Limiti di velocità HERE non disponibili; si usa OpenStreetMap (sconosciuto sulle strade senza tag)",
+  "Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)": "Il limite di velocità stradale viene letto mentre guidi (Premium: HERE; altrimenti Mapbox, poi OpenStreetMap)",
+  "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Controllo del limite di velocità stradale attivo (Premium: HERE, riserva OpenStreetMap)",
 };

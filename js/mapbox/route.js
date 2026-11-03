@@ -3,6 +3,8 @@
 import { cached, TTL } from '../utils/cache.js';
 import { decodePolyline6 } from '../osm/route.js';
 import { mbfetch } from './api.js';
+import { kphFromMapbox, mergeSegments } from '../nav/limitSpans.js';
+import { haversineKm } from '../utils/geo.js';
 
 const DIR = {
   left: 'sola', right: 'sağa', 'slight left': 'hafifçe sola', 'slight right': 'hafifçe sağa',
@@ -73,6 +75,36 @@ export function trafficSpans(legs) {
   return spans.filter((s) => s.to - s.from >= 0.15);
 }
 
+/**
+ * Mapbox maxspeed ek açıklaması → hız limiti kesimleri [[lat1, lon1, lat2, lon2, kph]] (nav/limitSpans.js biçimi; Premium navigasyonda HERE'den sonra 2. kaynak).
+ * Ek açıklamanın i. öğesi rota çizgisinin i. parçasıdır; sayı tutmazsa (bacak birleşimi vb.) parçalar birikimli mesafeyle eşlenir.
+ * Bilinmeyen ({unknown}/{none}) ya da 5..150 dışı değerler kesim üretmez.
+ */
+export function maxspeedSpans(coords, legs) {
+  const ms = (legs || []).flatMap((l) => l.annotation?.maxspeed || []);
+  if (!ms.length || !Array.isArray(coords) || coords.length < 2) return [];
+  const pts = coords.map(([lon, lat]) => [lat, lon]);
+  const ann = ms.map(kphFromMapbox);
+  if (ann.length === pts.length - 1) return mergeSegments(pts, ann);
+  const dist = (legs || []).flatMap((l) => l.annotation?.distance || []);
+  if (dist.length !== ann.length) return [];
+  const annCum = [0];
+  for (const d of dist) annCum.push(annCum.at(-1) + (Number(d) || 0) / 1000);
+  const segKm = pts.slice(1).map((p, i) => haversineKm({ lat: pts[i][0], lon: pts[i][1] }, { lat: p[0], lon: p[1] }));
+  const total = segKm.reduce((a, b) => a + b, 0);
+  const scale = total > 0 ? annCum.at(-1) / total : 1; // iki uzunluk ölçümü arasındaki küçük farkı dengele
+  const kph = [];
+  let km = 0;
+  let a = 0;
+  for (const len of segKm) {
+    const mid = (km + len / 2) * scale; // parçanın orta noktası hangi ek açıklama aralığında
+    while (a < ann.length - 1 && annCum[a + 1] <= mid) a++;
+    kph.push(ann[a]);
+    km += len;
+  }
+  return mergeSegments(pts, kph);
+}
+
 const lonlat = (p) => `${p.lon.toFixed(6)},${p.lat.toFixed(6)}`;
 
 /**
@@ -87,18 +119,20 @@ export function fetchRoute(start, end, via = []) {
 async function routeFromMapbox(start, end, via) {
   const coords = [start, ...via, end].map(lonlat).join(';');
   const json = await mbfetch(`/directions/v5/mapbox/driving-traffic/${coords}`, {
-    geometries: 'polyline6', overview: 'full', steps: 'true', roundabout_exits: 'true', alternatives: 'false', annotations: 'distance,congestion',
+    geometries: 'polyline6', overview: 'full', steps: 'true', roundabout_exits: 'true', alternatives: 'false', annotations: 'distance,congestion,maxspeed',
   }, { timeoutMs: 40000 });
   const r = json.routes?.[0];
   if (!r?.geometry) throw new Error('Mapbox rota bulamadı');
   const typical = r.duration_typical;
+  const line = decodePolyline6(r.geometry);
   return {
-    coords: decodePolyline6(r.geometry),
+    coords: line,
     intervals: [], // yavaşlama zaten adım sürelerinde
     distanceKm: (r.distance || 0) / 1000,
     durationH: (r.duration || 0) / 3600,
     trafficRatio: typical > 0 ? Math.max(1, r.duration / typical) : 1,
     trafficSpans: trafficSpans(r.legs || []), // rota çizgisinin renklendirilmesi için (yavaş sarı, yoğun kırmızı)
+    limitSpans: maxspeedSpans(line, r.legs || []), // Premium navigasyonda yol hız limiti (HERE bilmeyen yerde)
     live: true,
     steps: mapSteps(r.legs || []),
   };

@@ -1008,5 +1008,356 @@ function fakeGm(cfg = { autoIdle: true }) {
   }
 }
 
+// ---- Bölüm 9: Premium yol hız limiti (HERE → Mapbox → OSM → bilinmiyor) ----
+// (a) server/speedlimits.mjs saf işlevleri; (b) POST /v1/speedlimits: alt süreç (8787 DIŞI port, geçici DATA_DIR, sahte anahtar) + sahte HERE sunucusu;
+// (c) js/nav/limitSpans.js ve js/mapbox/route.js maxspeed ayrıştırması; (d) js/nav/speedLimit.js kaynak sırası (sahte fetch, gerçek ağ yok).
+const FLEX_TAB = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+/** Test için HERE esnek çoklu çizgi kodlayıcısı (third: 3. boyut türü, z değerleri points[i][2]). */
+function encodeFlex(points, precision = 5, third = 0, thirdPrec = 0) {
+  const u = (v) => { let s = ''; while (v > 31) { s += FLEX_TAB[(v % 32) | 32]; v = Math.floor(v / 32); } return s + FLEX_TAB[v]; };
+  const z = (v) => u(v < 0 ? -2 * v - 1 : 2 * v);
+  let out = u(1) + u(precision | (third << 4) | (thirdPrec << 7));
+  const m = 10 ** precision, mz = 10 ** thirdPrec;
+  let pa = 0, pb = 0, pc = 0;
+  for (const p of points) {
+    const A = Math.round(p[0] * m), B = Math.round(p[1] * m);
+    out += z(A - pa) + z(B - pb); pa = A; pb = B;
+    if (third) { const C = Math.round(p[2] * mz); out += z(C - pc); pc = C; }
+  }
+  return out;
+}
+const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: n }, (_, i) => [lat, +(lon0 + i * step).toFixed(5)]);
+{
+  // (a) saf işlevler
+  try {
+    const SL = await import('../server/speedlimits.mjs');
+    const vec = [[50.10228, 8.69821], [50.10201, 8.69567], [50.10063, 8.6915], [50.09878, 8.68752]];
+    ok('(a) esnek çoklu çizgi: HERE belge vektörü "BFoz5xJ67i1B1B7PzIhaxL7Y" çözülür', JSON.stringify(SL.decodeFlexPolyline('BFoz5xJ67i1B1B7PzIhaxL7Y')) === JSON.stringify(vec));
+    ok('(a) test kodlayıcısı aynı vektörü üretir (kodlayıcı da doğru)', encodeFlex(vec) === 'BFoz5xJ67i1B1B7PzIhaxL7Y');
+    const big = [[39.12345, 32.98765], [41, 28.97], [-33.9, 151.2], [39.12345, -179.99999], [89.99999, 179.99999]];
+    ok('(a) negatif/büyük değerler gidiş-dönüş', JSON.stringify(SL.decodeFlexPolyline(encodeFlex(big))) === JSON.stringify(big));
+    const z3 = [[50.1022829, 8.6982122, 10], [50.1020076, 8.6956695, 20], [50.1006313, 8.6914960, 30]];
+    ok('(a) 3. boyutlu (rakım) çizgi: z atlanır, 7 basamak lat/lon doğru', JSON.stringify(SL.decodeFlexPolyline(encodeFlex(z3, 7, 2, 0))) === JSON.stringify(z3.map((p) => [p[0], p[1]])));
+    ok('(a) bozuk dize hata fırlatır (geçersiz karakter, sürüm 2, yarım sayı)', await throws(() => SL.decodeFlexPolyline('BF*a')) && await throws(() => SL.decodeFlexPolyline('CFoz5xJ67i1B')) && await throws(() => SL.decodeFlexPolyline('BFo')));
+    ok('(a) m/s → km/s: 22.7777786 → 82 (tek sayılı gerçek limit kabul)', SL.kphFromMs(22.7777786) === 82);
+    ok('(a) m/s → km/s: 13.8888893 → 50, 41.6667 → 150', SL.kphFromMs(13.8888893) === 50 && SL.kphFromMs(41.6667) === 150);
+    ok('(a) 0 / 3 km/s / 200 km/s / sayı değil → null', SL.kphFromMs(0) === null && SL.kphFromMs(3 / 3.6) === null && SL.kphFromMs(200 / 3.6) === null && SL.kphFromMs('x') === null && SL.kphFromMs(null) === null);
+    const good = SL.parsePoints({ points: [{ lat: 39.9000049, lon: 32.8 }, { lat: 41, lon: 28.97 }] });
+    ok('(a) parsePoints: geçerli 2 nokta, 5 basamağa yuvarlanır', JSON.stringify(good) === '[[39.9,32.8],[41,28.97]]');
+    const P = (n) => Array.from({ length: n }, (_, i) => ({ lat: 39.9, lon: 32.8 + i * 0.001 }));
+    const bad = [undefined, null, {}, { points: 'x' }, { points: P(1) }, { points: P(61) }, { points: [{ lat: 91, lon: 0 }, { lat: 0, lon: 0 }] },
+      { points: [{ lat: 0, lon: -181 }, { lat: 0, lon: 0 }] }, { points: [{ lat: '39.9', lon: 32 }, { lat: 0, lon: 0 }] }, { points: [{ lat: null, lon: 32 }, { lat: 0, lon: 0 }] },
+      { points: [{ lat: 39.9 }, { lat: 0, lon: 0 }] }, { points: [null, { lat: 0, lon: 0 }] }];
+    ok('(a) parsePoints: geçersiz gövdelerin hepsi null (12 durum)', bad.every((b) => SL.parsePoints(b) === null));
+    ok('(a) parsePoints: 60 nokta kabul', SL.parsePoints({ points: P(60) })?.length === 60);
+    // HERE yanıtı → kısa kesimler: 11 doğrusal nokta; 0-3 arası 82, 3-6 limitsiz, 6-8 ve 8-10 50 (bitişik eşit limitler birleşir)
+    const pts = line(11);
+    const route = { routes: [{ sections: [{ polyline: encodeFlex(pts), spans: [{ offset: 0, maxSpeed: 22.7777786 }, { offset: 3 }, { offset: 6, maxSpeed: 13.8888893 }, { offset: 8, maxSpeed: 13.8888893 }] }] }] };
+    ok('(a) spansFromRoute: limitsiz kesim atlanır, bitişik eşit limit birleşir', JSON.stringify(SL.spansFromRoute(route)) === JSON.stringify([[39.9, 32.8, 39.9, 32.803, 82], [39.9, 32.806, 39.9, 32.81, 50]]));
+    const L = [[39.9, 32.8], [39.9, 32.81], [39.91, 32.81]]; // dik köşe: tek kirişe indirgenmez (yol şekli korunur)
+    const rl = SL.spansFromRoute({ routes: [{ sections: [{ polyline: encodeFlex(L), spans: [{ offset: 0, maxSpeed: 25 }] }] }] });
+    ok('(a) köşeli yol aynı limitte bile iki kesim (kiriş yolu kesmez)', rl.length === 2 && rl[0][4] === 90 && rl[1][4] === 90);
+    const two = SL.spansFromRoute({ routes: [{ sections: [{ polyline: encodeFlex(line(3)), spans: [{ offset: 0, maxSpeed: 25 }] }, { polyline: encodeFlex(line(3, 39.9, 32.802)), spans: [{ offset: 0, maxSpeed: 25 }] }] }] });
+    ok('(a) birden çok bölüm (section) art arda eklenir ve birleşir', JSON.stringify(two) === JSON.stringify([[39.9, 32.8, 39.9, 32.804, 90]]));
+    ok('(a) bozuk/boş yanıt → boş liste', JSON.stringify(SL.spansFromRoute({})) === '[]' && JSON.stringify(SL.spansFromRoute({ routes: [{ sections: [{ polyline: 'B*', spans: [] }] }] })) === '[]');
+  } catch (e) {
+    ok('Bölüm 9 (a) çalıştı: ' + e.message, false);
+  }
+
+  // (b) sunucu yolu
+  const http = await import('node:http');
+  const ROOT = fileURLToPath(new URL('..', import.meta.url));
+  const CODE = 'test-dummy-access-code-0123456789';
+  const HKEY = 'here-test-dummy-key-0123456789';
+  const sha256 = (s) => createHash('sha256').update(s).digest('hex');
+  const TOK_FREE = 'F'.repeat(30), TOK_PREM = 'P'.repeat(30), TOK_PREM2 = 'Q'.repeat(30);
+  const children = [], dirs = [], logs = [], texts = [];
+  const hereReq = [];
+  const mock = http.createServer((req, res) => {
+    const u = new URL(req.url, 'http://x');
+    hereReq.push(u);
+    if ((u.searchParams.get('origin') || '').startsWith('10.')) { res.writeHead(500, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ error: 'boom', echo: u.searchParams.get('apiKey') })); }
+    const pts = [u.searchParams.get('origin'), ...u.searchParams.getAll('via').map((v) => v.split('!')[0]), u.searchParams.get('destination')].map((s) => String(s).split(',').map(Number));
+    const n = pts.length, a = Math.floor(n / 3), b = Math.floor((2 * n) / 3);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ routes: [{ sections: [{ polyline: encodeFlex(pts), spans: [{ offset: 0, length: 1, maxSpeed: 22.7777786 }, { offset: a, length: 1 }, { offset: b, length: 1, maxSpeed: 13.8888893 }] }] }] }));
+  });
+  await new Promise((r) => mock.listen(18799, '127.0.0.1', r));
+  const seed = () => {
+    const now = Date.now();
+    const sess = (uid) => ({ uid, createdAt: now, lastSeen: now, exp: now + 86400e3 });
+    return {
+      users: {
+        u_free: { id: 'u_free', email: 'free@test.invalid', name: 'Free', createdAt: now },
+        u_prem: { id: 'u_prem', email: 'prem@test.invalid', name: 'Prem', createdAt: now, premiumUntil: now + 30 * 86400e3 },
+        u_prem2: { id: 'u_prem2', email: 'prem2@test.invalid', name: 'Prem2', createdAt: now, premiumUntil: now + 30 * 86400e3 },
+      },
+      invites: {}, docs: {},
+      sessions: { [sha256(TOK_FREE)]: sess('u_free'), [sha256(TOK_PREM)]: sess('u_prem'), [sha256(TOK_PREM2)]: sess('u_prem2') },
+    };
+  };
+  async function start(port, extra = {}) {
+    const dir = mkdtempSync(join(tmpdir(), 'sl-test-')); dirs.push(dir);
+    writeFileSync(join(dir, 'db.json'), JSON.stringify(seed()));
+    const blank = Object.fromEntries(['MAPBOX_TOKEN', 'OCM_KEY', 'HERE_API_KEY', 'GOOGLE_PLACES_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SMTP_USER', 'SMTP_PASS', 'PUBLIC_URL', 'ADMIN_EMAILS', 'GOOGLE_MAPS_BROWSER_KEY', 'GOOGLE_MAP_ID', 'MAPBOX_MAP_TOKEN', 'TRUST_PROXY', 'PREMIUM_REQUIRED', 'HERE_MONTHLY_CAP', 'SPEEDLIMIT_DAILY_PER_USER', 'HERE_ROUTER_BASE', 'HERE_BASE'].map((k) => [k, '']));
+    const child = spawn(process.execPath, ['server/proxy.mjs'], { cwd: ROOT, env: { ...process.env, ...blank, PREMIUM_REQUIRED: '1', PORT: String(port), HOST: '127.0.0.1', DATA_DIR: dir, ACCESS_CODES: CODE, HERE_ROUTER_BASE: 'http://127.0.0.1:18799', ...extra }, stdio: ['ignore', 'pipe', 'pipe'] });
+    children.push(child);
+    let out = ''; logs.push(() => out);
+    child.stdout.on('data', (d) => { out += d; });
+    child.stderr.on('data', (d) => { out += d; });
+    for (let i = 0; i < 100 && !out.includes('ara sunucusu'); i++) await new Promise((r) => setTimeout(r, 100));
+    if (!out.includes('ara sunucusu')) throw new Error('sunucu başlamadı: ' + out);
+    return async (auth, body, { raw } = {}) => {
+      const headers = { 'Content-Type': 'application/json' };
+      if (auth === 'code') headers['X-Access-Code'] = CODE; else if (auth) headers.Authorization = 'Bearer ' + auth;
+      const r = await fetch(`http://127.0.0.1:${port}/v1/speedlimits`, { method: 'POST', headers, body: raw ?? JSON.stringify(body) });
+      const text = await r.text(); texts.push(text);
+      let j = null; try { j = JSON.parse(text); } catch {}
+      return { status: r.status, text, json: j, headers: r.headers };
+    };
+  }
+  const body = (n, lat = 39.9, lon0 = 32.8) => ({ points: line(n, lat, lon0).map(([la, lo]) => ({ lat: la, lon: lo })) });
+  try {
+    const A = await start(18791, { HERE_API_KEY: HKEY, SPEEDLIMIT_DAILY_PER_USER: '2', HERE_MONTHLY_CAP: '100' });
+    let r = await A(undefined, body(10));
+    ok('(b) kimliksiz → 401', r.status === 401);
+    r = await A(TOK_FREE, body(10));
+    ok('(b) Premium olmayan hesap → 402 premium_required, HERE çağrılmaz', r.status === 402 && r.json?.error === 'premium_required' && hereReq.length === 0);
+    const bads = [{}, { points: [] }, body(1), body(61), { points: [{ lat: 95, lon: 1 }, { lat: 1, lon: 1 }] }, { points: [{ lat: '1', lon: 1 }, { lat: 1, lon: 1 }] }];
+    let allBad = true;
+    for (const b of bads) { const x = await A(TOK_PREM, b); if (x.status !== 400) allBad = false; }
+    ok('(b) geçersiz gövdeler → 400 (6 durum)', allBad);
+    r = await A(TOK_PREM, null, { raw: '{bozuk' });
+    ok('(b) JSON olmayan gövde → 400', r.status === 400);
+    r = await A(TOK_PREM, null, { raw: JSON.stringify({ points: body(10).points, pad: 'x'.repeat(20000) }) });
+    ok('(b) çok büyük gövde → 400', r.status === 400 && hereReq.length === 0);
+    r = await A(TOK_PREM, body(10));
+    ok('(b) Premium → 200 { v:1, s:[[lat1,lon1,lat2,lon2,kph]] } (5 basamak, limitsiz kesim yok, birleşik)', r.status === 200 && JSON.stringify(r.json) === JSON.stringify({ v: 1, s: [[39.9, 32.8, 39.9, 32.803, 82], [39.9, 32.806, 39.9, 32.809, 50]] }));
+    ok('(b) yanıt Cache-Control no-store', /no-store/.test(r.headers.get('cache-control') || ''));
+    const q = hereReq[0]?.searchParams;
+    ok('(b) HERE isteği: /v8/routes, car, origin/destination ilk/son nokta, return=polyline, spans maxSpeed', hereReq.length === 1 && hereReq[0].pathname === '/v8/routes' && q.get('transportMode') === 'car' && q.get('origin') === '39.90000,32.80000' && q.get('destination') === '39.90000,32.80900' && q.get('return') === 'polyline' && /maxSpeed/.test(q.get('spans') || ''));
+    ok('(b) ara noktalar via=lat,lon!passThrough=true (8 adet, sırayla)', q.getAll('via').length === 8 && q.getAll('via').every((v) => /^39\.90000,32\.80\d{3}!passThrough=true$/.test(v)) && q.getAll('via')[0].startsWith('39.90000,32.80100'));
+    ok('(b) anahtar yalnızca HERE isteğinde (apiKey)', q.get('apiKey') === HKEY);
+    r = await A(TOK_PREM, body(10));
+    ok('(b) aynı rota ikinci kez: önbellekten (X-Cache hit), HERE ikinci kez çağrılmaz', r.status === 200 && r.headers.get('x-cache') === 'hit' && hereReq.length === 1 && r.json?.s?.length === 2);
+    r = await A(TOK_PREM, body(10, 39.91));
+    ok('(b) kullanıcı 2. farklı rota → 200 (günlük 2)', r.status === 200 && hereReq.length === 2);
+    r = await A(TOK_PREM, body(10, 39.92));
+    ok('(b) kullanıcı 3. farklı rota → 429 (SPEEDLIMIT_DAILY_PER_USER=2), HERE çağrılmaz', r.status === 429 && hereReq.length === 2);
+    r = await A(TOK_PREM, body(10));
+    ok('(b) hak dolsa da önbellekteki rota yine 200', r.status === 200 && r.headers.get('x-cache') === 'hit');
+    r = await A('code', body(10, 39.93));
+    ok('(b) yönetici kodu günlük sınırdan muaf → 200', r.status === 200 && hereReq.length === 3);
+    r = await A(TOK_PREM2, body(10, 10.1));
+    ok('(b) HERE hatası → 502, genel ileti, anahtar yok', r.status === 502 && typeof r.json?.error === 'string' && !r.text.includes(HKEY) && !r.text.includes('boom'));
+    r = await A(TOK_PREM2, body(2, 39.95));
+    ok('(b) 2 nokta (via yok) → 200', r.status === 200 && hereReq.at(-1).searchParams.getAll('via').length === 0);
+
+    const B = await start(18792, { HERE_API_KEY: HKEY, HERE_MONTHLY_CAP: '1' });
+    const before = hereReq.length;
+    r = await B(TOK_PREM, body(10, 38.5));
+    ok('(b) aylık HERE sayacı: 1. istek → 200', r.status === 200 && hereReq.length === before + 1);
+    r = await B(TOK_PREM, body(10, 38.6));
+    ok('(b) aylık HERE sınırı (ortak sayaç) → 402 here_cap, HERE çağrılmaz', r.status === 402 && r.json?.error === 'here_cap' && hereReq.length === before + 1);
+
+    const C = await start(18793, {});
+    r = await C(TOK_PREM, body(10));
+    ok('(b) sunucuda HERE anahtarı yok → 501', r.status === 501);
+  } catch (e) {
+    ok('Bölüm 9 (b) çalıştı: ' + e.message, false);
+  } finally {
+    for (const c of children) { try { c.kill(); } catch {} }
+    await new Promise((r) => setTimeout(r, 300));
+    for (const d of dirs) { try { rmSync(d, { recursive: true, force: true }); } catch {} }
+    mock.close();
+  }
+  ok('(b) hiçbir yanıtta ve sunucu çıktısında sahte HERE anahtarı yok', texts.length > 10 && texts.every((t) => !t.includes(HKEY)) && logs.length === 3 && logs.every((f) => !f().includes(HKEY)));
+}
+{
+  // (c) istemci: limitSpans.js, mapbox/route.js maxspeed; (d) speedLimit.js kaynak sırası
+  const { readFileSync } = await import('node:fs');
+  const src = (p) => readFileSync(fileURLToPath(new URL('../' + p, import.meta.url)), 'utf8');
+  const saved = Object.fromEntries(['localStorage', 'sessionStorage', 'document', 'fetch'].map((k) => [k, Object.getOwnPropertyDescriptor(globalThis, k)]));
+  const def = (k, v) => Object.defineProperty(globalThis, k, { value: v, configurable: true, writable: true });
+  const m = new Map();
+  const ls = { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), clear: () => m.clear(), key: (i) => [...m.keys()][i] ?? null, get length() { return m.size; } };
+  def('localStorage', ls); def('sessionStorage', ls);
+  def('document', { getElementById: () => null, addEventListener() {}, dispatchEvent() {}, documentElement: { lang: 'tr' }, body: { classList: { toggle() {}, contains: () => false } } });
+  const calls = [];
+  let mode = { premium: true, here: true, sl: 'ok', osm: 70 };
+  const HERE_S = [[39.9, 32.8, 39.9, 32.81, 82], [39.9, 32.81, 39.9, 32.811, 200], [NaN, 32.81, 39.9, 32.82, 60]]; // son ikisi geçersiz: atılır
+  const resp = (status, obj) => Promise.resolve(new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } }));
+  def('fetch', (url, init) => {
+    const u = String(url);
+    calls.push(u);
+    if (u.endsWith('/v1/me')) return resp(200, { caps: { here: mode.here, mapbox: false, ocm: false, overpass: true, occupancy: true }, user: { premium: mode.premium } });
+    if (u.endsWith('/v1/speedlimits')) {
+      if (mode.sl === 'ok') return resp(200, { v: 1, s: HERE_S });
+      if (mode.sl === 'net') return Promise.reject(new TypeError('ağ yok'));
+      return resp(Number(mode.sl), { error: 'x' });
+    }
+    if (u.includes('/locate')) return resp(200, mode.osm ? [{ edges: [{ distance: 5, heading: 90, edge_info: { speed_limit: mode.osm } }] }] : [{ edges: [] }]);
+    return resp(404, {});
+  });
+  const nSl = () => calls.filter((u) => u.endsWith('/v1/speedlimits')).length;
+  const nOsm = () => calls.filter((u) => u.includes('/locate')).length;
+  try {
+    const LS = await import('../js/nav/limitSpans.js');
+    ok('(c) kphFromMs 22.7777786 → 82, 0 → null', LS.kphFromMs(22.7777786) === 82 && LS.kphFromMs(0) === null);
+    ok('(c) Mapbox maxspeed km/h: 82 kabul, 50 kabul', LS.kphFromMapbox({ speed: 82, unit: 'km/h' }) === 82 && LS.kphFromMapbox({ speed: 50, unit: 'km/h' }) === 50);
+    ok('(c) Mapbox maxspeed mph → km/s (65 mph → 105, 31 mph → 50)', LS.kphFromMapbox({ speed: 65, unit: 'mph' }) === 105 && LS.kphFromMapbox({ speed: 31, unit: 'mph' }) === 50);
+    ok('(c) Mapbox {unknown:true} / {none:true} / birimsiz / null → null', LS.kphFromMapbox({ unknown: true }) === null && LS.kphFromMapbox({ none: true }) === null && LS.kphFromMapbox({ speed: 50 }) === null && LS.kphFromMapbox(null) === null);
+    ok('(c) 5..150 kabul (82 evet; 0, 3, 200, 151 hayır; 10\'un katı şartı yok)', LS.validKph(82) && LS.validKph(5) && LS.validKph(150) && LS.validKph(45) && !LS.validKph(0) && !LS.validKph(3) && !LS.validKph(200) && !LS.validKph(151) && !LS.validKph(82.5)
+      && LS.kphFromMapbox({ speed: 3, unit: 'km/h' }) === null && LS.kphFromMapbox({ speed: 200, unit: 'km/h' }) === null);
+
+    // örnekleme: en çok 60 nokta, ilk = başlangıç, son = varış, mesafeye göre eşit aralık
+    const coords = Array.from({ length: 1000 }, (_, i) => [32 + i * 0.002, 39.9]); // [lon, lat]
+    const smp = LS.sampleRoute(coords, 60);
+    const gaps = smp.slice(1).map((p, i) => Math.abs(p.lon - smp[i].lon));
+    ok('(c) sampleRoute: 60 nokta, ilk/son rota uçları, eşit aralık', smp.length === 60 && smp[0].lat === 39.9 && smp[0].lon === 32 && smp[59].lon === 33.998 && Math.max(...gaps) / Math.min(...gaps) < 1.05);
+    ok('(c) sampleRoute: kısa rota (3 köşe) en çok köşe sayısı kadar ama en az 2', LS.sampleRoute([[32, 39.9], [32.001, 39.9], [32.002, 39.9]], 60).length <= 60 && LS.sampleRoute([[32, 39.9], [32.001, 39.9]], 60).length === 2);
+
+    // uzamsal arama: çift şeritli yol (gidiş doğu 90, dönüş batı 70; ≈ 22 m arayla)
+    const east = [[39.9, 32.8, 39.9, 32.81, 90], [39.9, 32.81, 39.9, 32.82, 90]];
+    const west = [[39.9002, 32.82, 39.9002, 32.81, 70], [39.9002, 32.81, 39.9002, 32.8, 70]];
+    const L1 = LS.createLimitSpans({ post: () => { throw new Error('çağrılmamalı'); }, premium: () => true, hasHere: () => false });
+    await L1.loadForRoute({ coords: [], limitSpans: [...east, ...west] }, { fetchHere: false });
+    const hit = (lat, lon, h) => { const x = L1.limitAt(lat, lon, h); return x ? `${x.kph}/${x.src}` : 'null'; };
+    ok('(c) limitAt: doğuya giderken 90 (mapbox)', hit(39.9001, 32.805, 92) === '90/mapbox');
+    ok('(c) limitAt: aynı noktada batıya giderken karşı şerit 70 (yön tercihi)', hit(39.9001, 32.805, 268) === '70/mapbox');
+    ok('(c) limitAt: yön bilinmiyorsa en yakın kesim', hit(39.90004, 32.815, null) === '90/mapbox' && hit(39.90017, 32.815, null) === '70/mapbox');
+    ok('(c) limitAt: 40 m\'den uzak → null', hit(39.9008, 32.805, 90) === 'null' && hit(39.9, 32.83, 90) === 'null');
+    ok('(c) limitAt: yönle uyumlu kesim yoksa (dik yön) tahmin yok → null', hit(39.9001, 32.805, 0) === 'null');
+    // uzun rota: 6000 kesim, ardışık 1200 sorgu doğru ve hızlı; uzak sıçrama da bulunur
+    const longS = Array.from({ length: 6000 }, (_, i) => [39.9, +(32 + i * 0.0005).toFixed(5), 39.9, +(32 + (i + 1) * 0.0005).toFixed(5), i < 3000 ? 110 : 82]);
+    const L2 = LS.createLimitSpans({ post: () => null, premium: () => true, hasHere: () => false });
+    await L2.loadForRoute({ coords: [], limitSpans: longS }, { fetchHere: false });
+    let allRight = true; const t0 = performance.now();
+    for (let i = 0; i < 1200; i++) { const lon = 32 + i * 0.0025 + 0.0001; const x = L2.limitAt(39.90005, lon, 90); if (x?.kph !== (lon < 33.5 ? 110 : 82)) allRight = false; }
+    const dt = performance.now() - t0;
+    ok(`(c) 6000 kesimli rotada 1200 ardışık sorgu doğru ve hızlı (${dt.toFixed(0)} ms)`, allRight && dt < 400);
+    ok('(c) pencere dışına sıçrama (geri dönüş) da bulunur', L2.limitAt(39.90005, 32.0101, 90)?.kph === 110);
+
+    // kaynak sırası (örnek kesimlerle): HERE > Mapbox > (OSM speedLimit.js'te) > null
+    let posts = 0;
+    const L3 = LS.createLimitSpans({ post: () => { posts++; return resp(200, { v: 1, s: HERE_S }); }, premium: () => true, hasHere: () => true });
+    const R = { coords: [[32.8, 39.9], [32.85, 39.9]], limitSpans: [[39.9, 32.8, 39.9, 32.82, 90]] };
+    await L3.ensure({ active: true, limitOn: true, route: R });
+    ok('(c) ensure: Premium + HERE → tek POST; geçersiz HERE kesimleri atılır', posts === 1 && L3.status().here === 1);
+    ok('(c) HERE ve Mapbox ikisi de biliyorsa HERE', JSON.stringify(L3.limitAt(39.9, 32.805, 90)) === '{"kph":82,"src":"here"}');
+    ok('(c) yalnızca Mapbox biliyorsa Mapbox', JSON.stringify(L3.limitAt(39.9, 32.815, 90)) === '{"kph":90,"src":"mapbox"}');
+    ok('(c) hiçbiri bilmiyorsa null', L3.limitAt(39.9, 32.84, 90) === null);
+    await L3.ensure({ active: true, limitOn: true, route: R }); await L3.ensure({ active: true, limitOn: true, route: R });
+    ok('(c) aynı rota için yeniden POST yok', posts === 1);
+    await L3.ensure({ active: true, limitOn: true, route: { ...R } });
+    ok('(c) rota değişince (yeniden rota) yeni POST', posts === 2);
+    await L3.ensure({ active: false, limitOn: true, route: { ...R } }); await L3.ensure({ active: true, limitOn: false, route: { ...R } });
+    ok('(c) navigasyon kapalıyken ya da limit kapalıyken POST yok', posts === 2);
+    const L4 = LS.createLimitSpans({ post: () => { posts++; return resp(200, { v: 1, s: HERE_S }); }, premium: () => false, hasHere: () => true });
+    await L4.ensure({ active: true, limitOn: true, route: R });
+    ok('(c) Premium değil → POST yok, Mapbox kesimleri de kullanılmaz', posts === 2 && L4.limitAt(39.9, 32.805, 90) === null);
+    let p402 = 0;
+    const L5 = LS.createLimitSpans({ post: () => { p402++; return resp(402, { error: 'here_cap' }); }, premium: () => true, hasHere: () => true });
+    await L5.ensure({ active: true, limitOn: true, route: R });
+    for (let i = 0; i < 5; i++) await L5.ensure({ active: true, limitOn: true, route: { ...R } });
+    ok('(c) 402 sonrası yeni rotalarda bile tekrar POST yok (döngü yok), Mapbox kesimleri yine çalışır', p402 === 1 && L5.limitAt(39.9, 32.805, 90)?.src === 'mapbox' && L5.status().failed === true);
+
+    // mapbox/route.js: maxspeed ek açıklaması → aynı kesim biçimi
+    const MR = await import('../js/mapbox/route.js');
+    const c5 = [[32.8, 39.9], [32.801, 39.9], [32.802, 39.9], [32.803, 39.9], [32.804, 39.9]];
+    const legs = [{ annotation: { distance: [85, 85], maxspeed: [{ speed: 50, unit: 'km/h' }, { speed: 50, unit: 'km/h' }] } }, { annotation: { distance: [85, 85], maxspeed: [{ unknown: true }, { speed: 31, unit: 'mph' }] } }];
+    ok('(c) maxspeedSpans: iki bacak birleşir, bilinmeyen atlanır, mph çevrilir', JSON.stringify(MR.maxspeedSpans(c5, legs)) === JSON.stringify([[39.9, 32.8, 39.9, 32.802, 50], [39.9, 32.803, 39.9, 32.804, 50]]));
+    const legs2 = [{ annotation: { distance: [170, 170], maxspeed: [{ speed: 30, unit: 'km/h' }, { speed: 70, unit: 'km/h' }] } }]; // sayı uyuşmuyor: mesafeye göre eşlenir
+    ok('(c) maxspeedSpans: kesim sayısı uyuşmazsa birikimli mesafeyle eşlenir', JSON.stringify(MR.maxspeedSpans(c5, legs2)) === JSON.stringify([[39.9, 32.8, 39.9, 32.802, 30], [39.9, 32.802, 39.9, 32.804, 70]]));
+    ok('(c) maxspeedSpans: ek açıklama yoksa boş', JSON.stringify(MR.maxspeedSpans(c5, [{ annotation: { distance: [1, 1, 1, 1] } }])) === '[]');
+    const rsrc = src('js/mapbox/route.js');
+    ok("(c) route.js ana rota isteği annotations 'distance,congestion,maxspeed' ve sonuçta limitSpans", rsrc.includes("annotations: 'distance,congestion,maxspeed'") && /limitSpans: maxspeedSpans\(/.test(rsrc));
+
+    // (d) speedLimit.js: gerçek modüller, sahte fetch
+    const { patch, getState } = await import('../js/state.js');
+    const PX = await import('../js/net/proxy.js');
+    const S = await import('../js/nav/speedLimit.js');
+    ls.setItem('evcp.session', JSON.stringify({ token: 'T'.repeat(30) }));
+    const at = (lon, heading = 90) => patch('sim', { enabled: true, play: true, lat: 39.9, lon, speed: 60, heading });
+    const run = async () => { await S.__test.check(); await S.__test.idle(); await S.__test.check(); await S.__test.idle(); };
+    const lim = () => { const l = getState('nav').limit; return l ? `${l.kph}/${l.src}` : 'null'; };
+    const mkRoute = () => ({ coords: [[32.8, 39.9], [32.9, 39.9]], limitSpans: [[39.9, 32.8, 39.9, 32.82, 90]] });
+
+    // Ücretsiz kullanıcı: yalnızca OSM, /v1/speedlimits yok, Mapbox kesimleri kullanılmaz
+    mode = { premium: false, here: true, sl: 'ok', osm: 70 };
+    await PX.refreshCaps();
+    S.__test.reset();
+    patch('nav', { active: true, limitOn: true, limit: null, limitErr: null }); patch('plan', { route: mkRoute() }); at(32.805);
+    let c0 = calls.length;
+    await run();
+    ok('(d) ücretsiz: /v1/speedlimits isteği yok, limit OSM\'den (Mapbox kesimi olsa da)', nSl() === 0 && lim() === '70/osm' && calls.slice(c0).some((u) => u.includes('/locate')));
+    ok('(d) ücretsiz: durum satırında kaynak OpenStreetMap', /Kaynak: OpenStreetMap/.test(S.__test.statusText()));
+
+    // Premium: HERE > Mapbox > OSM > null
+    mode = { premium: true, here: true, sl: 'ok', osm: 70 };
+    await PX.refreshCaps();
+    S.__test.reset();
+    patch('nav', { limit: null }); patch('plan', { route: mkRoute() }); at(32.805);
+    let o0 = nOsm();
+    await run();
+    ok('(d) Premium: navigasyonda tek /v1/speedlimits POST', nSl() === 1);
+    ok('(d) Premium: HERE kesimi varken HERE limiti, OSM sorgusu yok', lim() === '82/here' && nOsm() === o0 && S.currentLimit() === 82);
+    ok('(d) durum satırı "Kaynak: HERE"', /Kaynak: HERE/.test(S.__test.statusText()));
+    at(32.815); await run();
+    ok('(d) HERE bilmiyor, Mapbox biliyor → Mapbox, OSM sorgusu yok', lim() === '90/mapbox' && nOsm() === o0);
+    ok('(d) durum satırı "Kaynak: Mapbox"', /Kaynak: Mapbox/.test(S.__test.statusText()));
+    at(32.84); await run();
+    ok('(d) hiçbir kesim yok → OSM (bugünkü sorgu)', lim() === '70/osm' && nOsm() === o0 + 1);
+    S.__test.reset(); mode.osm = 0; at(32.87); await run();
+    ok('(d) OSM de bilmiyor → null (tahmin yok)', lim() === 'null' && S.currentLimit() === null);
+    ok('(d) bu sürüşte /v1/speedlimits hâlâ tek', nSl() === 1);
+    // HERE limitinden sonra bilinmeyen kesime geçince eski HERE limiti taşınmaz (OSM sorgusu sıklık sınırında olsa bile)
+    at(32.805); await run();
+    ok('(d) yeniden HERE kesimi → 82/here', lim() === '82/here');
+    o0 = nOsm();
+    at(32.875); await S.__test.check(); // son OSM sorgusu 32.87'de, < 1 km ve < 20 sn: OSM sorulmaz
+    ok('(d) kesim dışına çıkınca eski HERE limiti hemen düşer (taşınmaz), OSM sıklık sınırına uyar', S.currentLimit() === null && nOsm() === o0);
+    await S.__test.idle();
+
+    // 402: OSM'e düşer, tekrar denemez (yeni rotada da)
+    mode = { premium: true, here: true, sl: '402', osm: 60 };
+    S.__test.reset({ spans: true });
+    patch('nav', { limit: null }); patch('plan', { route: { coords: [[32.8, 39.9], [32.9, 39.9]] } }); at(32.91);
+    let s0 = nSl();
+    await run(); await run();
+    patch('plan', { route: { coords: [[32.8, 39.9], [32.95, 39.9]] } }); at(32.93); S.__test.reset(); await run();
+    ok('(d) 402: tek POST, yeni rotada da tekrar yok, limit OSM\'den', nSl() === s0 + 1 && lim() === '60/osm');
+    ok('(d) 402 sonrası durum notu (toast yok)', /HERE hız limiti alınamadı/.test(S.__test.statusText({ noLimit: true })));
+    // 500 / ağ hatası: aynı rotada tekrar yok, OSM'e düşer
+    for (const bad of ['500', 'net']) {
+      mode = { premium: true, here: true, sl: bad, osm: 50 };
+      S.__test.reset({ spans: true });
+      patch('nav', { limit: null }); patch('plan', { route: { coords: [[32.8, 39.9], [32.99, 39.9]] } }); at(bad === '500' ? 32.96 : 32.98);
+      s0 = nSl();
+      await run(); await run(); await run();
+      ok(`(d) ${bad}: tek POST, döngü yok, limit OSM'den`, nSl() === s0 + 1 && lim() === '50/osm');
+    }
+    // HERE özelliği sunucuda yoksa (caps.here false): POST yok, Mapbox kesimleri çalışır
+    mode = { premium: true, here: false, sl: 'ok', osm: 40 };
+    await PX.refreshCaps();
+    S.__test.reset({ spans: true });
+    patch('nav', { limit: null }); patch('plan', { route: mkRoute() }); at(32.805);
+    s0 = nSl();
+    await run();
+    ok('(d) sunucuda HERE yok: POST yok, Mapbox kesimi kullanılır', nSl() === s0 && lim() === '90/mapbox');
+
+    // i18n ve sw.js
+    const kx = JSON.parse(src('i18n/keys.extra.json'));
+    const NEW = ['Bu yolun hız limiti: {0} km/s · Kaynak: {1}', 'HERE hız limiti alınamadı; OpenStreetMap kullanılıyor (etiketi olmayan yolda bilinmez)', 'Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)', 'Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)'];
+    const dicts = await Promise.all(['de', 'en', 'es', 'fr', 'it', 'nl', 'pl', 'pt', 'ro', 'bg', 'el'].map(async (c) => (await import(`../js/i18n/lang/${c}.extra.js`)).default));
+    ok('i18n: yeni hız limiti metinleri ek sözlükte ve 11 dilde', NEW.every((k) => kx.includes(k)) && dicts.every((dd) => NEW.every((k) => typeof dd[k] === 'string' && dd[k].trim())));
+    ok("sw.js SHELL './js/nav/limitSpans.js' içerir", src('sw.js').includes("'./js/nav/limitSpans.js'"));
+  } catch (e) {
+    ok('Bölüm 9 (c/d) çalıştı: ' + e.message + ' ' + (e.stack || '').split('\n')[1], false);
+  } finally {
+    for (const [k, d] of Object.entries(saved)) { if (d) Object.defineProperty(globalThis, k, d); else delete globalThis[k]; }
+  }
+}
+
 console.log(`\n${pass} geçti, ${fail} kaldı`);
 process.exit(fail ? 1 : 0);

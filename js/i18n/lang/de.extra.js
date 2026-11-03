@@ -251,4 +251,8 @@ export default {
   "Harita gidiş yönüne dönsün (yön yukarı)": "Karte nach Fahrtrichtung ausrichten (Fahrtrichtung oben)",
   "3B": "3D",
   "2B": "2D",
+  "Bu yolun hız limiti: {0} km/s · Kaynak: {1}": "Tempolimit auf dieser Straße: {0} km/h · Quelle: {1}",
+  "HERE hız limiti alınamadı; OpenStreetMap kullanılıyor (etiketi olmayan yolda bilinmez)": "HERE-Tempolimits nicht verfügbar; OpenStreetMap wird verwendet (auf Straßen ohne Tag unbekannt)",
+  "Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)": "Das Tempolimit wird während der Fahrt gelesen (Premium: HERE; sonst Mapbox, danach OpenStreetMap)",
+  "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Tempolimit-Prüfung an (Premium: HERE, Reserve OpenStreetMap)",
 };

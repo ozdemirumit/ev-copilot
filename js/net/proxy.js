@@ -30,6 +30,8 @@ export const proxyReady = hasCreds; // hesapla giriş ya da yönetici kodu var m
 /** Sunucu kullanılabilir mi ve istenen özelliği (mapbox | ocm | overpass) sağlıyor mu. */
 export const proxyHas = (what) => !!(hasCreds() && caps?.[what]);
 export const getPlan = () => (getSession() ? plan : null);
+/** Premium özellikler açık mı: hesapla girişte plan Premium (ya da yönetici), hesapsız eski yönetici erişim koduyla her zaman (sunucu da öyle sayar). */
+export const isPremium = () => (getSession() ? !!plan?.premium : !!proxyCode());
 
 export function proxyFetch(path, init = {}) {
   const headers = new Headers(init.headers || {});

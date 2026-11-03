@@ -251,4 +251,8 @@ export default {
   "Harita gidiş yönüne dönsün (yön yukarı)": "Harta se rotește în direcția de mers (direcția în sus)",
   "3B": "3D",
   "2B": "2D",
+  "Bu yolun hız limiti: {0} km/s · Kaynak: {1}": "Limita de viteză pe acest drum: {0} km/h · Sursa: {1}",
+  "HERE hız limiti alınamadı; OpenStreetMap kullanılıyor (etiketi olmayan yolda bilinmez)": "Limitele de viteză HERE nu sunt disponibile; se folosește OpenStreetMap (necunoscută pe drumurile fără etichetă)",
+  "Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)": "Limita de viteză a drumului se citește în timpul mersului (Premium: HERE; altfel Mapbox, apoi OpenStreetMap)",
+  "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Verificarea limitei de viteză a drumului este activă (Premium: HERE, rezervă OpenStreetMap)",
 };

@@ -251,4 +251,8 @@ export default {
   "Harita gidiş yönüne dönsün (yön yukarı)": "Περιστροφή χάρτη προς την κατεύθυνση κίνησης (πορεία προς τα πάνω)",
   "3B": "3D",
   "2B": "2D",
+  "Bu yolun hız limiti: {0} km/s · Kaynak: {1}": "Όριο ταχύτητας αυτού του δρόμου: {0} km/h · Πηγή: {1}",
+  "HERE hız limiti alınamadı; OpenStreetMap kullanılıyor (etiketi olmayan yolda bilinmez)": "Τα όρια ταχύτητας HERE δεν είναι διαθέσιμα· χρησιμοποιείται το OpenStreetMap (άγνωστο σε δρόμο χωρίς ετικέτα)",
+  "Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)": "Το όριο ταχύτητας δρόμου διαβάζεται κατά την οδήγηση (Premium: HERE· αλλιώς Mapbox, μετά OpenStreetMap)",
+  "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Ο έλεγχος ορίου ταχύτητας δρόμου είναι ενεργός (Premium: HERE, εφεδρικά OpenStreetMap)",
 };

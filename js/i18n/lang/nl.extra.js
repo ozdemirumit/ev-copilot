@@ -251,4 +251,8 @@ export default {
   "Harita gidiş yönüne dönsün (yön yukarı)": "Kaart meedraaien met rijrichting (richting boven)",
   "3B": "3D",
   "2B": "2D",
+  "Bu yolun hız limiti: {0} km/s · Kaynak: {1}": "Maximumsnelheid op deze weg: {0} km/h · Bron: {1}",
+  "HERE hız limiti alınamadı; OpenStreetMap kullanılıyor (etiketi olmayan yolda bilinmez)": "HERE-maximumsnelheden niet beschikbaar; OpenStreetMap wordt gebruikt (onbekend op wegen zonder tag)",
+  "Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)": "De wegmaximumsnelheid wordt tijdens het rijden uitgelezen (Premium: HERE; anders Mapbox, daarna OpenStreetMap)",
+  "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Controle op wegmaximumsnelheid aan (Premium: HERE, reserve OpenStreetMap)",
 };

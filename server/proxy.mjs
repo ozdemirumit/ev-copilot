@@ -23,6 +23,7 @@ import { createCommunity } from './community.mjs';
 import { createStationInfo, MAX_PHOTO_BYTES } from './stationinfo.mjs';
 import { createTesla } from './tesla.mjs';
 import { createMaps } from './maps.mjs';
+import { parsePoints, pointsKey, hereSpeedLimits, createLru } from './speedlimits.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -118,7 +119,7 @@ const once = (k, fn) => {
 };
 
 // ---------- kullanıcı başına günlük kota (Mapbox faturasını ve ortak Overpass'i korur) ----------
-const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 40), here: Number(env.HERE_DAILY_PER_USER || 800), price: 20, presence: 60, status: 30, sinfo: 600, srate: 60, sfac: 120, sphoto: 15, map: Number(env.MAP_DAILY_PER_USER || 100) };
+const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 40), here: Number(env.HERE_DAILY_PER_USER || 800), price: 20, presence: 60, status: 30, sinfo: 600, srate: 60, sfac: 120, sphoto: 15, map: Number(env.MAP_DAILY_PER_USER || 100), slimit: Number(env.SPEEDLIMIT_DAILY_PER_USER || 40) };
 const MAP_TOTAL = Number(env.MAP_DAILY_TOTAL || 3000); // tüm kullanıcılar için günlük harita anahtarı verme tavanı (Mapbox/Google faturasını korur)
 let mapToday = { d: '', n: 0 };
 /** Harita anahtarı döndürmeden önce: toplam ve kullanıcı başı günlük hak. Yalnızca anahtar dönen çağrılar sayılır (osm sayılmaz). */
@@ -284,6 +285,30 @@ async function hereStations(req, res, url, id) {
   }).catch((err) => ({ status: err.status === 429 ? 429 : 502, type: 'application/json', body: Buffer.from(JSON.stringify({ error: err.status ? 'HERE HTTP ' + err.status : 'HERE yanıt vermedi' })), pass: {} }));
   if (u.status === 200) cset(key, u, 6 * 3600e3);
   reply(res, u, { 'X-Cache': 'miss' });
+}
+
+// ---------- Premium yol hız limiti (HERE Routing v8, spans=maxSpeed) ----------
+// Navigasyon başlarken uygulama rotanın 2..60 örnek noktasını yollar; yanıt rota boyunca limit kesimleridir (server/speedlimits.mjs).
+// Yalnızca Premium; HERE aylık sayacı istasyon aramasıyla ORTAKTIR (HERE_MONTHLY_CAP); kullanıcı başına günlük hak SPEEDLIMIT_DAILY_PER_USER (yönetici muaf).
+// Sonuç 24 saat bellek önbelleğinde (en çok 100 rota); önbellekten dönen yanıt hak ve sayaçtan düşmez.
+const slCache = createLru(100, 24 * 3600e3);
+async function speedLimitsRoute(req, res, id) {
+  if (!premiumOk(id)) return json(res, 402, { error: 'premium_required' });
+  if (!HERE) return json(res, 501, { error: 'Sunucuda HERE anahtarı yok' });
+  const pts = parsePoints(await readJson(req, 6000)); // 60 nokta ≈ 3 KB; büyük gövde reddedilir
+  if (!pts) return json(res, 400, { error: 'geçersiz gövde' });
+  const key = pointsKey(pts);
+  const hit = slCache.get(key);
+  if (hit) return send(res, 200, hit, { 'Content-Type': 'application/json; charset=utf-8', 'X-Cache': 'hit' });
+  if (overQuota(id, 'slimit')) return json(res, 429, { error: 'günlük hız limiti hakkı doldu' }, { 'Retry-After': '3600' });
+  if (!hereAllowed()) return json(res, 402, { error: 'here_cap' });
+  const body = await once(key, async () => {
+    hereCount();
+    return Buffer.from(JSON.stringify(await hereSpeedLimits(HERE, pts)));
+  }).catch((err) => { console.error('HERE hız limiti alınamadı:', err?.status ? 'HTTP ' + err.status : scrub(String(err?.name || 'hata'))); return null; }); // HERE yanıt gövdesi ve adres günlüğe yazılmaz
+  if (!body) return json(res, 502, { error: 'hız limiti alınamadı' });
+  slCache.set(key, body);
+  send(res, 200, body, { 'Content-Type': 'application/json; charset=utf-8', 'X-Cache': 'miss' });
 }
 
 // ---------- OpenChargeMap ----------
@@ -521,6 +546,7 @@ const server = http.createServer(async (req, res) => {
     if (p.startsWith('/ocm/')) return await ocm(req, res, url, id);
     if (p === '/overpass') return await overpass(req, res, url, id);
     if (p === '/v1/occupancy' && req.method === 'POST') return await occupancyRoute(req, res, id);
+    if (p === '/v1/speedlimits' && req.method === 'POST') return await speedLimitsRoute(req, res, id);
     if (p === '/v1/price' && req.method === 'POST') return await priceRoute(req, res, id);
     if (p === '/v1/presence' && req.method === 'POST') return await communityRoute(req, res, id, 'presence');
     if (p === '/v1/status' && req.method === 'POST') return await communityRoute(req, res, id, 'status');

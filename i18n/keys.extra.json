@@ -250,5 +250,9 @@
  "3B/2B görünüm",
  "Harita gidiş yönüne dönsün (yön yukarı)",
  "3B",
- "2B"
+ "2B",
+ "Bu yolun hız limiti: {0} km/s · Kaynak: {1}",
+ "HERE hız limiti alınamadı; OpenStreetMap kullanılıyor (etiketi olmayan yolda bilinmez)",
+ "Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)",
+ "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)"
 ]
