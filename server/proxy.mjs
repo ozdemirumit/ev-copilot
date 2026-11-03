@@ -23,7 +23,7 @@ import { createCommunity } from './community.mjs';
 import { createStationInfo, MAX_PHOTO_BYTES } from './stationinfo.mjs';
 import { createTesla } from './tesla.mjs';
 import { createMaps } from './maps.mjs';
-import { parsePoints, pointsKey, hereSpeedLimits, createLru } from './speedlimits.mjs';
+import { parsePoints, pointsKey, hereSpeedLimits, createLru, MAX_CACHE_ITEM } from './speedlimits.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -290,8 +290,10 @@ async function hereStations(req, res, url, id) {
 // ---------- Premium yol hız limiti (HERE Routing v8, spans=maxSpeed) ----------
 // Navigasyon başlarken uygulama rotanın 2..60 örnek noktasını yollar; yanıt rota boyunca limit kesimleridir (server/speedlimits.mjs).
 // Yalnızca Premium; HERE aylık sayacı istasyon aramasıyla ORTAKTIR (HERE_MONTHLY_CAP); kullanıcı başına günlük hak SPEEDLIMIT_DAILY_PER_USER (yönetici muaf).
-// Sonuç 24 saat bellek önbelleğinde (en çok 100 rota); önbellekten dönen yanıt hak ve sayaçtan düşmez.
-const slCache = createLru(100, 24 * 3600e3);
+// Sonuç 24 saat bellek önbelleğinde (en çok 100 rota, toplam en çok 32 MB); önbellekten dönen yanıt hak ve sayaçtan düşmez.
+// Boş sonuç (s: []) ve 512 KB'tan büyük sonuç önbelleğe alınmaz (boşsa sonra yeniden denenebilsin; büyük rota belleği şişirmesin).
+// Rota uzunluğu (≤ 2000 km, komşu noktalar ≤ 300 km) ve HERE yanıt boyutu (≤ 4 MB) speedlimits.mjs'te sınırlanır.
+const slCache = createLru(100, 24 * 3600e3, 32e6);
 async function speedLimitsRoute(req, res, id) {
   if (!premiumOk(id)) return json(res, 402, { error: 'premium_required' });
   if (!HERE) return json(res, 501, { error: 'Sunucuda HERE anahtarı yok' });
@@ -302,13 +304,17 @@ async function speedLimitsRoute(req, res, id) {
   if (hit) return send(res, 200, hit, { 'Content-Type': 'application/json; charset=utf-8', 'X-Cache': 'hit' });
   if (overQuota(id, 'slimit')) return json(res, 429, { error: 'günlük hız limiti hakkı doldu' }, { 'Retry-After': '3600' });
   if (!hereAllowed()) return json(res, 402, { error: 'here_cap' });
-  const body = await once(key, async () => {
+  const out = await once(key, async () => {
     hereCount();
-    return Buffer.from(JSON.stringify(await hereSpeedLimits(HERE, pts)));
-  }).catch((err) => { console.error('HERE hız limiti alınamadı:', err?.status ? 'HTTP ' + err.status : scrub(String(err?.name || 'hata'))); return null; }); // HERE yanıt gövdesi ve adres günlüğe yazılmaz
-  if (!body) return json(res, 502, { error: 'hız limiti alınamadı' });
-  slCache.set(key, body);
-  send(res, 200, body, { 'Content-Type': 'application/json; charset=utf-8', 'X-Cache': 'miss' });
+    const r = await hereSpeedLimits(HERE, pts);
+    return { body: Buffer.from(JSON.stringify(r)), empty: !r.s.length };
+  }).catch((err) => { // HERE yanıt gövdesi ve adres günlüğe yazılmaz
+    console.error('HERE hız limiti alınamadı:', typeof err?.status === 'number' ? 'HTTP ' + err.status : err?.status === 'too_large' ? 'yanıt çok büyük' : scrub(String(err?.name || 'hata')));
+    return null;
+  });
+  if (!out) return json(res, 502, { error: 'hız limiti alınamadı' });
+  if (!out.empty && out.body.length <= MAX_CACHE_ITEM) slCache.set(key, out.body);
+  send(res, 200, out.body, { 'Content-Type': 'application/json; charset=utf-8', 'X-Cache': 'miss' });
 }
 
 // ---------- OpenChargeMap ----------

@@ -3,6 +3,7 @@
 import { cached, TTL } from '../utils/cache.js';
 import { decodePolyline6 } from '../osm/route.js';
 import { mbfetch } from './api.js';
+import { premiumAccess } from '../net/proxy.js';
 import { kphFromMapbox, mergeSegments } from '../nav/limitSpans.js';
 import { haversineKm } from '../utils/geo.js';
 
@@ -113,29 +114,31 @@ const lonlat = (p) => `${p.lon.toFixed(6)},${p.lat.toFixed(6)}`;
  */
 export function fetchRoute(start, end, via = []) {
   const k = (p) => `${p.lat.toFixed(4)},${p.lon.toFixed(4)}`;
-  return cached(`mrt:${k(start)}>${k(end)}|${via.map(k).join(';')}`, TTL.route, () => routeFromMapbox(start, end, via), { persist: false });
+  const prem = premiumAccess(); // hız limiti (maxspeed) yalnızca Premium'da istenir; önbellek anahtarında plan ayrı (ücretsiz rota Premium'a verilmez, tersi de)
+  return cached(`mrt:${prem ? 'p' : 'f'}:${k(start)}>${k(end)}|${via.map(k).join(';')}`, TTL.route, () => routeFromMapbox(start, end, via, prem), { persist: false });
 }
 
-async function routeFromMapbox(start, end, via) {
+async function routeFromMapbox(start, end, via, prem = false) {
   const coords = [start, ...via, end].map(lonlat).join(';');
   const json = await mbfetch(`/directions/v5/mapbox/driving-traffic/${coords}`, {
-    geometries: 'polyline6', overview: 'full', steps: 'true', roundabout_exits: 'true', alternatives: 'false', annotations: 'distance,congestion,maxspeed',
+    geometries: 'polyline6', overview: 'full', steps: 'true', roundabout_exits: 'true', alternatives: 'false', annotations: prem ? 'distance,congestion,maxspeed' : 'distance,congestion',
   }, { timeoutMs: 40000 });
   const r = json.routes?.[0];
   if (!r?.geometry) throw new Error('Mapbox rota bulamadı');
   const typical = r.duration_typical;
   const line = decodePolyline6(r.geometry);
-  return {
+  const out = {
     coords: line,
     intervals: [], // yavaşlama zaten adım sürelerinde
     distanceKm: (r.distance || 0) / 1000,
     durationH: (r.duration || 0) / 3600,
     trafficRatio: typical > 0 ? Math.max(1, r.duration / typical) : 1,
     trafficSpans: trafficSpans(r.legs || []), // rota çizgisinin renklendirilmesi için (yavaş sarı, yoğun kırmızı)
-    limitSpans: maxspeedSpans(line, r.legs || []), // Premium navigasyonda yol hız limiti (HERE bilmeyen yerde)
     live: true,
     steps: mapSteps(r.legs || []),
   };
+  if (prem) out.limitSpans = maxspeedSpans(line, r.legs || []); // Premium navigasyonda yol hız limiti (HERE bilmeyen yerde); ücretsizde alan yok (eski biçim)
+  return out;
 }
 
 /** Bitişik yoğun/yavaş kesimlerin ilk önemli kümesi (km, konumdan itibaren): { from, to, jam }. */

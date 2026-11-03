@@ -9,7 +9,7 @@ import { haversineKm } from '../utils/geo.js';
 import { toast } from '../ui/toast.js';
 import { cached, TTL } from '../utils/cache.js';
 import { limitSpans } from './limitSpans.js';
-import { isPremium, proxyHas } from '../net/proxy.js';
+import { premiumAccess, proxyHas } from '../net/proxy.js';
 
 const $ = (id) => document.getElementById(id);
 const EVERY_MS = 20000; // iki sorgu arası en az süre
@@ -83,9 +83,9 @@ function statusText({ noLimit = false } = {}) {
   const st = limitSpans.status();
   if (!nav.limitOn) return 'Kapalı: yol hız limiti sorgulanmaz. Hız uyarısı senin belirlediğin eşikle çalışır.';
   if (info) return `Bu yolun hız limiti: ${info.kph} km/s · Kaynak: ${SRC_NAME[info.src] || SRC_NAME.osm}`;
-  if (st.active && st.failed) return 'HERE hız limiti alınamadı; OpenStreetMap kullanılıyor (etiketi olmayan yolda bilinmez)';
+  if (nav.active && st.active && st.failed) return 'HERE hız limiti alınamadı; OpenStreetMap kullanılıyor (etiketi olmayan yolda bilinmez)';
   if (nav.limitErr) return `Yol hız limiti alınamadı (${nav.limitErr}); senin eşiğin kullanılır.`;
-  if (isPremium() && proxyHas('here')) return 'Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)';
+  if (premiumAccess() && proxyHas('here')) return 'Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)';
   return 'Yol hız limiti sürerken okunur (OpenStreetMap; etiketi olmayan yolda bilinmez)';
 }
 
@@ -118,7 +118,7 @@ export function initSpeedLimit() {
     patch('nav', { limitOn: on, limit: null, limitErr: null });
     save('limitOn', on);
     blockedUntil = 0;
-    toast(!on ? 'Yol hız limiti kontrolü kapalı' : isPremium() && proxyHas('here') ? 'Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)' : 'Yol hız limiti kontrolü açık (OpenStreetMap, ücretsiz)');
+    toast(!on ? 'Yol hız limiti kontrolü kapalı' : premiumAccess() && proxyHas('here') ? 'Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)' : 'Yol hız limiti kontrolü açık (OpenStreetMap, ücretsiz)');
     paintOn();
     paint();
   };

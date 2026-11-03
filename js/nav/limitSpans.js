@@ -3,7 +3,7 @@
 // 3) OpenStreetMap (nav/speedLimit.js'teki bugünkü tek nokta sorgusu), 4) bilinmiyor (null: kullanıcının eşiği; tahmin YAPILMAZ).
 // Ücretsiz kullanıcıda bu modül hiçbir şey yüklemez ve istek atmaz (yalnızca OSM).
 // Kesim biçimi: [lat1, lon1, lat2, lon2, kph] (rota yönünde). Uzun rotada binlerce kesim olur: arama son eşleşmenin çevresinde başlar.
-import { proxyFetch, proxyHas, isPremium } from '../net/proxy.js';
+import { proxyFetch, proxyHas, premiumAccess } from '../net/proxy.js';
 import { buildTrack, pointAtKm } from './track.js';
 
 const NEAR_M = 40; // konum kesime en çok bu kadar uzaksa o kesim sayılır
@@ -30,7 +30,7 @@ export function kphFromMapbox(m) {
 
 const r5 = (x) => Math.round(x * 1e5) / 1e5;
 const TOL_M = 10;
-const MAX_RUN = 300;
+const MAX_RUN = 64; // sınırlı geri bakış: maliyet O(n·64), uzun rotada O(n²) yok
 /** Nokta p → [a, b] doğru parçası uzaklığı (m), yerel düzlem. Noktalar [lat, lon]. */
 function offM(p, a, b) {
   const kx = 111320 * Math.cos((a[0] * Math.PI) / 180);
@@ -134,7 +134,7 @@ function lookup(src, lat, lon, heading) {
  */
 export function createLimitSpans({
   post = (body) => proxyFetch('/v1/speedlimits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, signal: AbortSignal.timeout(20000) }),
-  premium = isPremium,
+  premium = premiumAccess,
   hasHere = () => proxyHas('here'),
 } = {}) {
   let cur = null; // { route, here, mapbox, failed }

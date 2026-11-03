@@ -1042,8 +1042,8 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
     ok('(a) m/s → km/s: 22.7777786 → 82 (tek sayılı gerçek limit kabul)', SL.kphFromMs(22.7777786) === 82);
     ok('(a) m/s → km/s: 13.8888893 → 50, 41.6667 → 150', SL.kphFromMs(13.8888893) === 50 && SL.kphFromMs(41.6667) === 150);
     ok('(a) 0 / 3 km/s / 200 km/s / sayı değil → null', SL.kphFromMs(0) === null && SL.kphFromMs(3 / 3.6) === null && SL.kphFromMs(200 / 3.6) === null && SL.kphFromMs('x') === null && SL.kphFromMs(null) === null);
-    const good = SL.parsePoints({ points: [{ lat: 39.9000049, lon: 32.8 }, { lat: 41, lon: 28.97 }] });
-    ok('(a) parsePoints: geçerli 2 nokta, 5 basamağa yuvarlanır', JSON.stringify(good) === '[[39.9,32.8],[41,28.97]]');
+    const good = SL.parsePoints({ points: [{ lat: 39.9000049, lon: 32.8 }, { lat: 40.5, lon: 32 }] });
+    ok('(a) parsePoints: geçerli 2 nokta, 5 basamağa yuvarlanır', JSON.stringify(good) === '[[39.9,32.8],[40.5,32]]');
     const P = (n) => Array.from({ length: n }, (_, i) => ({ lat: 39.9, lon: 32.8 + i * 0.001 }));
     const bad = [undefined, null, {}, { points: 'x' }, { points: P(1) }, { points: P(61) }, { points: [{ lat: 91, lon: 0 }, { lat: 0, lon: 0 }] },
       { points: [{ lat: 0, lon: -181 }, { lat: 0, lon: 0 }] }, { points: [{ lat: '39.9', lon: 32 }, { lat: 0, lon: 0 }] }, { points: [{ lat: null, lon: 32 }, { lat: 0, lon: 0 }] },
@@ -1059,6 +1059,42 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
     ok('(a) köşeli yol aynı limitte bile iki kesim (kiriş yolu kesmez)', rl.length === 2 && rl[0][4] === 90 && rl[1][4] === 90);
     const two = SL.spansFromRoute({ routes: [{ sections: [{ polyline: encodeFlex(line(3)), spans: [{ offset: 0, maxSpeed: 25 }] }, { polyline: encodeFlex(line(3, 39.9, 32.802)), spans: [{ offset: 0, maxSpeed: 25 }] }] }] });
     ok('(a) birden çok bölüm (section) art arda eklenir ve birleşir', JSON.stringify(two) === JSON.stringify([[39.9, 32.8, 39.9, 32.804, 90]]));
+    // Düzeltme 1: rota uzunluğu / aralık sınırı, yanıt ve önbellek bayt sınırı, birleştirme maliyeti
+    const chain = (n, stepDeg) => ({ points: Array.from({ length: n }, (_, i) => ({ lat: 39, lon: -20 + i * stepDeg })) });
+    ok('(a) parsePoints: toplam > 2000 km → null (60 nokta × 0,4°, ≈ 2040 km)', SL.parsePoints(chain(60, 0.4)) === null && SL.parsePoints(chain(60, 0.38)) !== null);
+    ok('(a) parsePoints: komşu iki nokta arası > 300 km → null (≈ 340 km), 250 km kabul', SL.parsePoints({ points: [{ lat: 39, lon: 32 }, { lat: 39, lon: 35.94 }] }) === null && SL.parsePoints({ points: [{ lat: 39, lon: 32 }, { lat: 39, lon: 34.9 }] }) !== null);
+    ok('(a) sınır sabitleri: 2000 km, 300 km, yanıt ≤ 4 MB, önbellek kaydı ≤ 512 KB', SL.MAX_ROUTE_KM === 2000 && SL.MAX_GAP_KM === 300 && SL.MAX_REPLY_BYTES === 4e6 && SL.MAX_CACHE_ITEM === 512 * 1024);
+    {
+      const lru = SL.createLru(100, 60e3, 1000);
+      const b = (n) => Buffer.alloc(n, 120);
+      lru.set('a', b(400)); lru.set('b', b(400)); lru.set('c', b(400));
+      ok('(a) LRU bayt bütçesi: 3 × 400 B, bütçe 1000 → en eskisi atılır', lru.get('a') === null && lru.get('b') && lru.get('c') && lru.size === 2 && lru.bytes === 800);
+      lru.set('d', b(1500));
+      ok('(a) LRU: bütçeden büyük tek kayıt saklanmaz, öncekiler kalır', lru.get('d') === null && lru.size === 2);
+    }
+    {
+      const N = 20000;
+      const pts = Array.from({ length: N }, (_, i) => [39.9, 32 + i * 0.00005]);
+      let t0 = performance.now();
+      const same = SL.mergeSegments(pts, new Array(N - 1).fill(90));
+      const dt1 = performance.now() - t0;
+      const zig = Array.from({ length: N }, (_, i) => [39.9 + (i % 2) * 0.0003, 32 + i * 0.00005]); // her köşe 30 m sapar: hiçbiri birleşmez
+      t0 = performance.now();
+      const zz = SL.mergeSegments(zig, new Array(N - 1).fill(90));
+      const dt2 = performance.now() - t0;
+      ok(`(a) mergeSegments 20000 köşe: doğrusal ${dt1.toFixed(0)} ms, zikzak ${dt2.toFixed(0)} ms (sınırlı geri bakış, O(n²) yok)`, dt1 < 300 && dt2 < 300 && same.length >= 20 && same.length <= 1000 && zz.length === N - 1 && same[0][0] === 39.9 && same.at(-1)[3] === pts.at(-1)[1]);
+    }
+    // Düzeltme 6: HERE_ROUTER_BASE yalnızca https ya da 127.0.0.1/localhost'a http
+    {
+      const old = process.env.HERE_ROUTER_BASE;
+      const rb = (v) => { if (v === undefined) delete process.env.HERE_ROUTER_BASE; else process.env.HERE_ROUTER_BASE = v; return SL.routerBase(); };
+      const REAL = 'https://router.hereapi.com';
+      ok('(a) routerBase: boş → gerçek adres', rb(undefined) === REAL && rb('') === REAL);
+      ok('(a) routerBase: http://127.0.0.1:18799 ve http://localhost:9 kabul', rb('http://127.0.0.1:18799') === 'http://127.0.0.1:18799' && rb('http://localhost:9') === 'http://localhost:9');
+      ok('(a) routerBase: https://x.example kabul', rb('https://x.example') === 'https://x.example');
+      ok('(a) routerBase: dış http, ftp, bozuk, kullanıcı bilgili adres → gerçek adres', rb('http://evil.example') === REAL && rb('http://127.0.0.1.evil.example') === REAL && rb('ftp://127.0.0.1') === REAL && rb('bozuk') === REAL && rb('http://user@127.0.0.1:1') === REAL);
+      if (old === undefined) delete process.env.HERE_ROUTER_BASE; else process.env.HERE_ROUTER_BASE = old;
+    }
     ok('(a) bozuk/boş yanıt → boş liste', JSON.stringify(SL.spansFromRoute({})) === '[]' && JSON.stringify(SL.spansFromRoute({ routes: [{ sections: [{ polyline: 'B*', spans: [] }] }] })) === '[]');
   } catch (e) {
     ok('Bölüm 9 (a) çalıştı: ' + e.message, false);
@@ -1076,7 +1112,21 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
   const mock = http.createServer((req, res) => {
     const u = new URL(req.url, 'http://x');
     hereReq.push(u);
-    if ((u.searchParams.get('origin') || '').startsWith('10.')) { res.writeHead(500, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ error: 'boom', echo: u.searchParams.get('apiKey') })); }
+    const org = u.searchParams.get('origin') || '';
+    if (org.startsWith('10.')) { res.writeHead(500, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ error: 'boom', echo: u.searchParams.get('apiKey') })); }
+    if (org.startsWith('11.')) { // büyük ama sınır altı HERE yanıtı (≈ 1 MB): 25000 köşe, her parça farklı limit → sonuç gövdesi > 512 KB
+      const big = Array.from({ length: 25000 }, (_, i) => [11, +(20 + i * 0.0001).toFixed(5)]);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ routes: [{ sections: [{ polyline: encodeFlex(big), spans: big.slice(0, -1).map((_, i) => ({ offset: i, maxSpeed: i % 2 ? 22.7777786 : 13.8888893 })) }] }] }));
+    }
+    if (org.startsWith('12.')) { res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': String(5e6) }); res.write('{"routes":['); return setTimeout(() => res.destroy(), 50); } // Content-Length > 4 MB
+    if (org.startsWith('13.')) { // uzunluk başlığı yok, 5 MB akar
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      const chunk = 'x'.repeat(65536); let sent = 0;
+      const pump = () => { while (sent < 5e6) { sent += chunk.length; if (!res.write(chunk)) return res.once('drain', pump); } res.end(); };
+      res.on('error', () => {}); return pump();
+    }
+    if (org.startsWith('14.')) { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ routes: [{ sections: [{ polyline: encodeFlex(line(5, 14)), spans: [{ offset: 0 }] }] }] })); } // limitsiz: s = []
     const pts = [u.searchParams.get('origin'), ...u.searchParams.getAll('via').map((v) => v.split('!')[0]), u.searchParams.get('destination')].map((s) => String(s).split(',').map(Number));
     const n = pts.length, a = Math.floor(n / 3), b = Math.floor((2 * n) / 3);
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -1152,6 +1202,27 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
     ok('(b) HERE hatası → 502, genel ileti, anahtar yok', r.status === 502 && typeof r.json?.error === 'string' && !r.text.includes(HKEY) && !r.text.includes('boom'));
     r = await A(TOK_PREM2, body(2, 39.95));
     ok('(b) 2 nokta (via yok) → 200', r.status === 200 && hereReq.at(-1).searchParams.getAll('via').length === 0);
+    // Düzeltme 1 ve 5 (yönetici kodu: günlük haktan muaf)
+    let n0 = hereReq.length;
+    r = await A('code', { points: Array.from({ length: 60 }, (_, i) => ({ lat: 39, lon: -20 + i * 0.4 })) });
+    ok('(b) > 2000 km rota → 400, HERE çağrılmaz', r.status === 400 && hereReq.length === n0);
+    r = await A('code', { points: [{ lat: 39, lon: 26 }, { lat: 39, lon: 30 }] });
+    ok('(b) komşu noktalar arası > 300 km → 400, HERE çağrılmaz', r.status === 400 && hereReq.length === n0);
+    r = await A('code', body(3, 11));
+    ok('(b) büyük sonuç (> 512 KB) → 200 ama önbelleğe girmez', r.status === 200 && r.text.length > 512 * 1024 && r.json?.s?.length === 24999 && hereReq.length === n0 + 1);
+    r = await A('code', body(3, 11));
+    ok('(b) aynı büyük rota tekrar: önbellekte yok (X-Cache miss), HERE yeniden çağrılır', r.status === 200 && r.headers.get('x-cache') === 'miss' && hereReq.length === n0 + 2);
+    r = await A('code', body(3, 12));
+    ok('(b) HERE yanıtı Content-Length > 4 MB → 502 genel ileti', r.status === 502 && r.json?.error === 'hız limiti alınamadı' && !r.text.includes(HKEY));
+    r = await A('code', body(3, 13));
+    ok('(b) uzunluk başlıksız 5 MB HERE yanıtı okuma sınırında kesilir → 502', r.status === 502 && r.json?.error === 'hız limiti alınamadı');
+    n0 = hereReq.length;
+    r = await A('code', body(3, 13));
+    ok('(b) 502 sonrası önbellek yok: tekrar istek HERE sunucusuna gider', r.status === 502 && hereReq.length === n0 + 1);
+    r = await A('code', body(3, 14));
+    ok('(b) boş sonuç (s: []) → 200 ama önbelleğe girmez', r.status === 200 && JSON.stringify(r.json) === '{"v":1,"s":[]}' && hereReq.length === n0 + 2);
+    r = await A('code', body(3, 14));
+    ok('(b) boş sonuç tekrar: HERE yeniden sorulur (X-Cache miss)', r.status === 200 && r.headers.get('x-cache') === 'miss' && hereReq.length === n0 + 3);
 
     const B = await start(18792, { HERE_API_KEY: HKEY, HERE_MONTHLY_CAP: '1' });
     const before = hereReq.length;
@@ -1172,6 +1243,7 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
     mock.close();
   }
   ok('(b) hiçbir yanıtta ve sunucu çıktısında sahte HERE anahtarı yok', texts.length > 10 && texts.every((t) => !t.includes(HKEY)) && logs.length === 3 && logs.every((f) => !f().includes(HKEY)));
+  ok('(b) 4 MB sınırı gerçekten devrede: günlükte 3 kez "yanıt çok büyük" (Content-Length + 2 × akış sınırı), ayrıştırma hatası değil', (logs[0]?.().match(/HERE hız limiti alınamadı: yanıt çok büyük/g) || []).length === 3);
 }
 {
   // (c) istemci: limitSpans.js, mapbox/route.js maxspeed; (d) speedLimit.js kaynak sırası
@@ -1271,7 +1343,7 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
     ok('(c) maxspeedSpans: kesim sayısı uyuşmazsa birikimli mesafeyle eşlenir', JSON.stringify(MR.maxspeedSpans(c5, legs2)) === JSON.stringify([[39.9, 32.8, 39.9, 32.802, 30], [39.9, 32.802, 39.9, 32.804, 70]]));
     ok('(c) maxspeedSpans: ek açıklama yoksa boş', JSON.stringify(MR.maxspeedSpans(c5, [{ annotation: { distance: [1, 1, 1, 1] } }])) === '[]');
     const rsrc = src('js/mapbox/route.js');
-    ok("(c) route.js ana rota isteği annotations 'distance,congestion,maxspeed' ve sonuçta limitSpans", rsrc.includes("annotations: 'distance,congestion,maxspeed'") && /limitSpans: maxspeedSpans\(/.test(rsrc));
+    ok('(c) route.js maxspeed yalnızca Premium: premiumAccess() ve önbellek anahtarında bayrak', /premiumAccess\(\)/.test(rsrc) && /mrt:\$\{/.test(rsrc) && rsrc.includes("'distance,congestion,maxspeed' : 'distance,congestion'"));
 
     // (d) speedLimit.js: gerçek modüller, sahte fetch
     const { patch, getState } = await import('../js/state.js');
@@ -1328,6 +1400,9 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
     patch('plan', { route: { coords: [[32.8, 39.9], [32.95, 39.9]] } }); at(32.93); S.__test.reset(); await run();
     ok('(d) 402: tek POST, yeni rotada da tekrar yok, limit OSM\'den', nSl() === s0 + 1 && lim() === '60/osm');
     ok('(d) 402 sonrası durum notu (toast yok)', /HERE hız limiti alınamadı/.test(S.__test.statusText({ noLimit: true })));
+    patch('nav', { active: false });
+    ok('(d) navigasyon bitince "HERE hız limiti alınamadı" notu kalmaz', !/HERE hız limiti alınamadı/.test(S.__test.statusText({ noLimit: true })));
+    patch('nav', { active: true });
     // 500 / ağ hatası: aynı rotada tekrar yok, OSM'e düşer
     for (const bad of ['500', 'net']) {
       mode = { premium: true, here: true, sl: bad, osm: 50 };
@@ -1345,6 +1420,34 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
     s0 = nSl();
     await run();
     ok('(d) sunucuda HERE yok: POST yok, Mapbox kesimi kullanılır', nSl() === s0 && lim() === '90/mapbox');
+
+    // Düzeltme 2: Mapbox maxspeed yalnızca Premium; ücretsiz istek/yanıt v0.81 ile birebir; önbellek planlara göre ayrı
+    {
+      const enc6 = (pts) => { let o = '', pa = 0, pb = 0; const e = (v) => { v = v < 0 ? ~(v << 1) : v << 1; let s2 = ''; while (v >= 0x20) { s2 += String.fromCharCode((0x20 | (v & 0x1f)) + 63); v >>= 5; } return s2 + String.fromCharCode(v + 63); }; for (const [la, lo] of pts) { const A2 = Math.round(la * 1e6), B2 = Math.round(lo * 1e6); o += e(A2 - pa) + e(B2 - pb); pa = A2; pb = B2; } return o; };
+      const mbCalls = [];
+      const MB_JSON = { routes: [{ geometry: enc6([[39.9, 32.8], [39.9, 32.801], [39.9, 32.802]]), distance: 170, duration: 20, duration_typical: 20, legs: [{ steps: [], annotation: { distance: [85, 85], congestion: ['low', 'low'], maxspeed: [{ speed: 82, unit: 'km/h' }, { speed: 82, unit: 'km/h' }] } }] }] };
+      const prevFetch = globalThis.fetch;
+      def('fetch', (url, init) => { const u2 = String(url); if (u2.startsWith('https://api.mapbox.com/directions/')) { mbCalls.push(u2); return resp(200, MB_JSON); } return prevFetch(url, init); });
+      const MBK = 'pk.test-dummy-mapbox-0123456789.abcdefghij0123';
+      ls.setItem('evcp.mbKey', JSON.stringify(MBK));
+      const A0 = { lat: 39.9, lon: 32.8 }, B0 = { lat: 39.9, lon: 32.802 };
+      mode = { premium: false, here: true, sl: 'ok', osm: 40 }; await PX.refreshCaps();
+      const free = await MR.fetchRoute(A0, B0);
+      const oldQ = new URLSearchParams({ geometries: 'polyline6', overview: 'full', steps: 'true', roundabout_exits: 'true', alternatives: 'false', annotations: 'distance,congestion' });
+      oldQ.set('access_token', MBK);
+      const oldUrl = 'https://api.mapbox.com/directions/v5/mapbox/driving-traffic/32.800000,39.900000;32.802000,39.900000?' + oldQ;
+      ok('(c) ücretsiz: Mapbox isteği v0.81 ile birebir (maxspeed yok)', mbCalls.length === 1 && mbCalls[0] === oldUrl);
+      ok('(c) ücretsiz: sonuçta limitSpans alanı yok (eski yanıt biçimi)', !('limitSpans' in free) && JSON.stringify(Object.keys(free)) === '["coords","intervals","distanceKm","durationH","trafficRatio","trafficSpans","live","steps"]');
+      mode = { premium: true, here: true, sl: 'ok', osm: 40 }; await PX.refreshCaps();
+      const prem = await MR.fetchRoute(A0, B0);
+      ok('(c) Premium: aynı rota ücretsiz önbellekten verilmez, yeni istek maxspeed ister', mbCalls.length === 2 && /annotations=distance%2Ccongestion%2Cmaxspeed/.test(mbCalls[1]));
+      ok('(c) Premium: sonuçta limitSpans (82)', JSON.stringify(prem.limitSpans) === '[[39.9,32.8,39.9,32.802,82]]');
+      mode = { premium: false, here: true, sl: 'ok', osm: 40 }; await PX.refreshCaps();
+      const free2 = await MR.fetchRoute(A0, B0);
+      ok('(c) ücretsize geri dönünce Premium önbelleği verilmez (ücretsiz kayıt kendi önbelleğinden)', mbCalls.length === 2 && !('limitSpans' in free2));
+      ls.removeItem('evcp.mbKey');
+      def('fetch', prevFetch);
+    }
 
     // i18n ve sw.js
     const kx = JSON.parse(src('i18n/keys.extra.json'));
