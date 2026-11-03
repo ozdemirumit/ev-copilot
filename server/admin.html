@@ -130,7 +130,8 @@ function mapSelect(value, withDefault) {
   const sel = el('select'); const cfg = D.sum?.configured || {};
   const has = { osm: true, mapbox: !!cfg.mapboxMap, google: !!cfg.googleMap };
   const opts = (withDefault ? [[ '', 'Varsayılan' ]] : []).concat(Object.keys(MAP_NAMES).map((p) => [p, MAP_NAMES[p] + (has[p] ? '' : ' (anahtar yok)')]));
-  for (const [v, t] of opts) { const o = el('option', '', t); o.value = v; if (v && !has[v]) o.disabled = true; sel.append(o); }
+  // Kayıtlı seçim anahtarı sonradan kalkmış bir sağlayıcıysa (pasif seçenek seçili) gerçekte OpenFreeMap kullanıldığı belirtilir
+  for (const [v, t] of opts) { const o = el('option', '', t + (v && !has[v] && v === (value || '') ? ' → OpenFreeMap kullanılıyor' : '')); o.value = v; if (v && !has[v]) o.disabled = true; sel.append(o); }
   sel.value = value || ''; sel.style.maxWidth = '100%';
   return sel;
 }
@@ -156,7 +157,7 @@ function drawSum(root) {
   const msel = mapSelect(s.map?.default || 'osm', false);
   msel.onchange = () => act(() => api('/admin/map', 'POST', { default: msel.value }), 'Varsayılan harita: ' + MAP_NAMES[msel.value]);
   mrow.append(el('span', '', 'Premium için varsayılan harita:'), msel);
-  root.append(mrow, el('p', 'mut', 'Kullanıcıya özel seçim (Kullanıcılar sekmesi) varsayılanı geçer. Premium olmayan hesap her zaman OpenFreeMap kullanır. Değişiklik, uygulamanın bir sonraki açılışında geçerli olur.'));
+  root.append(mrow, el('p', 'mut', 'Kullanıcıya özel seçim (Kullanıcılar sekmesi) varsayılanı geçer. Premium olmayan hesap her zaman OpenFreeMap kullanır. Değişiklik uygulamada en geç ikinci açılışta geçerli olur.'));
   root.append(el('h2', '', 'Yapılandırma ve sunucu'));
   const on = (b) => chip(b ? 'açık' : 'kapalı', b ? 'ok' : 'warn');
   root.append(table(['Ayar', 'Durum'], [
@@ -183,7 +184,7 @@ function plan(u) {
   if (u.premiumUntil > Date.now()) return chip('Premium · ' + fmtDate(u.premiumUntil), 'ok');
   return chip(u.premiumUntil ? 'Ücretsiz (süre bitti)' : 'Ücretsiz');
 }
-async function act(fn, ok) { try { await fn(); toast(ok); await load(); } catch (e) { toast(e.message); } }
+async function act(fn, ok) { try { await fn(); toast(ok); await load(); } catch (e) { toast(e.message); load(); } } // hata: sunucudaki gerçek durum yeniden çizilir (reddedilen seçim geri döner)
 
 function drawUsers(root) {
   root.replaceChildren();

@@ -120,8 +120,9 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
     const dir = mkdtempSync(join(tmpdir(), 'map-test-')); dirs.push(dir);
     writeFileSync(join(dir, 'db.json'), JSON.stringify(seed()));
     // Gerçek server/.env anahtarları sızmasın: tanımlı (boş) değerler .env'nin üstüne yazılmaz.
-    const blank = Object.fromEntries(['MAPBOX_TOKEN', 'OCM_KEY', 'HERE_API_KEY', 'GOOGLE_PLACES_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SMTP_USER', 'SMTP_PASS', 'PUBLIC_URL', 'ADMIN_EMAILS', 'GOOGLE_MAPS_BROWSER_KEY', 'GOOGLE_MAP_ID', 'MAP_DAILY_PER_USER', 'MAP_DAILY_TOTAL', 'TRUST_PROXY'].map((k) => [k, '']));
-    const child = spawn(process.execPath, ['server/proxy.mjs'], { cwd: ROOT, env: { ...process.env, ...blank, PORT: String(port), HOST: '127.0.0.1', DATA_DIR: dir, ACCESS_CODES: CODE, MAPBOX_MAP_TOKEN: 'pk.test-dummy', ...extra }, stdio: ['ignore', 'pipe', 'pipe'] });
+    const blank = Object.fromEntries(['MAPBOX_TOKEN', 'OCM_KEY', 'HERE_API_KEY', 'GOOGLE_PLACES_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SMTP_USER', 'SMTP_PASS', 'PUBLIC_URL', 'ADMIN_EMAILS', 'GOOGLE_MAPS_BROWSER_KEY', 'GOOGLE_MAP_ID', 'MAP_DAILY_PER_USER', 'MAP_DAILY_TOTAL', 'TRUST_PROXY', 'PREMIUM_REQUIRED'].map((k) => [k, '']));
+    // Premium/premium-olmayan testleri sahibinin .env/ortamına bağlı olmasın: PREMIUM_REQUIRED açıkça '1'
+    const child = spawn(process.execPath, ['server/proxy.mjs'], { cwd: ROOT, env: { ...process.env, ...blank, PREMIUM_REQUIRED: '1', PORT: String(port), HOST: '127.0.0.1', DATA_DIR: dir, ACCESS_CODES: CODE, MAPBOX_MAP_TOKEN: 'pk.test-dummy', ...extra }, stdio: ['ignore', 'pipe', 'pipe'] });
     children.push(child);
     let out = ''; logs.push(() => out);
     child.stdout.on('data', (d) => { out += d; });
@@ -193,6 +194,7 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
     ok('/admin/summary pk.test-dummy içermez', r.status === 200 && !r.text.includes('pk.test-dummy'));
     ok('/admin/summary configured.mapboxMap true, googleMap false', r.json?.configured?.mapboxMap === true && r.json?.configured?.googleMap === false);
     ok('/admin/summary map.default', r.json?.map?.default === 'mapbox');
+    ok('test sunucusu PREMIUM_REQUIRED=1 ile çalışır (sahibinin .env/ortamından bağımsız)', r.json?.configured?.premiumRequired === true);
 
     // günlük hak: kullanıcı başı 1, toplam 2; osm yanıtları sayılmaz
     const B = await start(18788, { MAP_DAILY_PER_USER: '1', MAP_DAILY_TOTAL: '2' });
@@ -233,6 +235,9 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
   ok('admin.html Google Cloud faturalama bağlantısı', html.includes('https://console.cloud.google.com/billing'));
   ok('admin.html Google Maps Platform kullanım/kota bağlantısı', html.includes('https://console.cloud.google.com/google/maps-apis/metrics'));
   ok('fatura bağlantıları yeni sekmede ve noopener ile açılır', html.includes("'_blank'") && html.includes('noopener'));
+  ok('admin.html act() hata olunca da load() çağırır (reddedilen seçim hemen geri döner)', html.includes('catch (e) { toast(e.message); load(); }'));
+  ok('admin.html harita değişikliği notu: en geç ikinci açılışta', html.includes('en geç ikinci açılışta') && !html.includes('bir sonraki açılışında geçerli olur'));
+  ok('admin.html anahtarı kalkmış kayıtlı seçim için "→ OpenFreeMap kullanılıyor" notu', html.includes('→ OpenFreeMap kullanılıyor'));
   ok('admin.html anahtar değeri içermez', !/pk\.[A-Za-z0-9_.-]{8,}/.test(html) && !html.includes('pk.test-dummy') && !/AIza[0-9A-Za-z_-]{10,}/.test(html));
 }
 
@@ -662,6 +667,7 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
     ok('(a) Google betiği yüklenemezse createGoogleMap reddeder', rejected);
     const su = script ? new URL(script.src) : null;
     ok('betik maps.googleapis.com/maps/api/js, async, loading=async ve callback ile', su?.origin === 'https://maps.googleapis.com' && su.pathname === '/maps/api/js' && script.async === true && su.searchParams.get('loading') === 'async' && !!su.searchParams.get('callback'));
+    ok("Google kanalı v=quarterly (kararlılık)", su?.searchParams.get('v') === 'quarterly');
     ok('betikte yalnızca harita: libraries / places YOK (Places hedef dışı)', !!su && !su.searchParams.has('libraries') && !/places/i.test(script.src) && !/places/i.test(gsrc));
     ok('başarısız yüklemede betik öğesi kaldırılır', script?.removed === true);
 

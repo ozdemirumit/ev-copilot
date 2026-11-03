@@ -15,7 +15,7 @@ export function loadGoogleMaps(key) {
   if (window.google?.maps?.importLibrary) return Promise.resolve(window.google.maps);
   loading ??= new Promise((resolve, reject) => {
     const lang = (document.documentElement?.lang || 'tr').slice(0, 2);
-    const q = new URLSearchParams({ key, v: 'weekly', loading: 'async', language: lang, callback: CALLBACK });
+    const q = new URLSearchParams({ key, v: 'quarterly', loading: 'async', language: lang, callback: CALLBACK });
     const s = Object.assign(document.createElement('script'), { src: `https://maps.googleapis.com/maps/api/js?${q}`, async: true });
     const fail = () => { loading = null; s.remove(); reject(new Error('Google Haritalar kütüphanesi yüklenemedi')); }; // iletide anahtar yok
     window[CALLBACK] = () => (window.google?.maps?.importLibrary ? resolve(window.google.maps) : fail());
