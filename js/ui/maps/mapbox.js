@@ -2,7 +2,7 @@
 // hesaba Mapbox seçip herkese açık "pk." belirteci verdiğinde kullanılır (js/net/mapConfig.js). Gövde ortak vektör-harita
 // motorundadır (mapEngine.js); burada kütüphane yükleme, stil, Mapbox uydu stili ve kimlik hatası (401/403) algılama kalır.
 // Mapbox şartları: Mapbox logosu (kütüphanenin varsayılanı) ve metin atfı görünür kalır; atıf motorda kompakt denetimdir (ⓘ).
-import { createVectorMap } from './mapEngine.js';
+import { createVectorMap, buildingsLayer } from './mapEngine.js';
 
 const VERSION = 'v3.16.0'; // sabit sürüm (@latest yok); yükseltirken api.mapbox.com/mapbox-gl-js/<sürüm>/ adresini doğrula
 const CDN = `https://api.mapbox.com/mapbox-gl-js/${VERSION}/`;
@@ -42,6 +42,13 @@ function mapboxSatellite() {
   };
 }
 
+/** 3B binalar (navigasyonda 3B): Mapbox stillerinin (dark-v11, satellite-streets-v12) 'composite' kaynağındaki bina yükseklikleri.
+ *  Yalnızca extrude == 'true' olanlar yükseltilir; stil değişiminde (uydu aç/kapa) motor yeniden ekler. */
+const BUILDINGS = {
+  layer: buildingsLayer({ source: 'composite', filter: ['==', ['get', 'extrude'], 'true'], height: 'height', base: 'min_height' }),
+  hide: ['building'],
+};
+
 const isAuthError = (e) => e?.error?.status === 401 || e?.error?.status === 403;
 
 /**
@@ -70,6 +77,7 @@ export async function createMapboxMap(container, token, { onAuthFail, loadLib = 
     mapOptions: { style: DARK, projection: 'mercator' }, // küre değil: zoom/kamera davranışı OpenFreeMap ile aynı
     name: 'mapbox',
     satellite: mapboxSatellite(),
+    buildings: BUILDINGS,
     onError,
     isFatal: isAuthError,
   });

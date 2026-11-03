@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.80.0';
+self.APP_VERSION = '0.81.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.81.0', date: '2026-11-03',
+    notes: [
+      'YENİ: Navigasyonda 3B/2B düğmesi. 3B açıkken harita eğilir ve binalar yüksekliğiyle çizilir; 2B görünümde düz harita. Binalar, kullanıcıya atanan harita sağlayıcısından gelir (OpenFreeMap, Mapbox, Google).',
+    ],
+  },
   {
     v: '0.80.0', date: '2026-11-03',
     notes: [

@@ -7,9 +7,26 @@ export const ZOOM_OFFSET = 1;
 
 const EMPTY = { type: 'FeatureCollection', features: [] };
 
+// 3B binalar (navigasyonda 3B görünüm): buildings = { layer, hide } sağlayıcıya özgü tanımdır. layer: kimliksiz 'fill-extrusion'
+// katmanı (kaynak/kaynak katmanı stile göre); hide: 3B açıkken gizlenecek düz bina dolgusu katmanları. Katman rota çizgisinin altına
+// konur; stil değişiminde ('style.load') istenen durum installLayers ile yeniden uygulanır.
+export const BUILDINGS_3D = 'buildings-3d';
+
+/** Sağlayıcıya özgü 3B bina katmanı (ortak görünüm: koyu stile uygun renk, ~%80 opaklık; minzoom kütüphane ölçeğinde,
+ *  14 = uygulama zoom'u 15). source: vektör kaynağı, filter: yükseltilecek binalar, height/base: yükseklik alanlarının adları. */
+export const buildingsLayer = ({ source, filter, height, base }) => ({
+  type: 'fill-extrusion', source, 'source-layer': 'building', minzoom: 14, filter,
+  paint: {
+    'fill-extrusion-color': '#2b333d',
+    'fill-extrusion-height': ['coalesce', ['get', height], 0],
+    'fill-extrusion-base': ['coalesce', ['get', base], 0],
+    'fill-extrusion-opacity': 0.8,
+  },
+});
+
 // onError(e): kütüphanenin 'error' olayları; isFatal(e) true dönerse yükleme bitmeden gelen hata yüklemeyi hemen bitirir (ör. Mapbox 401/403).
 // Yükleme başarısızsa (zaman aşımı / ölümcül hata) map.remove() çağrılır: WebGL bağlamı ve dinleyiciler bırakılır.
-export async function createVectorMap(lib, container, { mapOptions = {}, name, satellite, onError, isFatal, timeoutMs = 25000 } = {}) {
+export async function createVectorMap(lib, container, { mapOptions = {}, name, satellite, buildings, onError, isFatal, timeoutMs = 25000 } = {}) {
   const map = new lib.Map({
     container, center: [35.0, 39.0], zoom: 6 - ZOOM_OFFSET, maxPitch: 60,
     attributionControl: false, // atıf aşağıda kompakt denetimle eklenir (OSM atfı ODbL gereği zorunlu)
@@ -41,6 +58,17 @@ export async function createVectorMap(lib, container, { mapOptions = {}, name, s
 
   let routeData = EMPTY; // stil değişiminde geri yüklenecek son veriler
   let trafficData = EMPTY;
+  let want3d = false; // istenen bina görünümü (stil değişiminde yeniden uygulanır)
+
+  // 3B bina katmanını istenen duruma getirir. Rota kaynağı yoksa stil henüz yükleniyordur: 'style.load' → installLayers uygular.
+  // Stilde bina kaynağı yoksa (beklenmedik stil) katman eklenmez.
+  function applyBuildings() {
+    if (!buildings || !map.getSource('route')) return;
+    const on = want3d && !!map.getSource(buildings.layer.source);
+    if (on && !map.getLayer(BUILDINGS_3D)) map.addLayer({ ...buildings.layer, id: BUILDINGS_3D }, 'route-line');
+    else if (!on && map.getLayer(BUILDINGS_3D)) map.removeLayer(BUILDINGS_3D);
+    for (const id of buildings.hide || []) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'none' : 'visible');
+  }
 
   // Rota çizgisi: tek kaynak + katman; remove() çizgiyi boşaltır. Trafik: rota çizgisinin üstünde yavaş (sarı), yoğun (kırmızı),
   // çok yoğun (koyu kırmızı) kesimler. Kaynak zaten varsa (aynı stil) dokunulmaz.
@@ -54,6 +82,7 @@ export async function createVectorMap(lib, container, { mapOptions = {}, name, s
       paint: { 'line-color': ['match', ['get', 'lvl'], 'moderate', '#ffb547', 'heavy', '#ff5d6c', 'severe', '#c4001d', '#ffb547'], 'line-width': 6, 'line-opacity': 0.95 },
     });
     satellite?.install?.(map);
+    if (want3d) applyBuildings(); // yeni stilde 3B binalar (kapalıysa yeni stil zaten düz)
   }
   installLayers();
   map.on('style.load', installLayers); // ilk yüklemeden sonraki stil değişimleri (ör. uydu stili) katmanları silerse geri koy
@@ -62,6 +91,8 @@ export async function createVectorMap(lib, container, { mapOptions = {}, name, s
     name,
     installLayers, // stil değişimini kendisi yöneten bağdaştırıcılar için (uygulama kodu kullanmaz)
     setSatellite(on) { satellite?.set(map, on); },
+    /** Navigasyonda 3B: binalar yüksekliğiyle (fill-extrusion) çizilir; false düz haritaya döner. */
+    setBuildings3d(on) { want3d = !!on; applyBuildings(); },
     marker(pos, content, title = '') {
       // Kütüphane, verdiği elemanın transform'unu kendisi yönetir: içeriği (kendi transform'u olan nokta/ok) bir sarmalayıcıya koy.
       const wrap = document.createElement('div');

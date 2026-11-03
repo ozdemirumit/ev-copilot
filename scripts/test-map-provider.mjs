@@ -357,6 +357,57 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
   }
 }
 
+// Sahte vektör kütüphanesi (MapLibre / Mapbox GL): Bölüm 5 ve 8 kullanır. maps[] oluşturulan haritaları tutar;
+// cfg.autoLoad=false ise 'load' kendiliğinden gelmez. cfg.base: stilin kendi kaynakları (ör. 'openmaptiles', 'composite'),
+// cfg.baseLayers: stilin kendi katmanları (ör. düz 'building'); stil değişiminde (setStyle) bunlar yeniden kurulur.
+// addLayer(l, before): before verilirse katman onun önüne (altına) eklenir; tanımlar layerDefs'te, görünürlük layout'ta tutulur.
+function fakeLib(cfg = {}) {
+  const autoLoad = cfg.autoLoad ?? true;
+  const base = cfg.base || [], baseLayers = cfg.baseLayers || [];
+  const maps = [];
+  class Map {
+    constructor(opts) {
+      this.opts = opts; this.handlers = {}; this.controls = []; this.styles = [opts.style];
+      this.removed = false; this.installs = 0;
+      this.resetStyle();
+      maps.push(this);
+      if (autoLoad) setTimeout(() => this.fire('load'), 0);
+    }
+    resetStyle() {
+      this.sources = Object.fromEntries(base.map((id) => [id, { type: 'vector', base: true }]));
+      this.layers = [...baseLayers]; this.layerDefs = Object.fromEntries(baseLayers.map((id) => [id, { id, type: 'fill' }])); this.layout = {};
+    }
+    on(ev, fn) { (this.handlers[ev] ??= []).push(fn); return this; }
+    once(ev, fn) { const w = (e) => { this.off(ev, w); fn(e); }; return this.on(ev, w); }
+    off(ev, fn) { this.handlers[ev] = (this.handlers[ev] || []).filter((f) => f !== fn); return this; }
+    fire(ev, e = {}) { if (!this.removed) for (const f of [...(this.handlers[ev] || [])]) f(e); }
+    addControl(c, pos) { this.controls.push({ c, pos }); }
+    getSource(id) { return this.sources[id]; }
+    addSource(id, s) {
+      if (this.sources[id]) throw new Error('kaynak zaten var: ' + id);
+      if (id === 'route') this.installs++;
+      this.sources[id] = { ...s, setData(d) { this.data = d; } };
+    }
+    addLayer(l, before) {
+      if (this.layers.includes(l.id)) throw new Error('katman zaten var: ' + l.id);
+      if (l.source && !this.sources[l.source]) throw new Error('kaynak yok: ' + l.source);
+      const i = before ? this.layers.indexOf(before) : -1;
+      if (i >= 0) this.layers.splice(i, 0, l.id); else this.layers.push(l.id);
+      this.layerDefs[l.id] = { ...l, before };
+    }
+    getLayer(id) { return this.layers.includes(id) ? this.layerDefs[id] : undefined; }
+    removeLayer(id) { this.layers = this.layers.filter((x) => x !== id); delete this.layerDefs[id]; }
+    setLayoutProperty(id, k, v) { (this.layout[id] ??= {})[k] = v; }
+    // Gerçek kütüphane gibi: stil değişince kaynak/katmanlar silinir, 'style.load' daha sonra (eşzamansız) gelir
+    setStyle(style, o) { this.styles.push(style); this.lastStyleOpts = o; this.resetStyle(); setTimeout(() => this.fire('style.load'), 5); }
+    remove() { this.removed = true; }
+    getCanvas() { return { style: {} }; }
+  }
+  class AttributionControl { constructor(o) { this.o = o; } }
+  class Marker {}
+  return { Map, AttributionControl, Marker, maps, accessToken: null };
+}
+
 // ---- Bölüm 5: js/ui/maps/mapbox.js (Mapbox bağdaştırıcısı) ve mapEngine.js yük/yedek mantığı ----
 // Ağ yok: window.mapboxgl sahte bir kütüphanedir (olay yayan sahte Map); betik yükleyici sahte document ile denenir.
 {
@@ -368,38 +419,6 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
   const origError = console.error, logged = []; // beklenen harita hataları çıktıyı kirletmesin; kaydedilir
   console.error = (...x) => logged.push(x);
 
-  // Sahte kütüphane: maps[] oluşturulan haritaları tutar; cfg.autoLoad=false ise 'load' kendiliğinden gelmez.
-  function fakeLib(cfg = { autoLoad: true }) {
-    const maps = [];
-    class Map {
-      constructor(opts) {
-        this.opts = opts; this.handlers = {}; this.controls = []; this.sources = {}; this.layers = []; this.styles = [opts.style];
-        this.removed = false; this.installs = 0;
-        maps.push(this);
-        if (cfg.autoLoad) setTimeout(() => this.fire('load'), 0);
-      }
-      on(ev, fn) { (this.handlers[ev] ??= []).push(fn); return this; }
-      once(ev, fn) { const w = (e) => { this.off(ev, w); fn(e); }; return this.on(ev, w); }
-      off(ev, fn) { this.handlers[ev] = (this.handlers[ev] || []).filter((f) => f !== fn); return this; }
-      fire(ev, e = {}) { if (!this.removed) for (const f of [...(this.handlers[ev] || [])]) f(e); }
-      addControl(c, pos) { this.controls.push({ c, pos }); }
-      getSource(id) { return this.sources[id]; }
-      addSource(id, s) {
-        if (this.sources[id]) throw new Error('kaynak zaten var: ' + id);
-        if (id === 'route') this.installs++;
-        this.sources[id] = { ...s, setData(d) { this.data = d; } };
-      }
-      addLayer(l, before) { this.layers.push(l.id); }
-      setLayoutProperty() {}
-      // Gerçek kütüphane gibi: stil değişince kaynak/katmanlar silinir, 'style.load' daha sonra (eşzamansız) gelir
-      setStyle(style, o) { this.styles.push(style); this.lastStyleOpts = o; this.sources = {}; this.layers = []; setTimeout(() => this.fire('style.load'), 5); }
-      remove() { this.removed = true; }
-      getCanvas() { return { style: {} }; }
-    }
-    class AttributionControl { constructor(o) { this.o = o; } }
-    class Marker {}
-    return { Map, AttributionControl, Marker, maps, accessToken: null };
-  }
   const container = () => ({ querySelector: () => null });
 
   // Sahte document: script eklenince cfg.script 'error' ise onerror, 'load' ise window.mapboxgl kurulup onload çağrılır,
@@ -416,7 +435,7 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
   try {
     const MB = await import('../js/ui/maps/mapbox.js');
     const ENG = await import('../js/ui/maps/mapEngine.js');
-    const METHODS = ['setSatellite', 'marker', 'traffic', 'line', 'fit', 'moveTo', 'onClick', 'onDragStart', 'cursor', 'resize', 'bearing', 'installLayers'];
+    const METHODS = ['setSatellite', 'setBuildings3d', 'marker', 'traffic', 'line', 'fit', 'moveTo', 'onClick', 'onDragStart', 'cursor', 'resize', 'bearing', 'installLayers'];
 
     // (a) kütüphane betiği yüklenemezse reddeder (gerçek yükleyici, sahte document)
     let rejected = await throws(() => MB.createMapboxMap(container(), 'pk.test-dummy'));
@@ -548,6 +567,71 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
   }
 }
 
+// Sahte DOM öğesi (append/remove/replaceChildren/style/title): Bölüm 7 ve 8 kullanır.
+const fakeEl = (tag) => {
+  const e = {
+    tagName: String(tag).toUpperCase(), style: {}, children: [], parentNode: null, removed: false,
+    append(...c) { for (const x of c) { if (x && typeof x === 'object') x.parentNode = e; e.children.push(x); } },
+    appendChild(x) { e.append(x); return x; },
+    remove() { e.removed = true; if (e.parentNode) e.parentNode.children = e.parentNode.children.filter((y) => y !== e); e.parentNode = null; },
+    replaceChildren(...c) { e.children = []; e.append(...c); },
+    get firstChild() { return e.children[0] ?? null; },
+    querySelector: () => null,
+  };
+  return e;
+};
+
+// Sahte google.maps (Bölüm 7 ve 8): maps[] ve polylines[] oluşturulanları tutar; cfg.autoIdle=false ise 'idle' kendiliğinden gelmez.
+function fakeGm(cfg = { autoIdle: true }) {
+  const maps = [], polylines = [], overlays = [];
+  const on = (o, ev, fn) => { ((o._h ??= {})[ev] ??= []).push(fn); return { remove: () => off(o, ev, fn) }; };
+  const off = (o, ev, fn) => { if (o._h?.[ev]) o._h[ev] = o._h[ev].filter((f) => f !== fn); };
+  const fire = (o, ev, ...a) => { for (const f of [...(o._h?.[ev] || [])]) f(...a); };
+  const event = {
+    addListenerOnce(o, ev, fn) { const w = (...a) => { off(o, ev, w); fn(...a); }; return on(o, ev, w); },
+    addListener: (o, ev, fn) => on(o, ev, fn),
+    trigger: (o, ev, ...a) => fire(o, ev, ...a),
+    clearInstanceListeners(o) { o._h = {}; o.cleared = true; },
+  };
+  class Map {
+    constructor(div, opts) {
+      this.div = div; this.opts = { ...opts }; this.calls = []; this.mapTypeId = opts.mapTypeId ?? 'roadmap'; this.zoom = opts.zoom; this.heading = 0;
+      maps.push(this);
+      if (cfg.autoIdle) setTimeout(() => fire(this, 'idle'), 0);
+    }
+    addListener(ev, fn) { return on(this, ev, fn); }
+    fire(ev, ...a) { fire(this, ev, ...a); }
+    setMapTypeId(t) { this.mapTypeId = t; this.calls.push(['setMapTypeId', t]); }
+    getMapTypeId() { return this.mapTypeId; }
+    moveCamera(o) { this.calls.push(['moveCamera', o]); if (o.zoom != null) this.zoom = o.zoom; if (o.heading != null) this.heading = o.heading; }
+    panTo(c) { this.calls.push(['panTo', c]); }
+    fitBounds(b, pad) { this.calls.push(['fitBounds', b, pad]); this.zoom = 18; }
+    getZoom() { return this.zoom; }
+    setZoom(z) { this.zoom = z; this.calls.push(['setZoom', z]); }
+    setOptions(o) { Object.assign(this.opts, o); }
+    getHeading() { return this.heading; }
+    getDiv() { return this.div; }
+  }
+  class OverlayView {
+    setMap(m) {
+      if (m) { this.map = m; overlays.push(this); this.onAdd?.(); this.draw?.(); } else if (this.map) { this.onRemove?.(); this.map = null; }
+    }
+    getMap() { return this.map; }
+    getPanes() { return { overlayMouseTarget: this.map ? (this.map._pane ??= fakeEl('div')) : null, floatPane: this.map ? (this.map._float ??= fakeEl('div')) : null }; }
+    getProjection() { return { fromLatLngToDivPixel: (ll) => ({ x: ll.lng() * 10, y: ll.lat() * 10 }) }; }
+  }
+  class Polyline {
+    constructor(o) { this.o = o; this.map = o.map ?? null; polylines.push(this); }
+    setMap(m) { this.map = m; }
+    getMap() { return this.map; }
+  }
+  class LatLng { constructor(lat, lng) { this._a = lat; this._o = lng; } lat() { return this._a; } lng() { return this._o; } }
+  class LatLngBounds { constructor() { this.pts = []; } extend(p) { this.pts.push(p); return this; } }
+  const ns = { Map, OverlayView, Polyline, LatLng, LatLngBounds, event, maps, polylines, overlays, imports: [] };
+  ns.importLibrary = async (name) => { ns.imports.push(name); return name === 'maps' ? { Map, OverlayView, Polyline } : {}; };
+  return ns;
+}
+
 // ---- Bölüm 7: js/ui/maps/google.js (Google bağdaştırıcısı) ----
 // Ağ yok: window.google.maps sahte bir ad alanıdır (olay yayan sahte Map, Polyline, OverlayView); betik yükleyici sahte document ile denenir.
 // Sahte anahtar KEY yalnızca bağdaştırıcıya verilir; ok() adlarında geçmez (günlük/depolama taraması için).
@@ -568,71 +652,6 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
   // Depolama casusu: yazılan her değer kaydedilir
   const stored = [];
   const fakeStorage = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => { stored.push([k, String(v)]); m.set(k, String(v)); }, removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
-
-  // Sahte DOM öğesi (append/remove/replaceChildren/style/title)
-  const fakeEl = (tag) => {
-    const e = {
-      tagName: String(tag).toUpperCase(), style: {}, children: [], parentNode: null, removed: false,
-      append(...c) { for (const x of c) { if (x && typeof x === 'object') x.parentNode = e; e.children.push(x); } },
-      appendChild(x) { e.append(x); return x; },
-      remove() { e.removed = true; if (e.parentNode) e.parentNode.children = e.parentNode.children.filter((y) => y !== e); e.parentNode = null; },
-      replaceChildren(...c) { e.children = []; e.append(...c); },
-      get firstChild() { return e.children[0] ?? null; },
-      querySelector: () => null,
-    };
-    return e;
-  };
-
-  // Sahte google.maps: maps[] ve polylines[] oluşturulanları tutar; cfg.autoIdle=false ise 'idle' kendiliğinden gelmez.
-  function fakeGm(cfg = { autoIdle: true }) {
-    const maps = [], polylines = [], overlays = [];
-    const on = (o, ev, fn) => { ((o._h ??= {})[ev] ??= []).push(fn); return { remove: () => off(o, ev, fn) }; };
-    const off = (o, ev, fn) => { if (o._h?.[ev]) o._h[ev] = o._h[ev].filter((f) => f !== fn); };
-    const fire = (o, ev, ...a) => { for (const f of [...(o._h?.[ev] || [])]) f(...a); };
-    const event = {
-      addListenerOnce(o, ev, fn) { const w = (...a) => { off(o, ev, w); fn(...a); }; return on(o, ev, w); },
-      addListener: (o, ev, fn) => on(o, ev, fn),
-      trigger: (o, ev, ...a) => fire(o, ev, ...a),
-      clearInstanceListeners(o) { o._h = {}; o.cleared = true; },
-    };
-    class Map {
-      constructor(div, opts) {
-        this.div = div; this.opts = { ...opts }; this.calls = []; this.mapTypeId = opts.mapTypeId ?? 'roadmap'; this.zoom = opts.zoom; this.heading = 0;
-        maps.push(this);
-        if (cfg.autoIdle) setTimeout(() => fire(this, 'idle'), 0);
-      }
-      addListener(ev, fn) { return on(this, ev, fn); }
-      fire(ev, ...a) { fire(this, ev, ...a); }
-      setMapTypeId(t) { this.mapTypeId = t; this.calls.push(['setMapTypeId', t]); }
-      getMapTypeId() { return this.mapTypeId; }
-      moveCamera(o) { this.calls.push(['moveCamera', o]); if (o.zoom != null) this.zoom = o.zoom; if (o.heading != null) this.heading = o.heading; }
-      panTo(c) { this.calls.push(['panTo', c]); }
-      fitBounds(b, pad) { this.calls.push(['fitBounds', b, pad]); this.zoom = 18; }
-      getZoom() { return this.zoom; }
-      setZoom(z) { this.zoom = z; this.calls.push(['setZoom', z]); }
-      setOptions(o) { Object.assign(this.opts, o); }
-      getHeading() { return this.heading; }
-      getDiv() { return this.div; }
-    }
-    class OverlayView {
-      setMap(m) {
-        if (m) { this.map = m; overlays.push(this); this.onAdd?.(); this.draw?.(); } else if (this.map) { this.onRemove?.(); this.map = null; }
-      }
-      getMap() { return this.map; }
-      getPanes() { return { overlayMouseTarget: this.map ? (this.map._pane ??= fakeEl('div')) : null, floatPane: this.map ? (this.map._float ??= fakeEl('div')) : null }; }
-      getProjection() { return { fromLatLngToDivPixel: (ll) => ({ x: ll.lng() * 10, y: ll.lat() * 10 }) }; }
-    }
-    class Polyline {
-      constructor(o) { this.o = o; this.map = o.map ?? null; polylines.push(this); }
-      setMap(m) { this.map = m; }
-      getMap() { return this.map; }
-    }
-    class LatLng { constructor(lat, lng) { this._a = lat; this._o = lng; } lat() { return this._a; } lng() { return this._o; } }
-    class LatLngBounds { constructor() { this.pts = []; } extend(p) { this.pts.push(p); return this; } }
-    const ns = { Map, OverlayView, Polyline, LatLng, LatLngBounds, event, maps, polylines, overlays, imports: [] };
-    ns.importLibrary = async (name) => { ns.imports.push(name); return name === 'maps' ? { Map, OverlayView, Polyline } : {}; };
-    return ns;
-  }
 
   // Sahte document: script eklenince cfg.script 'error' ise onerror, 'load' ise window.google kurulup betiğin callback'i çağrılır,
   // 'hang' ise hiçbir şey olmaz (asılı kalan betik; öğe docCfg.hung'da saklanır)
@@ -848,6 +867,128 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
     ok('Bölüm 7 çalıştı: ' + e.message, false);
   } finally {
     Object.assign(console, orig);
+    for (const [k, d] of Object.entries(saved)) { if (d) Object.defineProperty(globalThis, k, d); else delete globalThis[k]; }
+  }
+}
+
+// ---- Bölüm 8: Navigasyonda 3B/2B: setBuildings3d (üç bağdaştırıcı) ve navigasyon kamerası kararı ----
+// Ağ yok: Bölüm 5'in sahte vektör kütüphanesi (stil kaynakları + düz 'building' katmanıyla) ve Bölüm 7'nin sahte google.maps'i.
+{
+  const { readFileSync } = await import('node:fs');
+  const src = (p) => readFileSync(fileURLToPath(new URL('../' + p, import.meta.url)), 'utf8');
+  const keys = ['window', 'document'];
+  const saved = Object.fromEntries(keys.map((k) => [k, Object.getOwnPropertyDescriptor(globalThis, k)]));
+  const def = (k, v) => Object.defineProperty(globalThis, k, { value: v, configurable: true, writable: true });
+  const tick = (ms = 10) => new Promise((r) => setTimeout(r, ms));
+  const container = () => ({ querySelector: () => null });
+  const ext = (m) => m.layers.filter((id) => m.layerDefs[id]?.type === 'fill-extrusion');
+  const js = (x) => JSON.stringify(x);
+  def('window', {});
+  def('document', { documentElement: { lang: 'tr' }, createElement: (tag) => fakeEl(tag), head: { append() {} } });
+
+  try {
+    const ML = await import('../js/ui/maps/maplibre.js');
+    const MB = await import('../js/ui/maps/mapbox.js');
+    const G = await import('../js/ui/maps/google.js');
+
+    // (a) OpenFreeMap: openmaptiles/building üzerinde fill-extrusion, rota çizgisinin altında; kapatınca kalkar; tekrar açınca çoğalmaz
+    let lib = fakeLib({ base: ['openmaptiles'], baseLayers: ['building'] });
+    window.maplibregl = lib;
+    const osm = await ML.createMapLibreMap(container());
+    let m = lib.maps.at(-1);
+    ok('(a) OpenFreeMap: başlangıçta 3B bina katmanı yok (navigasyon dışı harita düz)', ext(m).length === 0);
+    osm.setBuildings3d(true);
+    let ids = ext(m), d = m.layerDefs[ids[0]];
+    const osmId = ids[0];
+    ok('(a) setBuildings3d(true) → tek fill-extrusion katmanı', ids.length === 1);
+    ok("(a) katman 'route-line'ın önüne (altına) eklenir: rota ve trafik görünür kalır", d?.before === 'route-line' && m.layers.indexOf(ids[0]) < m.layers.indexOf('route-line') && m.layers.indexOf(ids[0]) < m.layers.indexOf('traffic-line'));
+    ok("(a) kaynak 'openmaptiles', kaynak katmanı 'building'", d?.source === 'openmaptiles' && d['source-layer'] === 'building');
+    ok('(a) yükseklik render_height, taban render_min_height', js(d?.paint?.['fill-extrusion-height']).includes('render_height') && js(d?.paint?.['fill-extrusion-base']).includes('render_min_height') && !js(d?.paint?.['fill-extrusion-height']).includes('render_min_height'));
+    ok('(a) süzgeç hide_3d == true olanları dışarıda bırakır', js(d?.filter).includes('hide_3d') && /"!=",\["get","hide_3d"\],true/.test(js(d?.filter)));
+    ok('(a) koyu renk, opaklık ≈ 0.8, minzoom 13-14', /^#[0-9a-f]{6}$/i.test(d?.paint?.['fill-extrusion-color'] || '') && Math.abs(d.paint['fill-extrusion-opacity'] - 0.8) < 0.11 && d.minzoom >= 13 && d.minzoom <= 14);
+    ok("(a) 3B açıkken düz 'building' dolgusu gizlenir", m.layout.building?.visibility === 'none');
+    osm.setBuildings3d(true);
+    ok('(a) tekrar setBuildings3d(true) katmanı çoğaltmaz', ext(m).length === 1);
+    osm.setBuildings3d(false);
+    ok('(a) setBuildings3d(false) katmanı kaldırır, düz dolgu geri gelir', ext(m).length === 0 && m.layout.building?.visibility === 'visible');
+    let threw = false; try { osm.setBuildings3d(false); } catch { threw = true; }
+    ok('(a) kapalıyken tekrar false çökmez', !threw && ext(m).length === 0);
+    osm.setSatellite(true); osm.setBuildings3d(true);
+    ok('(a) Esri uydu açıkken de bina katmanı rota çizgisinin altında', ext(m).length === 1 && m.layers.indexOf(ext(m)[0]) < m.layers.indexOf('route-line'));
+    osm.setBuildings3d(false); osm.setSatellite(false);
+    // Stilde kaynak yoksa (beklenmedik stil) katman eklenmez, çökmez
+    lib = fakeLib(); window.maplibregl = lib;
+    const bare = await ML.createMapLibreMap(container());
+    threw = false; try { bare.setBuildings3d(true); } catch { threw = true; }
+    ok('(a) stilde openmaptiles kaynağı yoksa setBuildings3d(true) çökmez, katman eklenmez', !threw && ext(lib.maps.at(-1)).length === 0);
+    delete window.maplibregl;
+
+    // (b) Mapbox: composite/building (extrude == 'true'), uydu stil değişiminde (style.load) korunur; kapatılınca geri eklenmez
+    lib = fakeLib({ base: ['composite'], baseLayers: ['building'] });
+    const mb = await MB.createMapboxMap(container(), 'pk.test-dummy', { loadLib: async () => lib });
+    m = lib.maps.at(-1);
+    mb.setBuildings3d(true);
+    ids = ext(m); d = m.layerDefs[ids[0]];
+    ok("(b) Mapbox: tek fill-extrusion, kaynak 'composite', kaynak katmanı 'building'", ids.length === 1 && d.source === 'composite' && d['source-layer'] === 'building');
+    ok("(b) süzgeç extrude == 'true', yükseklik height, taban min_height", /"==",\["get","extrude"\],"true"/.test(js(d.filter)) && js(d.paint['fill-extrusion-height']).includes('"height"') && js(d.paint['fill-extrusion-base']).includes('"min_height"'));
+    ok("(b) katman 'route-line'ın altında", d.before === 'route-line' && m.layers.indexOf(ids[0]) < m.layers.indexOf('route-line'));
+    ok('(b) OpenFreeMap ile aynı katman kimliği (motor ortak)', !!osmId && ids[0] === osmId);
+    mb.setSatellite(true);
+    ok('(b) uydu stili yüklenirken katman geçici olarak yok (stil silindi)', ext(m).length === 0);
+    threw = false; try { mb.setBuildings3d(true); } catch { threw = true; }
+    ok('(b) stil yüklenirken setBuildings3d(true) çökmez', !threw);
+    await tick(30);
+    ok('(b) style.load sonrası (uydu) 3B binalar yeniden eklenir, tek katman, rota altında', m.styles.at(-1) === 'mapbox://styles/mapbox/satellite-streets-v12' && ext(m).length === 1 && m.layers.indexOf(ext(m)[0]) < m.layers.indexOf('route-line'));
+    ok("(b) yeni stilde düz 'building' yine gizlenir", m.layout.building?.visibility === 'none');
+    mb.setSatellite(false); await tick(30);
+    ok('(b) uydu kapanınca (dark-v11) 3B binalar yine yerinde', m.styles.at(-1) === 'mapbox://styles/mapbox/dark-v11' && ext(m).length === 1);
+    mb.setBuildings3d(false);
+    ok('(b) setBuildings3d(false) → katman kalkar', ext(m).length === 0);
+    mb.setSatellite(true); await tick(30);
+    ok('(b) kapatıldıktan sonra stil değişiminde geri eklenmez', ext(m).length === 0 && m.installs >= 3);
+    mb.setBuildings3d(true); mb.setSatellite(false); mb.setBuildings3d(false); await tick(30);
+    ok('(b) stil yüklenirken kapatılırsa style.load sonrası katman yok', ext(m).length === 0 && m.layout.building?.visibility !== 'none');
+
+    // (c) Google: yöntem var ve hiçbir şey yapmaz (eğim vektör haritada; 3B binaları Google kendisi çizer)
+    const gm = fakeGm();
+    const g = await G.createGoogleMap(fakeEl('div'), 'gk-dummy-t8', 'DEMO_MAP_ID', { loadLib: async () => gm });
+    const gmap = gm.maps.at(-1);
+    gmap.calls.length = 0;
+    const optsBefore = js(gmap.opts);
+    threw = false; try { g.setBuildings3d(true); g.setBuildings3d(false); g.setBuildings3d(true); } catch { threw = true; }
+    ok('(c) Google setBuildings3d var, çökmez ve haritaya dokunmaz (no-op)', typeof g.setBuildings3d === 'function' && !threw && gmap.calls.length === 0 && js(gmap.opts) === optsBefore);
+
+    // (d) Üç bağdaştırıcının yöntem kümesi birebir aynı ve setBuildings3d içerir
+    const methodsOf = (o) => Object.keys(o).filter((k) => typeof o[k] === 'function').sort().join(',');
+    ok('(d) yöntem kümesi OpenFreeMap = Mapbox = Google ve setBuildings3d içerir', methodsOf(osm) === methodsOf(mb) && methodsOf(mb) === methodsOf(g) && methodsOf(g).split(',').includes('setBuildings3d'));
+
+    // (e) Navigasyon kamerası kararı (saf işlev): eğim yalnızca navigasyon + 3B; yön kararı 3B'den bağımsız
+    const { navCamera } = await import('../js/ui/navCamera.js');
+    let c = navCamera(true, false, true);
+    ok('(e) 3B açık + kuzey-yukarı → eğim 40, yön 0, 3B binalar', c.tilt === 40 && c.resetHeading === true && c.buildings === true);
+    c = navCamera(true, true, false);
+    ok('(e) 3B kapalı + yön-yukarı → eğim 0, yön korunur (harita döner), düz binalar', c.tilt === 0 && c.resetHeading === false && c.buildings === false);
+    c = navCamera(true, true, true);
+    ok('(e) 3B açık + yön-yukarı → eğim 40, yön korunur, 3B binalar', c.tilt === 40 && c.resetHeading === false && c.buildings === true);
+    c = navCamera(false, true, true);
+    ok('(e) navigasyon kapalı → eğim 0, yön 0, düz binalar (3B seçimi ne olursa olsun)', c.tilt === 0 && c.resetHeading === true && c.buildings === false);
+    c = navCamera(true, false, false);
+    ok('(e) 3B kapalı + kuzey-yukarı → eğim 0, yön 0, düz binalar', c.tilt === 0 && c.resetHeading === true && c.buildings === false);
+
+    // Bağlantılar: mapView, navigator, kabuk düğmesi, depolama (cihazda; hesap eşitlemesine girmez), sw.js
+    const mv = src('js/ui/mapView.js'), nv = src('js/nav/navigator.js'), sh = src('js/ui/shell.js'), html = src('index.html'), sync = src('js/account/sync.js'), sw = src('sw.js');
+    ok('mapView: navCamera kararı kullanılır, setBuildings3d çağrılır, harita hazır değilse whenMap sırası', /navCamera\(/.test(mv) && /adapter\.setBuildings3d\(/.test(mv) && /mapApi\.navView = [\s\S]{0,400}whenMap\(/.test(mv));
+    ok("mapView: seçim cihazda load('nav3d', true) / save('nav3d', …)", /load\('nav3d', true\)/.test(mv) && /save\('nav3d',/.test(mv));
+    ok("nav3d hesap eşitleme anahtarlarında yok", !/'nav3d'/.test(sync));
+    ok('navigator: başlatma ve yön-yukarı değişimi 3B seçimini geçirir', /mapApi\.navView\(true, up, mapApi\.is3d\(\)\)/.test(nv) && /mapApi\.navView\(true, hu\.checked, mapApi\.is3d\(\)\)/.test(nv));
+    const fabs = html.slice(html.indexOf('<div class="fabs" id="fabs">'), html.indexOf('</div>', html.indexOf('<div class="fabs" id="fabs">')));
+    const b3 = /<button[^>]*id="fab-3d"[^>]*>/.exec(fabs)?.[0] || '';
+    ok('index.html: #fab-3d .fabs içinde, başlangıçta gizli, aria-pressed ve Türkçe aria-label/title', /class="hidden"/.test(b3) && /aria-pressed="(true|false)"/.test(b3) && /aria-label="3B\/2B görünüm"/.test(b3) && /title="3B\/2B görünüm"/.test(b3));
+    ok('shell: #fab-3d yalnızca navigasyonda görünür, 3B/2B yazar, mapApi.set3d ile değiştirir', /\$\('fab-3d'\)/.test(sh) && /'3B' : '2B'/.test(sh) && /mapApi\.set3d\(/.test(sh));
+    ok("sw.js SHELL './js/ui/navCamera.js' içerir", sw.includes("'./js/ui/navCamera.js'"));
+  } catch (e) {
+    ok('Bölüm 8 çalıştı: ' + e.message, false);
+  } finally {
     for (const [k, d] of Object.entries(saved)) { if (d) Object.defineProperty(globalThis, k, d); else delete globalThis[k]; }
   }
 }

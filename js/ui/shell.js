@@ -23,6 +23,19 @@ export function initShell() {
   sat.addEventListener('click', () => { mapApi.setSatellite(!mapApi.isSatellite()); paintSat(); });
   paintSat();
 
+  // 3B/2B görünüm: yalnızca navigasyonda görünür; şu anki kipi yazar (3B / 2B), dokununca değiştirir (seçim cihazda saklanır)
+  const d3 = $('fab-3d');
+  const paint3d = () => {
+    const on = mapApi.is3d();
+    d3.classList.toggle('hidden', !getState('nav').active);
+    d3.classList.toggle('on', on);
+    d3.setAttribute('aria-pressed', String(on));
+    d3.textContent = on ? '3B' : '2B';
+  };
+  d3.addEventListener('click', () => { mapApi.set3d(!mapApi.is3d()); paint3d(); });
+  subscribe('nav', paint3d);
+  paint3d();
+
   $('fab-route').addEventListener('click', () => (mapApi.hasRoute() ? mapApi.overview() : toast('Önce bir rota planla')));
   // Haritayı bana ortala: konum varsa hemen, yoksa GPS'i açıp ilk konumda ortalar
   let wantCenter = false;

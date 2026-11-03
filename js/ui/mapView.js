@@ -8,10 +8,11 @@ import { createMapboxMap } from './maps/mapbox.js';
 import { createGoogleMap } from './maps/google.js';
 import { resolveProvider, forceOsm } from '../net/mapConfig.js';
 import { showTab } from './tabs.js';
+import { navCamera } from './navCamera.js';
 
 /** Harita çizim API'si; initMap() çağrılınca dolar (routing/controller.js, nav/* kullanır). Harita henüz yüklenmediyse çizimler sıraya alınır. */
 export const mapApi = {
-  drawRoute() {}, drawStations() {}, drawNearby() {}, setPoint() {}, follow() {}, navView() {},
+  drawRoute() {}, drawStations() {}, drawNearby() {}, setPoint() {}, follow() {}, navView() {}, is3d: () => true, set3d() {},
   setSatellite() {}, isSatellite: () => false, hasRoute: () => false, cancelPick() {}, pickBar() {}, pickPlace() {}, // initMap doldurur (pickBar'ı ui/shell.js)
   snap: () => null, // navigator.js: konumu rotaya yapıştırır
   drawPlaces() {}, // ui/places.js kayıtlı yerleri çizer
@@ -268,15 +269,27 @@ export function initMap() {
     lastFollow = { lat: center.lat, lon: center.lon };
     adapter.moveTo({ center, zoom, heading: turn }, true);
   };
-  /** Navigasyon görünümü: açıkken eğik (3D); up=true ise yön-yukarı, değilse kuzey-yukarı. Kapanınca düz kuzey-yukarı harita. */
-  mapApi.navView = (on, up = true) => {
+  /** Navigasyonda 3B/2B seçimi: yalnızca bu cihazda saklanır (hesap eşitlemesine girmez), varsayılan 3B. */
+  let threeD = load('nav3d', true);
+  mapApi.is3d = () => threeD;
+  mapApi.set3d = (on) => {
+    threeD = !!on;
+    save('nav3d', threeD);
+    if (navOn) mapApi.navView(true, headingUp, threeD);
+  };
+  /**
+   * Navigasyon görünümü: up=true ise yön-yukarı, değilse kuzey-yukarı; threeD (varsayılan kayıtlı seçim) ise eğik kamera ve
+   * yüksekliğiyle çizilen binalar, değilse düz. Kapanınca düz kuzey-yukarı harita. Harita hazır değilse sıraya alınır.
+   */
+  mapApi.navView = (on, up = true, d3 = threeD) => {
     navOn = on;
     headingUp = up;
-    if (adapter) {
-      const o = { tilt: on && up ? 40 : 0 };
-      if (!on || !up) { o.heading = 0; lastHeading = 0; }
-      adapter.moveTo(o);
-    }
+    const cam = navCamera(on, up, d3);
+    if (cam.resetHeading) lastHeading = 0;
+    whenMap(() => {
+      adapter.moveTo(cam.resetHeading ? { tilt: cam.tilt, heading: 0 } : { tilt: cam.tilt });
+      adapter.setBuildings3d(cam.buildings);
+    });
     updateMe();
   };
   /** Kullanıcı haritayı kaydırdı mı (takip duraklatıldı)? */

@@ -247,4 +247,6 @@ export default {
   "Hiçbiri seçili değilse tüm markalar kullanılır. Seçtiğin markalar önceliklidir; şarj yetmezse plan gerektiğinde başka markaları da kullanır.": "If none is selected, all brands are used. Your selected brands come first; if charging is not enough, the plan also uses other brands when needed.",
   "tercih dışı": "not preferred",
   "Seçili harita açılamadı, OpenFreeMap kullanılıyor": "Selected map could not be opened, using OpenFreeMap",
+  "3B/2B görünüm": "3D/2D view",
+  "Harita gidiş yönüne dönsün (yön yukarı)": "Rotate the map to the travel direction (heading up)",
 };

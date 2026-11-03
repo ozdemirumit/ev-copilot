@@ -247,4 +247,6 @@ export default {
   "Hiçbiri seçili değilse tüm markalar kullanılır. Seçtiğin markalar önceliklidir; şarj yetmezse plan gerektiğinde başka markaları da kullanır.": "Se nessuna è selezionata, si usano tutti i marchi. Quelli scelti hanno la priorità; se la ricarica non basta, il piano usa anche altri marchi quando serve.",
   "tercih dışı": "non preferito",
   "Seçili harita açılamadı, OpenFreeMap kullanılıyor": "Impossibile aprire la mappa selezionata, viene usato OpenFreeMap",
+  "3B/2B görünüm": "Vista 3D/2D",
+  "Harita gidiş yönüne dönsün (yön yukarı)": "Ruota la mappa nella direzione di marcia (direzione verso l'alto)",
 };

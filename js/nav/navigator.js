@@ -262,7 +262,7 @@ export async function startNav() {
   document.querySelector('.bottomnav [data-tab="map"]')?.click();
   zoomNow = 16; zoomAt = Date.now(); speedAvg = e.speed ?? 0;
   const up = getState('nav').headingUp;
-  mapApi.navView(true, up);
+  mapApi.navView(true, up, mapApi.is3d());
   if (e.lat != null) mapApi.follow(e.lat, e.lon, 16, true, up ? (track ? headingAt(track, trackKm ?? 0) : (e.speed ?? 0) > 5 ? e.heading : null) : null);
   speak('Navigasyon başladı.', { key: 'navstart', cooldownMs: 0, interrupt: true });
   tick();
@@ -322,13 +322,13 @@ export function initNavigator() {
   const sizeMap = () => document.body.classList.toggle('navmode', getState('nav').active);
   subscribe('nav', () => { paintBtn(); sizeMap(); tick(); });
 
-  // Harita yönü: gidiş yönü yukarı (3D) ya da kuzey yukarı
+  // Harita yönü: gidiş yönü yukarı ya da kuzey yukarı (3B/2B seçimi ayrı: harita üstündeki #fab-3d düğmesi)
   const hu = $('nav-headingup');
   hu.checked = nav.headingUp;
   hu.addEventListener('change', () => {
     patch('nav', { headingUp: hu.checked });
     save('headingUp', hu.checked);
-    if (getState('nav').active) mapApi.navView(true, hu.checked);
+    if (getState('nav').active) mapApi.navView(true, hu.checked, mapApi.is3d()); // 3B/2B seçimi korunur
   });
 
   // Harita üstü düğmeler: sesli aç/kapat, tüm rota, aracı ortala

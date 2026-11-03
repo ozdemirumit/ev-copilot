@@ -1,6 +1,6 @@
 // Harita bağdaştırıcısı: MapLibre GL JS (yerel vendor/maplibre kopyası, BSD-3) + OpenFreeMap vektör karoları (OpenStreetMap verisi,
 // anahtarsız). Gövde ortak vektör-harita motorundadır (mapEngine.js); burada kütüphane yükleme, stil ve Esri uydu stratejisi kalır.
-import { createVectorMap } from './mapEngine.js';
+import { createVectorMap, buildingsLayer } from './mapEngine.js';
 
 const STYLE = 'https://tiles.openfreemap.org/styles/dark';
 const VENDOR = new URL('../../../vendor/maplibre/', import.meta.url).href;
@@ -48,7 +48,14 @@ function esriSatellite() {
   };
 }
 
+/** 3B binalar (navigasyonda 3B): OpenFreeMap karolarındaki (openmaptiles) bina yükseklikleri. Koyu stil binaları zoom 12'den düz
+ *  ('building' dolgusu) çizer; 3B açıkken o gizlenir. hide_3d işaretli parçalar yükseltilmez. */
+const BUILDINGS = {
+  layer: buildingsLayer({ source: 'openmaptiles', filter: ['!=', ['get', 'hide_3d'], true], height: 'render_height', base: 'render_min_height' }),
+  hide: ['building'],
+};
+
 export async function createMapLibreMap(container) {
   const ml = await loadMapLibre();
-  return createVectorMap(ml, container, { mapOptions: { style: STYLE }, name: 'osm', satellite: esriSatellite() });
+  return createVectorMap(ml, container, { mapOptions: { style: STYLE }, name: 'osm', satellite: esriSatellite(), buildings: BUILDINGS });
 }

@@ -118,6 +118,8 @@ export async function createGoogleMap(container, key, mapId = 'DEMO_MAP_ID', { o
     // Rota/trafik çizgileri Google'da harita türü değişince kaybolmaz: yeniden kurulacak katman yok (motorla aynı yöntem kümesi için)
     installLayers() {},
     setSatellite(on) { map.setMapTypeId(on ? 'hybrid' : 'roadmap'); }, // Google'ın kendi uydu görüntüsü (Esri karıştırılmaz)
+    // 3B: eğim vektör haritada moveTo({ tilt }) ile gelir; 3B binaları Google (bulunduğu yerlerde) kendisi çizer (motorla aynı yöntem kümesi için)
+    setBuildings3d() {},
     marker(pos, content, title = '') {
       const m = new HtmlMarker(pos, content, title);
       return {

@@ -247,4 +247,6 @@ export default {
   "Hiçbiri seçili değilse tüm markalar kullanılır. Seçtiğin markalar önceliklidir; şarj yetmezse plan gerektiğinde başka markaları da kullanır.": "Αν δεν επιλεγεί καμία, χρησιμοποιούνται όλες οι μάρκες. Οι επιλεγμένες έχουν προτεραιότητα· αν η φόρτιση δεν αρκεί, το πλάνο χρησιμοποιεί και άλλες μάρκες όταν χρειάζεται.",
   "tercih dışı": "εκτός προτίμησης",
   "Seçili harita açılamadı, OpenFreeMap kullanılıyor": "Ο επιλεγμένος χάρτης δεν άνοιξε, χρησιμοποιείται το OpenFreeMap",
+  "3B/2B görünüm": "Προβολή 3D/2D",
+  "Harita gidiş yönüne dönsün (yön yukarı)": "Περιστροφή χάρτη προς την κατεύθυνση κίνησης (πορεία προς τα πάνω)",
 };

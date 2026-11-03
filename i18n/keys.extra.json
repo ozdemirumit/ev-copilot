@@ -246,5 +246,7 @@
  "Şarj markası",
  "Hiçbiri seçili değilse tüm markalar kullanılır. Seçtiğin markalar önceliklidir; şarj yetmezse plan gerektiğinde başka markaları da kullanır.",
  "tercih dışı",
- "Seçili harita açılamadı, OpenFreeMap kullanılıyor"
+ "Seçili harita açılamadı, OpenFreeMap kullanılıyor",
+ "3B/2B görünüm",
+ "Harita gidiş yönüne dönsün (yön yukarı)"
 ]
