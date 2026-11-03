@@ -402,9 +402,9 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
         json(res, 200, { users: Object.values(data.users).map((u) => ({ id: u.id, email: u.email, name: u.name, admin: u.admin, disabled: u.disabled, createdAt: u.createdAt, lastLogin: u.lastLogin, premiumUntil: u.premiumUntil || null, mapProvider: u.mapProvider || null, bytes: usedBytes(u.id), trips: Object.keys(data.history?.[u.id]?.trips || {}).length, charges: Object.keys(data.history?.[u.id]?.charges || {}).length, google: costs?.summary(u.id) || null, devices: devicesOf(u.id).length, firstDevice: devicesOf(u.id).reduce((m, d) => Math.min(m, d.firstSeen), Infinity) })) });
         return true;
       }
-      if (p === '/admin/costs' && req.method === 'GET') { // kullanıcı başına ücretli çağrılar (Google): bugün / bu ay / toplam, çağrı ve tahmini USD
-        const rows = (costs?.keys() || []).map((k) => { const u = data.users[k]; return { id: k, email: u?.email || (k === 'code' ? '(erişim kodu)' : k === '_silinen' ? '(silinen hesaplar)' : k), ...costs.summary(k) }; });
-        json(res, 200, { unitUsd: costs?.unit ?? null, rows });
+      if (p === '/admin/costs' && req.method === 'GET') { // kullanıcı başına: Google (calls/usd, eski biçim) + tüm sağlayıcı istekleri (usage: tür → bugün / bu ay / toplam)
+        const rows = (costs?.keys() || []).map((k) => { const u = data.users[k]; return { id: k, email: u?.email || (k === 'code' ? 'yönetici kodu' : k === '_silinen' ? '(silinen hesaplar)' : k), admin: k === 'code' || !!u?.admin, ...costs.summary(k), usage: costs.counts(k) }; });
+        json(res, 200, { unitUsd: costs?.unit ?? null, rows, kinds: costs?.kinds || [], totals: costs?.totals() || {} });
         return true;
       }
       const du = /^\/admin\/users\/(u_[A-Za-z0-9_-]+)\/(disable|enable)$/.exec(p);

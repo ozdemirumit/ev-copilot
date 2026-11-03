@@ -1881,5 +1881,246 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
   }
 }
 
+// ---- Bölüm 11: Yönetim: tüm sağlayıcı istek sayaçları (HERE, Mapbox, harita anahtarı verme, OCM, Overpass; yöneticiler ve yönetici kodu dahil) ----
+// (a) server/costs.mjs saf işlevleri (sahte depo); (b) alt süreç sunucular (18810-18811, 8787 DIŞI, geçici DATA_DIR, sahte anahtarlar) + sahte üst sunucu (18809);
+// (c) server/admin.html içerik denetimi. Gerçek anahtar/ağ yok.
+{
+  const http = await import('node:http');
+  const { readFileSync } = await import('node:fs');
+  const KINDS = ['google', 'here', 'slimit', 'mapbox', 'map_mapbox', 'map_google', 'ocm', 'overpass'];
+  const today = new Date().toISOString().slice(0, 10);
+
+  // (a) costs.mjs
+  try {
+    const { createCosts, KINDS: K } = await import('../server/costs.mjs');
+    ok('(11a) costs.mjs KINDS: google, here, slimit, mapbox, map_mapbox, map_google, ocm, overpass', JSON.stringify(K) === JSON.stringify(KINDS));
+    let saves = 0;
+    const store = { data: {}, save: () => { saves++; } };
+    const c = createCosts(store, {});
+    const U = { kind: 'user', user: { id: 'u_a' } };
+    const L = { kind: 'legacy', admin: true, key: 'c:127.0.0.1' };
+    c.add(U, 'here'); c.add(U, 'here'); c.add(U, 'mapbox'); c.add(L, 'ocm'); c.add(U, 'google');
+    ok('(11a) add her çağrıda store.save (gecikmeli kayıt; başka yazma yok)', saves === 5);
+    const lastMonth = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 0)).toISOString().slice(0, 10); // önceki ayın son günü
+    store.data.costs.u_a.days[lastMonth] = { here: 5 }; store.data.costs.u_a.total.here += 5;
+    const cu = c.counts('u_a');
+    ok('(11a) counts: her tür için {today, month, total}; ay yalnızca bu takvim ayı', KINDS.every((k) => cu[k] && ['today', 'month', 'total'].every((f) => typeof cu[k][f] === 'number')) && cu.here.today === 2 && cu.here.month === 2 && cu.here.total === 7 && cu.mapbox.total === 1 && cu.ocm.total === 0);
+    ok('(11a) yönetici kodu "code" anahtarında', c.counts('code').ocm.today === 1);
+    ok('(11a) summary (Google) eskisi gibi: calls + usd', c.summary('u_a').calls.today === 1 && c.summary('u_a').usd.today === 0.04);
+    const t = c.totals();
+    ok('(11a) totals = anahtarların toplamı', t.here.total === 7 && t.here.today === 2 && t.ocm.today === 1 && t.google.total === 1 && t.map_google.total === 0);
+    c.forget('u_a');
+    ok('(11a) forget: kişi kaydı silinir, tüm türler "_silinen" kovasına eklenir', !store.data.costs.u_a && c.counts('_silinen').here.total === 7 && c.counts('_silinen').mapbox.today === 1 && c.totals().here.total === 7);
+    const sink = store.data.costs._silinen;
+    for (let i = 0; i < 450; i++) sink.days[new Date(Date.UTC(2020, 0, 1) + i * 86400e3).toISOString().slice(0, 10)] = { here: 1 };
+    store.data.costs.u_b = { total: { here: 1 }, days: { [today]: { here: 1 } } };
+    c.forget('u_b');
+    ok('(11a) "_silinen" kovası da en çok 400 gün tutar (sınırsız büyümez)', Object.keys(store.data.costs._silinen.days).length <= 400 && !!store.data.costs._silinen.days[today]);
+  } catch (e) {
+    ok('Bölüm 11 (a) çalıştı: ' + e.message, false);
+  }
+
+  // (b) sunucu
+  const ROOT = fileURLToPath(new URL('..', import.meta.url));
+  const CODE = 'test-dummy-access-code-0123456789';
+  const SECRETS = { MAPBOX_TOKEN: 'mb-test-dummy-token-11-0123456789', OCM_KEY: 'ocm-test-dummy-key-11-0123456789', HERE_API_KEY: 'here-test-dummy-key-11-0123456789', MAPBOX_MAP_TOKEN: 'pk.test-dummy-map-11', GOOGLE_MAPS_BROWSER_KEY: 'gm-test-dummy-browser-11' };
+  const sha256 = (s) => createHash('sha256').update(s).digest('hex');
+  const TOK = { prem: 'P'.repeat(30), free: 'F'.repeat(30), adm: 'A'.repeat(30), del: 'D'.repeat(30) };
+  const children = [], dirs = [], logs = [], texts = [];
+  const up = { here: 0, slimit: 0, mapbox: 0, ocm: 0, overpass: 0 };
+  const mock = http.createServer(async (req, res) => {
+    const u = new URL(req.url, 'http://x');
+    for await (const _ of req) {} // gövde okunur
+    const send = (obj) => { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); };
+    if (u.pathname === '/v1/browse') { up.here++; return send({ items: [] }); }
+    if (u.pathname === '/v8/routes') {
+      up.slimit++;
+      const pts = [u.searchParams.get('origin'), ...u.searchParams.getAll('via').map((v) => v.split('!')[0]), u.searchParams.get('destination')].map((s) => String(s).split(',').map(Number));
+      return send({ routes: [{ sections: [{ polyline: encodeFlex(pts), spans: [{ offset: 0, length: 1, maxSpeed: 22.7777786 }] }] }] });
+    }
+    if (u.pathname.startsWith('/directions/') || u.pathname.startsWith('/search/')) { up.mapbox++; return send({ ok: 1 }); }
+    if (u.pathname === '/v3/poi/') { up.ocm++; return send([]); }
+    if (u.pathname === '/api/interpreter') { up.overpass++; return send({ elements: [] }); }
+    res.writeHead(404); res.end();
+  });
+  await new Promise((r) => mock.listen(18809, '127.0.0.1', r));
+  const MOCK = 'http://127.0.0.1:18809';
+  const seed = () => {
+    const now = Date.now();
+    const sess = (uid) => ({ uid, createdAt: now, lastSeen: now, exp: now + 86400e3 });
+    return {
+      users: {
+        u_prem: { id: 'u_prem', email: 'prem@test.invalid', name: 'Prem', createdAt: now, premiumUntil: now + 30 * 86400e3 },
+        u_free: { id: 'u_free', email: 'free@test.invalid', name: 'Free', createdAt: now },
+        u_adm: { id: 'u_adm', email: 'adm@test.invalid', name: 'Adm', admin: true, createdAt: now },
+        u_del: { id: 'u_del', email: 'del@test.invalid', name: 'Del', createdAt: now, premiumUntil: now + 30 * 86400e3 },
+      },
+      invites: {}, docs: {},
+      sessions: { [sha256(TOK.prem)]: sess('u_prem'), [sha256(TOK.free)]: sess('u_free'), [sha256(TOK.adm)]: sess('u_adm'), [sha256(TOK.del)]: sess('u_del') },
+    };
+  };
+  async function start(port, extra = {}) {
+    const dir = mkdtempSync(join(tmpdir(), 'usage-test-')); dirs.push(dir);
+    writeFileSync(join(dir, 'db.json'), JSON.stringify(seed()));
+    const blank = Object.fromEntries(['MAPBOX_TOKEN', 'OCM_KEY', 'HERE_API_KEY', 'GOOGLE_PLACES_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SMTP_USER', 'SMTP_PASS', 'PUBLIC_URL', 'ADMIN_EMAILS', 'GOOGLE_MAPS_BROWSER_KEY', 'MAPBOX_MAP_TOKEN', 'GOOGLE_MAP_ID', 'TRUST_PROXY', 'TRUST_CF_HEADER', 'PREMIUM_REQUIRED', 'ADMIN_TOTP_SECRET', 'ADMIN_TOKEN_TTL_SEC',
+      'MAPBOX_DAILY_PER_USER', 'OCM_DAILY_PER_USER', 'OVERPASS_DAILY_PER_USER', 'OCCUPANCY_DAILY_PER_USER', 'GOOGLE_DAILY_PER_USER', 'HERE_DAILY_PER_USER', 'MAP_DAILY_PER_USER', 'MAP_DAILY_TOTAL', 'SPEEDLIMIT_DAILY_PER_USER', 'GOOGLE_DAILY_TOTAL', 'MAPBOX_MONTHLY_CAP', 'MAPBOX_MONTH_USED_SEED', 'HERE_MONTHLY_CAP', 'GOOGLE_COST_PER_CALL_USD', 'RATE_PER_MIN'].map((k) => [k, '']));
+    const child = spawn(process.execPath, ['server/proxy.mjs'], { cwd: ROOT, env: { ...process.env, ...blank, ...SECRETS, PREMIUM_REQUIRED: '1', PORT: String(port), HOST: '127.0.0.1', DATA_DIR: dir, ACCESS_CODES: CODE,
+      MAPBOX_BASE: MOCK, OCM_BASE: MOCK, HERE_BASE: MOCK, HERE_ROUTER_BASE: MOCK, OVERPASS_URLS: MOCK + '/api/interpreter', OVERPASS_GAP_MS: '0', ...extra }, stdio: ['ignore', 'pipe', 'pipe'] });
+    children.push(child);
+    let out = ''; logs.push(() => out);
+    child.stdout.on('data', (d) => { out += d; });
+    child.stderr.on('data', (d) => { out += d; });
+    for (let i = 0; i < 100 && !out.includes('ara sunucusu'); i++) await new Promise((r) => setTimeout(r, 100));
+    if (!out.includes('ara sunucusu')) throw new Error('sunucu başlamadı: ' + out);
+    const call = async (method, path, { auth, body, form } = {}) => {
+      const headers = {};
+      if (auth === 'code') headers['X-Access-Code'] = CODE; else if (auth) headers.Authorization = 'Bearer ' + auth;
+      if (body !== undefined) headers['Content-Type'] = 'application/json';
+      if (form !== undefined) headers['Content-Type'] = 'application/x-www-form-urlencoded';
+      const r = await fetch(`http://127.0.0.1:${port}${path}`, { method, headers, body: form !== undefined ? form : body === undefined ? undefined : JSON.stringify(body) });
+      const text = await r.text(); if (path !== '/v1/map/config') texts.push(text); // harita anahtarı Premium'a bilerek verilir; diğer hiçbir yanıtta anahtar olmamalı
+      let j = null; try { j = JSON.parse(text); } catch {}
+      return { status: r.status, text, json: j, headers: r.headers };
+    };
+    return { call, dir };
+  }
+  const opq = (i) => 'data=' + encodeURIComponent(`[out:json][timeout:25];nwr["amenity"="charging_station"](around:5000,39.${i},32.8);out tags center;`);
+  const pts = (i) => ({ points: line(5, 39.9 + i / 100, 32.8).map(([la, lo]) => ({ lat: la, lon: lo })) });
+  try {
+    const A = await start(18810, { MAPBOX_DAILY_PER_USER: '3', OCM_DAILY_PER_USER: '1', HERE_DAILY_PER_USER: '1', OVERPASS_DAILY_PER_USER: '1', SPEEDLIMIT_DAILY_PER_USER: '1', MAP_DAILY_PER_USER: '2' });
+    const R = {
+      here: (a, i) => A.call('GET', `/here/stations?lat=39.${i}&lon=32.8&r=10`, { auth: a }),
+      mbs: (a, i) => A.call('GET', `/mapbox/search/searchbox/v1/category/charging_station?proximity=32.${i},39.9`, { auth: a }),
+      mbd: (a, i) => A.call('GET', `/mapbox/directions/v5/mapbox/driving/32.8,39.9;32.${i},39.95`, { auth: a }),
+      ocm: (a, i) => A.call('GET', `/ocm/poi?latitude=39.${i}&longitude=32.8&distance=10`, { auth: a }),
+      op: (a, i) => A.call('POST', '/overpass', { auth: a, form: opq(i) }),
+      sl: (a, i) => A.call('POST', '/v1/speedlimits', { auth: a, body: pts(i) }),
+      map: (a) => A.call('GET', '/v1/map/config', { auth: a }),
+    };
+    const costs = async () => (await A.call('GET', '/admin/costs', { auth: 'code' })).json;
+    const row = (c, id) => c?.rows?.find((x) => x.id === id);
+    const zero = (c, id) => !row(c, id) || KINDS.every((k) => (row(c, id).usage?.[k]?.total || 0) === 0);
+
+    // kimliksiz: üst sunucuya gidilmez, sayılmaz
+    const unauth = [await R.here(undefined, 1), await R.mbs(undefined, 1), await R.ocm(undefined, 1), await R.op(undefined, 1), await R.sl(undefined, 1), await R.map(undefined)];
+    let c = await costs();
+    ok('(11b) kimliksiz istekler 401, üst sunucuya gidilmez, sayaç yok', unauth.every((x) => x.status === 401) && Object.values(up).every((n) => n === 0) && KINDS.every((k) => (c?.totals?.[k]?.total ?? -1) === 0));
+
+    // normal Premium kullanıcı: her tür bir kez, önbellek isabeti sayılmaz
+    let r1 = await R.here(TOK.prem, 1), r2 = await R.here(TOK.prem, 1);
+    ok('(11b) HERE istasyon: 1. istek üst sunucuya, 2. önbellekten', r1.status === 200 && r2.headers.get('x-cache') === 'hit' && up.here === 1);
+    r1 = await R.mbs(TOK.prem, 1); r2 = await R.mbs(TOK.prem, 1);
+    const r3 = await R.mbd(TOK.prem, 1);
+    ok('(11b) Mapbox arama (önbellekli) 1 + rota (önbelleksiz) 1 = 2 üst istek', r1.status === 200 && r2.headers.get('x-cache') === 'hit' && r3.status === 200 && up.mapbox === 2);
+    r1 = await R.ocm(TOK.prem, 1); r2 = await R.ocm(TOK.prem, 1);
+    ok('(11b) OCM: 1 üst istek, 2. önbellekten', r1.status === 200 && r2.headers.get('x-cache') === 'hit' && up.ocm === 1);
+    r1 = await R.op(TOK.prem, 1); r2 = await R.op(TOK.prem, 1);
+    ok('(11b) Overpass: 1 üst istek, 2. önbellekten', r1.status === 200 && r2.headers.get('x-cache') === 'hit' && up.overpass === 1);
+    r1 = await R.sl(TOK.prem, 1); r2 = await R.sl(TOK.prem, 1);
+    ok('(11b) HERE hız limiti: 1 üst istek, 2. önbellekten', r1.status === 200 && r2.headers.get('x-cache') === 'hit' && up.slimit === 1);
+    c = await costs();
+    const P = row(c, 'u_prem')?.usage;
+    ok('(11b) kullanıcı satırı: here 1, mapbox 2, ocm 1, overpass 1, slimit 1 (bugün/ay/toplam)', !!P && P.here.today === 1 && P.here.month === 1 && P.here.total === 1 && P.mapbox.today === 2 && P.ocm.today === 1 && P.overpass.today === 1 && P.slimit.today === 1 && P.google.today === 0);
+
+    // kota reddi: üst sunucuya gidilmez, sayılmaz; günlük hak normal kullanıcı için eskisi gibi
+    const before = { ...up };
+    const q = [await R.here(TOK.prem, 2), await R.ocm(TOK.prem, 2), await R.op(TOK.prem, 2), await R.sl(TOK.prem, 2)];
+    await R.mbd(TOK.prem, 2); const qmb = await R.mbd(TOK.prem, 3);
+    c = await costs();
+    const P2 = row(c, 'u_prem')?.usage;
+    ok('(11b) normal kullanıcıda günlük hak eskisi gibi: 2. farklı istek 429 (here/ocm/overpass/slimit), Mapbox 4. istek 429', q.every((x) => x.status === 429) && qmb.status === 429);
+    ok('(11b) 429 alan istekler üst sunucuya gitmez ve sayılmaz', up.here === before.here && up.ocm === before.ocm && up.overpass === before.overpass && up.slimit === before.slimit && up.mapbox === before.mapbox + 1 && P2.here.today === 1 && P2.ocm.today === 1 && P2.mapbox.today === 3 && P2.slimit.today === 1);
+
+    // yönetici hesabı ve yönetici kodu: sınırsız ama sayılır
+    const adm = [], code = [];
+    for (const i of [3, 4, 5]) { adm.push(await R.here(TOK.adm, i), await R.ocm(TOK.adm, i), await R.op(TOK.adm, i), await R.sl(TOK.adm, i), await R.mbd(TOK.adm, i + 3)); }
+    for (const i of [6, 7]) { code.push(await R.here('code', i), await R.ocm('code', i), await R.op('code', i), await R.sl('code', i), await R.mbd('code', i + 3)); }
+    ok('(11b) yönetici hesabı ve yönetici kodu günlük haktan muaf (hepsi 200)', adm.concat(code).every((x) => x.status === 200));
+    c = await costs();
+    const AD = row(c, 'u_adm')?.usage, CD = row(c, 'code');
+    ok('(11b) yönetici hesabının istekleri sayılır (her tür 3)', !!AD && ['here', 'ocm', 'overpass', 'slimit', 'mapbox'].every((k) => AD[k].today === 3));
+    ok('(11b) yönetici kodu "code" satırında sayılır (her tür 2), etiketi "yönetici kodu"', !!CD && ['here', 'ocm', 'overpass', 'slimit', 'mapbox'].every((k) => CD.usage[k].today === 2) && CD.email === 'yönetici kodu');
+
+    // harita anahtarı verme: sağlayıcı başına; osm sayılmaz; kota reddi sayılmaz
+    await A.call('POST', '/admin/map', { auth: 'code', body: { default: 'mapbox' } });
+    const mf = await R.map(TOK.free); // Premium değil → osm
+    const mp1 = await R.map(TOK.prem);
+    await A.call('POST', '/admin/users/u_prem/map', { auth: 'code', body: { provider: 'google' } });
+    const mp2 = await R.map(TOK.prem);
+    const mp3 = await R.map(TOK.prem); // MAP_DAILY_PER_USER=2 → 429
+    const ma = [await R.map(TOK.adm), await R.map(TOK.adm), await R.map(TOK.adm), await R.map('code')];
+    c = await costs();
+    ok('(11b) /v1/map/config: osm 200 (sayılmaz), mapbox ve google anahtarı 200, 3. çağrı 429', mf.text === '{"provider":"osm"}' && mp1.json?.provider === 'mapbox' && mp2.json?.provider === 'google' && mp3.status === 429 && ma.every((x) => x.status === 200));
+    ok('(11b) anahtar verme sağlayıcı başına sayılır: kullanıcı map_mapbox 1, map_google 1; osm/429 sayılmaz', row(c, 'u_prem').usage.map_mapbox.today === 1 && row(c, 'u_prem').usage.map_google.today === 1 && zero(c, 'u_free'));
+    ok('(11b) yönetici hesabı (3) ve yönetici kodu (1) anahtar alımı sayılır, sınır yok', row(c, 'u_adm').usage.map_mapbox.today === 3 && row(c, 'code').usage.map_mapbox.today === 1);
+
+    // HERE doluluk sorgusu da HERE sayacına (here) yazılır
+    const hb = up.here, hc = row(c, 'u_adm').usage.here.today;
+    const oc = await A.call('POST', '/v1/occupancy', { auth: TOK.adm, body: { stations: [{ id: 's1', lat: 38.1, lon: 27.1, dc: true }] } });
+    c = await costs();
+    ok('(11b) doluluk HERE sorgusu here sayacına üst istek kadar eklenir', oc.status === 200 && up.here - hb >= 1 && row(c, 'u_adm').usage.here.today - hc === up.here - hb);
+
+    // /admin/costs biçimi: eski alanlar yerinde, yeni alanlar var, toplam = satırlar
+    ok('(11b) /admin/costs eski alanlar: unitUsd, rows[].id/email/calls/usd', typeof c.unitUsd === 'number' && c.rows.every((x) => typeof x.id === 'string' && typeof x.email === 'string' && typeof x.calls?.today === 'number' && typeof x.usd?.total === 'number'));
+    ok('(11b) /admin/costs yeni alanlar: kinds, totals, rows[].usage', JSON.stringify(c.kinds) === JSON.stringify(KINDS) && KINDS.every((k) => c.rows.every((x) => typeof x.usage?.[k]?.month === 'number')));
+    ok('(11b) Maliyet toplamları = satırların toplamı (her tür, bugün/ay/toplam)', KINDS.every((k) => ['today', 'month', 'total'].every((f) => c.totals[k][f] === c.rows.reduce((s, x) => s + x.usage[k][f], 0))));
+    ok('(11b) toplam üst istek = sayaç toplamı (here, mapbox, ocm, overpass, slimit)', ['here', 'mapbox', 'ocm', 'overpass', 'slimit'].every((k) => c.totals[k].total === up[k]));
+
+    // /admin/summary: kota sayacı yöneticileri de sayar, kullanıcı başına görünüm, sağlayıcı toplamları
+    const s = (await A.call('GET', '/admin/summary', { auth: 'code' })).json;
+    ok('(11b) /admin/summary eski alanlar yerinde (google, usageToday, mapbox, here)', typeof s.google?.callsToday === 'number' && typeof s.google?.usd?.month === 'number' && typeof s.usageToday === 'object' && typeof s.mapbox?.used === 'number' && typeof s.here?.used === 'number');
+    ok('(11b) usageToday yönetici trafiğini de içerir (ocm: 2 kullanıcı + 3 yönetici + 2 kod = 7)', s.usageToday.ocm === 7 && s.usageToday.here === 7);
+    const ub = s.usageByUser || [];
+    const uCode = ub.find((x) => x.who === 'yönetici kodu'), uAdm = ub.find((x) => x.who === 'adm@test.invalid'), uPrem = ub.find((x) => x.who === 'prem@test.invalid');
+    ok('(11b) usageByUser: yönetici kodu ve yönetici hesabı satırları var, adres (IP) yok', !!uCode && !!uAdm && uAdm.admin === true && uCode.kinds.ocm === 2 && uAdm.kinds.ocm === 3 && uPrem?.kinds.ocm === 2 && !JSON.stringify(ub).includes('127.0.0.1') && !JSON.stringify(ub).includes('c:'));
+    ok('(11b) usageByUser toplama göre azalan sıralı, total = türlerin toplamı', ub.every((x, i) => i === 0 || ub[i - 1].total >= x.total) && ub.every((x) => x.total === Object.values(x.kinds).reduce((a, b) => a + b, 0)));
+    ok('(11b) /admin/summary providers: kinds + totals (/admin/costs ile aynı)', JSON.stringify(s.providers?.kinds) === JSON.stringify(KINDS) && JSON.stringify(s.providers?.totals) === JSON.stringify(c.totals));
+
+    // yalnızca yönetici
+    const na = [await A.call('GET', '/admin/costs', { auth: TOK.prem }), await A.call('GET', '/admin/summary', { auth: TOK.prem }), await A.call('GET', '/admin/costs', {}), await A.call('GET', '/admin/summary', {})];
+    ok('(11b) /admin/costs ve /admin/summary yönetici olmayana ve kimliksize kapalı', na.every((x) => x.status !== 200) && na.every((x) => !x.text.includes('usage')));
+    const users = (await A.call('GET', '/admin/users', { auth: 'code' })).json;
+    ok('(11b) /admin/users google alanı eskisi gibi', users.users.every((u) => typeof u.google?.calls?.total === 'number'));
+
+    // hesap silme: sayılar "_silinen" kovasına
+    await R.ocm(TOK.del, 9); await R.here(TOK.del, 9);
+    const del = await A.call('DELETE', '/v1/me', { auth: TOK.del });
+    c = await costs();
+    ok('(11b) hesap silinince satırı kalkar, sayıları "_silinen" kovasına eklenir, toplam değişmez', del.status === 200 && !row(c, 'u_del') && row(c, '_silinen')?.usage.ocm.total === 1 && row(c, '_silinen')?.usage.here.total === 1 && c.totals.ocm.total === up.ocm);
+
+    // kalıcılık: db.json'a gecikmeli yazılır
+    await new Promise((r) => setTimeout(r, 1300));
+    const db = JSON.parse(readFileSync(join(A.dir, 'db.json'), 'utf8'));
+    ok('(11b) sayılar db.json costs altında kalıcı (gün gün)', db.costs?.u_prem?.days?.[today]?.here === 1 && db.costs?.code?.days?.[today]?.ocm === 2 && db.costs?.u_adm?.total?.map_mapbox === 3);
+
+    // PREMIUM_REQUIRED=0: herkes Premium → ücretsiz hesap da anahtar alır ve sayılır
+    const B = await start(18811, { PREMIUM_REQUIRED: '0' });
+    await B.call('POST', '/admin/map', { auth: 'code', body: { default: 'mapbox' } });
+    const bf = await B.call('GET', '/v1/map/config', { auth: TOK.free });
+    const bc = (await B.call('GET', '/admin/costs', { auth: 'code' })).json;
+    ok('(11b) PREMIUM_REQUIRED=0: ücretsiz hesap anahtar alır, map_mapbox 1 sayılır', bf.json?.provider === 'mapbox' && bc.rows.find((x) => x.id === 'u_free')?.usage?.map_mapbox?.today === 1);
+  } catch (e) {
+    ok('Bölüm 11 (b) çalıştı: ' + e.message + ' ' + (e.stack || '').split('\n')[1], false);
+  } finally {
+    for (const ch of children) { try { ch.kill(); } catch {} }
+    await new Promise((r) => setTimeout(r, 300));
+    for (const d of dirs) { try { rmSync(d, { recursive: true, force: true }); } catch {} }
+    mock.close();
+  }
+  const leak = (t) => Object.values(SECRETS).some((v) => t.includes(v));
+  ok('(11b) hiçbir yanıtta ve sunucu çıktısında sahte anahtar yok', texts.length > 40 && !texts.some(leak) && logs.length === 2 && !logs.some((f) => leak(f())));
+
+  // (c) admin.html
+  const html = readFileSync(fileURLToPath(new URL('../server/admin.html', import.meta.url)), 'utf8');
+  ok('(11c) Özet: "Sağlayıcı istekleri (sunucu sayacı)" bölümü', html.includes('Sağlayıcı istekleri (sunucu sayacı)'));
+  ok('(11c) sağlayıcı adları: HERE istasyon, HERE hız limiti, Mapbox (rota/arama), Mapbox harita (anahtar verme), Google harita (anahtar verme), OpenChargeMap, Overpass', ['HERE istasyon', 'HERE hız limiti', 'Mapbox (rota/arama)', 'Mapbox harita (anahtar verme)', 'Google harita (anahtar verme)', 'OpenChargeMap', 'Overpass'].every((t) => html.includes(t)));
+  ok('(11c) "anahtar verme ≠ gerçek harita yüklemesi" notu', html.includes('anahtar verme ≠ gerçek harita yüklemesi'));
+  ok('(11c) "Kullanıcı başına bugünkü istekler" tablosu (usageByUser)', html.includes('Kullanıcı başına bugünkü istekler') && html.includes('usageByUser'));
+  ok('(11c) Google Places kartları yerinde', html.includes('Google Places (ücretli)') && html.includes('bugünkü çağrı / günlük tavan'));
+  ok('(11c) Maliyet: tüm sağlayıcılar (c.kinds, c.totals, r.usage), TOPLAM satırı, fatura notu', html.includes('c.totals') && html.includes('r.usage') && html.includes('TOPLAM') && html.includes('kendi fatura panellerinde'));
+  ok('(11c) CSV yeni sütunları içerir', html.includes("'_bugun'") && html.includes("'_ay'") && html.includes("'_toplam'"));
+  ok('(11c) admin.html innerHTML / outerHTML / insertAdjacentHTML kullanmaz', !/innerHTML|outerHTML|insertAdjacentHTML|document\.write/.test(html));
+}
+
 console.log(`\n${pass} geçti, ${fail} kaldı`);
 process.exit(fail ? 1 : 0);

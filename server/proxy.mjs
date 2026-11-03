@@ -157,13 +157,33 @@ function googleAllowed(id) {
 }
 const usage = new Map();
 const today = () => new Date().toISOString().slice(0, 10);
-/** Hesaplı (yönetici olmayan) kullanıcının günlük hakkı bittiyse true. Eski erişim kodu ve yönetici sınırsızdır. */
+/** Hesaplı (yönetici olmayan) kullanıcının günlük hakkı bittiyse true. Eski erişim kodu ve yönetici sınırsızdır, ama onların istekleri de
+ *  (yönetim Özet'inde görünsün diye) sayılır: yönetici kodu/belirteci adres başına değil tek 'code' kovasında. */
 function overQuota(id, kind) {
-  if (!id || id.kind !== 'user' || id.admin) return false;
-  const k = `${id.key}|${today()}|${kind}`;
+  if (!id) return false;
+  const k = `${id.kind === 'user' ? id.key : 'code'}|${today()}|${kind}`;
   const n = (usage.get(k) || 0) + 1;
   usage.set(k, n);
+  if (id.kind !== 'user' || id.admin) return false;
   return n > DAILY[kind];
+}
+/** Bugünkü kota sayacı kişi başına: [{ id, who (e-posta ya da "yönetici kodu"), admin, kinds, total }], toplama göre azalan. Adres (IP) yok. */
+function usageByUser() {
+  const d = today();
+  const rows = new Map();
+  for (const [k, n] of usage) {
+    const [key, kd, kind] = k.split('|');
+    if (kd !== d) continue;
+    let r = rows.get(key);
+    if (!r) {
+      const u = store.data.users[key];
+      r = { id: key, who: key === 'code' ? 'yönetici kodu' : u?.email || '(silinmiş hesap)', admin: key === 'code' || !!u?.admin, kinds: {}, total: 0 };
+      rows.set(key, r);
+    }
+    r.kinds[kind] = (r.kinds[kind] || 0) + n;
+    r.total += n;
+  }
+  return [...rows.values()].sort((a, b) => b.total - a.total);
 }
 /** Yönetim paneli özeti: kullanıcı/davet sayıları, bugünkü çağrılar, Google kotası, Google maliyeti, sunucu durumu. Anahtar değerleri YOK, yalnızca tanımlı mı bilgisi. */
 function adminSummary() {
@@ -190,7 +210,9 @@ function adminSummary() {
     map: { default: maps.getDefault() },
     configured: { mapbox: !!MAPBOX, mapboxMap: maps.available().mapbox, googleMap: maps.available().google, here: !!HERE, ocm: !!OCM, googlePlaces: !!GOOGLE_PLACES, googleLogin: !!accounts.googleOn, smtp: !!mailer, premiumRequired: String(env.PREMIUM_REQUIRED ?? '1') !== '0' },
     usageToday: byKind,
+    usageByUser: usageByUser(),
     google: { callsToday: gToday.d === today() ? gToday.n : 0, dailyCap: GOOGLE_TOTAL, unitUsd: costs.unit, usd: tot },
+    providers: { kinds: costs.kinds, totals: costs.totals() }, // üst sağlayıcıya giden istekler (kalıcı sayaç, server/costs.mjs): tür başına bugün / bu ay / toplam
   };
 }
 setInterval(() => { const d = today(); for (const k of usage.keys()) if (!k.includes(`|${d}|`)) usage.delete(k); }, 3600e3).unref();
@@ -262,6 +284,7 @@ async function mapbox(req, res, url, id) {
     const real = new URLSearchParams(q);
     real.set('access_token', MAPBOX);
     if (isSearch) { mbUsage().n++; store.save(); }
+    costs.add(id, 'mapbox'); // üst sunucuya giden istek (önbellek isabeti ve ret buraya gelmez)
     return upstream(`${MAPBOX_BASE}${path}?${real}`);
   });
   if (rule[1] && u.status === 200) cset(key, u, rule[1]);
@@ -293,6 +316,7 @@ async function hereStations(req, res, url, id) {
   if (!hereAllowed()) return json(res, 402, { error: 'here_cap' });
   const u = await once(key, async () => {
     hereCount();
+    costs.add(id, 'here');
     const items = await hereBrowse(HERE, { lat, lon, r: r * 1000 });
     const body = Buffer.from(JSON.stringify({ items: items.map(compact).filter(Boolean), full: items.length >= 100 }));
     return { status: 200, type: 'application/json; charset=utf-8', body, pass: {} };
@@ -320,6 +344,7 @@ async function speedLimitsRoute(req, res, id) {
   if (!hereAllowed()) return json(res, 402, { error: 'here_cap' });
   const out = await once(key, async () => {
     hereCount();
+    costs.add(id, 'slimit');
     const r = await hereSpeedLimits(HERE, pts);
     return { body: Buffer.from(JSON.stringify(r)), empty: !r.s.length };
   }).catch((err) => { // HERE yanıt gövdesi ve adres günlüğe yazılmaz
@@ -350,6 +375,7 @@ async function ocm(req, res, url, id) {
   const u = await once(key, () => {
     const real = new URLSearchParams(q);
     real.set('key', OCM);
+    costs.add(id, 'ocm');
     return upstream(`${OCM_BASE}/v3/poi/?${real}`);
   });
   if (u.status === 200) cset(key, u, 6 * 3600e3);
@@ -407,7 +433,7 @@ async function overpass(req, res, url, id) {
   const hit = cget(key);
   if (hit) return reply(res, hit, { 'X-Cache': 'hit' });
   if (overQuota(id, 'overpass')) return json(res, 429, { error: 'günlük Overpass hakkı doldu' }, { 'Retry-After': '3600' });
-  const u = await once(key, () => overpassQueued(query));
+  const u = await once(key, () => { costs.add(id, 'overpass'); return overpassQueued(query); }); // istek başına bir kez (aynalar arası yeniden deneme ayrıca sayılmaz)
   if (u.status === 200) cset(key, u, 6 * 3600e3);
   reply(res, u, { 'X-Cache': 'miss' });
 }
@@ -422,7 +448,7 @@ async function occupancyRoute(req, res, id) {
   if (!stations.length) return json(res, 400, { error: 'geçersiz istasyon' });
   if (overQuota(id, 'occupancy')) return json(res, 429, { error: 'günlük doluluk hakkı doldu' }, { 'Retry-After': '3600' });
   const google = GOOGLE_PLACES ? { key: GOOGLE_PLACES, allow: () => googleAllowed(id), onCall: () => costs.add(id, 'google') } : null; // her başarılı Google çağrısı kullanıcıya yazılır
-  const here = HERE ? { key: HERE, allow: hereAllowed, onCall: hereCount } : null;
+  const here = HERE ? { key: HERE, allow: hereAllowed, onCall: () => { hereCount(); costs.add(id, 'here'); } } : null; // HERE doluluk sorgusu da 'here' türüne
   const soc = Number.isFinite(Number(b.soc)) ? Number(b.soc) : null; // pil %: Google (ücretli) yalnızca düşük pilde sorulur
   json(res, 200, { results: await lookupAll(stations, { google, here, soc, book: priceBook, community }) });
 }
@@ -621,6 +647,7 @@ const server = http.createServer(async (req, res) => {
     if (p === '/v1/map/config' && req.method === 'GET') { // harita sağlayıcısı: Premium değilse ya da anahtar yoksa osm (anahtarsız); anahtar yalnızca seçili sağlayıcınınki, yalnızca Premium'a
       const cfg = maps.config(id.kind === 'user' ? id.user : null, premiumOk(id)); // eski erişim kodunda kullanıcı nesnesi yok
       if (cfg.provider !== 'osm' && !mapAllowed(id)) return json(res, 429, { error: 'günlük harita hakkı doldu' }, { 'Retry-After': '3600' });
+      if (cfg.provider !== 'osm') costs.add(id, 'map_' + cfg.provider); // anahtar VERME sayılır (map_mapbox / map_google); harita yüklemesi tarayıcıdan doğrudan sağlayıcıya gider
       return json(res, 200, cfg, { 'Cache-Control': 'no-store' });
     }
     if (adminAuth && p === '/admin/logout' && req.method === 'POST' && id.admin) { // yönetim sayfası Çıkış; ?all=1 yalnızca bu makineden: her yerden çıkış

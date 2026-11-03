@@ -2,7 +2,7 @@
 //   node server/premium.mjs ali@gmail.com 30     → 30 gün ekler (mevcut süre varsa üstüne)
 //   node server/premium.mjs ali@gmail.com 0      → Premium'u kaldırır
 //   node server/premium.mjs list                  → herkesin planını listeler
-//   node server/premium.mjs costs                 → kullanıcı başına Google maliyeti (çağrı ve tahmini USD: bugün / bu ay / toplam)
+//   node server/premium.mjs costs                 → kullanıcı başına Google maliyeti (çağrı ve tahmini USD: bugün / bu ay / toplam) ve tüm sağlayıcı istek toplamları
 // Ödeme sağlayıcısı bağlanınca abonelik webhook'u aynı uç noktayı (sunucu içinden) kullanır.
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -29,7 +29,8 @@ if (email === 'list') { // node server/premium.mjs list → kullanıcılar ve Pr
 }
 if (email === 'costs') {
   const r = await fetch(`${base}/admin/costs`, { headers: { 'X-Access-Code': code } }).catch((e) => { console.error('Sunucuya ulaşılamadı:', e.message); process.exit(1); });
-  const { rows = [], unitUsd } = await r.json();
+  const j = await r.json();
+  const { rows = [], unitUsd } = j;
   const usd = (v) => '$' + v.toFixed(v > 0 && v < 1 ? 3 : 2);
   console.log(`Google birim fiyatı: ${unitUsd} USD/çağrı (GOOGLE_COST_PER_CALL_USD)`);
   console.log(`${'Kullanıcı'.padEnd(34)} ${'bugün'.padStart(14)} ${'bu ay'.padStart(14)} ${'toplam'.padStart(14)}`);
@@ -40,6 +41,10 @@ if (email === 'costs') {
     for (const k of Object.keys(t)) t[k] += x.usd[k];
   }
   console.log(`${'TOPLAM'.padEnd(34)} ${usd(t.today).padStart(14)} ${usd(t.month).padStart(14)} ${usd(t.total).padStart(14)}`);
+  if (j.kinds?.length && j.totals) { // tüm sağlayıcı istekleri (yeni sunucu): bugün / bu ay / toplam; harita türleri anahtar vermeyi sayar, harita yüklemesini değil
+    console.log('\nSağlayıcı istekleri (bugün / bu ay / toplam):');
+    for (const k of j.kinds) { const x = j.totals[k] || {}; console.log(`  ${k.padEnd(12)} ${x.today ?? 0} / ${x.month ?? 0} / ${x.total ?? 0}`); }
+  }
   process.exit(0);
 }
 if (!code || !email || days === undefined) { console.error('Kullanım: node server/premium.mjs <e-posta> <gün>   (0 = kaldır)'); process.exit(1); }
