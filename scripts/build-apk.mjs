@@ -1,31 +1,14 @@
 // Android APK'sını derler ve sunucunun internetten kurulum sayfasına (https://<sunucu>/app) koyar. Kullanım: npm run apk
 // Adımlar: web dosyalarını android/ içine eşitle → Gradle ile debug APK → server/public/ev-copilot.apk + app.json.
 // Gerekenler: Android Studio (SDK ve JDK 21; ~/.jdks altındaki JBR bulunur). Gizli anahtar içermez.
-import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { findJdk, run } from './android-jdk.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const android = join(root, 'android');
-
-function findJdk() {
-  if (process.env.JAVA_HOME && existsSync(join(process.env.JAVA_HOME, 'bin', 'java.exe'))) return process.env.JAVA_HOME;
-  const dirs = [join(homedir(), '.jdks'), 'C:\\Program Files\\Android\\Android Studio'];
-  for (const d of dirs) {
-    if (!existsSync(d)) continue;
-    const cands = d.endsWith('.jdks') ? readdirSync(d).filter((n) => /^(jbr|jdk|temurin|corretto)-?(17|21)/.test(n)).map((n) => join(d, n)) : [join(d, 'jbr')];
-    for (const c of cands) if (existsSync(join(c, 'bin', 'java.exe'))) return c; // Gradle 8.14 için JDK 17/21; Android Studio'nun JBR'ı 25 olabilir
-  }
-  return null;
-}
-
-function run(cmd, args, cwd, env = process.env) {
-  const r = spawnSync(cmd, args, { cwd, env, stdio: 'inherit' });
-  if (r.status !== 0) { console.error(`\nHata: ${cmd} ${args.join(' ')} (kod ${r.status})`); process.exit(1); }
-}
 
 const jdk = findJdk();
 if (!jdk) { console.error('JDK 21 bulunamadı: Android Studio > Settings > Gradle JDK bölümünden indir ya da JAVA_HOME ayarla.'); process.exit(1); }

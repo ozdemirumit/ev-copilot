@@ -18,7 +18,28 @@ Web uygulaması olduğu gibi bir Android paketinin içine konur (`npm run sync` 
 - Giriş (Google) sistem tarayıcısında açılır, davet `evcopilot://invite` ile uygulamaya gelir.
 
 ## APK dosyası
-**Build > Build Bundle(s) / APK(s) > Build APK(s)**. Çıktı: `android/app/build/outputs/apk/debug/app-debug.apk`. Telefona atıp "bilinmeyen kaynaktan kur" izniyle yüklenir (kişisel kullanım). Play Store'a koymak için imzalı sürüm (`.aab`) gerekir; imzalama anahtarını (keystore) GitHub'a koyma, yedeğini güvenli yerde tut.
+**Build > Build Bundle(s) / APK(s) > Build APK(s)**. Çıktı: `android/app/build/outputs/apk/debug/app-debug.apk`. Telefona atıp "bilinmeyen kaynaktan kur" izniyle yüklenir (kişisel kullanım). Play Store için imzalı AAB aşağıdaki "Google Play" bölümünde.
+
+## Google Play (imzalı AAB)
+Play, debug APK değil imzalı **AAB** ister. Play App Signing kullanılır: Google asıl imza anahtarını tutar, biz **yükleme anahtarı** (upload key) ile imzalayıp yükleriz.
+
+**Bir kerelik: yükleme anahtarını üret** (depo dışında bir klasörde; örnek `C:\Users\<sen>\anahtarlar\`):
+```
+"C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe" -genkeypair -v -keystore C:\Users\<sen>\anahtarlar\ev-copilot-upload.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000
+```
+Parolaları keytool kendisi sorar (kayıt dışı bir yere not et). Anahtar dosyasının **yedeğini** (ör. parola yöneticisi ya da şifreli bir USB) al; kaybolursa Play'e anahtar sıfırlama başvurusu gerekir.
+
+**Bir kerelik: `android/keystore.properties`** (depoya girmez, `.gitignore`'da):
+```
+storeFile=C:/Users/<sen>/anahtarlar/ev-copilot-upload.jks
+storePassword=...
+keyAlias=upload
+keyPassword=...
+```
+
+**Her yayında:** `npm run aab`. Çıktı: `android/app/build/outputs/bundle/release/app-release.aab`. Sürüm kodu `version.js`'ten türer (`x.y.z` → `x*1000000 + y*1000 + z`, 0.82.3 → 82003); Play her yüklemede artmasını ister, bu yüzden aynı sürümle ikinci kez yüklenemez. Betik sonunda `jarsigner -verify` ile imzayı doğrular ("jar verified" çıkar; ardındaki "signed in JarFile" uyarıları AAB için normaldir).
+
+Web kodu değişince yeni AAB gerekmez (uygulama canlı siteyi yükler); yalnızca Android tarafı (izin, eklenti, `capacitor.config.json`, manifest) değişince.
 
 ## Notlar
 - Eski gömülü sürümde adres `https://localhost` idi; o kurulumlardaki yerel ayarlar yeni sürümde görünmez, hesapla giriş yapınca senkron her şeyi geri getirir.

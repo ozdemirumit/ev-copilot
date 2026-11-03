@@ -8,7 +8,8 @@
     "sync": "npm run build:web && cap sync android",
     "open": "cap open android",
     "check": "node scripts/check.mjs",
-    "apk": "node scripts/build-apk.mjs"
+    "apk": "node scripts/build-apk.mjs",
+    "aab": "node scripts/build-aab.mjs"
   },
   "dependencies": {
     "@capacitor-community/text-to-speech": "^8.0.2",
