@@ -2,6 +2,7 @@
 // Bağımlılık yok. proxy.mjs ADMIN_TOTP_SECRET tanımlı ve geçerliyse createAdminAuth ile kullanır; setup betiği (totp-setup.mjs) base32Encode'u kullanır.
 // Gizli anahtar, kodlar ve oturum belirteçleri hiçbir yerde günlüğe yazılmaz; belirteç yalnızca SHA-256 özeti olarak bellekte tutulur.
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { readFileSync, writeFileSync } from 'node:fs';
 
 const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 export const MIN_KEY_BYTES = 16; // RFC 4226 R6: en az 128 bit
@@ -68,14 +69,22 @@ const TOKEN_RE = /^[A-Za-z0-9_-]{43}$/; // 32 bayt base64url
 export function createAdminAuth(secret, {
   now = Date.now, step = 30, window = 1, ttlMs = 12 * 3600e3, maxTokens = 20,
   ipMax = 5, ipBlockMs = 3600e3, globalMax = 25, globalWindowMs = 600e3, globalBlockMs = 600e3,
+  stateFile = null, onError = () => {},
 } = {}) {
   const key = parseSecret(secret);
   if (!key) return null;
 
   // ---- TOTP ----
   // Tekrar oynatma: başarıyla kullanılan son adım tutulur; aynı ya da daha eski adımın kodu bir daha kabul edilmez (RFC 6238 §5.2).
-  // Tek bir sayı olduğu için büyüyen bir küme ve temizlik gerekmez.
+  // Tek bir sayı olduğu için büyüyen bir küme ve temizlik gerekmez. stateFile verilirse (DATA_DIR/totp-last.json) yeniden başlatmada da korunur:
+  // yalnızca adım numarası yazılır (gizli değildir); dosya yoksa/bozuksa ya da pencerenin ötesinde bir gelecek adımsa (saat geri alınmış) yok sayılır.
   let lastUsed = -Infinity;
+  if (stateFile) {
+    try {
+      const v = JSON.parse(readFileSync(stateFile, 'utf8'))?.lastUsed;
+      if (Number.isSafeInteger(v) && v <= Math.floor(now() / 1000 / step) + window) lastUsed = v;
+    } catch { /* yok ya da bozuk: boş durum */ }
+  }
   /** Kod eşleşen (henüz kullanılmamış) adımı döndürür, yoksa null. Kodu TÜKETMEZ (giriş iki adım da doğruysa consume çağrılır). */
   function matchTotp(code) {
     const s = typeof code === 'string' && code.length <= 32 ? code.replace(/\s+/g, '') : '';
@@ -90,7 +99,11 @@ export function createAdminAuth(secret, {
     }
     return found;
   }
-  const consume = (st) => { if (st > lastUsed) lastUsed = st; };
+  function consume(st) {
+    if (!(st > lastUsed)) return;
+    lastUsed = st;
+    if (stateFile) try { writeFileSync(stateFile, JSON.stringify({ lastUsed })); } catch (e) { onError(e); }
+  }
 
   // ---- belirteçler (yalnızca SHA-256 özeti bellekte; yeniden başlatma herkesi çıkarır) ----
   const tokens = new Map(); // özet → bitiş (ms)
@@ -114,6 +127,8 @@ export function createAdminAuth(secret, {
   }
   /** Çıkış: belirteç sunucuda da geçersiz olur. */
   const revoke = (t) => { if (typeof t === 'string' && TOKEN_RE.test(t)) tokens.delete(sha(t)); };
+  /** Her yerden çıkış: tüm belirteçler silinir; silinen sayı döner. */
+  const revokeAll = () => { const n = tokens.size; tokens.clear(); return n; };
 
   // ---- deneme kilidi: adres başına ipMax yanlışta ipBlockMs; tüm adreslerde globalWindowMs içinde globalMax yanlışta globalBlockMs ----
   const ipFails = new Map(); // ip → { n, first, until }
@@ -127,15 +142,23 @@ export function createAdminAuth(secret, {
     if (f && f.until > t) return Math.ceil((f.until - t) / 1000);
     return 0;
   }
-  function fail(ip) {
+  /**
+   * Yanlış deneme. countGlobal: yalnızca erişim kodu DOĞRU (TOTP yanlış) denemeler genel sınıra sayılır; yanlış erişim kodu yalnızca adres sınırına sayılır
+   * (kodu bilmeyen biri çok adresten deneyerek sahibin girişini kilitleyemesin). Dönüş: yeni açılan kilit 'global' | 'ip' | null.
+   */
+  function fail(ip, countGlobal = true) {
     const t = now();
+    let tripped = null;
     let f = ipFails.get(ip);
     if (!f || (f.until <= t && f.first <= t - ipBlockMs)) f = { n: 0, first: t, until: 0 };
-    if (++f.n >= ipMax) { f.until = t + ipBlockMs; f.n = 0; f.first = t; }
+    if (++f.n >= ipMax) { f.until = t + ipBlockMs; f.n = 0; f.first = t; tripped = 'ip'; }
     ipFails.set(ip, f);
-    gFails = gFails.filter((x) => x > t - globalWindowMs);
-    gFails.push(t);
-    if (gFails.length >= globalMax) { gUntil = t + globalBlockMs; gFails = []; }
+    if (countGlobal) {
+      gFails = gFails.filter((x) => x > t - globalWindowMs);
+      gFails.push(t);
+      if (gFails.length >= globalMax) { gUntil = t + globalBlockMs; gFails = []; tripped = 'global'; }
+    }
+    return tripped;
   }
   const success = (ip) => { ipFails.delete(ip); };
   function sweep() {
@@ -144,5 +167,5 @@ export function createAdminAuth(secret, {
     for (const [ip, f] of ipFails) if (f.until <= t && f.first <= t - ipBlockMs) ipFails.delete(ip);
   }
 
-  return { matchTotp, consume, issueToken, tokenValid, revoke, gate, fail, success, sweep, stats: () => ({ tokens: tokens.size, ipFails: ipFails.size }) };
+  return { matchTotp, consume, issueToken, tokenValid, revoke, revokeAll, gate, fail, success, sweep, stats: () => ({ tokens: tokens.size, ipFails: ipFails.size }) };
 }

@@ -52,7 +52,8 @@ const GOOGLE_PLACES = env.GOOGLE_PLACES_KEY || ''; // isteğe bağlı: istasyon 
 const ORIGINS = new Set(list(env.ALLOW_ORIGINS || 'https://ozdemirumit.github.io,https://localhost,capacitor://localhost,http://localhost'));
 if (env.PUBLIC_URL) ORIGINS.add(String(env.PUBLIC_URL).replace(/\/+$/, '')); // yönetim paneli (/yonetim) aynı kökenden POST/DELETE yapar
 const RATE = Number(env.RATE_PER_MIN || 600); // adres/kullanıcı başına dakikada istek (uzun rotada istasyon araması yüzlerce Mapbox isteği atar)
-const TRUST_PROXY = env.TRUST_PROXY === '1'; // Cloudflare Tunnel arkasında: gerçek istemci adresi CF-Connecting-IP'den okunur
+const TRUST_PROXY = env.TRUST_PROXY === '1'; // aynı makinedeki ters vekil (Caddy, cloudflared) arkasında: gerçek istemci adresi X-Forwarded-For'un SON adresinden okunur
+const TRUST_CF = TRUST_PROXY && env.TRUST_CF_HEADER === '1'; // yalnızca gerçek Cloudflare Tunnel'da: CF-Connecting-IP'ye güven (Caddy bu başlığı istemciden olduğu gibi geçirir)
 const MAPBOX_BASE = env.MAPBOX_BASE || 'https://api.mapbox.com'; // yalnızca denemeler için değiştirilir
 const OCM_BASE = env.OCM_BASE || 'https://api.openchargemap.io';
 const OVERPASS = list(env.OVERPASS_URLS || 'https://overpass-api.de/api/interpreter,https://overpass.private.coffee/api/interpreter,https://overpass.kumi.systems/api/interpreter');
@@ -77,7 +78,7 @@ const authOk = (code) => {
 // X-Admin-Token belirteci, yönetici Google hesabı ya da YEREL istek (aynı makinedeki komut satırı betikleri: premium/restart/invite.mjs).
 // Tanımsız ya da geçersizse hiçbir şey değişmez. Ayrıntı: server/README.md "Yönetim ekranı: ikinci adım (TOTP)".
 const ADMIN_TTL_SEC = Math.min(43200, Math.max(1, Math.floor(Number(env.ADMIN_TOKEN_TTL_SEC) || 43200))); // belirteç ömrü (en çok 12 sa; kısa değer yalnızca test için)
-const adminAuth = createAdminAuth(env.ADMIN_TOTP_SECRET, { ttlMs: ADMIN_TTL_SEC * 1000 });
+const adminAuth = createAdminAuth(env.ADMIN_TOTP_SECRET, { ttlMs: ADMIN_TTL_SEC * 1000, stateFile: join(env.DATA_DIR || join(here, 'data'), 'totp-last.json'), onError: () => console.error('UYARI: totp-last.json yazılamadı (tekrar oynatma durumu yalnızca bellekte)') });
 if (String(env.ADMIN_TOTP_SECRET || '').trim() && !adminAuth) console.error('UYARI: ADMIN_TOTP_SECRET geçersiz (base32, en az 16 bayt olmalı): yönetim ikinci adımı KAPALI. Yeniden üret: node server/totp-setup.mjs --force');
 if (adminAuth) setInterval(() => adminAuth.sweep(), 600e3).unref();
 // Yerel istek: soket adresi loopback VE hiçbir vekil başlığı yok. Caddy/cloudflared her dış isteğe X-Forwarded-For ekler; istemci kendini yalnızca DAHA AZ yerel gösterebilir.
@@ -500,9 +501,17 @@ async function adminLogin(req, res, ip) {
   let b;
   try { b = JSON.parse(raw.toString('utf8')); } catch { return json(res, 400, { error: 'geçersiz gövde' }); }
   if (!b || typeof b !== 'object' || Array.isArray(b)) return json(res, 400, { error: 'geçersiz gövde' });
+  // Gövde beklenirken başka denemeler kilidi açmış olabilir (yavaş gövdeli eşzamanlı istekler): kilit burada YENİDEN denetlenir.
+  // Buradan fail()/consume()'a kadar her şey eşzamanlıdır (await yok), denemeler arasına başka istek giremez.
+  const wait2 = adminAuth.gate(ip);
+  if (wait2) return json(res, 429, { error: 'çok fazla yanlış deneme, sonra dene' }, { 'Retry-After': String(wait2) });
   const codeOk = authOk(typeof b.code === 'string' ? b.code : '');
   const step = adminAuth.matchTotp(typeof b.totp === 'string' ? b.totp : ''); // kod yanlış olsa da hesaplanır (süre farkı yok)
-  if (!codeOk || step === null) { adminAuth.fail(ip); return json(res, 401, { error: 'kod yanlış' }); }
+  if (!codeOk || step === null) {
+    const tripped = adminAuth.fail(ip, codeOk); // genel sınıra yalnızca doğru erişim kodlu (TOTP yanlış) denemeler sayılır
+    if (tripped) console.error(`admin giriş kilidi: ${tripped === 'ip' ? 'ip ' + ip + ' (1 sa)' : 'global (10 dk)'}`);
+    return json(res, 401, { error: 'kod yanlış' });
+  }
   adminAuth.consume(step); // bu adımın kodu bir daha kabul edilmez
   adminAuth.success(ip);
   return json(res, 200, adminAuth.issueToken());
@@ -511,8 +520,11 @@ async function adminLogin(req, res, ip) {
 // ---------- sunucu ----------
 const clientIp = (req) => {
   const raw = req.socket.remoteAddress || '?';
-  if (TRUST_PROXY && /^(::1|127\.0\.0\.1|::ffff:127\.0\.0\.1)$/.test(raw)) return String(req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'] || raw).split(',')[0].trim();
-  return raw;
+  if (!TRUST_PROXY || !/^(::1|127\.0\.0\.1|::ffff:127\.0\.0\.1)$/.test(raw)) return raw;
+  if (TRUST_CF && req.headers['cf-connecting-ip']) return String(req.headers['cf-connecting-ip']).split(',')[0].trim();
+  // Caddy güvenilmeyen istemcinin X-Forwarded-For'unu kendi gördüğü adresle değiştirir; zincire istemcinin eklediği adresler olsa bile SON adres vekilin gördüğüdür
+  const xff = String(req.headers['x-forwarded-for'] || '').split(',').map((x) => x.trim()).filter(Boolean);
+  return xff.length ? xff[xff.length - 1] : raw;
 };
 
 process.on('unhandledRejection', (err) => console.error('yakalanmamış söz reddi:', scrub(String(err?.message || err)))); // tek bir hatalı istek süreci düşürmesin
@@ -611,7 +623,14 @@ const server = http.createServer(async (req, res) => {
       if (cfg.provider !== 'osm' && !mapAllowed(id)) return json(res, 429, { error: 'günlük harita hakkı doldu' }, { 'Retry-After': '3600' });
       return json(res, 200, cfg, { 'Cache-Control': 'no-store' });
     }
-    if (adminAuth && p === '/admin/logout' && req.method === 'POST' && id.admin) { adminAuth.revoke(req.headers['x-admin-token']); return json(res, 200, { ok: true }); } // yönetim sayfası Çıkış
+    if (adminAuth && p === '/admin/logout' && req.method === 'POST' && id.admin) { // yönetim sayfası Çıkış; ?all=1 yalnızca bu makineden: her yerden çıkış
+      if (url.searchParams.get('all') === '1') {
+        if (!isLocal(req)) return json(res, 403, { error: 'yalnızca yerel' });
+        return json(res, 200, { ok: true, revoked: adminAuth.revokeAll() });
+      }
+      adminAuth.revoke(req.headers['x-admin-token']);
+      return json(res, 200, { ok: true });
+    }
     if (p === '/admin/map' && id.admin && (req.method === 'GET' || req.method === 'POST')) {
       if (req.method === 'GET') return json(res, 200, { default: maps.getDefault(), available: maps.available() });
       const b = await readJson(req, 500);

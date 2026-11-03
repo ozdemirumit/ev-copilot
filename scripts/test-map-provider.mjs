@@ -1553,17 +1553,50 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
         ok('(10a) genel sınır: 10 dk sonra açılır', a.gate('9.9.9.9') === 0);
         clock = 1111111109 * 1000;
       }
+      {
+        const a = mk();
+        for (let i = 0; i < 30; i++) a.fail('10.2.0.' + i, false);
+        ok('(10a) yanlış ERİŞİM KODU genel sınıra sayılmaz (30 adres) → açık', a.gate('9.9.9.9') === 0);
+        const marks = [];
+        for (let i = 0; i < 5; i++) marks.push(a.fail('10.3.0.1', false));
+        ok('(10a) fail(): adres kilidi açılınca "ip" döner', JSON.stringify(marks) === '[null,null,null,null,"ip"]' && a.gate('10.3.0.1') === 3600);
+        const b = mk(), gm = [];
+        for (let i = 0; i < 25; i++) gm.push(b.fail('10.4.0.' + i, true));
+        ok('(10a) fail(): genel kilit açılınca "global" döner', gm[24] === 'global' && gm.slice(0, 24).every((x) => x === null));
+      }
+      {
+        const a = mk();
+        const ts = [a.issueToken().token, a.issueToken().token, a.issueToken().token];
+        ok('(10a) revokeAll tüm belirteçleri siler', a.revokeAll() === 3 && ts.every((t) => !a.tokenValid(t)));
+      }
+      {
+        const sdir = mkdtempSync(join(tmpdir(), 'totp-state-'));
+        try {
+          const sf = join(sdir, 'totp-last.json');
+          const a = mk({ stateFile: sf });
+          a.consume(a.matchTotp('081804'));
+          const saved = JSON.parse(readFileSync(sf, 'utf8'));
+          ok('(10a) son kullanılan adım dosyaya yazılır (yalnızca adım numarası)', saved.lastUsed === Math.floor(1111111109 / 30) && Object.keys(saved).length === 1);
+          ok('(10a) yeni örnek (yeniden başlatma) dosyayı okur: aynı kod red, sonraki adım kabul', mk({ stateFile: sf }).matchTotp('081804') === null && mk({ stateFile: sf }).matchTotp(at(1111111109 + 30)) !== null);
+          writeFileSync(sf, '{bozuk');
+          ok('(10a) bozuk durum dosyası tolere edilir', mk({ stateFile: sf }).matchTotp('081804') !== null);
+          rmSync(sf);
+          ok('(10a) eksik durum dosyası tolere edilir', mk({ stateFile: sf }).matchTotp('081804') !== null);
+          writeFileSync(sf, JSON.stringify({ lastUsed: Math.floor(1111111109 / 30) + 100 }));
+          ok('(10a) pencerenin ötesindeki (gelecek) adım yok sayılır (saat düzeltilince giriş kilitlenmez)', mk({ stateFile: sf }).matchTotp('081804') !== null);
+        } finally { rmSync(sdir, { recursive: true, force: true }); }
+      }
     } catch (e) {
       ok('Bölüm 10 (a) çalıştı: ' + e.message, false);
     }
   }
 
-  // (b) sunucu: alt süreçler (18781-18785)
+  // (b) sunucu: alt süreçler (18780-18786, 18789, 18795, 18796)
   const children = [], dirs = [], logs = [], responses = [], tokensSeen = [];
-  async function start(port, extra = {}) {
-    const dir = mkdtempSync(join(tmpdir(), 'totp-test-')); dirs.push(dir);
-    writeFileSync(join(dir, 'db.json'), JSON.stringify({ users: {}, invites: {}, docs: {}, sessions: {} }));
-    const blank = Object.fromEntries(['MAPBOX_TOKEN', 'OCM_KEY', 'HERE_API_KEY', 'GOOGLE_PLACES_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SMTP_USER', 'SMTP_PASS', 'PUBLIC_URL', 'ADMIN_EMAILS', 'GOOGLE_MAPS_BROWSER_KEY', 'MAPBOX_MAP_TOKEN', 'GOOGLE_MAP_ID', 'MAP_DAILY_PER_USER', 'MAP_DAILY_TOTAL', 'TRUST_PROXY', 'PREMIUM_REQUIRED', 'ADMIN_TOTP_SECRET', 'ADMIN_TOKEN_TTL_SEC'].map((k) => [k, '']));
+  async function start(port, extra = {}, reuseDir = null) {
+    const dir = reuseDir || mkdtempSync(join(tmpdir(), 'totp-test-'));
+    if (!reuseDir) { dirs.push(dir); writeFileSync(join(dir, 'db.json'), JSON.stringify({ users: {}, invites: {}, docs: {}, sessions: {} })); }
+    const blank = Object.fromEntries(['MAPBOX_TOKEN', 'OCM_KEY', 'HERE_API_KEY', 'GOOGLE_PLACES_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SMTP_USER', 'SMTP_PASS', 'PUBLIC_URL', 'ADMIN_EMAILS', 'GOOGLE_MAPS_BROWSER_KEY', 'MAPBOX_MAP_TOKEN', 'GOOGLE_MAP_ID', 'MAP_DAILY_PER_USER', 'MAP_DAILY_TOTAL', 'TRUST_PROXY', 'TRUST_CF_HEADER', 'PREMIUM_REQUIRED', 'ADMIN_TOTP_SECRET', 'ADMIN_TOKEN_TTL_SEC'].map((k) => [k, '']));
     const child = spawn(process.execPath, ['server/proxy.mjs'], { cwd: ROOT, env: { ...process.env, ...blank, PREMIUM_REQUIRED: '1', PORT: String(port), HOST: '127.0.0.1', DATA_DIR: dir, ACCESS_CODES: CODE, ...extra }, stdio: ['ignore', 'pipe', 'pipe'] });
     children.push(child);
     let out = ''; logs.push(() => out);
@@ -1580,7 +1613,7 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
       responses.push({ path, text, login: path === '/admin/login' && r.status === 200 });
       return { status: r.status, text, json: j, headers: r.headers };
     };
-    return { call, log: () => out };
+    return { call, log: () => out, child };
   }
   const XFF = { 'X-Forwarded-For': '203.0.113.5' };
   const C = { 'X-Access-Code': CODE };
@@ -1663,6 +1696,85 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
     r = await S.call('GET', '/admin/summary', { headers: { 'X-Admin-Token': tok, 'X-Forwarded-For': L } });
     ok('(10b) giriş kilidi geçerli belirteci ve eski 10/10 kilidini etkilemez', r.status === 200);
     ok('(10b) açılış günlüğü TOTP açık der', /TOTP açık/.test(S.log()));
+    await sleep(100);
+    ok('(10b) adres kilidi açılınca tek günlük satırı (admin giriş kilidi: ip)', (S.log().match(/admin giriş kilidi: ip/g) || []).length === 1);
+
+    // istemci adresi (TRUST_PROXY=1, TRUST_CF_HEADER yok): CF-Connecting-IP yok sayılır, X-Forwarded-For'un SON adresi kullanılır
+    await S.call('GET', '/zz-ip-cf', { headers: { 'CF-Connecting-IP': '198.18.7.7', 'X-Forwarded-For': '198.18.1.1' } });
+    await S.call('GET', '/zz-ip-xff', { headers: { 'X-Forwarded-For': '6.6.6.6, 198.18.2.2' } });
+    await sleep(150);
+    ok('(10b) TRUST_PROXY=1: istemcinin gönderdiği CF-Connecting-IP yok sayılır', /198\.18\.1\.1 GET \/zz-ip-cf /.test(S.log()) && !/198\.18\.7\.7 GET/.test(S.log()));
+    ok('(10b) TRUST_PROXY=1: X-Forwarded-For zincirinin SON adresi kullanılır', /198\.18\.2\.2 GET \/zz-ip-xff /.test(S.log()) && !/6\.6\.6\.6 GET/.test(S.log()));
+    const bad = { code: CODE + 'x', totp: '000000' };
+    const cfRot = [];
+    for (let i = 0; i < 5; i++) cfRot.push((await S.call('POST', '/admin/login', { headers: { 'X-Forwarded-For': '198.18.3.3', 'CF-Connecting-IP': '10.77.0.' + i }, body: bad })).status);
+    r = await S.call('POST', '/admin/login', { headers: { 'X-Forwarded-For': '198.18.3.3', 'CF-Connecting-IP': '10.77.0.99' }, body: bad });
+    ok('(10b) CF-Connecting-IP döndürerek adres kilidinden kaçılamaz (6. deneme 429)', cfRot.every((s) => s === 401) && r.status === 429);
+    const xRot = [];
+    for (let i = 0; i < 5; i++) xRot.push((await S.call('POST', '/admin/login', { headers: { 'X-Forwarded-For': `${i + 1}.1.1.1, 198.18.4.4` }, body: bad })).status);
+    r = await S.call('POST', '/admin/login', { headers: { 'X-Forwarded-For': '9.9.9.9, 198.18.4.4' }, body: bad });
+    ok('(10b) X-Forwarded-For başına adres ekleyerek adres kilidinden kaçılamaz', xRot.every((s) => s === 401) && r.status === 429);
+
+    // yerel "her yerden çıkış": POST /admin/logout?all=1
+    r = await S.call('POST', '/admin/logout?all=1', { headers: { 'X-Admin-Token': tok, ...XFF } });
+    r2 = await S.call('POST', '/admin/logout?all=1', { headers: { ...C, ...XFF } });
+    r3 = await S.call('GET', '/admin/summary', { headers: T1 });
+    ok('(10b) /admin/logout?all=1 dışarıdan reddedilir (belirteçle 403, kodla 401), belirteçler kalır', r.status === 403 && r2.status === 401 && r3.status === 200);
+    r = await S.call('POST', '/admin/logout?all=1', { headers: C });
+    r2 = await S.call('GET', '/admin/summary', { headers: T1 });
+    ok('(10b) yerel /admin/logout?all=1 tüm belirteçleri siler', r.status === 200 && r.json?.ok === true && r2.status === 401);
+
+    // TRUST_CF_HEADER=1 (gerçek Cloudflare Tunnel): CF-Connecting-IP kullanılır
+    const K = await start(18780, { ADMIN_TOTP_SECRET: SECRET, TRUST_PROXY: '1', TRUST_CF_HEADER: '1' });
+    await K.call('GET', '/zz-ip-cfon', { headers: { 'CF-Connecting-IP': '198.18.5.5', 'X-Forwarded-For': '198.18.6.6' } });
+    await sleep(150);
+    ok('(10b) TRUST_PROXY=1 + TRUST_CF_HEADER=1: CF-Connecting-IP kullanılır', /198\.18\.5\.5 GET \/zz-ip-cfon /.test(K.log()));
+
+    // yavaş gövde yarışı: kilit gövde okunduktan SONRA yeniden denetlenir
+    const W = await start(18795, { ADMIN_TOTP_SECRET: SECRET, TRUST_PROXY: '1' });
+    const httpm = await import('node:http');
+    const slow = (ip) => {
+      const body = JSON.stringify(bad);
+      let finish;
+      const done = new Promise((resolve) => {
+        const rq = httpm.request({ host: '127.0.0.1', port: 18795, method: 'POST', path: '/admin/login', agent: false, headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body), 'X-Forwarded-For': ip } }, (res) => { let t = ''; res.on('data', (d) => { t += d; }); res.on('end', () => resolve({ status: res.statusCode, text: t })); });
+        rq.on('error', (e) => resolve({ status: 0, text: e.message }));
+        rq.write(body.slice(0, 5));
+        finish = () => rq.end(body.slice(5));
+      });
+      return { done, finish };
+    };
+    const sl = Array.from({ length: 12 }, () => slow('198.18.10.10'));
+    await sleep(500); // hepsi ilk kilit denetimini geçip gövde bekliyor
+    sl.forEach((x) => x.finish());
+    const sr = await Promise.all(sl.map((x) => x.done));
+    ok('(10b) eşzamanlı 12 yavaş gövdeli giriş: kilit açılınca kalanlar değerlendirilmeden 429 (5×401, 7×429)', sr.filter((x) => x.status === 401).length === 5 && sr.filter((x) => x.status === 429).length === 7);
+
+    // yanlış ERİŞİM KODU genel kilide sayılmaz (kilitleme saldırısı sahibin girişini engelleyemez)
+    const N = await start(18796, { ADMIN_TOTP_SECRET: SECRET, TRUST_PROXY: '1' });
+    const ns = [];
+    for (let a = 0; a < 7; a++) for (let i = 0; i < 4; i++) ns.push((await login(N, '10.5.0.' + a, { code: CODE + 'x', totp: wrongCode() })).status);
+    await untilSafe();
+    r = await login(N, '10.9.9.8', { code: CODE, totp: nowCode(0) });
+    if (r.json?.token) tokensSeen.push(r.json.token);
+    ok('(10b) 28 yanlış erişim kodu (7 adres) genel kilidi açmaz: sahibin geçerli girişi 200', ns.every((s) => s === 401) && r.status === 200);
+    ok('(10b) yanlış erişim kodlarında genel kilit günlük satırı yok', !/admin giriş kilidi: global/.test(N.log()));
+
+    // tekrar oynatma durumu yeniden başlatmadan sonra (DATA_DIR/totp-last.json)
+    const pdir = mkdtempSync(join(tmpdir(), 'totp-test-')); dirs.push(pdir);
+    writeFileSync(join(pdir, 'db.json'), JSON.stringify({ users: {}, invites: {}, docs: {}, sessions: {} }));
+    const P1 = await start(18786, { ADMIN_TOTP_SECRET: SECRET }, pdir);
+    await untilSafe();
+    const pc = nowCode(0);
+    r = await login(P1, null, { code: CODE, totp: pc });
+    if (r.json?.token) tokensSeen.push(r.json.token);
+    const pst = existsSync(join(pdir, 'totp-last.json')) ? readFileSync(join(pdir, 'totp-last.json'), 'utf8') : '';
+    await new Promise((res) => { P1.child.once('exit', res); P1.child.kill(); });
+    const P2 = await start(18789, { ADMIN_TOTP_SECRET: SECRET }, pdir);
+    r2 = await login(P2, null, { code: CODE, totp: pc });
+    r3 = await login(P2, null, { code: CODE, totp: nowCode(1) });
+    if (r3.json?.token) tokensSeen.push(r3.json.token);
+    ok('(10b) tekrar oynatma durumu DATA_DIR/totp-last.json ile yeniden başlatmadan sonra da geçerli', r.status === 200 && /^\{"lastUsed":\d+\}$/.test(pst) && r2.status === 401 && r3.status === 200);
 
     // --- genel sınır: 7 adres × 4 yanlış = 28 → 25.den sonra herkese 429 ---
     const G = await start(18782, { ADMIN_TOTP_SECRET: SECRET, TRUST_PROXY: '1' });
@@ -1673,6 +1785,7 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
     ok('(10b) genel sınır: ilk 25 yanlış 401, sonrası 429; yeni adrese de 429 (Retry-After ≈ 600)', gs.slice(0, 25).every((s) => s === 401) && gs.slice(25).every((s) => s === 429) && r.status === 429 && gra > 500 && gra <= 600);
     r = await G.call('GET', '/admin/summary', { headers: C });
     ok('(10b) genel giriş sınırı yerel CLI erişimini etkilemez', r.status === 200);
+    ok('(10b) genel kilit açılınca tek günlük satırı (admin giriş kilidi: global)', (G.log().match(/admin giriş kilidi: global/g) || []).length === 1);
 
     // --- belirteç süresi (ADMIN_TOKEN_TTL_SEC=1) ---
     const E = await start(18783, { ADMIN_TOTP_SECRET: SECRET, ADMIN_TOKEN_TTL_SEC: '1' });
@@ -1690,6 +1803,9 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
     r = await U.call('GET', '/admin/auth');
     r2 = await U.call('GET', '/admin/summary', { headers: { ...C, ...XFF } });
     r3 = await U.call('POST', '/admin/login', { body: { code: CODE, totp: '000000' } });
+    await U.call('GET', '/zz-ip-none', { headers: { 'CF-Connecting-IP': '198.18.8.8', 'X-Forwarded-For': '198.18.9.9' } });
+    await sleep(150);
+    ok('(10b) TRUST_PROXY yok: vekil başlıkları yok sayılır, soket adresi kullanılır', /127\.0\.0\.1 GET \/zz-ip-none /.test(U.log()));
     ok('(10b) ADMIN_TOTP_SECRET yok → /admin/auth {totp:false}, dışarıdan kodla /admin/summary 200, /admin/login eskisi gibi (401 giriş gerekli)', r.text === '{"totp":false}' && r2.status === 200 && r3.status === 401 && r3.json?.error === 'giriş gerekli');
     ok('(10b) ADMIN_TOTP_SECRET yok → açılış günlüğünde TOTP sözü yok', !/TOTP/.test(U.log()));
     const BAD = 'NOT*BASE32*SECRET';
@@ -1706,7 +1822,7 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
   }
   if (T) {
     const allLogs = logs.map((f) => f()).join('\n');
-    ok('(10b) sunucu çıktısında TOTP anahtarı ve belirteç yok', logs.length >= 5 && !allLogs.includes(SECRET) && tokensSeen.length >= 3 && tokensSeen.every((t) => !allLogs.includes(t)));
+    ok('(10b) sunucu çıktısında TOTP anahtarı, erişim kodu ve belirteç yok', logs.length >= 5 && !allLogs.includes(SECRET) && !allLogs.includes(CODE) && tokensSeen.length >= 3 && tokensSeen.every((t) => !allLogs.includes(t)));
     ok('(10b) hiçbir yanıtta anahtar yok; belirteç yalnızca giriş yanıtında', responses.length > 20 && responses.every((x) => !x.text.includes(SECRET)) && tokensSeen.every((t) => responses.filter((x) => x.text.includes(t)).every((x) => x.login)));
   }
 
@@ -1722,6 +1838,10 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
     ok('(10c) süre dolunca mesaj: "Oturum süresi doldu, tekrar giriş yap"', html.includes('Oturum süresi doldu, tekrar giriş yap'));
     ok('(10c) TOTP açıkken erişim kodu saklanmaz (adm yalnızca !TOTP dalında yazılır, açılışta silinir)', /if \(!TOTP\)[^\n]*sessionStorage\.setItem\('adm',/.test(html) && (html.match(/sessionStorage\.setItem\('adm',/g) || []).length === 1 && html.includes("sessionStorage.removeItem('adm')"));
     ok('(10c) admin.html innerHTML / outerHTML / insertAdjacentHTML / document.write kullanmaz', !/innerHTML|outerHTML|insertAdjacentHTML|document\.write/.test(html));
+    const readme = readFileSync(fileURLToPath(new URL('../server/README.md', import.meta.url)), 'utf8');
+    const envEx = readFileSync(fileURLToPath(new URL('../server/.env.example', import.meta.url)), 'utf8');
+    ok('(10c) README/.env.example: Cloudflare Tunnel için TRUST_CF_HEADER=1, Caddy için yalnızca TRUST_PROXY=1', readme.includes('TRUST_CF_HEADER=1') && envEx.includes('TRUST_CF_HEADER') && /Caddy[^\n]*TRUST_PROXY=1/.test(readme));
+    ok('(10c) README: her yerden çıkış (/admin/logout?all=1), TCP yönlendiriciler ve TOTP\'nin yalnızca /admin/* koruduğu', readme.includes('/admin/logout?all=1') && readme.includes('portproxy') && readme.includes('ssh -L') && /yalnızca `\/admin\/\*`/.test(readme));
   }
 
   // (d) kurulum betiği: yalnızca geçici env dosyası (--env), sahte erişim kodu; çıktı yakalanır, yazdırılmaz

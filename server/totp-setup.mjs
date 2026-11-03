@@ -5,7 +5,7 @@
 // Diğer satırlara (erişim kodları, anahtarlar) dokunulmaz ve hiçbiri ekrana yazılmaz. Değiştirmeden önce dosyanın yedeği <dosya>.totp-yedek olarak
 // alınır (Windows'ta yalnızca SYSTEM, Yöneticiler ve sen okuyabilirsin). Sonra sunucuyu yeniden başlat: node server/restart.mjs
 import { randomBytes } from 'node:crypto';
-import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
+import { chmodSync, existsSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -56,7 +56,8 @@ if (found.length) {
 const bak = envFile + '.totp-yedek';
 try {
   writeFileSync(bak, '', { mode: 0o600 });
-  if (process.platform === 'win32') {
+  if (process.platform !== 'win32') chmodSync(bak, 0o600); // dosya önceden varsa mode yok sayılır
+  else {
     const me = `${process.env.USERDOMAIN || '.'}\\${process.env.USERNAME}`;
     execFileSync('icacls', [bak, '/inheritance:r', '/grant:r', '*S-1-5-18:F', '*S-1-5-32-544:F', `${me}:F`], { stdio: 'ignore' });
   }
