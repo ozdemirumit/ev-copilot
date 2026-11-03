@@ -137,13 +137,16 @@ async function load() {
 
 function card(big, small, compact) { const c = el('div', 'card' + (compact ? ' sm' : '')); c.append(el('b', '', big), el('span', '', small)); return c; }
 // Sağlayıcı istek türleri (server/costs.mjs KINDS) ve kota sayacı türleri için okunur adlar
-const KIND_NAMES = { google: 'Google Places', here: 'HERE istasyon', slimit: 'HERE hız limiti', mapbox: 'Mapbox (rota/arama)', map_mapbox: 'Mapbox harita (anahtar verme)', map_google: 'Google harita (anahtar verme)', ocm: 'OpenChargeMap', overpass: 'Overpass',
+const KIND_NAMES = { google: 'Google Places', here: 'HERE istasyon', slimit: 'HERE hız limiti', mapbox: 'Mapbox rota (eski kayıtlarda arama dahil)', mapbox_search: 'Mapbox arama (istasyon)', map_mapbox: 'Mapbox harita (anahtar verme)', map_google: 'Google harita (anahtar verme)', ocm: 'OpenChargeMap', overpass: 'Overpass',
   map: 'harita anahtarı (kota)', occupancy: 'doluluk', price: 'fiyat bildirimi', presence: 'şarj bildirimi', status: 'Dolu/Boş bildirimi', sinfo: 'istasyon bilgisi', srate: 'puan', sfac: 'olanak', sphoto: 'fotoğraf' };
 const kindName = (k) => KIND_NAMES[k] || k;
 const provName = (k) => (k === 'here' ? 'HERE (istasyon + doluluk)' : kindName(k)); // kalıcı sayaçta 'here' doluluk sorgularını da içerir (kota sayacında içermez)
 // CSV hücresi: metin çift tırnakla (iç tırnak ikilenir); = + - @ sekme CR ile başlayan metne ' eklenir (Excel formül enjeksiyonu); sayılar olduğu gibi. Testte ayıklanıp çalıştırılır: tek satır kalmalı.
 function csvCell(v) { if (typeof v === 'number') return String(v); let s = String(v ?? ''); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }
 const tri = (t) => `${t?.today ?? 0} / ${t?.month ?? 0} / ${t?.total ?? 0}`; // bugün / bu ay / toplam
+const per1k = (u) => '$' + Number((u * 1000).toPrecision(3)); // çağrı başına USD → 1000 çağrı fiyatı
+/** Kişinin brüt (ücretsiz kota düşülmemiş) tahmini USD'si: f = 'today' | 'month' | 'total'; est yoksa (eski sunucu) Google'a düşer. */
+const grossUsd = (r, est, f) => (est ? Object.entries(est).reduce((s, [k, e]) => s + (r.usage?.[k]?.[f] || 0) * e.unit, 0) : r.usd?.[f] || 0);
 function table(heads, rows, numCols = []) {
   const w = el('div', 'wrap'); const t = el('table');
   const h = el('tr'); heads.forEach((x, i) => h.append(el('th', numCols.includes(i) ? 'n' : '', x)));
@@ -177,7 +180,7 @@ function drawSum(root) {
   root.append(gi);
   root.append(el('h2', '', 'Google Places (ücretli)'));
   const gg = el('div', 'grid');
-  gg.append(card(`${s.google.callsToday} / ${s.google.dailyCap}`, 'bugünkü çağrı / günlük tavan'), card(usd(s.google.usd.today), 'bugün (tahmini)'), card(usd(s.google.usd.month), 'bu ay (tahmini)'), card(usd(s.google.usd.total), 'toplam (tahmini)'));
+  gg.append(card(`${s.google.callsToday} / ${s.google.dailyCap}`, 'bugünkü çağrı / günlük tavan'), card(usd(s.google.usd.today), 'bugün (brüt tahmini)'), card(usd(s.google.usd.month), 'bu ay (brüt tahmini)'), card(usd(s.google.usd.total), 'toplam (brüt tahmini)'));
   root.append(gg);
   root.append(el('h2', '', 'Sağlayıcı istekleri (sunucu sayacı)'));
   const pv = s.providers || { kinds: [], totals: {} };
@@ -186,6 +189,7 @@ function drawSum(root) {
   root.append(gp);
   root.append(el('p', 'mut', 'Yalnızca sağlayıcıya gerçekten gönderilen istekler sayılır (gönderilip hata/zaman aşımıyla biten dahil; önbellekten dönen ve reddedilen istekler sayılmaz); yönetici hesapları ve yönetici kodu dahil. HERE satırı doluluk sorgularını da içerir.'));
   root.append(el('p', 'mut', 'Harita satırları için: anahtar verme ≠ gerçek harita yüklemesi. Uygulama açılışta sunucudan yalnızca harita anahtarını alır; harita döşemeleri tarayıcıdan doğrudan Mapbox/Google\'a gider ve sunucudan geçmez. Gerçek harita yükleme sayısı ve tutarı aşağıdaki Fatura bölümündeki sağlayıcı panellerindedir.'));
+  drawEstimate(root, s.estimate);
   const QNOTE = 'Kota sayacı yöneticileri ve yönetici kodunu da sayar (onlar için sınır yok); reddedilen istekler de sayılır, sağlayıcı dışı türler (doluluk, bildirimler…) de vardır. Sunucu yeniden başlayınca sıfırlanır.';
   root.append(el('h2', '', 'Bugünkü istekler (kota sayacı, bellek içi, yeniden başlatınca sıfırlanır)'));
   root.append(el('p', 'mut', QNOTE));
@@ -321,34 +325,48 @@ function drawInv(root) {
   root.append(table(['Etiket', 'E-posta', 'Premium', 'Durum', 'Oluşturma', 'Son geçerlilik', 'Kullanan', 'İşlem'], rows));
 }
 
+/** Ücretli sağlayıcılar: toplam kartları + tür tablosu (ücretsiz aylık kota düşülmüş tahmini USD). est: sunucudaki costs.estimate(). */
+function drawEstimate(root, est) {
+  const ks = Object.keys(est || {});
+  if (!ks.length) return;
+  const sumF = (f) => ks.reduce((t, k) => t + est[k].usd[f], 0);
+  root.append(el('h2', '', 'Tahmini maliyet (ücretsiz aylık kota düşülmüş)'));
+  const g = el('div', 'grid');
+  g.append(card(usd(sumF('today')), 'bugün (tahmini)'), card(usd(sumF('month')), 'bu ay (tahmini)'), card(usd(sumF('total')), 'toplam (tahmini)'));
+  root.append(g);
+  root.append(table(['Sağlayıcı', '1000 çağrı', 'Ücretsiz / ay', 'Bu ay çağrı', 'Kalan ücretsiz', 'Bugün', 'Bu ay', 'Toplam'],
+    ks.map((k) => { const e = est[k]; return [provName(k), per1k(e.unit), e.free, e.calls.month, e.freeLeft, usd(e.usd.today), usd(e.usd.month), usd(e.usd.total)]; }), [1, 2, 3, 4, 5, 6, 7]));
+  root.append(el('p', 'mut', 'Tahmindir, fatura değildir: ücretsiz kota hesap geneli ay ay düşülür (toplam, tutulan son 400 günü kapsar). Fiyat ve kotalar sunucuda varsayılan; HERE ve Mapbox arama rakamları doğrulanmadı, .env\'de COST_<TÜR>_PER_1K_USD / COST_<TÜR>_FREE_MONTHLY ile değiştirilir (server/README.md). Harita satırları anahtar vermeyi sayar, gerçek yüklemeyi değil. OpenChargeMap ve Overpass ücretsizdir. Asıl tutar sağlayıcı fatura panellerindedir.'));
+}
+
 function drawCost(root) {
   root.replaceChildren();
   const c = D.cost; const kinds = c.kinds || []; const tot = c.totals || {};
+  drawEstimate(root, c.estimate);
   const reqs = (r) => kinds.reduce((t, k) => t + (r.usage?.[k]?.total || 0), 0);
   const rows = (c.rows || []).sort((a, b) => reqs(b) - reqs(a) || b.usd.total - a.usd.total);
   const sum = (f) => rows.reduce((t, r) => t + f(r), 0);
   root.append(el('h2', '', 'Bu ay sağlayıcı başına toplam istek'));
   const g = el('div', 'grid');
   for (const k of kinds) g.append(card(tot[k]?.month ?? 0, provName(k) + ' · bu ay', true));
-  g.append(card(usd(sum((r) => r.usd.month)), 'Google Places · bu ay (tahmini USD)', true));
   root.append(g);
   const bar = el('div', 'row');
   const csv = el('button', 'sm', '⬇ CSV indir');
   csv.onclick = () => {
     const kcols = kinds.flatMap((k) => [k + '_bugun', k + '_ay', k + '_toplam']);
-    const lines = [['kullanici', 'bugun_cagri', 'bugun_usd', 'ay_cagri', 'ay_usd', 'toplam_cagri', 'toplam_usd', ...kcols].map(csvCell).join(',')];
-    rows.forEach((r) => lines.push([r.email, r.calls.today, r.usd.today, r.calls.month, r.usd.month, r.calls.total, r.usd.total, ...kinds.flatMap((k) => [r.usage?.[k]?.today || 0, r.usage?.[k]?.month || 0, r.usage?.[k]?.total || 0])].map(csvCell).join(',')));
+    const lines = [['kullanici', 'bugun_cagri', 'bugun_usd', 'ay_cagri', 'ay_usd', 'toplam_cagri', 'toplam_usd', ...kcols, 'brut_usd_bugun', 'brut_usd_ay', 'brut_usd_toplam'].map(csvCell).join(',')]; // *_usd: yalnızca Google Places; brut_usd_*: tüm ücretli türler, ücretsiz kota düşülmeden
+    rows.forEach((r) => lines.push([r.email, r.calls.today, r.usd.today, r.calls.month, r.usd.month, r.calls.total, r.usd.total, ...kinds.flatMap((k) => [r.usage?.[k]?.today || 0, r.usage?.[k]?.month || 0, r.usage?.[k]?.total || 0]), ...['today', 'month', 'total'].map((f) => Math.round(grossUsd(r, c.estimate, f) * 10000) / 10000)].map(csvCell).join(',')));
     // UTF-8 BOM: Excel Türkçe karakterleri doğru gösterir; satır sonu CRLF (RFC 4180)
     const a = el('a'); a.href = URL.createObjectURL(new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' })); a.download = 'saglayici-istekleri.csv'; a.click();
   };
-  bar.append(el('span', 'mut', `Hücreler: bugün / bu ay / toplam istek (sağlayıcıya gönderilen; hata/zaman aşımı dahil). HERE sütunu doluluk sorgularını da içerir. Tahmini USD yalnızca Google Places içindir: ${c.unitUsd} USD / çağrı (sunucuda GOOGLE_COST_PER_CALL_USD), asıl fatura Google Cloud Billing'dedir. HERE, Mapbox, OpenChargeMap ve Overpass için burada tutar yok; maliyetleri kendi fatura panellerinde görünür. Harita sütunları anahtar vermeyi sayar, gerçek harita yüklemesini değil.`), csv);
+  bar.append(el('span', 'mut', `Hücreler: bugün / bu ay / toplam istek (sağlayıcıya gönderilen; hata/zaman aşımı dahil). HERE sütunu doluluk sorgularını da içerir. Son sütun brüt tahmini USD'dir (ücretsiz kota düşülmeden, kişinin payı); ücretsiz kota düşülmüş tutar yukarıdaki tabloda. Google Places birim fiyatı: ${c.unitUsd} USD / çağrı (GOOGLE_COST_PER_CALL_USD). OpenChargeMap ve Overpass ücretsizdir. Harita sütunları anahtar vermeyi sayar, gerçek harita yüklemesini değil.`), csv);
   root.append(bar);
   const data = rows.map((r) => {
     const who = el('div', '', r.email); if (r.admin && r.id !== 'code') who.append(' ', chip('yönetici', 'ok'));
-    return [who, ...kinds.map((k) => tri(r.usage?.[k])), `${usd(r.usd.month)} / ${usd(r.usd.total)}`];
+    return [who, ...kinds.map((k) => tri(r.usage?.[k])), `${usd(grossUsd(r, c.estimate, 'month'))} / ${usd(grossUsd(r, c.estimate, 'total'))}`];
   });
-  data.push([el('b', '', 'TOPLAM'), ...kinds.map((k) => el('b', '', tri(tot[k]))), el('b', '', `${usd(sum((r) => r.usd.month))} / ${usd(sum((r) => r.usd.total))}`)]);
-  root.append(table(['Kullanıcı', ...kinds.map(provName), 'Google USD (ay / toplam)'], data, kinds.map((_, i) => i + 1).concat(kinds.length + 1)));
+  data.push([el('b', '', 'TOPLAM'), ...kinds.map((k) => el('b', '', tri(tot[k]))), el('b', '', `${usd(sum((r) => grossUsd(r, c.estimate, 'month')))} / ${usd(sum((r) => grossUsd(r, c.estimate, 'total')))}`)]);
+  root.append(table(['Kullanıcı', ...kinds.map(provName), 'Brüt USD (ay / toplam)'], data, kinds.map((_, i) => i + 1).concat(kinds.length + 1)));
 }
 
 function drawDev(root) {

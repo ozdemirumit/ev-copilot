@@ -404,7 +404,7 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
       }
       if (p === '/admin/costs' && req.method === 'GET') { // kullanıcı başına: Google (calls/usd, eski biçim) + tüm sağlayıcı istekleri (usage: tür → bugün / bu ay / toplam)
         const rows = (costs?.keys() || []).map((k) => { const u = data.users[k]; return { id: k, email: u?.email || (k === 'code' ? 'yönetici kodu' : k === '_silinen' ? '(silinen hesaplar)' : k), admin: k === 'code' || !!u?.admin, ...costs.summary(k), usage: costs.counts(k) }; });
-        json(res, 200, { unitUsd: costs?.unit ?? null, rows, kinds: costs?.kinds || [], totals: costs?.totals() || {} });
+        json(res, 200, { unitUsd: costs?.unit ?? null, rows, kinds: costs?.kinds || [], totals: costs?.totals() || {}, estimate: costs?.estimate() || {} }); // estimate: sağlayıcı geneli, ücretsiz kota düşülmüş; satırların brüt USD'si istemcide estimate[tür].unit ile
         return true;
       }
       const du = /^\/admin\/users\/(u_[A-Za-z0-9_-]+)\/(disable|enable)$/.exec(p);

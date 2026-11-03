@@ -1887,13 +1887,13 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
 {
   const http = await import('node:http');
   const { readFileSync } = await import('node:fs');
-  const KINDS = ['google', 'here', 'slimit', 'mapbox', 'map_mapbox', 'map_google', 'ocm', 'overpass'];
+  const KINDS = ['google', 'here', 'slimit', 'mapbox', 'mapbox_search', 'map_mapbox', 'map_google', 'ocm', 'overpass'];
   const today = new Date().toISOString().slice(0, 10);
 
   // (a) costs.mjs
   try {
     const { createCosts, KINDS: K } = await import('../server/costs.mjs');
-    ok('(11a) costs.mjs KINDS: google, here, slimit, mapbox, map_mapbox, map_google, ocm, overpass', JSON.stringify(K) === JSON.stringify(KINDS));
+    ok('(11a) costs.mjs KINDS: google, here, slimit, mapbox, mapbox_search, map_mapbox, map_google, ocm, overpass', JSON.stringify(K) === JSON.stringify(KINDS));
     let saves = 0;
     const store = { data: {}, save: () => { saves++; } };
     const c = createCosts(store, {});
@@ -1915,6 +1915,20 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
     for (let i = 0; i < 450; i++) sink.days[new Date(Date.UTC(2020, 0, 1) + i * 86400e3).toISOString().slice(0, 10)] = { here: 1 };
     store.data.costs.u_b = { total: { here: 1 }, days: { [today]: { here: 1 } } };
     c.forget('u_b');
+    // estimate: ücretsiz aylık kota ay ay düşülür, kota sağlayıcı geneli
+    {
+      const lm = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 0)).toISOString().slice(0, 10);
+      const es = { data: { costs: { u1: { total: { here: 17 }, days: { [lm]: { here: 12 }, [today]: { here: 5 } } }, u2: { total: {}, days: {} } } }, save: () => {} };
+      const ce = createCosts(es, { COST_HERE_PER_1K_USD: '2', COST_HERE_FREE_MONTHLY: '10', COST_MAPBOX_FREE_MONTHLY: 'abc', COST_SLIMIT_PER_1K_USD: '-1', GOOGLE_COST_PER_CALL_USD: '0.05' });
+      let e = ce.estimate();
+      ok('(11a) estimate: yalnızca ücretli türler; geçersiz .env varsayılana döner; Google birimi GOOGLE_COST_PER_CALL_USD', JSON.stringify(Object.keys(e)) === JSON.stringify(['google', 'here', 'slimit', 'mapbox', 'mapbox_search', 'map_mapbox', 'map_google']) && e.mapbox.free === 100000 && e.slimit.unit === 0.00075 && e.google.unit === 0.05 && e.google.free === 1000 && e.here.unit === 0.002 && e.here.free === 10);
+      ok('(11a) estimate: kota ay ay düşülür (geçen ay 12-10 → 2, bu ay 5 → 0), toplam 0.004, kalan ücretsiz 5', e.here.usd.month === 0 && e.here.usd.today === 0 && e.here.usd.total === 0.004 && e.here.freeLeft === 5 && e.here.calls.month === 5 && e.here.calls.total === 17);
+      ce.add({ kind: 'legacy' }, 'here', 8);
+      e = ce.estimate();
+      ok('(11a) estimate: bu ay 13 → 3 ücretli (0.006); bugün payı 0.006; toplam 0.01', e.here.usd.month === 0.006 && e.here.usd.today === 0.006 && e.here.usd.total === 0.01 && e.here.freeLeft === 0);
+      ce.add({ kind: 'legacy' }, 'ocm', 5);
+      ok('(11a) estimate: ocm/overpass tahmin dışı; harita ve arama türleri varsayılan fiyatla', !('ocm' in ce.estimate()) && ce.rates.map_google.unit === 0.007 && ce.rates.map_mapbox.free === 50000 && ce.rates.mapbox_search.unit === 0.0017);
+    }
     ok('(11a) "_silinen" kovası da en çok 400 gün tutar (sınırsız büyümez)', Object.keys(store.data.costs._silinen.days).length <= 400 && !!store.data.costs._silinen.days[today]);
   } catch (e) {
     ok('Bölüm 11 (a) çalıştı: ' + e.message, false);
@@ -2020,7 +2034,7 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
     ok('(11b) HERE hız limiti: 1 üst istek, 2. önbellekten', r1.status === 200 && r2.headers.get('x-cache') === 'hit' && up.slimit === 1);
     c = await costs();
     const P = row(c, 'u_prem')?.usage;
-    ok('(11b) kullanıcı satırı: here 1, mapbox 2, ocm 1, overpass 1, slimit 1 (bugün/ay/toplam)', !!P && P.here.today === 1 && P.here.month === 1 && P.here.total === 1 && P.mapbox.today === 2 && P.ocm.today === 1 && P.overpass.today === 1 && P.slimit.today === 1 && P.google.today === 0);
+    ok('(11b) kullanıcı satırı: here 1, mapbox (rota) 1, mapbox_search 1, ocm 1, overpass 1, slimit 1 (bugün/ay/toplam)', !!P && P.here.today === 1 && P.here.month === 1 && P.here.total === 1 && P.mapbox.today === 1 && P.mapbox_search.today === 1 && P.ocm.today === 1 && P.overpass.today === 1 && P.slimit.today === 1 && P.google.today === 0);
 
     // kota reddi: üst sunucuya gidilmez, sayılmaz; günlük hak normal kullanıcı için eskisi gibi
     const before = { ...up };
@@ -2029,7 +2043,7 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
     c = await costs();
     const P2 = row(c, 'u_prem')?.usage;
     ok('(11b) normal kullanıcıda günlük hak eskisi gibi: 2. farklı istek 429 (here/ocm/overpass/slimit), Mapbox 4. istek 429', q.every((x) => x.status === 429) && qmb.status === 429);
-    ok('(11b) 429 alan istekler üst sunucuya gitmez ve sayılmaz', up.here === before.here && up.ocm === before.ocm && up.overpass === before.overpass && up.slimit === before.slimit && up.mapbox === before.mapbox + 1 && P2.here.today === 1 && P2.ocm.today === 1 && P2.mapbox.today === 3 && P2.slimit.today === 1);
+    ok('(11b) 429 alan istekler üst sunucuya gitmez ve sayılmaz', up.here === before.here && up.ocm === before.ocm && up.overpass === before.overpass && up.slimit === before.slimit && up.mapbox === before.mapbox + 1 && P2.here.today === 1 && P2.ocm.today === 1 && P2.mapbox.today === 2 && P2.mapbox_search.today === 1 && P2.slimit.today === 1);
 
     // yönetici hesabı ve yönetici kodu: sınırsız ama sayılır
     const adm = [], code = [];
@@ -2064,7 +2078,8 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
     ok('(11b) /admin/costs eski alanlar: unitUsd, rows[].id/email/calls/usd', typeof c.unitUsd === 'number' && c.rows.every((x) => typeof x.id === 'string' && typeof x.email === 'string' && typeof x.calls?.today === 'number' && typeof x.usd?.total === 'number'));
     ok('(11b) /admin/costs yeni alanlar: kinds, totals, rows[].usage', JSON.stringify(c.kinds) === JSON.stringify(KINDS) && KINDS.every((k) => c.rows.every((x) => typeof x.usage?.[k]?.month === 'number')));
     ok('(11b) Maliyet toplamları = satırların toplamı (her tür, bugün/ay/toplam)', KINDS.every((k) => ['today', 'month', 'total'].every((f) => c.totals[k][f] === c.rows.reduce((s, x) => s + x.usage[k][f], 0))));
-    ok('(11b) toplam üst istek = sayaç toplamı (here, mapbox, ocm, overpass, slimit)', ['here', 'mapbox', 'ocm', 'overpass', 'slimit'].every((k) => c.totals[k].total === up[k]));
+    ok('(11b) toplam üst istek = sayaç toplamı (here, mapbox + mapbox_search, ocm, overpass, slimit)', ['here', 'ocm', 'overpass', 'slimit'].every((k) => c.totals[k].total === up[k]) && c.totals.mapbox.total + c.totals.mapbox_search.total === up.mapbox && c.totals.mapbox_search.total === 1);
+    ok('(11b) /admin/costs estimate: ücretli türler (ocm/overpass yok), kota ve birim fiyat, çağrılar sayaçla aynı', JSON.stringify(Object.keys(c.estimate || {})) === JSON.stringify(['google', 'here', 'slimit', 'mapbox', 'mapbox_search', 'map_mapbox', 'map_google']) && c.estimate.here.free === 30000 && c.estimate.mapbox_search.calls.total === 1 && c.estimate.here.calls.total === c.totals.here.total && c.estimate.map_mapbox.unit === 0.005 && c.estimate.here.usd.month === 0);
 
     // /admin/summary: kota sayacı yöneticileri de sayar, kullanıcı başına görünüm, sağlayıcı toplamları
     const s = (await A.call('GET', '/admin/summary', { auth: 'code' })).json;
@@ -2113,11 +2128,12 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
   // (c) admin.html
   const html = readFileSync(fileURLToPath(new URL('../server/admin.html', import.meta.url)), 'utf8');
   ok('(11c) Özet: "Sağlayıcı istekleri (sunucu sayacı)" bölümü', html.includes('Sağlayıcı istekleri (sunucu sayacı)'));
-  ok('(11c) sağlayıcı adları: HERE istasyon, HERE hız limiti, Mapbox (rota/arama), Mapbox harita (anahtar verme), Google harita (anahtar verme), OpenChargeMap, Overpass', ['HERE istasyon', 'HERE hız limiti', 'Mapbox (rota/arama)', 'Mapbox harita (anahtar verme)', 'Google harita (anahtar verme)', 'OpenChargeMap', 'Overpass'].every((t) => html.includes(t)));
+  ok('(11c) sağlayıcı adları: HERE istasyon, HERE hız limiti, Mapbox rota, Mapbox arama, Mapbox harita (anahtar verme), Google harita (anahtar verme), OpenChargeMap, Overpass', ['HERE istasyon', 'HERE hız limiti', 'Mapbox rota (eski kayıtlarda arama dahil)', 'Mapbox arama (istasyon)', 'Mapbox harita (anahtar verme)', 'Google harita (anahtar verme)', 'OpenChargeMap', 'Overpass'].every((t) => html.includes(t)));
   ok('(11c) "anahtar verme ≠ gerçek harita yüklemesi" notu', html.includes('anahtar verme ≠ gerçek harita yüklemesi'));
   ok('(11c) "Kullanıcı başına bugünkü istekler" tablosu (usageByUser)', html.includes('Kullanıcı başına bugünkü istekler') && html.includes('usageByUser'));
   ok('(11c) Google Places kartları yerinde', html.includes('Google Places (ücretli)') && html.includes('bugünkü çağrı / günlük tavan'));
-  ok('(11c) Maliyet: tüm sağlayıcılar (c.kinds, c.totals, r.usage), TOPLAM satırı, fatura notu', html.includes('c.totals') && html.includes('r.usage') && html.includes('TOPLAM') && html.includes('kendi fatura panellerinde'));
+  ok('(11c) Maliyet: tüm sağlayıcılar (c.kinds, c.totals, r.usage), TOPLAM satırı, fatura notu', html.includes('c.totals') && html.includes('r.usage') && html.includes('TOPLAM') && html.includes('fatura panellerindedir'));
+  ok('(11c) Tahmini maliyet: drawEstimate hem Özet hem Maliyet sekmesinde, ücretsiz kota notu, brüt USD sütunu ve CSV', (html.match(/drawEstimate\(root, [cs]\.estimate\)/g) || []).length === 2 && html.includes('Tahmini maliyet (ücretsiz aylık kota düşülmüş)') && html.includes('Brüt USD (ay / toplam)') && html.includes("'brut_usd_ay'") && html.includes('COST_<TÜR>_PER_1K_USD'));
   ok('(11c) CSV yeni sütunları içerir', html.includes("'_bugun'") && html.includes("'_ay'") && html.includes("'_toplam'"));
   ok('(11c) admin.html innerHTML / outerHTML / insertAdjacentHTML kullanmaz', !/innerHTML|outerHTML|insertAdjacentHTML|document\.write/.test(html));
 

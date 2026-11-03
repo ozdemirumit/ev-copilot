@@ -212,6 +212,7 @@ function adminSummary() {
     usageToday: byKind,
     usageByUser: usageByUser(),
     google: { callsToday: gToday.d === today() ? gToday.n : 0, dailyCap: GOOGLE_TOTAL, unitUsd: costs.unit, usd: tot },
+    estimate: costs.estimate(), // ücretli sağlayıcılar: ücretsiz kota düşülmüş tahmini USD (server/costs.mjs)
     providers: { kinds: costs.kinds, totals: costs.totals() }, // üst sağlayıcıya giden istekler (kalıcı sayaç, server/costs.mjs): tür başına bugün / bu ay / toplam
   };
 }
@@ -284,7 +285,7 @@ async function mapbox(req, res, url, id) {
     const real = new URLSearchParams(q);
     real.set('access_token', MAPBOX);
     if (isSearch) { mbUsage().n++; store.save(); }
-    costs.add(id, 'mapbox'); // üst sunucuya giden istek (önbellek isabeti ve ret buraya gelmez)
+    costs.add(id, isSearch ? 'mapbox_search' : 'mapbox'); // üst sunucuya giden istek (önbellek isabeti ve ret buraya gelmez); rota ve arama fiyatı farklı olduğu için ayrı türler
     return upstream(`${MAPBOX_BASE}${path}?${real}`);
   });
   if (rule[1] && u.status === 200) cset(key, u, rule[1]);
