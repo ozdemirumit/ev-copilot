@@ -531,13 +531,292 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
     const mv = src('js/ui/mapView.js'), sw = src('sw.js'), mbs = src('js/ui/maps/mapbox.js');
     ok("mapView mapbox dalı createMapboxMap(mapEl, cfg.token, { onAuthFail })", /import \{ createMapboxMap \} from '\.\/maps\/mapbox\.js'/.test(mv) && /createMapboxMap\(mapEl, cfg\.token, \{ onAuthFail/.test(mv));
     ok('mapView onAuthFail → forceOsm + sayfa yenileme', /forceOsm\(\)/.test(mv) && /location\.reload\(\)/.test(mv));
-    ok('mapView google dalı Task 7\'ye dek OpenFreeMap', /cfg\.provider === 'google'\) return await createMapLibreMap\(mapEl\)/.test(mv));
+    ok('mapView google dalı artık OpenFreeMap açmıyor (Task 7 bağladı; ayrıntı Bölüm 7)', !/cfg\.provider === 'google'\) return await createMapLibreMap\(mapEl\)/.test(mv));
     ok("sw.js SHELL './js/ui/maps/mapbox.js' içerir", sw.includes("'./js/ui/maps/mapbox.js'"));
     ok('mapbox.js gerçek belirteç içermez', !/pk\.[A-Za-z0-9_-]{20,}/.test(mbs) && !/sk\./.test(mbs));
   } catch (e) {
     ok('Bölüm 5 çalıştı: ' + e.message, false);
   } finally {
     console.error = origError;
+    for (const [k, d] of Object.entries(saved)) { if (d) Object.defineProperty(globalThis, k, d); else delete globalThis[k]; }
+  }
+}
+
+// ---- Bölüm 7: js/ui/maps/google.js (Google bağdaştırıcısı) ----
+// Ağ yok: window.google.maps sahte bir ad alanıdır (olay yayan sahte Map, Polyline, OverlayView); betik yükleyici sahte document ile denenir.
+// Sahte anahtar KEY yalnızca bağdaştırıcıya verilir; ok() adlarında geçmez (günlük/depolama taraması için).
+{
+  const { readFileSync } = await import('node:fs');
+  const src = (p) => readFileSync(fileURLToPath(new URL('../' + p, import.meta.url)), 'utf8');
+  const keys = ['window', 'document', 'localStorage', 'sessionStorage'];
+  const saved = Object.fromEntries(keys.map((k) => [k, Object.getOwnPropertyDescriptor(globalThis, k)]));
+  const def = (k, v) => Object.defineProperty(globalThis, k, { value: v, configurable: true, writable: true });
+  const tick = (ms = 10) => new Promise((r) => setTimeout(r, ms));
+  const KEY = 'gk-dummy-t7';
+  // Konsol: harita hataları çıktıyı kirletmesin; her şey kaydedilir (anahtar günlüğe yazılıyor mu diye taranır), log yine yazdırılır
+  const orig = { log: console.log, error: console.error, warn: console.warn, info: console.info }, logged = [];
+  console.error = (...x) => logged.push(x);
+  console.warn = (...x) => logged.push(x);
+  console.info = (...x) => logged.push(x);
+  console.log = (...x) => { logged.push(x); orig.log(...x); };
+  // Depolama casusu: yazılan her değer kaydedilir
+  const stored = [];
+  const fakeStorage = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => { stored.push([k, String(v)]); m.set(k, String(v)); }, removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
+
+  // Sahte DOM öğesi (append/remove/replaceChildren/style/title)
+  const fakeEl = (tag) => {
+    const e = {
+      tagName: String(tag).toUpperCase(), style: {}, children: [], parentNode: null, removed: false,
+      append(...c) { for (const x of c) { if (x && typeof x === 'object') x.parentNode = e; e.children.push(x); } },
+      appendChild(x) { e.append(x); return x; },
+      remove() { e.removed = true; if (e.parentNode) e.parentNode.children = e.parentNode.children.filter((y) => y !== e); e.parentNode = null; },
+      replaceChildren(...c) { e.children = []; e.append(...c); },
+      get firstChild() { return e.children[0] ?? null; },
+      querySelector: () => null,
+    };
+    return e;
+  };
+
+  // Sahte google.maps: maps[] ve polylines[] oluşturulanları tutar; cfg.autoIdle=false ise 'idle' kendiliğinden gelmez.
+  function fakeGm(cfg = { autoIdle: true }) {
+    const maps = [], polylines = [], overlays = [];
+    const on = (o, ev, fn) => { ((o._h ??= {})[ev] ??= []).push(fn); return { remove: () => off(o, ev, fn) }; };
+    const off = (o, ev, fn) => { if (o._h?.[ev]) o._h[ev] = o._h[ev].filter((f) => f !== fn); };
+    const fire = (o, ev, ...a) => { for (const f of [...(o._h?.[ev] || [])]) f(...a); };
+    const event = {
+      addListenerOnce(o, ev, fn) { const w = (...a) => { off(o, ev, w); fn(...a); }; return on(o, ev, w); },
+      addListener: (o, ev, fn) => on(o, ev, fn),
+      trigger: (o, ev, ...a) => fire(o, ev, ...a),
+      clearInstanceListeners(o) { o._h = {}; o.cleared = true; },
+    };
+    class Map {
+      constructor(div, opts) {
+        this.div = div; this.opts = { ...opts }; this.calls = []; this.mapTypeId = opts.mapTypeId ?? 'roadmap'; this.zoom = opts.zoom; this.heading = 0;
+        maps.push(this);
+        if (cfg.autoIdle) setTimeout(() => fire(this, 'idle'), 0);
+      }
+      addListener(ev, fn) { return on(this, ev, fn); }
+      fire(ev, ...a) { fire(this, ev, ...a); }
+      setMapTypeId(t) { this.mapTypeId = t; this.calls.push(['setMapTypeId', t]); }
+      getMapTypeId() { return this.mapTypeId; }
+      moveCamera(o) { this.calls.push(['moveCamera', o]); if (o.zoom != null) this.zoom = o.zoom; if (o.heading != null) this.heading = o.heading; }
+      panTo(c) { this.calls.push(['panTo', c]); }
+      fitBounds(b, pad) { this.calls.push(['fitBounds', b, pad]); this.zoom = 18; }
+      getZoom() { return this.zoom; }
+      setZoom(z) { this.zoom = z; this.calls.push(['setZoom', z]); }
+      setOptions(o) { Object.assign(this.opts, o); }
+      getHeading() { return this.heading; }
+      getDiv() { return this.div; }
+    }
+    class OverlayView {
+      setMap(m) {
+        if (m) { this.map = m; overlays.push(this); this.onAdd?.(); this.draw?.(); } else if (this.map) { this.onRemove?.(); this.map = null; }
+      }
+      getMap() { return this.map; }
+      getPanes() { return { overlayMouseTarget: this.map ? (this.map._pane ??= fakeEl('div')) : null, floatPane: this.map ? (this.map._float ??= fakeEl('div')) : null }; }
+      getProjection() { return { fromLatLngToDivPixel: (ll) => ({ x: ll.lng() * 10, y: ll.lat() * 10 }) }; }
+    }
+    class Polyline {
+      constructor(o) { this.o = o; this.map = o.map ?? null; polylines.push(this); }
+      setMap(m) { this.map = m; }
+      getMap() { return this.map; }
+    }
+    class LatLng { constructor(lat, lng) { this._a = lat; this._o = lng; } lat() { return this._a; } lng() { return this._o; } }
+    class LatLngBounds { constructor() { this.pts = []; } extend(p) { this.pts.push(p); return this; } }
+    const ns = { Map, OverlayView, Polyline, LatLng, LatLngBounds, event, maps, polylines, overlays, imports: [] };
+    ns.importLibrary = async (name) => { ns.imports.push(name); return name === 'maps' ? { Map, OverlayView, Polyline } : {}; };
+    return ns;
+  }
+
+  // Sahte document: script eklenince cfg.script 'error' ise onerror, 'load' ise window.google kurulup betiğin callback'i çağrılır,
+  // 'hang' ise hiçbir şey olmaz (asılı kalan betik; öğe docCfg.hung'da saklanır)
+  const appended = [];
+  const docCfg = { script: 'error', gm: null, hung: null };
+  const cbOf = (el) => new URL(el.src).searchParams.get('callback');
+  def('window', {});
+  def('localStorage', fakeStorage());
+  def('sessionStorage', fakeStorage());
+  window.localStorage = globalThis.localStorage; window.sessionStorage = globalThis.sessionStorage;
+  def('document', {
+    documentElement: { lang: 'tr' },
+    createElement: (tag) => fakeEl(tag),
+    head: {
+      append(el) {
+        appended.push(el);
+        if (el.tagName !== 'SCRIPT') return;
+        if (docCfg.script === 'hang') { docCfg.hung = el; return; }
+        setTimeout(() => { if (docCfg.script === 'load') { window.google = { maps: docCfg.gm }; window[cbOf(el)]?.(); } else el.onerror?.(); }, 0);
+      },
+    },
+  });
+  const nScripts = () => appended.filter((e) => e.tagName === 'SCRIPT').length;
+
+  try {
+    const G = await import('../js/ui/maps/google.js');
+    const ENG = await import('../js/ui/maps/mapEngine.js');
+    const gsrc = src('js/ui/maps/google.js');
+
+    // (a) betik yüklenemezse reddeder (gerçek yükleyici, sahte document)
+    let rejected = await throws(() => G.createGoogleMap(fakeEl('div'), KEY));
+    const script = appended.find((e) => e.tagName === 'SCRIPT');
+    ok('(a) Google betiği yüklenemezse createGoogleMap reddeder', rejected);
+    const su = script ? new URL(script.src) : null;
+    ok('betik maps.googleapis.com/maps/api/js, async, loading=async ve callback ile', su?.origin === 'https://maps.googleapis.com' && su.pathname === '/maps/api/js' && script.async === true && su.searchParams.get('loading') === 'async' && !!su.searchParams.get('callback'));
+    ok('betikte yalnızca harita: libraries / places YOK (Places hedef dışı)', !!su && !su.searchParams.has('libraries') && !/places/i.test(script.src) && !/places/i.test(gsrc));
+    ok('başarısız yüklemede betik öğesi kaldırılır', script?.removed === true);
+
+    // Asılı kalan betik: kütüphane süresi dolunca reddedilir; önbellekteki yükleme bozulmaz, geç yükleme yeni betik eklemeden kullanılır
+    docCfg.script = 'hang';
+    let t0 = Date.now();
+    const hang1 = await G.createGoogleMap(fakeEl('div'), KEY, 'DEMO_MAP_ID', { libTimeoutMs: 60 }).then(() => null, (e) => e);
+    ok('asılı kalan betik: kütüphane süresi dolunca anlaşılır Türkçe hatayla reddeder', hang1 instanceof Error && /zamanında yüklenemedi/.test(hang1.message) && Date.now() - t0 < 1000);
+    ok('başarısız yüklemeden sonra yeniden denenir (önbelleğe alınmış ret yok)', nScripts() === 2 && !!docCfg.hung);
+    docCfg.gm = fakeGm();
+    const late = G.createGoogleMap(fakeEl('div'), KEY, 'DEMO_MAP_ID', { libTimeoutMs: 2000 });
+    await tick();
+    ok('süre dolması önbellekteki yüklemeyi silmez: ikinci çağrı ikinci betik eklemez', nScripts() === 2);
+    window.google = { maps: docCfg.gm }; window[cbOf(docCfg.hung)]();
+    const lateA = await late.catch((e) => e);
+    ok('geç gelen başarılı yükleme bekleyen çağrıya ulaşır', lateA?.name === 'google' && docCfg.gm.maps.length === 1);
+    await G.createGoogleMap(fakeEl('div'), KEY);
+    ok('kütüphane yüklüyken yeni betik eklenmez', nScripts() === 2);
+    ok('enjekte edilen yükleyici reddederse createGoogleMap reddeder', await throws(() => G.createGoogleMap(fakeEl('div'), KEY, 'm', { loadLib: () => Promise.reject(new Error('yok')) })));
+    t0 = Date.now();
+    const never = await G.createGoogleMap(fakeEl('div'), KEY, 'm', { loadLib: () => new Promise(() => {}), libTimeoutMs: 50 }).then(() => null, (e) => e);
+    ok('enjekte yükleyici hiç sonuçlanmazsa süre içinde reddeder (openAdapter catch → OpenFreeMap)', never instanceof Error && /zamanında yüklenemedi/.test(never.message) && Date.now() - t0 < 1000);
+    ok('kütüphane süresi varsayılanı 25 sn, harita yükleme süresi 25 sn', /libTimeoutMs = 25000/.test(gsrc) && /25000/.test(gsrc.replace(/libTimeoutMs = 25000/, '')));
+
+    // Temel: ad, yöntem kümesi OpenFreeMap/Mapbox motoruyla BİREBİR aynı, harita seçenekleri
+    let gm = fakeGm(); window.google = { maps: gm };
+    const cont = fakeEl('div');
+    let a = await G.createGoogleMap(cont, KEY, 'mid-1');
+    let m = gm.maps.at(-1);
+    ok("adapter.name === 'google'", a.name === 'google');
+    const vlib = (() => {
+      class Map { constructor() { this.h = {}; this.src = {}; setTimeout(() => this.fire('load'), 0); } on(ev, f) { (this.h[ev] ??= []).push(f); } once(ev, f) { this.on(ev, f); } fire(ev) { (this.h[ev] || []).forEach((f) => f({})); } addControl() {} getSource(id) { return this.src[id]; } addSource(id, s) { this.src[id] = { ...s, setData() {} }; } addLayer() {} }
+      return { Map, AttributionControl: class {}, Marker: class {} };
+    })();
+    const osmA = await ENG.createVectorMap(vlib, fakeEl('div'), { name: 'osm' });
+    const methodsOf = (o) => Object.keys(o).filter((k) => k !== 'name' && typeof o[k] === 'function').sort().join(',');
+    ok('yöntem kümesi OpenFreeMap/Mapbox motoruyla birebir aynı', methodsOf(a) === methodsOf(osmA) && Object.keys(a).sort().join(',') === Object.keys(osmA).sort().join(','));
+    ok("importLibrary('maps') ile harita kitaplığı yüklenir (başka kitaplık yok)", gm.imports.length === 1 && gm.imports[0] === 'maps');
+    ok('harita, kabın içindeki kendi alt öğesine kurulur', m.div !== cont && cont.children.includes(m.div));
+    ok('mapId sunucudan gelen değer; varsayılan zoom web-mercator (6)', m.opts.mapId === 'mid-1' && m.opts.zoom === 6 && m.opts.center?.lat === 39 && m.opts.center?.lng === 35);
+    ok('Google logosu/şartları gizlenmez (gizleyen seçenek yok)', !Object.keys(m.opts).some((k) => /logo|attribution|copyright|terms/i.test(k)) && !/gm-style-cc|gmnoprint|\.gm-style\b/.test(gsrc));
+    gm = fakeGm(); window.google = { maps: gm };
+    await G.createGoogleMap(fakeEl('div'), KEY);
+    ok("mapId verilmezse 'DEMO_MAP_ID'", gm.maps.at(-1).opts.mapId === 'DEMO_MAP_ID');
+
+    // (b) gm_authFailure → onAuthFail tam bir kez (harita açıldıktan sonra)
+    let fails = 0;
+    gm = fakeGm(); window.google = { maps: gm };
+    a = await G.createGoogleMap(fakeEl('div'), KEY, 'DEMO_MAP_ID', { onAuthFail: () => fails++ });
+    ok('gm_authFailure window üzerinde tanımlı', typeof window.gm_authFailure === 'function');
+    window.gm_authFailure(); window.gm_authFailure(); window.gm_authFailure();
+    ok('(b) gm_authFailure üç kez → onAuthFail tam bir kez', fails === 1);
+    gm = fakeGm(); window.google = { maps: gm };
+    await G.createGoogleMap(fakeEl('div'), KEY);
+    let threw = false; try { window.gm_authFailure(); } catch { threw = true; }
+    ok('onAuthFail verilmeden gm_authFailure çökertmez', !threw);
+
+    // Yükleme sırasında kimlik hatası: hızlı ret (25 sn beklenmez), onAuthFail bir kez, alt öğe kaldırılır
+    fails = 0; gm = fakeGm({ autoIdle: false }); window.google = { maps: gm };
+    const cont2 = fakeEl('div');
+    t0 = Date.now();
+    const p = G.createGoogleMap(cont2, KEY, 'DEMO_MAP_ID', { onAuthFail: () => fails++ });
+    await tick();
+    window.gm_authFailure();
+    rejected = await p.then(() => false, () => true);
+    ok('yükleme sırasında gm_authFailure → hemen reddeder', rejected && Date.now() - t0 < 1000);
+    ok('yükleme sırasında gm_authFailure → onAuthFail bir kez, haritanın alt öğesi kaldırılır', fails === 1 && cont2.children.length === 0 && gm.maps.at(-1).cleared === true);
+    window.gm_authFailure();
+    ok('ret sonrası tekrar gm_authFailure → onAuthFail artmaz', fails === 1);
+
+    // (c) trafik: her aralık ayrı çizgi; boş dizi hepsini kaldırır. Rota çizgisi: line() → { remove }
+    gm = fakeGm(); window.google = { maps: gm };
+    a = await G.createGoogleMap(fakeEl('div'), KEY);
+    m = gm.maps.at(-1);
+    const C1 = [[29.0, 41.0], [29.05, 41.02], [29.1, 41.05], [29.15, 41.07], [29.2, 41.1]];
+    a.traffic(C1, [{ from: 0, to: 3, lvl: 'moderate' }, { from: 5, to: 9, lvl: 'heavy' }, { from: 12, to: 20, lvl: 'severe' }]);
+    let tl = gm.polylines.filter((l) => l.map === m);
+    ok('(c) traffic(coords, 3 aralık) → 3 ayrı çizgi haritada', tl.length === 3 && tl.every((l) => l.o.path.length >= 2));
+    ok('(c) trafik renkleri motorla aynı (yavaş/yoğun/çok yoğun)', tl.map((l) => l.o.strokeColor).join() === '#ffb547,#ff5d6c,#c4001d');
+    ok('(c) yol koordinatları {lat, lng} ([lon, lat] girdiden)', tl[0].o.path[0].lat === 41.0 && tl[0].o.path[0].lng === 29.0);
+    a.traffic(C1, [{ from: 0, to: 3, lvl: 'heavy' }]);
+    ok('(c) yeni trafik eskisini değiştirir (önceki 3 çizgi kaldırılır, 1 yeni)', gm.polylines.filter((l) => l.map === m).length === 1 && tl.every((l) => l.map === null));
+    a.traffic(C1, []);
+    ok('(c) traffic(coords, []) → tüm trafik çizgileri kaldırılır', gm.polylines.every((l) => l.map === null));
+    const ln = a.line(C1);
+    const route = gm.polylines.at(-1);
+    ok('(c) line(coords) rota çizgisi çizer, trafik altında kalır', route.map === m && route.o.strokeColor === '#2ee6a6' && route.o.path.length === C1.length && route.o.zIndex < 2);
+    a.traffic(C1, [{ from: 0, to: 3, lvl: 'heavy' }]);
+    ok('(c) trafik çizgisi rota çizgisinin üstünde (zIndex)', gm.polylines.at(-1).o.zIndex > route.o.zIndex);
+    a.line(C1.slice(0, 2));
+    ok('(c) ikinci line() öncekini kaldırır', route.map === null && gm.polylines.filter((l) => l.map === m && l.o.strokeColor === '#2ee6a6').length === 1);
+    ln.remove();
+    ok('(c) line().remove() rota çizgisini kaldırır', gm.polylines.filter((l) => l.map === m && l.o.strokeColor === '#2ee6a6').length === 0);
+
+    // (d) uydu: hybrid / roadmap
+    a.setSatellite(true);
+    ok("(d) setSatellite(true) → 'hybrid'", m.mapTypeId === 'hybrid');
+    a.setSatellite(false);
+    ok("(d) setSatellite(false) → 'roadmap'", m.mapTypeId === 'roadmap');
+
+    // (e) moveTo → moveCamera (zoom ofseti YOK: Google kendi ölçeği web-mercator)
+    m.calls.length = 0;
+    a.moveTo({ center: { lat: 40.1, lon: 29.2 }, zoom: 15, heading: 90 });
+    const mc = m.calls.find((c) => c[0] === 'moveCamera')?.[1];
+    ok('(e) moveTo({center, zoom, heading}) → moveCamera', !!mc && mc.center.lat === 40.1 && mc.center.lng === 29.2 && mc.zoom === 15 && mc.heading === 90);
+    a.moveTo({ tilt: 45 }, true);
+    ok('(e) tilt → moveCamera({ tilt })', m.calls.at(-1)[0] === 'moveCamera' && m.calls.at(-1)[1].tilt === 45);
+    a.moveTo({ center: { lat: 40.2, lon: 29.3 } }, true);
+    ok('(e) yalnızca merkez + animate → panTo (akıcı kaydırma)', m.calls.at(-1)[0] === 'panTo' && m.calls.at(-1)[1].lat === 40.2);
+    ok('bearing() = harita yönü', a.bearing() === 90);
+
+    // İşaretçi, sığdırma, olaylar, imleç
+    const dot = fakeEl('div');
+    const mk = a.marker({ lat: 41, lon: 29 }, dot, 'Başlangıç');
+    const ov = gm.overlays.at(-1);
+    ok('marker: içerik haritanın bindirme katmanında, başlık sarmalayıcıda', ov.map === m && ov.div.children[0] === dot && ov.div.title === 'Başlangıç' && m._pane.children.includes(ov.div));
+    mk.setPosition({ lat: 42, lon: 30 });
+    ok('marker.setPosition konumu günceller', ov.div.style.left === '300px' && ov.div.style.top === '420px');
+    const dot2 = fakeEl('div'); mk.setContent(dot2);
+    ok('marker.setContent içeriği değiştirir', ov.div.children.length === 1 && ov.div.children[0] === dot2);
+    mk.remove();
+    ok('marker.remove haritadan kaldırır', ov.map === null && !m._pane.children.includes(ov.div));
+    a.fit([{ lat: 40, lon: 29 }, { lat: 41, lon: 30 }], 60);
+    const fb = m.calls.find((c) => c[0] === 'fitBounds');
+    ok('fit(points, pad) → fitBounds(bounds, pad)', fb?.[1].pts.length === 2 && fb[1].pts[0].lng === 29 && fb[2] === 60);
+    m.fire('idle');
+    ok('fit sonrası zoom en çok 16', m.zoom === 16);
+    let clicked = null; a.onClick((pt) => { clicked = pt; });
+    m.fire('click', { latLng: new gm.LatLng(40.5, 29.5) });
+    ok('onClick { lat, lon } verir', clicked?.lat === 40.5 && clicked?.lon === 29.5);
+    let dragged = 0; a.onDragStart(() => dragged++); m.fire('dragstart');
+    ok('onDragStart kullanıcı sürüklemesinde çağrılır', dragged === 1);
+    a.cursor('crosshair');
+    ok('cursor(c) → draggableCursor', m.opts.draggableCursor === 'crosshair');
+    a.cursor('');
+    ok('cursor("") imleci sıfırlar', m.opts.draggableCursor == null);
+    threw = false; try { a.resize(); a.installLayers(); } catch { threw = true; }
+    ok('resize() ve installLayers() çökmez', !threw);
+
+    // Anahtar: depolamaya ve günlüğe yazılmaz; kaynakta gerçek anahtar yok
+    ok('anahtar localStorage/sessionStorage\'a hiç yazılmaz', !stored.some(([k, v]) => k.includes(KEY) || v.includes(KEY)) && !/localStorage|sessionStorage|storage\.js/.test(gsrc));
+    ok('anahtar konsola/günlüğe yazılmaz', !logged.some((x) => x.some((y) => { try { return String(y?.message ?? y).includes(KEY) || JSON.stringify(y)?.includes(KEY); } catch { return false; } })));
+    ok('google.js gerçek anahtar içermez', !/AIza[0-9A-Za-z_-]{20,}/.test(gsrc));
+
+    // Bağlantılar: mapView google dalı, sw.js SHELL
+    const mv = src('js/ui/mapView.js'), sw = src('sw.js');
+    ok("mapView: import { createGoogleMap } from './maps/google.js'", /import \{ createGoogleMap \} from '\.\/maps\/google\.js'/.test(mv));
+    ok('mapView google dalı createGoogleMap(mapEl, cfg.key, cfg.mapId, { onAuthFail })', /createGoogleMap\(mapEl, cfg\.key, cfg\.mapId, \{ onAuthFail \}\)/.test(mv));
+    const gBranch = mv.slice(mv.indexOf("cfg.provider === 'google'"), mv.indexOf('} catch', mv.indexOf("cfg.provider === 'google'")));
+    ok('mapView google dalı: onAuthFail → fallBackToOsm (forceOsm + tek bildirim), yalnızca gösterildikten sonra yenile', /fallBackToOsm\(\)/.test(gBranch) && /if \(shown\) setTimeout\(\(\) => location\.reload\(\)/.test(gBranch) && /shown = true/.test(gBranch));
+    ok("sw.js SHELL './js/ui/maps/google.js' içerir", sw.includes("'./js/ui/maps/google.js'"));
+  } catch (e) {
+    ok('Bölüm 7 çalıştı: ' + e.message, false);
+  } finally {
+    Object.assign(console, orig);
     for (const [k, d] of Object.entries(saved)) { if (d) Object.defineProperty(globalThis, k, d); else delete globalThis[k]; }
   }
 }

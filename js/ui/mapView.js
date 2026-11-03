@@ -5,6 +5,7 @@ import { attachSearch } from './placeSearch.js';
 import { reverseLabel } from '../providers/index.js';
 import { createMapLibreMap } from './maps/maplibre.js';
 import { createMapboxMap } from './maps/mapbox.js';
+import { createGoogleMap } from './maps/google.js';
 import { resolveProvider, forceOsm } from '../net/mapConfig.js';
 import { showTab } from './tabs.js';
 
@@ -50,7 +51,7 @@ function stationPin(s, { planned = false, num = 0, focus = false } = {}) {
  */
 export function initMap() {
   const mapEl = document.getElementById('map');
-  let adapter = null; // hazır harita bağdaştırıcısı (maps/maplibre.js | maps/mapbox.js; ileride google.js)
+  let adapter = null; // hazır harita bağdaştırıcısı (maps/maplibre.js | maps/mapbox.js | maps/google.js)
   let booting = null;
   const queue = [];
   const readyHooks = []; // harita hazır olunca bir kez çalışacak güncellemeler (sıraya alınması gereksiz olanlar)
@@ -79,8 +80,15 @@ export function initMap() {
           shown = true;
           return a;
         }
-        // Google bağdaştırıcısı (Task 7) buraya bağlanır; o zamana dek OpenFreeMap açar.
-        if (cfg.provider === 'google') return await createMapLibreMap(mapEl);
+        if (cfg.provider === 'google') {
+          // Anahtar reddedildi (gm_authFailure). Mapbox ile aynı: harita gösterildikten sonraysa bayrak + bildirim + yenile;
+          // açılış sırasındaysa söz reddedilir ve aşağıdaki catch aynı sayfa yüklemesinde OpenFreeMap açar.
+          let shown = false;
+          const onAuthFail = () => { fallBackToOsm(); if (shown) setTimeout(() => location.reload(), 1500); };
+          const a = await createGoogleMap(mapEl, cfg.key, cfg.mapId, { onAuthFail });
+          shown = true;
+          return a;
+        }
       } catch {
         fallBackToOsm();
         mapEl.replaceChildren(); // yarım kalan haritanın tuvali OpenFreeMap'in üstünde kalmasın

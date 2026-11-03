@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.79.0';
+self.APP_VERSION = '0.80.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.80.0', date: '2026-11-03',
+    notes: [
+      'YENİ: Premium için yönetici seçimli harita sağlayıcısına Google Haritalar seçeneği eklendi. Anahtar yoksa, reddedilirse ya da yüklenemezse harita kendiliğinden OpenFreeMap haritasına döner.',
+    ],
+  },
   {
     v: '0.79.0', date: '2026-11-03',
     notes: [
