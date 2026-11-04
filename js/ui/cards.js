@@ -1,4 +1,6 @@
-import { effective, getState, subscribe } from '../state.js';
+import { effective, getState, patch, subscribe } from '../state.js';
+import { save } from '../utils/storage.js';
+import { toast } from './toast.js';
 import { compass } from '../utils/geo.js';
 import { tr } from '../i18n/index.js';
 
@@ -68,7 +70,15 @@ function paint() {
   set('t-net', t ? `${signed(t.netKwh, 2)} kWh / 100 km` : '—');
 }
 
+/** Öğrenilmiş k yanlışsa (örn. eski hatalı okuma) modelin varsayımına dön; hesap hesaba bağlıysa diğer cihazlara da gider. */
+function resetK() {
+  patch('engine', { k: 1 });
+  save('kCal', 1);
+  toast(tr('Düzeltme çarpanı 1,00 yapıldı'));
+}
+
 export function initCards() {
+  $('c-kreset').addEventListener('click', resetK);
   subscribe(['live', 'sim', 'engine', 'plan', 'weather'], paint);
   paint();
 }
