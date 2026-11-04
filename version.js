@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.82.3';
+self.APP_VERSION = '0.83.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.83.0', date: '2026-11-04',
+    notes: [
+      'DEĞİŞTİ: Uygulamanın adı EV Route Finder oldu (arayüz, 11 dil, kurulum simgesi adı, davet e-postası ve sayfaları, yönetim ekranı). Android uygulama adı sonraki APK ile değişir.',
+    ],
+  },
   {
     v: '0.82.3', date: '2026-11-03',
     notes: [
