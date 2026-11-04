@@ -279,6 +279,7 @@ function drawUsers(root) {
   root.append(table(['Kullanıcı', 'Plan', 'Son giriş', 'Kayıt', 'Yolculuk / şarj', 'Veri', 'Harita', 'Google ay / toplam', 'İşlem'], rows, [4, 5, 7]));
 }
 
+let invForm = {}, invOut = null;
 function drawInv(root) {
   root.replaceChildren();
   const NL = String.fromCharCode(10);
@@ -290,6 +291,11 @@ function drawInv(root) {
   const days = input('number', '', '80px'); days.min = 1; days.max = 90; days.value = 7;
   const pdays = input('number', '', '80px'); pdays.min = 0; pdays.max = 3650; pdays.value = 0;
   const sendCb = input('checkbox'); sendCb.checked = smtp;
+  // Otomatik yenileme formu yeniden çizdiği için yazılanlar kaybolmasın: değerler modül düzeyinde tutulur
+  const F = invForm;
+  if (F.mail !== undefined) { mail.value = F.mail; lab.value = F.lab; days.value = F.days; pdays.value = F.pdays; sendCb.checked = F.send; }
+  const keep = () => { F.mail = mail.value; F.lab = lab.value; F.days = days.value; F.pdays = pdays.value; F.send = sendCb.checked; };
+  for (const x of [mail, lab, days, pdays, sendCb]) { x.addEventListener('input', keep); x.addEventListener('change', keep); }
   const sendLbl = el('label', 'mut'); sendLbl.append(sendCb, ' E-postayı sunucudan gönder'); sendLbl.style.display = smtp ? '' : 'none';
   const mk = el('button', 'pri', 'Davet üret');
   const r1 = el('div', 'row'); r1.append(mail, lab);
@@ -297,7 +303,7 @@ function drawInv(root) {
   const r3 = el('div', 'row'); r3.append(sendLbl, mk);
   form.append(r1, r2, r3);
   if (!smtp) form.append(el('div', 'mut', 'Sunucudan e-posta göndermek için server\\.env içine SMTP_USER (Gmail adresin) ve SMTP_PASS (Google uygulama şifresi) yaz ve sunucuyu yeniden başlat. O zamana kadar davet üretince "E-posta uygulamamla gönder" düğmesi çıkar.'));
-  const out = el('div', 'card hidden');
+  const out = invOut || el('div', 'card hidden'); invOut = out; // üretilen link kartı yenilemede silinmesin
   mk.onclick = async () => {
     try {
       const em = mail.value.trim();
@@ -316,7 +322,7 @@ function drawInv(root) {
         a.style.cssText = 'display:inline-block;margin-top:8px;padding:3px 10px;border:1px solid var(--line);border-radius:8px;color:inherit;text-decoration:none';
         out.append(el('div'), a);
       }
-      mail.value = ''; lab.value = '';
+      mail.value = ''; lab.value = ''; keep();
       await load(); tab = 'inv'; $('t-inv').prepend(out);
     } catch (e) { toast(e.message); }
   };
@@ -471,7 +477,7 @@ async function init() { // sunucu ikinci adım istiyor mu? (eski sunucuda yol yo
   if (authed()) load();
 }
 init();
-setInterval(() => { if (authed() && !document.hidden) load(); }, 60000);
+setInterval(() => { const a = document.activeElement; if (authed() && !document.hidden && !(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) load(); }, 60000); // yazarken yenileme yapılmaz
 </script>
 </body>
 </html>
