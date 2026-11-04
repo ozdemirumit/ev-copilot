@@ -3,6 +3,7 @@ import { VEHICLE } from '../config.js';
 import { save } from '../utils/storage.js';
 import { headwindComponent, haversineKm } from '../utils/geo.js';
 import { batteryPowerKw, kwhPer100 } from './model.js';
+import { rangeForEnergy } from './rangeCalc.js';
 import { createTracker } from './consumption.js';
 import { trafficBreakdown, stopGoOverhead } from './traffic.js';
 import { fetchWeather } from '../providers/index.js';
@@ -121,28 +122,15 @@ function tick() {
   } else {
     est = kwhPer100({ v: vRef, ...cond }) * k * overhead;
   }
-  const usable = e.soc == null ? null : (Math.max(0, e.soc - route.minArrivalSoc) / 100) * VEHICLE.batteryNetKwh;
-  // Menzil: rota planlıysa ve araç rotadaysa önümüzdeki yolun gerçek enerji profiline göre (eğim, hız, rüzgâr, trafik dilim dilim);
-  // enerji varışa yetiyorsa varışa kalan yol + artan enerjiyle düz tüketimle devam. Rota yoksa anlık tüketimle.
-  // Düz zemin tüketimi: yerel eğim menzile yayılmasın. Kısa bir iniş (%3 bile) rejenerasyonla tüketimi ~1-6 kWh/100 km'ye indirir ve
-  // "bu eğim sonsuza dek sürer" varsayımıyla menzil 1000 km'yi aşardı (kısa rotanın son dilimi ya da GPS rakım eğimi).
+  // Düz zemin tüketimi: rota profilinin bittiği yerden sonrası (ve rota yoksa her şey) için kullanılır. Yerel eğim menzile yayılmasın:
+  // kısa bir iniş (%3 bile) rejenerasyonla tüketimi ~1-6 kWh/100 km'ye indirir ve "bu eğim sonsuza dek sürer" varsayımıyla
+  // menzil 1000 km'yi aşardı (kısa rotanın son dilimi ya da GPS rakım eğimi).
   const estFlat = kwhPer100({ v: vRef, ...cond, grade: 0 }) * k * overhead;
-  let rangeKm = usable == null ? null : (usable / estFlat) * 100;
-  if (usable != null && prof && routeKm != null && offKm != null && offKm <= 3 && prof.totalKm - routeKm > 0.5) {
-    const kp = plan.kInfo?.k ?? k;
-    const toEnd = prof.energyBetween(routeKm, prof.totalKm, kp);
-    if (toEnd <= usable) {
-      rangeKm = (prof.totalKm - routeKm) + ((usable - toEnd) / est) * 100;
-    } else {
-      let lo = routeKm;
-      let hi = prof.totalKm;
-      for (let i = 0; i < 24; i++) {
-        const mid = (lo + hi) / 2;
-        if (prof.energyBetween(routeKm, mid, kp) <= usable) lo = mid; else hi = mid;
-      }
-      rangeKm = lo - routeKm;
-    }
-  }
+  // Menzil: rota profiline göre eğim hesaba katılır, profil bitince düz zemin tüketimi (physics/rangeCalc.js).
+  const rangeFor = (energyKwh) => rangeForEnergy({ energyKwh, estFlat, prof, routeKm, offKm, kp: plan.kInfo?.k ?? k });
+  const usable = e.soc == null ? null : (Math.max(0, e.soc - route.minArrivalSoc) / 100) * VEHICLE.batteryNetKwh;
+  const rangeKm = rangeFor(usable); // eşik piline kadar (Menzil sekmesi)
+  const totalRangeKm = rangeFor(e.soc == null ? null : (Math.max(0, e.soc) / 100) * VEHICLE.batteryNetKwh); // %0'a kadar (pil sürgüsü altı)
 
   // Rüzgar (anlık koşul)
   let netWind = null;
@@ -167,7 +155,7 @@ function tick() {
     measuredKm: st?.distKm ?? null,
     kwh100Est: est, kwh100Flat: estFlat,
     powerKw: speed > 0 ? modelKw * k : null, // anlık güç tahmini (model × k)
-    rangeKm,
+    rangeKm, totalRangeKm,
     netWind, aeroPct, traffic,
   });
 

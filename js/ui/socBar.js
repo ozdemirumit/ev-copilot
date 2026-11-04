@@ -1,7 +1,6 @@
 // Navigasyonda sol kenarda dikey pil sürgüsü: parmakla yukarı/aşağı sürükleyerek mevcut pil elle ayarlanır.
 // Değer yolda kendiliğinden düşer (physics/socEstimate.js); kamera okuyunca o değer geçerli olur.
 import { getState, patch, subscribe, effective } from '../state.js';
-import { VEHICLE } from '../config.js';
 import { setManual, isOnline, manualLocked } from '../physics/socEstimate.js';
 import { toast } from './toast.js';
 
@@ -37,8 +36,9 @@ export function initSocBar() {
     if (nhDot) nhDot.className = cls;
     // Toplam menzil: mevcut pille %0'a kadar tahmini km. (Eşik piline kadar menzil Menzil sekmesinde; eşik pile eşitse orada 0 görünür.)
     const r = getState('engine').rangeKm;
-    const flat = getState('engine').kwh100Flat; // düz zemin tüketimi: yerel eğim toplam menzili şişirmesin (iniş %3'te bile 1000 km çıkarırdı)
-    const total = flat > 0 && v != null ? Math.round(((v / 100) * VEHICLE.batteryNetKwh / flat) * 100) : null;
+    // Rota varsa önümüzdeki yolun eğimi hesaba katılır; rota bitince ya da yoksa düz zemin tüketimi (yerel eğim yayılmaz)
+    const tr = getState('engine').totalRangeKm;
+    const total = tr != null && v != null ? Math.round(tr) : null;
     $('socbar-range').textContent = total == null ? '--' : String(Math.max(0, total));
     $('socbar-rangebox').title = 'Tahmini toplam menzil (%0\'a kadar)' + (r != null ? `; %${getState('route').minArrivalSoc} eşik piline kadar ${Math.max(0, Math.round(r))} km` : '');
     bar.classList.toggle('low', v != null && v < getState('nav').lowSoc);
