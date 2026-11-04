@@ -1,7 +1,7 @@
 // OCR siyah-beyaz çevirme (js/sensors/binarize.js) testi: açık zeminde açık rakam (gerçek bir Togg fotoğrafında okunamayan durum),
 // koyu zeminde açık rakam (klasik durum), koyu zeminde koyu rakam, düz görüntü ve eşik kaydırması.
 // Kullanım: node scripts/test-binarize.mjs
-import { binarize, otsu, MIN_RANGE } from '../js/sensors/binarize.js';
+import { binarize, binarizeCore, otsu, MIN_RANGE } from '../js/sensors/binarize.js';
 
 let pass = 0, fail = 0;
 const ok = (name, cond) => { cond ? pass++ : fail++; console.log(cond ? 'ok  ' : 'FAIL', name); };
@@ -63,6 +63,22 @@ const check = ({ g, w, h, inside }, out) => {
   for (let i = 0; i < 120; i++) g[i] = 250; // %30 açık
   const out = binarize(g);
   ok('yazı azınlıksa siyah olur (%30 açık → siyah)', out.filter((v) => v === 0).length === 120);
+}
+
+// 8) Işıma (bloom): rakam çekirdeği 250, çevresindeki ışıma 205, zemin 60. Otsu ışıma+rakamı tek leke yapar; çekirdek yöntemi yalnızca rakamı siyah yapar
+{
+  const w = 40, h = 30, g = new Uint8Array(w * h).fill(60);
+  const inHalo = (x, y) => x >= 8 && x < 32 && y >= 4 && y < 26;
+  const inCore = (x, y) => (x >= 15 && x < 18 && y >= 8 && y < 22) || (x >= 22 && x < 25 && y >= 8 && y < 22);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) g[y * w + x] = inCore(x, y) ? 250 : inHalo(x, y) ? 205 : 60;
+  const a = binarize(g);
+  const b = binarizeCore(g);
+  ok('ışıma: Otsu yöntemi rakamı ışımadan ayıramaz (çekirdek sonucundan farklı)', a.some((v, i) => v !== b[i]));
+  let good = 0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if ((b[y * w + x] === 0) === inCore(x, y)) good++;
+  ok('ışıma: çekirdek yöntemi yalnızca rakam çekirdeğini siyah yapar', good === w * h);
+  ok('çekirdek yöntemi: düz görüntü hepsi beyaz', binarizeCore(new Uint8Array(1200).fill(140)).every((v) => v === 255));
+  ok('çekirdek yöntemi: yalnızca 0/255', [...binarizeCore(g, 10)].every((v) => v === 0 || v === 255));
 }
 
 console.log(`\n${pass} geçti, ${fail} kaldı`);

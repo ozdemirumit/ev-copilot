@@ -24,6 +24,26 @@ export function otsu(g) {
   return thr;
 }
 
+/**
+ * "Parlak çekirdek" yöntemi: kamera pozlaması rakamı taşırıp etrafında ışıma (bloom) oluşturduğunda ışıma ile rakam
+ * birleşir ve Otsu hepsini tek leke yapar. Burada eşik iki kez bulunur: önce zemin ayrılır, sonra kalan açık pikseller
+ * (ışıma + rakam) kendi içinde ikiye bölünür; yalnızca en parlak çekirdek (rakam çizgileri) siyah olur.
+ */
+export function binarizeCore(gray, bias = 0) {
+  const n = gray.length;
+  const out = new Uint8Array(n).fill(255);
+  let mn = 255;
+  let mx = 0;
+  for (let i = 0; i < n; i++) { if (gray[i] < mn) mn = gray[i]; if (gray[i] > mx) mx = gray[i]; }
+  if (mx - mn < MIN_RANGE) return out;
+  const t1 = otsu(gray);
+  const bright = gray.filter((v) => v > t1);
+  if (bright.length < 16) return out;
+  const t2 = Math.min(254, Math.max(1, otsu(bright) + bias));
+  for (let i = 0; i < n; i++) if (gray[i] > t2) out[i] = 0;
+  return out;
+}
+
 /** Aralığı bu değerden dar görüntü düzdür (yazı yok): çıktı tamamen beyaz olur, gürültü rakam sanılmaz. */
 export const MIN_RANGE = 24;
 

@@ -1,4 +1,8 @@
-import { binarize } from './binarize.js';
+import { binarize, binarizeCore } from './binarize.js';
+
+/** Okuma yöntemleri: 0 = Otsu (normal); 1..3 = parlak çekirdek, eşik kaydırmaları CORE_BIAS[variant-1]. ocr.js sırayla dener. */
+export const VARIANTS = [0, 1, 3, 2];
+const CORE_BIAS = [10, 0, 25];
 
 const TARGET_H = 96; // OCR için ROI bu yüksekliğe ölçeklenir
 const PAD = 12; // Tesseract kenara yapışık karakterleri sevmez
@@ -160,7 +164,7 @@ export function preprocess(video, stage, opts, canvas) {
 
   const img = ctx.getImageData(PAD, PAD, w, h);
   const d = img.data;
-  const c = opts.contrast;
+  const c = opts.variant ? 1 : opts.contrast; // çekirdek yöntemi (variant ≥ 1): kontrast artırmak ışımayı rakamla aynı beyaza doyurur, artırılmaz
 
   const gray = new Uint8Array(d.length / 4);
   let sum = 0;
@@ -173,7 +177,8 @@ export function preprocess(video, stage, opts, canvas) {
 
   if (opts.useThreshold) {
     // Eşik ve yazı rengi görüntüden otomatik bulunur; sürgü (varsayılan 128) yalnızca otomatik eşiğe kaydırma ekler.
-    const bw = binarize(gray, (opts.threshold ?? 128) - 128);
+    const bias = (opts.threshold ?? 128) - 128;
+    const bw = opts.variant ? binarizeCore(gray, bias + CORE_BIAS[opts.variant - 1]) : binarize(gray, bias);
     for (let i = 0; i < d.length; i += 4) { d[i] = d[i + 1] = d[i + 2] = bw[i >> 2]; d[i + 3] = 255; }
   } else {
     const invert = sum / gray.length < 128; // eşiksiz: koyu zeminde açık yazıyı ters çevir

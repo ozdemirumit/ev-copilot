@@ -1,6 +1,6 @@
 import { getState, patch } from '../state.js';
 import { OCR } from '../config.js';
-import { preprocess } from './preprocess.js';
+import { preprocess, VARIANTS } from './preprocess.js';
 import { createFilter } from './outlierFilter.js';
 import { countOcrEngineOnce } from '../net/meter.js';
 
@@ -78,11 +78,24 @@ export function parseSpeed(text) {
   return v <= 250 ? v : null;
 }
 
-async function readRoi(worker, video, stage, roi) {
+/**
+ * ROI'yi okur. Önce normal yöntem (Otsu); okunamazsa ya da güven düşükse "parlak çekirdek" yöntemleri sırayla denenir
+ * (kamera rakamı aşırı pozlayıp etrafında ışıma yaptığında Otsu rakamı ışımayla tek leke yapar). İlk güvenli okuma döner;
+ * yoksa ayrıştırılabilen en yüksek güvenli okuma, o da yoksa son deneme.
+ */
+const GOOD_CONFIDENCE = 60;
+async function readRoi(worker, video, stage, roi, parse) {
   const o = getState('ocr');
-  if (!preprocess(video, stage, { ...o, roi }, work)) return null;
-  const { data } = await worker.recognize(work);
-  return { text: data.text, confidence: data.confidence };
+  let best = null;
+  for (const variant of VARIANTS) {
+    if (!preprocess(video, stage, { ...o, roi, variant }, work)) return null;
+    const { data } = await worker.recognize(work);
+    const r = { text: data.text, confidence: data.confidence, parsed: parse(data.text) != null };
+    if (r.parsed && r.confidence >= GOOD_CONFIDENCE) return r;
+    if (!best || (r.parsed && (!best.parsed || r.confidence > best.confidence)) || (!best.parsed && !r.parsed && r.confidence > best.confidence)) best = r;
+    if (!o.useThreshold) break; // eşiksiz modda yalnızca tek yöntem anlamlı (çekirdek yöntemi eşiğe dayanır)
+  }
+  return best;
 }
 
 async function tick(video, stage) {
@@ -95,7 +108,7 @@ async function tick(video, stage) {
     try {
       const worker = await getWorker();
 
-      const soc = await readRoi(worker, video, stage, o.roi);
+      const soc = await readRoi(worker, video, stage, o.roi, parseSoc);
       if (!running) return;
       if (soc) {
         const value = parseSoc(soc.text);
@@ -113,7 +126,7 @@ async function tick(video, stage) {
       }
 
       if (getState('ocr').speedOn) {
-        const spd = await readRoi(worker, video, stage, o.roiSpeed);
+        const spd = await readRoi(worker, video, stage, o.roiSpeed, parseSpeed);
         if (!running) return;
         if (spd) {
           const value = parseSpeed(spd.text);
