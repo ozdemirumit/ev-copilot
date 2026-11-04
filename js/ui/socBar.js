@@ -37,7 +37,8 @@ export function initSocBar() {
     if (nhDot) nhDot.className = cls;
     // Toplam menzil: mevcut pille %0'a kadar tahmini km. (Eşik piline kadar menzil Menzil sekmesinde; eşik pile eşitse orada 0 görünür.)
     const r = getState('engine').rangeKm;
-    const total = getState('engine').kwh100Est > 0 && v != null ? Math.round(((v / 100) * VEHICLE.batteryNetKwh / getState('engine').kwh100Est) * 100) : null;
+    const flat = getState('engine').kwh100Flat; // düz zemin tüketimi: yerel eğim toplam menzili şişirmesin (iniş %3'te bile 1000 km çıkarırdı)
+    const total = flat > 0 && v != null ? Math.round(((v / 100) * VEHICLE.batteryNetKwh / flat) * 100) : null;
     $('socbar-range').textContent = total == null ? '--' : String(Math.max(0, total));
     $('socbar-rangebox').title = 'Tahmini toplam menzil (%0\'a kadar)' + (r != null ? `; %${getState('route').minArrivalSoc} eşik piline kadar ${Math.max(0, Math.round(r))} km` : '');
     bar.classList.toggle('low', v != null && v < getState('nav').lowSoc);

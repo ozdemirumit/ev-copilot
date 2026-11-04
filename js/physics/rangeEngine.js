@@ -124,7 +124,10 @@ function tick() {
   const usable = e.soc == null ? null : (Math.max(0, e.soc - route.minArrivalSoc) / 100) * VEHICLE.batteryNetKwh;
   // Menzil: rota planlıysa ve araç rotadaysa önümüzdeki yolun gerçek enerji profiline göre (eğim, hız, rüzgâr, trafik dilim dilim);
   // enerji varışa yetiyorsa varışa kalan yol + artan enerjiyle düz tüketimle devam. Rota yoksa anlık tüketimle.
-  let rangeKm = usable == null ? null : (usable / est) * 100;
+  // Düz zemin tüketimi: yerel eğim menzile yayılmasın. Kısa bir iniş (%3 bile) rejenerasyonla tüketimi ~1-6 kWh/100 km'ye indirir ve
+  // "bu eğim sonsuza dek sürer" varsayımıyla menzil 1000 km'yi aşardı (kısa rotanın son dilimi ya da GPS rakım eğimi).
+  const estFlat = kwhPer100({ v: vRef, ...cond, grade: 0 }) * k * overhead;
+  let rangeKm = usable == null ? null : (usable / estFlat) * 100;
   if (usable != null && prof && routeKm != null && offKm != null && offKm <= 3 && prof.totalKm - routeKm > 0.5) {
     const kp = plan.kInfo?.k ?? k;
     const toEnd = prof.energyBetween(routeKm, prof.totalKm, kp);
@@ -162,7 +165,7 @@ function tick() {
     kwh100Measured: st?.kwh100 ?? null,
     kmPerPct: st?.kmPerPct ?? null,
     measuredKm: st?.distKm ?? null,
-    kwh100Est: est,
+    kwh100Est: est, kwh100Flat: estFlat,
     powerKw: speed > 0 ? modelKw * k : null, // anlık güç tahmini (model × k)
     rangeKm,
     netWind, aeroPct, traffic,

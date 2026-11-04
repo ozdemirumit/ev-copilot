@@ -49,7 +49,7 @@ function enrich(list) {
   const e = effective();
   if (e.lat == null) return [];
   const eng = getState('engine');
-  const kwh100 = eng.kwh100Est ?? 20;
+  const kwh100 = eng.kwh100Flat ?? eng.kwh100Est ?? 20; // düz zemin: yerel iniş eğimi varış pilini şişirmesin
   return list.map((s) => {
     const distKm = haversineKm(e, s);
     const roadKm = distKm * ROAD_FACTOR;
