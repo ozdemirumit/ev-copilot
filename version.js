@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.84.0';
+self.APP_VERSION = '0.84.1';
 self.APP_CHANGELOG = [
+  {
+    v: '0.84.1', date: '2026-11-04',
+    notes: [
+      'DÜZELTME: Kamera pil okuması açık renkli zeminde (gündüz yansıması, açık gri kutuda beyaz rakam) rakamları siliyordu ve okuyamıyordu. Eşik ve yazı rengi artık her görüntüden otomatik bulunuyor; eşik sürgüsü bu otomatik değere kaydırma olarak çalışır.',
+    ],
+  },
   {
     v: '0.84.0', date: '2026-11-04',
     notes: [
