@@ -134,7 +134,7 @@ function show() {
 
 async function load() {
   try {
-    const [s, u, i, c, dv, ph] = await Promise.all([api('/admin/summary'), api('/admin/users'), api('/admin/invites'), api('/admin/costs'), api('/admin/devices'), api('/admin/photos')]);
+    const [s, u, i, c, dv, ph] = await Promise.all([api('/admin/summary'), api('/admin/users'), api('/admin/invites'), api('/admin/costs'), api('/admin/devices'), api('/admin/photos').catch(() => ({ photos: [] }))]); // fotoğraf listesi yüklenemese (eski sunucu) tüm panel boş kalmasın
     D = { sum: s, users: u.users || [], inv: i.invites || [], cost: c, dev: dv, photos: ph.photos || [] };
     $('stamp').textContent = new Date().toLocaleTimeString('tr-TR');
     draw();
