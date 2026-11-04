@@ -144,7 +144,7 @@ export default {
   "Teşekkürler: fiyat kaydedildi": "Ευχαριστούμε: η τιμή αποθηκεύτηκε",
   "Fiyat gönderilemedi": "Δεν ήταν δυνατή η αποστολή της τιμής",
   "Fiyat bildirildi": "Η τιμή αναφέρθηκε",
-  "Konum izni kapalı: Android Ayarlar > Uygulamalar > EV Co-Pilot > İzinler > Konum": "Η άδεια τοποθεσίας είναι απενεργοποιημένη: Ρυθμίσεις Android > Εφαρμογές > EV Co-Pilot > Άδειες > Τοποθεσία",
+  "Konum izni kapalı: Android Ayarlar > Uygulamalar > EV Route Finder > İzinler > Konum": "Η άδεια τοποθεσίας είναι απενεργοποιημένη: Ρυθμίσεις Android > Εφαρμογές > EV Route Finder > Άδειες > Τοποθεσία",
   "Konum alınamadı: açık alanda tekrar dene": "Δεν ήταν δυνατή η εύρεση τοποθεσίας: δοκιμάστε ξανά σε ανοιχτό χώρο",
   "👥 {0} araç şarj ediyor": "👥 {0} οχήματα φορτίζουν",
   "🔴 Dolu bildirildi": "🔴 Αναφέρθηκε ως πλήρης",

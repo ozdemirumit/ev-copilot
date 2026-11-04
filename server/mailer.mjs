@@ -1,6 +1,6 @@
 // Küçük SMTP istemcisi (bağımlılık yok): davet e-postası göndermek için. Gmail ile: Google hesabında 2 adımlı doğrulama açıkken
 // "Uygulama şifresi" üret, .env'ye SMTP_USER (Gmail adresin) ve SMTP_PASS (16 haneli uygulama şifresi) yaz; gerisi varsayılan.
-// Ayarlar: SMTP_HOST (smtp.gmail.com), SMTP_PORT (465, doğrudan TLS), MAIL_FROM_NAME (EV Co-Pilot). Yapılandırılmamışsa createMailer null döner.
+// Ayarlar: SMTP_HOST (smtp.gmail.com), SMTP_PORT (465, doğrudan TLS), MAIL_FROM_NAME (EV Route Finder). Yapılandırılmamışsa createMailer null döner.
 // Yalnızca test için: SMTP_HOST 127.0.0.1/localhost ise TLS'siz bağlanılır (şifre yerel makineden çıkmaz).
 import tls from 'node:tls';
 import net from 'node:net';
@@ -17,7 +17,7 @@ export function createMailer(env) {
   if (!user || !pass) return null;
   const host = String(env.SMTP_HOST || 'smtp.gmail.com').trim();
   const port = Number(env.SMTP_PORT || 465);
-  const fromName = String(env.MAIL_FROM_NAME || 'EV Co-Pilot').replace(/[\r\n"<>]/g, '');
+  const fromName = String(env.MAIL_FROM_NAME || 'EV Route Finder').replace(/[\r\n"<>]/g, '');
   const local = host === '127.0.0.1' || host === 'localhost';
 
   function send({ to, subject, text }) {

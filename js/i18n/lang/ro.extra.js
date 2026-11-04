@@ -144,7 +144,7 @@ export default {
   "Teşekkürler: fiyat kaydedildi": "Mulțumim: prețul a fost salvat",
   "Fiyat gönderilemedi": "Prețul nu a putut fi trimis",
   "Fiyat bildirildi": "Preț raportat",
-  "Konum izni kapalı: Android Ayarlar > Uygulamalar > EV Co-Pilot > İzinler > Konum": "Permisiunea de locație este oprită: Setări Android > Aplicații > EV Co-Pilot > Permisiuni > Locație",
+  "Konum izni kapalı: Android Ayarlar > Uygulamalar > EV Route Finder > İzinler > Konum": "Permisiunea de locație este oprită: Setări Android > Aplicații > EV Route Finder > Permisiuni > Locație",
   "Konum alınamadı: açık alanda tekrar dene": "Locația nu a putut fi obținută: încearcă din nou în aer liber",
   "👥 {0} araç şarj ediyor": "👥 {0} vehicule se încarcă",
   "🔴 Dolu bildirildi": "🔴 Raportată ca ocupată",

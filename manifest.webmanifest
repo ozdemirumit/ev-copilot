@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "Smart EV Co-Pilot & ABRP Bridge",
-  "short_name": "EV Co-Pilot",
+  "name": "EV Route Finder",
+  "short_name": "EV Route Finder",
   "description": "Togg T10X için OCR + GPS + fizik tabanlı akıllı rota planlayıcı ve ABRP telemetri köprüsü",
   "start_url": "./index.html",
   "scope": "./",

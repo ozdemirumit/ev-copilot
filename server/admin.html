@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>EV Co-Pilot Yönetim</title>
+<title>EV Route Finder Yönetim</title>
 <style>
 :root{--bg:#f4f6f8;--card:#fff;--ink:#17202a;--mut:#5d6b7a;--line:#dde3ea;--acc:#12805c;--accink:#fff;--bad:#c0392b;--warn:#b9770e;--chip:#e8eef4}
 @media(prefers-color-scheme:dark){:root{--bg:#0e1319;--card:#171e26;--ink:#e8eef5;--mut:#93a1b1;--line:#2a3541;--acc:#2fbf8f;--accink:#06251a;--bad:#ff7b6b;--warn:#f0b35a;--chip:#222c37}}
@@ -49,7 +49,7 @@ code{background:var(--chip);padding:1px 5px;border-radius:5px;word-break:break-a
 </head>
 <body>
 <div id="login" class="card hidden">
-  <h1 style="font-size:18px;margin:0">🔌 EV Co-Pilot Yönetim</h1>
+  <h1 style="font-size:18px;margin:0">🔌 EV Route Finder Yönetim</h1>
   <span class="mut" id="hint1">Yönetici erişim kodunu gir (<code>server\.env</code> içindeki <code>ACCESS_CODES</code> değerlerinden biri). Kod yalnızca bu sekmede tutulur.</span>
   <span class="mut hidden" id="hint2">Yönetici erişim kodunu ve Microsoft Authenticator'daki 6 haneli doğrulama kodunu gir. Erişim kodu saklanmaz; giriş bu sekmede en çok 12 saat geçerli bir oturum açar.</span>
   <input id="code" type="password" autocomplete="off" placeholder="Yönetici kodu">
@@ -60,7 +60,7 @@ code{background:var(--chip);padding:1px 5px;border-radius:5px;word-break:break-a
 
 <div id="app" class="hidden">
   <header>
-    <h1>🔌 EV Co-Pilot Yönetim</h1>
+    <h1>🔌 EV Route Finder Yönetim</h1>
     <div class="row" style="margin:0"><span id="stamp" class="mut"></span><button id="refresh" class="sm">↻ Yenile</button><button id="logout" class="sm">Çıkış</button></div>
   </header>
   <main>
@@ -305,8 +305,8 @@ function drawInv(root) {
       if (r.emailed) out.append(el('div', '', '✔ E-posta gönderildi: ' + r.email));
       else if (r.email) {
         if (r.emailError) out.append(el('div', 'chip bad', r.emailError));
-        const body = 'Merhaba,' + NL + NL + 'EV Co-Pilot uygulamasına davet edildin. Bu linke dokun ve Google ile giriş yap (' + r.email + ' hesabıyla):' + NL + link + NL + NL + 'Davet ' + fmtDate(r.expiresAt) + ' tarihine kadar geçerli.' + (r.premiumDays ? ' İlk girişinle ' + r.premiumDays + ' gün Premium hediye.' : '');
-        const a = el('a', 'sm'); a.textContent = '✉ E-posta uygulamamla gönder'; a.href = 'mailto:' + encodeURIComponent(r.email) + '?subject=' + encodeURIComponent('EV Co-Pilot daveti') + '&body=' + encodeURIComponent(body);
+        const body = 'Merhaba,' + NL + NL + 'EV Route Finder uygulamasına davet edildin. Bu linke dokun ve Google ile giriş yap (' + r.email + ' hesabıyla):' + NL + link + NL + NL + 'Davet ' + fmtDate(r.expiresAt) + ' tarihine kadar geçerli.' + (r.premiumDays ? ' İlk girişinle ' + r.premiumDays + ' gün Premium hediye.' : '');
+        const a = el('a', 'sm'); a.textContent = '✉ E-posta uygulamamla gönder'; a.href = 'mailto:' + encodeURIComponent(r.email) + '?subject=' + encodeURIComponent('EV Route Finder daveti') + '&body=' + encodeURIComponent(body);
         a.style.cssText = 'display:inline-block;margin-top:8px;padding:3px 10px;border:1px solid var(--line);border-radius:8px;color:inherit;text-decoration:none';
         out.append(el('div'), a);
       }

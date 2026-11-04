@@ -8,7 +8,7 @@ try {
   $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $psArgs
   $trigger = New-ScheduledTaskTrigger -AtLogOn
   $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit ([TimeSpan]::Zero)
-  Register-ScheduledTask -TaskName 'EVCoPilotProxy' -Action $action -Trigger $trigger -Settings $settings -Description 'EV Co-Pilot ara sunucusu' -Force -ErrorAction Stop | Out-Null
+  Register-ScheduledTask -TaskName 'EVCoPilotProxy' -Action $action -Trigger $trigger -Settings $settings -Description 'EV Route Finder ara sunucusu' -Force -ErrorAction Stop | Out-Null
   Start-ScheduledTask -TaskName 'EVCoPilotProxy' -ErrorAction Stop
   Write-Host 'Zamanlanmis gorev kuruldu ve baslatildi: EVCoPilotProxy'
 } catch {

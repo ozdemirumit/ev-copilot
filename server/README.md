@@ -1,4 +1,4 @@
-# EV Co-Pilot ara sunucusu (isteğe bağlı)
+# EV Route Finder ara sunucusu (isteğe bağlı)
 
 Uygulama sunucusuz da çalışır. Bu sunucu şunlar için vardır:
 - **Anahtarlar sunucuda kalır:** Mapbox ve OpenChargeMap anahtarları yalnızca `server/.env` içinde durur; telefona yazılmaz, repoya girmez.
@@ -14,7 +14,7 @@ Sunucu kapalıysa ya da ulaşılamıyorsa: Overpass doğrudan halka açık sunuc
    node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))"
    ```
    `MAPBOX_TOKEN` ve `OCM_KEY` alanlarına kendi anahtarlarını yaz. Bu dosyayı kimseye gönderme, repoya ekleme.
-3. Dene: `node server\proxy.mjs` → "EV Co-Pilot ara sunucusu 127.0.0.1:8787 …" yazmalı.
+3. Dene: `node server\proxy.mjs` → "EV Route Finder ara sunucusu 127.0.0.1:8787 …" yazmalı.
 4. Açılışta otomatik başlasın: PowerShell'de `powershell -ExecutionPolicy Bypass -File server\install-task.ps1`. Bilgisayarda zamanlanmış görev için yönetici izni yoksa betik kendiliğinden Başlangıç klasörüne kısayol koyar (yönetici gerekmez). Günlük: `server\proxy.log` (adres, yol, durum; sorgu ve anahtar yazılmaz).
 
 ## İnternete açmak: Cloudflare Tunnel (önerilen)
@@ -66,7 +66,7 @@ Telefonda hiçbir anahtar yazılmaz. Kullanıcı davet linkine dokunur, Google i
 
 **Kurulum (bir kez, kendi terminalinde):**
 1. `node server\totp-setup.mjs` → 20 baytlık rastgele bir anahtar üretir, `server\.env` içine `ADMIN_TOTP_SECRET=...` yazar (diğer satırlara dokunmaz, erişim kodlarını ekrana yazmaz; önce `server\.env.totp-yedek` yedeğini alır, Windows'ta yalnızca SYSTEM/Yöneticiler/sen okuyabilir) ve anahtarı **yalnızca o an** ekrana yazar. Zaten anahtar varsa `--force` olmadan üzerine yazmaz.
-2. Microsoft Authenticator: **+ (Hesap ekle) > Diğer hesap (Google, Facebook vb.) > "Kodu el ile gir"** → Hesap adı `EV Co-Pilot Yönetim`, Gizli anahtar: ekrandaki 4'lü gruplar (boşluklu ya da boşluksuz). Betik ayrıca `otpauth://` adresini yazar (başka doğrulayıcılar için); QR üretmek için bir web sitesine yapıştırma, anahtar sızar.
+2. Microsoft Authenticator: **+ (Hesap ekle) > Diğer hesap (Google, Facebook vb.) > "Kodu el ile gir"** → Hesap adı `EV Route Finder Yönetim`, Gizli anahtar: ekrandaki 4'lü gruplar (boşluklu ya da boşluksuz). Betik ayrıca `otpauth://` adresini yazar (başka doğrulayıcılar için); QR üretmek için bir web sitesine yapıştırma, anahtar sızar.
 3. `node server\restart.mjs` → açılış satırında "yönetim 2. adım: TOTP açık" yazar.
 
 **Giriş:** `/yonetim` sayfası açılışta `GET /admin/auth` (`{ totp: true|false }`, gizli bilgi yok) sorar; TOTP açıksa erişim kodunun yanında "Doğrulama kodu (6 hane)" alanı çıkar. Sayfa `POST /admin/login { code, totp }` ile giriş yapar; dönen `{ token, expiresAt }` belirteci yalnızca o sekmede (`sessionStorage`) tutulur ve her istekte `X-Admin-Token` başlığıyla gider. Erişim kodu sayfada saklanmaz. Belirteç **12 saat** geçerlidir (`ADMIN_TOKEN_TTL_SEC` ile kısaltılabilir, uzatılamaz); sunucuda yalnızca SHA-256 özeti bellekte durur (en çok 20 canlı oturum; sunucu yeniden başlarsa herkes çıkar). Süre dolunca sayfa "Oturum süresi doldu, tekrar giriş yap" der. Çıkış düğmesi `POST /admin/logout` ile belirteci sunucuda da siler.

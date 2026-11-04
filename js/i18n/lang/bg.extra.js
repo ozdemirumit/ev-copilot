@@ -144,7 +144,7 @@ export default {
   "Teşekkürler: fiyat kaydedildi": "Благодаря: цената е запазена",
   "Fiyat gönderilemedi": "Цената не можа да бъде изпратена",
   "Fiyat bildirildi": "Цената е докладвана",
-  "Konum izni kapalı: Android Ayarlar > Uygulamalar > EV Co-Pilot > İzinler > Konum": "Разрешението за местоположение е изключено: Настройки на Android > Приложения > EV Co-Pilot > Разрешения > Местоположение",
+  "Konum izni kapalı: Android Ayarlar > Uygulamalar > EV Route Finder > İzinler > Konum": "Разрешението за местоположение е изключено: Настройки на Android > Приложения > EV Route Finder > Разрешения > Местоположение",
   "Konum alınamadı: açık alanda tekrar dene": "Местоположението не можа да се определи: опитай пак на открито",
   "👥 {0} araç şarj ediyor": "👥 {0} превозни средства се зареждат",
   "🔴 Dolu bildirildi": "🔴 Докладвана като заета",

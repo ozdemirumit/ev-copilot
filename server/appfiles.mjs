@@ -26,9 +26,9 @@ export function createAppFiles({ dir, send }) {
     const m = meta();
     const ok = size() > 0;
     const mb = (size() / 1048576).toFixed(1);
-    send(res, 200, `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EV Co-Pilot</title>`
+    send(res, 200, `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EV Route Finder</title>`
       + `<style>body{font:16px system-ui,sans-serif;background:#0b0f14;color:#e8eef5;margin:0;padding:24px;display:grid;place-items:center;min-height:100vh}main{max-width:460px}h1{font-size:24px;margin:0 0 4px}p,li{color:#a9b6c6;line-height:1.55}ol{padding-left:20px}.btn{display:block;margin:18px 0;padding:16px 18px;border-radius:14px;background:#2ee6a6;color:#04281c;text-align:center;text-decoration:none;font-weight:700}.off{background:#2c3a49;color:#a9b6c6}small{color:#7d8da0}</style></head>`
-      + `<body><main><h1>🔌 EV Co-Pilot</h1><p>Android uygulaması${m?.version ? ` · v${esc(m.version)}` : ''}${ok ? ` · ${mb} MB` : ''}. <small>Android app.</small></p>`
+      + `<body><main><h1>🔌 EV Route Finder</h1><p>Android uygulaması${m?.version ? ` · v${esc(m.version)}` : ''}${ok ? ` · ${mb} MB` : ''}. <small>Android app.</small></p>`
       + (ok ? `<a class="btn" href="/app/ev-copilot.apk" download>📥 APK'yı indir (Download APK)</a>` : `<div class="btn off">APK henüz yüklenmemiş (APK not uploaded yet)</div>`)
       + `<ol><li>İndirince dosyayı aç. Android "bu kaynaktan yüklemeye izin ver" derse izin ver, sonra <b>Yükle</b>'ye dokun. <small>(Open the file; allow installs from this source; tap Install.)</small></li>`
       + `<li>Play Protect uyarı verirse "Yine de yükle" de. Uygulama kendi imzalı sürümümüzdür. <small>(If Play Protect warns, choose Install anyway.)</small></li>`
@@ -45,7 +45,7 @@ export function createAppFiles({ dir, send }) {
       if (!n) { send(res, 404, 'APK yok', { 'Content-Type': 'text/plain; charset=utf-8' }); return true; }
       if (req.method === 'GET' && tooMany(ip)) { send(res, 429, 'Çok fazla indirme, sonra dene', { 'Content-Type': 'text/plain; charset=utf-8', 'Retry-After': '3600' }); return true; }
       res.writeHead(200, {
-        'Content-Type': 'application/vnd.android.package-archive', 'Content-Disposition': 'attachment; filename="EV-Co-Pilot.apk"',
+        'Content-Type': 'application/vnd.android.package-archive', 'Content-Disposition': 'attachment; filename="EV-Route-Finder.apk"',
         'Content-Length': n, 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff',
       });
       if (req.method === 'HEAD') res.end();

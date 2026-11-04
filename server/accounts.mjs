@@ -35,13 +35,13 @@ function inviteMail(link, rec) {
   const until = new Date(rec.expiresAt).toLocaleDateString('tr-TR');
   return [
     'Merhaba,', '',
-    'EV Co-Pilot uygulamasına davet edildin.', '',
+    'EV Route Finder uygulamasına davet edildin.', '',
     `1) Bu linke dokun: ${link}`,
     '2) Açılan sayfada Android uygulamasını ya da web uygulamasını seç, "Google ile giriş yap"a bas.',
     `3) Giriş için bu e-postanın Google hesabını kullan${rec.email ? ' (' + rec.email + ')' : ''}.`, '',
     `Davet ${until} tarihine kadar geçerli ve tek kullanımlıktır.${rec.premiumDays ? ` İlk girişinle birlikte ${rec.premiumDays} gün Premium hediye.` : ''}`, '',
     '---',
-    'Hello, you have been invited to EV Co-Pilot. Open the link above and sign in with the Google account this email was sent to.',
+    'Hello, you have been invited to EV Route Finder. Open the link above and sign in with the Google account this email was sent to.',
   ].join('\n');
 }
 
@@ -129,7 +129,7 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
     for (const [n, p] of pend) if (p.exp < Date.now()) { pend.delete(n); byState.delete(p.state); if (p.cid) byConfirm.delete(p.cid); }
   }, 60000).unref();
 
-  const page = (res, status, title, msg) => send(res, status, `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EV Co-Pilot</title>`
+  const page = (res, status, title, msg) => send(res, status, `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EV Route Finder</title>`
     + `<style>body{font:16px system-ui,sans-serif;background:#0b0f14;color:#e8eef5;display:grid;place-items:center;min-height:100vh;margin:0;padding:24px;text-align:center}main{max-width:420px}h1{font-size:22px}a{color:#2ee6a6}p{color:#a9b6c6;line-height:1.5}.btn{display:inline-block;margin:6px;padding:12px 18px;border-radius:12px;background:#1b2530;border:1px solid #2c3a49;text-decoration:none}</style></head><body><main><h1>${title}</h1><p>${msg}</p></main></body></html>`,
   { 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'", 'Referrer-Policy': 'no-referrer' });
 
@@ -191,7 +191,7 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
   }
 
   function confirmPage(res, p, error = '') {
-    send(res, 200, `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EV Co-Pilot</title>`
+    send(res, 200, `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EV Route Finder</title>`
       + `<style>body{font:16px system-ui,sans-serif;background:#0b0f14;color:#e8eef5;display:grid;place-items:center;min-height:100vh;margin:0;padding:24px;text-align:center}main{max-width:420px}h1{font-size:22px}p{color:#a9b6c6;line-height:1.5}b{color:#e8eef5}.err{color:#ff8a8a}input{font:inherit;font-size:28px;letter-spacing:8px;text-align:center;width:9ch;padding:10px;border-radius:12px;border:1px solid #2c3a49;background:#1b2530;color:#e8eef5}button{display:block;margin:16px auto 0;font:inherit;padding:12px 22px;border-radius:12px;border:1px solid #2c3a49;background:#1b2530;color:#2ee6a6;font-weight:600}</style></head>`
       + `<body><main><h1>🔐 Giriş kodunu gir</h1><p>Hesap: <b>${esc(p.identity.email)}</b><br>Girişi başlattığın uygulamada gösterilen <b>4 haneli kodu</b> yaz. (Enter the 4-digit code shown in the app where you started sign-in.)</p>`
       + `<p>Bu girişi sen başlatmadıysan ya da uygulamada kod görmediysen sayfayı kapat: biri seni kandırmaya çalışıyor olabilir. (If you did not start this sign-in, close this page.)</p>`
@@ -262,9 +262,9 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
       const st = inviteState(findInvite(inv[1]));
       if (st !== 'ok') { const [t, m] = ERR['invite_' + st] || ERR.invite_invalid; page(res, 404, t, m); return true; }
       const code = inv[1];
-      send(res, 200, `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EV Co-Pilot</title>`
+      send(res, 200, `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EV Route Finder</title>`
         + `<style>body{font:16px system-ui,sans-serif;background:#0b0f14;color:#e8eef5;display:grid;place-items:center;min-height:100vh;margin:0;padding:24px;text-align:center}main{max-width:420px}h1{font-size:22px}p{color:#a9b6c6;line-height:1.5}.btn{display:block;margin:10px 0;padding:14px 18px;border-radius:12px;background:#1b2530;border:1px solid #2c3a49;color:#2ee6a6;text-decoration:none;font-weight:600}</style></head>`
-        + `<body><main><h1>🔌 EV Co-Pilot daveti</h1><p>Davet edildin. Uygulamayı aç ve Google ile giriş yap. (You have been invited.)</p>`
+        + `<body><main><h1>🔌 EV Route Finder daveti</h1><p>Davet edildin. Uygulamayı aç ve Google ile giriş yap. (You have been invited.)</p>`
         + `<a class="btn" href="evcopilot://invite?code=${code}">📱 Android uygulamasında aç</a>`
         + `<a class="btn" href="${APP_URL}?invite=${code}">🌐 Web uygulamasında aç</a>`
         + (PUBLIC_URL ? `<a class="btn" href="${PUBLIC_URL}/app">📥 Android uygulamasını indir (kurulu değilse)</a>` : '')
@@ -384,7 +384,7 @@ export function createAccounts({ env, store, send, json, readJson, caps, onDelet
           if (!mailer) emailError = 'E-posta gönderimi ayarlı değil (SMTP_USER/SMTP_PASS)';
           else {
             try {
-              await mailer.send({ to: email, subject: 'EV Co-Pilot daveti', text: inviteMail(link, rec) });
+              await mailer.send({ to: email, subject: 'EV Route Finder daveti', text: inviteMail(link, rec) });
               emailed = true;
             } catch (err) { emailError = String(err.message).slice(0, 160); console.error('davet e-postası:', emailError); }
           }

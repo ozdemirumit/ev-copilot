@@ -1,6 +1,6 @@
 {
   "appId": "com.ozdemirumit.evcopilot",
-  "appName": "EV Co-Pilot",
+  "appName": "EV Route Finder",
   "webDir": "www",
   "server": {
     "url": "https://ozdemirumit.github.io/ev-copilot/",

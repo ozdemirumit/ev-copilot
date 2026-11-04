@@ -144,7 +144,7 @@ export default {
   "Teşekkürler: fiyat kaydedildi": "Danke: Preis gespeichert",
   "Fiyat gönderilemedi": "Preis konnte nicht gesendet werden",
   "Fiyat bildirildi": "Preis gemeldet",
-  "Konum izni kapalı: Android Ayarlar > Uygulamalar > EV Co-Pilot > İzinler > Konum": "Standortberechtigung aus: Android-Einstellungen > Apps > EV Co-Pilot > Berechtigungen > Standort",
+  "Konum izni kapalı: Android Ayarlar > Uygulamalar > EV Route Finder > İzinler > Konum": "Standortberechtigung aus: Android-Einstellungen > Apps > EV Route Finder > Berechtigungen > Standort",
   "Konum alınamadı: açık alanda tekrar dene": "Standort nicht verfügbar: im Freien erneut versuchen",
   "👥 {0} araç şarj ediyor": "👥 {0} Fahrzeuge laden",
   "🔴 Dolu bildirildi": "🔴 Als belegt gemeldet",

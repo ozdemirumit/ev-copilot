@@ -69,7 +69,7 @@ export function initShell() {
     } catch (err) {
       if (err?.code === 1) { // izin reddedildi: beklemenin anlamı yok
         wantCenter = false;
-        toast('Konum izni kapalı: Android Ayarlar > Uygulamalar > EV Co-Pilot > İzinler > Konum', 7000);
+        toast('Konum izni kapalı: Android Ayarlar > Uygulamalar > EV Route Finder > İzinler > Konum', 7000);
       } else {
         toast('Konum henüz alınamadı: GPS sinyali bekleniyor (açık alanda dene)', 6000); // GPS izleme sürüyor: ilk konum gelince harita yine ortalanır
       }

@@ -77,7 +77,7 @@ if (check !== out || after.length !== 1 || after[0][2].trim() !== secret) {
 }
 
 const groups = secret.match(/.{1,4}/g).join(' ');
-const uri = `otpauth://totp/EV%20Co-Pilot%20Y%C3%B6netim?secret=${secret}&issuer=EV%20Co-Pilot&algorithm=SHA1&digits=6&period=30`;
+const uri = `otpauth://totp/EV%20Route%20Finder%20Y%C3%B6netim?secret=${secret}&issuer=EV%20Route%20Finder&algorithm=SHA1&digits=6&period=30`;
 console.log([
   '',
   `Yönetim ekranı ikinci adım (TOTP) anahtarı üretildi ve ${envFile} dosyasına yazıldı.`,
@@ -86,7 +86,7 @@ console.log([
   "Microsoft Authenticator'a ekle:",
   "  1) Uygulamada + (Hesap ekle) > 'Diğer hesap (Google, Facebook vb.)'",
   "  2) QR kodu tara ekranında 'Kodu el ile gir' seçeneğine dokun (bu betik QR çizmez)",
-  '  3) Hesap adı:     EV Co-Pilot Yönetim',
+  '  3) Hesap adı:     EV Route Finder Yönetim',
   `     Gizli anahtar: ${groups}`,
   '     (boşluklu ya da boşluksuz yazılabilir; harfler büyük ya da küçük olabilir)',
   "  4) Son'a dokun. Uygulama her 30 saniyede bir 6 haneli kod gösterir.",

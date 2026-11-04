@@ -1,4 +1,4 @@
-# Smart EV Co-Pilot & ABRP Bridge (Togg T10X V2 LR)
+# EV Route Finder (Togg T10X V2 LR)
 
 Telefonda (Chrome PWA) çalışan; GPS + kamera OCR + fizik tabanlı menzil motoru, çok duraklı şarj planlayıcı, dinamik uyarılar ve ABRP canlı telemetri köprüsü.
 Build adımı yok: saf ES modülleri + Tesseract.js (OCR) + MapLibre GL JS (harita). Hiçbir ücretli servis ve anahtar zorunlu değil: harita OpenFreeMap, rota/rakım/yol hız limiti Valhalla, yer arama Photon, istasyonlar Overpass (+ isteğe bağlı OpenChargeMap), hava Open-Meteo (hepsi OpenStreetMap tabanlı, herkese açık sunucular, adil kullanım).

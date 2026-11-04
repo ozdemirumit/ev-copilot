@@ -1858,7 +1858,7 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
       ok('(10d) kurulum: çıkış 0, ADMIN_TOTP_SECRET 32 karakter base32 (20 bayt)', p.status === 0 && sec.length === 32 && T?.base32Decode(sec)?.length === 20);
       ok('(10d) kurulum: diğer satırlar ve CRLF korunur', txt.startsWith(orig) && !/[^\r]\n/.test(txt));
       ok('(10d) kurulum: yedek dosyası eski içerikle', existsSync(envFile + '.totp-yedek') && readFileSync(envFile + '.totp-yedek', 'utf8') === orig);
-      const uri = `otpauth://totp/EV%20Co-Pilot%20Y%C3%B6netim?secret=${sec}&issuer=EV%20Co-Pilot&algorithm=SHA1&digits=6&period=30`;
+      const uri = `otpauth://totp/EV%20Route%20Finder%20Y%C3%B6netim?secret=${sec}&issuer=EV%20Route%20Finder&algorithm=SHA1&digits=6&period=30`;
       ok('(10d) çıktı: otpauth URI (aynı anahtar) ve 4\'lü gruplar', !!sec && p.stdout.includes(uri) && p.stdout.includes(sec.match(/.{4}/g).join(' ')));
       ok('(10d) çıktı: Microsoft Authenticator adımları (Diğer hesap, Kodu el ile gir) ve kapatma yolu', p.stdout.includes('Microsoft Authenticator') && p.stdout.includes('Diğer hesap') && p.stdout.includes('Kodu el ile gir') && /sil/.test(p.stdout));
       ok('(10d) çıktı erişim kodunu içermez', !p.stdout.includes(CODE) && !p.stderr.includes(CODE));

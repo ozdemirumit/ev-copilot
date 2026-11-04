@@ -1,4 +1,4 @@
-# EV Co-Pilot: komutlar
+# EV Route Finder: komutlar
 
 Hepsi **PowerShell**'de, proje klasöründen çalışır (aksi yazılmadıkça yönetici gerekmez):
 

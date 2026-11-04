@@ -1,4 +1,4 @@
-// EV Co-Pilot ara sunucusu (isteğe bağlı). Telefon yerine bu sunucu Mapbox, OpenChargeMap ve Overpass'e gider:
+// EV Route Finder ara sunucusu (isteğe bağlı). Telefon yerine bu sunucu Mapbox, OpenChargeMap ve Overpass'e gider:
 //  - anahtarlar yalnızca burada (server/.env) durur, uygulamaya ve repoya girmez;
 //  - Overpass/OpenChargeMap/Mapbox arama yanıtları ortak önbelleğe alınır, Overpass istekleri sıraya konur (429 azalır);
 //  - istemci davetle kayıt olmuş bir hesapla (Google girişi, oturum belirteci uygulamada kendiliğinden saklanır) ya da yönetici erişim koduyla doğrulanır;
@@ -687,5 +687,5 @@ server.requestTimeout = 120000;
 server.headersTimeout = 15000;
 tesla.get().catch(() => {}); // ilk kullanıcı beklemesin: açılışta Tesla listesi (diskte yoksa) önceden alınır
 server.listen(PORT, HOST, () => {
-  console.log(`EV Co-Pilot ara sunucusu ${HOST}:${PORT} · Mapbox ${MAPBOX ? 'var' : 'yok'} · OpenChargeMap ${OCM ? 'var' : 'yok'} · HERE ${HERE ? 'var' : 'yok'} · Google girişi ${accounts.googleOn ? 'açık' : 'kapalı'} · doluluk: NDW${HERE ? ' + HERE' : ''}${GOOGLE_PLACES ? ' + Google' : ''} · ${CODES.length} yönetici kodu${adminAuth ? ' · yönetim 2. adım: TOTP açık' : ''}`);
+  console.log(`EV Route Finder ara sunucusu ${HOST}:${PORT} · Mapbox ${MAPBOX ? 'var' : 'yok'} · OpenChargeMap ${OCM ? 'var' : 'yok'} · HERE ${HERE ? 'var' : 'yok'} · Google girişi ${accounts.googleOn ? 'açık' : 'kapalı'} · doluluk: NDW${HERE ? ' + HERE' : ''}${GOOGLE_PLACES ? ' + Google' : ''} · ${CODES.length} yönetici kodu${adminAuth ? ' · yönetim 2. adım: TOTP açık' : ''}`);
 });
