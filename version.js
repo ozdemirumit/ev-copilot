@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.84.6';
+self.APP_VERSION = '0.84.7';
 self.APP_CHANGELOG = [
+  {
+    v: '0.84.7', date: '2026-11-05',
+    notes: [
+      'Menzil sekmesine k çarpanını sıfırla düğmesi eklendi: eskiden yanlış öğrenilmiş düzeltme çarpanı (örn. 1,78) menzili ve planı olduğundan çok kısa gösteriyordu; sıfırlayınca model varsayımına (1,00) dönülür.',
+    ],
+  },
   {
     v: '0.84.6', date: '2026-11-05',
     notes: [
