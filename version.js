@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.84.2';
+self.APP_VERSION = '0.84.3';
 self.APP_CHANGELOG = [
+  {
+    v: '0.84.3', date: '2026-11-04',
+    notes: [
+      'DEĞİŞTİ: Navigasyondaki pil sürgüsünün altındaki menzil artık mevcut pille %0a kadar toplam menzili gösteriyor (eskiden eşik piline kadar menzildi; eşik pile eşitse 0 km yazıyordu). Eşik piline kadar menzil Menzil sekmesinde ve menzil kutusunun ipucunda.',
+    ],
+  },
   {
     v: '0.84.2', date: '2026-11-04',
     notes: [
