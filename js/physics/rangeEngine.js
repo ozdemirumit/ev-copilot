@@ -3,7 +3,7 @@ import { VEHICLE } from '../config.js';
 import { save } from '../utils/storage.js';
 import { headwindComponent, haversineKm } from '../utils/geo.js';
 import { batteryPowerKw, kwhPer100 } from './model.js';
-import { rangeForEnergy } from './rangeCalc.js';
+import { rangeForEnergy, usesRouteProfile } from './rangeCalc.js';
 import { createTracker } from './consumption.js';
 import { trafficBreakdown, stopGoOverhead } from './traffic.js';
 import { fetchWeather } from '../providers/index.js';
@@ -130,7 +130,12 @@ function tick() {
   const rangeFor = (energyKwh) => rangeForEnergy({ energyKwh, estFlat, prof, routeKm, offKm, kp: plan.kInfo?.k ?? k });
   const usable = e.soc == null ? null : (Math.max(0, e.soc - route.minArrivalSoc) / 100) * VEHICLE.batteryNetKwh;
   const rangeKm = rangeFor(usable); // eşik piline kadar (Menzil sekmesi)
-  const totalRangeKm = rangeFor(e.soc == null ? null : (Math.max(0, e.soc) / 100) * VEHICLE.batteryNetKwh); // %0'a kadar (pil sürgüsü altı)
+  const totalKwh = e.soc == null ? null : (Math.max(0, e.soc) / 100) * VEHICLE.batteryNetKwh;
+  const totalRangeKm = rangeFor(totalKwh); // %0'a kadar (pil sürgüsü altı)
+  // Tanı: menzil neye göre hesaplandı? (rota profili ya da düz zemin) ve bu menzilin ima ettiği ortalama tüketim
+  const rangeSrc = usesRouteProfile({ prof, routeKm, offKm }) ? 'route' : 'flat';
+  const rangeKwh100 = totalKwh != null && totalRangeKm > 0 ? (totalKwh / totalRangeKm) * 100 : null;
+  const rangeKp = plan.kInfo?.k ?? k;
 
   // Rüzgar (anlık koşul)
   let netWind = null;
@@ -155,7 +160,7 @@ function tick() {
     measuredKm: st?.distKm ?? null,
     kwh100Est: est, kwh100Flat: estFlat,
     powerKw: speed > 0 ? modelKw * k : null, // anlık güç tahmini (model × k)
-    rangeKm, totalRangeKm,
+    rangeKm, totalRangeKm, rangeSrc, rangeKwh100, rangeKp,
     netWind, aeroPct, traffic,
   });
 

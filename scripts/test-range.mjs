@@ -1,6 +1,6 @@
 // Menzil hesabı (js/physics/rangeCalc.js) testi: rota yok → düz zemin; rota sonu yakın → kısa iniş menzili şişirmez; rota tırmanışı menzili düşürür.
 // Kullanım: node scripts/test-range.mjs
-import { rangeForEnergy } from '../js/physics/rangeCalc.js';
+import { rangeForEnergy, usesRouteProfile } from '../js/physics/rangeCalc.js';
 
 let pass = 0, fail = 0;
 const ok = (name, cond) => { cond ? pass++ : fail++; console.log(cond ? 'ok  ' : 'FAIL', name); };
@@ -58,6 +58,15 @@ ok('enerji null → null', rangeForEnergy({ energyKwh: null, estFlat: FLAT, prof
   const prof = profile([{ len: 100, kwhPerKm: 0.6 }]);
   const km = rangeForEnergy({ energyKwh: E, estFlat: FLAT, prof, routeKm: 5, offKm: 8, kp: 1 });
   ok('rotadan 8 km uzakta: düz zemin', near(km, (E / FLAT) * 100));
+}
+
+// 6) Kaynak ayrımı (arayüzdeki "Toplam menzil hesabı" satırı)
+{
+  const prof = profile([{ len: 100, kwhPerKm: 0.2 }]);
+  ok('rotada: rota profili', usesRouteProfile({ prof, routeKm: 10, offKm: 0.5 }));
+  ok('rotadan uzak: düz zemin', !usesRouteProfile({ prof, routeKm: 10, offKm: 8 }));
+  ok('rota yok: düz zemin', !usesRouteProfile({ prof: null, routeKm: null, offKm: null }));
+  ok('rota bitti: düz zemin', !usesRouteProfile({ prof, routeKm: 99.8, offKm: 0 }));
 }
 
 console.log(`\n${pass} geçti, ${fail} kaldı`);

@@ -35,7 +35,7 @@ const store = {
   engine: {
     k: load('kCal', 1), grade: null, routeKm: null, offRouteKm: null,
     kwh100Measured: null, kmPerPct: null, measuredKm: null,
-    kwh100Est: null, kwh100Flat: null, rangeKm: null, totalRangeKm: null, netWind: null, aeroPct: null, traffic: null,
+    kwh100Est: null, kwh100Flat: null, rangeKm: null, totalRangeKm: null, rangeSrc: null, rangeKwh100: null, rangeKp: null, netWind: null, aeroPct: null, traffic: null,
   },
   // Planlanan rota ve şarj planı.
   plan: { status: 'none', text: '', route: null, profile: null, wxInfo: null, stations: [], stationInfo: null, stops: [], mode: load('planMode', 'opt'), totals: null },

@@ -40,6 +40,10 @@ function paint() {
   set('c-model', g.kwh100Est == null ? '—' : `${g.kwh100Est.toFixed(1)} kWh/100km`);
   set('c-k', g.k.toFixed(2) + (Math.abs(g.k - 1) < 0.005 ? ' ' + tr('(kalibre değil)') : ''));
 
+  // Pil sürgüsü altındaki toplam menzil neye göre hesaplandı: kaynak, ima ettiği ortalama tüketim, rota k'sı
+  set('c-rangecalc', g.rangeKwh100 == null ? '—'
+    : `${tr(g.rangeSrc === 'route' ? 'rota profili' : 'düz zemin')} · ${g.rangeKwh100.toFixed(1)} kWh/100km · k ${(g.rangeKp ?? 1).toFixed(2)}`);
+
   // Hava
   set('w-temp', withUnit(e.extTemp, '°C'));
   set('w-rain', withUnit(e.rain, 'mm/sa', 1));
