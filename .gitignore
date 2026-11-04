@@ -8,3 +8,6 @@ server/.env.totp-yedek
 server/*.log
 server/data/
 server/public/
+
+# Tanıtım sitesi çıktısı (node site-src/build.mjs üretir; ayrı depoda yayınlanır)
+site/
