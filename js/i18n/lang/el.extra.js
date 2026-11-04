@@ -257,4 +257,10 @@ export default {
   "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Ο έλεγχος ορίου ταχύτητας δρόμου είναι ενεργός (Premium: HERE, εφεδρικά OpenStreetMap)",
   "Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin": "Άγνωστη μπαταρία: υποτέθηκε 80 %. Μπορείς να την αλλάξεις με το ρυθμιστικό «Τρέχουσα μπαταρία»",
   "Sunucuya ulaşılamıyor, yeniden deneniyor…": "Ο διακομιστής δεν είναι προσβάσιμος, γίνεται νέα προσπάθεια…",
+  "🚩 Bildir": "🚩 Αναφορά",
+  "Bu fotoğraf bildirilsin mi? Bildirilen fotoğraf herkesten gizlenir ve incelenir.": "Να αναφερθεί αυτή η φωτογραφία; Η φωτογραφία που αναφέρεται κρύβεται από όλους και ελέγχεται.",
+  "Fotoğraf bildirildi ve gizlendi. İnceleyeceğiz.": "Η φωτογραφία αναφέρθηκε και κρύφτηκε. Θα την ελέγξουμε.",
+  "Bildirilemedi": "Η αναφορά απέτυχε",
+  "Bildirildi, inceleme bekliyor": "Αναφέρθηκε, αναμένει έλεγχο",
+  "Yeşil çerçeveli fotoğraflar senin: açıp silebilirsin.": "Οι φωτογραφίες με πράσινο πλαίσιο είναι δικές σου: άνοιξέ τις για να τις διαγράψεις.",
 };

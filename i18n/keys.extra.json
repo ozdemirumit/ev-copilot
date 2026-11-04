@@ -256,5 +256,11 @@
  "Yol hız limiti sürerken okunur (Premium: HERE; yoksa Mapbox, o da yoksa OpenStreetMap)",
  "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)",
  "Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin",
- "Sunucuya ulaşılamıyor, yeniden deneniyor…"
+ "Sunucuya ulaşılamıyor, yeniden deneniyor…",
+ "🚩 Bildir",
+ "Bu fotoğraf bildirilsin mi? Bildirilen fotoğraf herkesten gizlenir ve incelenir.",
+ "Fotoğraf bildirildi ve gizlendi. İnceleyeceğiz.",
+ "Bildirilemedi",
+ "Bildirildi, inceleme bekliyor",
+ "Yeşil çerçeveli fotoğraflar senin: açıp silebilirsin."
 ]

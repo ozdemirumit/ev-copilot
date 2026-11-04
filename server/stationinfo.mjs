@@ -2,6 +2,8 @@
 // komşu hücreler birlikte taranır (aynı istasyonu farklı kaynaklar biraz farklı koordinatla verebilir); yazarken kullanıcının komşu hücrelerdeki
 // eski oyu silinir, böylece kişi başına tek puan / tek oy kalır. Fotoğraflar diskte (DATA_DIR/photos/<id>.jpg), üst verisi db.json'dadır.
 // Kullanıcı kimlikleri yalnızca tekrarı önlemek ve silme yetkisi için tutulur, dışarı verilmez ("mine" yalnızca isteyen kişiye döner).
+// Bildirme (moderasyon): başkasının fotoğrafı bildirilince HEMEN herkesten gizlenir (yükleyen ve yönetici görür); yönetici inceler: geri yükler ya da siler.
+// Bildirenler kimliğiyle tutulur (aynı kişi tekrar bildirmesin, en çok 20), yükleyene ya da başkasına gösterilmez.
 import { mkdirSync, writeFileSync, readFileSync, unlinkSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
@@ -27,7 +29,7 @@ export function createStationInfo(store, dir) {
   const photoFile = (id) => join(dir, id + '.jpg');
   const rm = (id) => { try { unlinkSync(photoFile(id)); } catch { /* dosya zaten yok */ } };
 
-  /** Özet: { rating: { avg, n, mine }, facilities: { fac: { yes, no, mine } }, photos: [{ id, mine, at }] }. */
+  /** Özet: { rating: { avg, n, mine }, facilities: { fac: { yes, no, mine } }, photos: [{ id, mine, at, hidden? }] }. Bildirilmiş (gizli) fotoğraf yalnızca yükleyene döner (hidden: true). */
   function summary(p, userId) {
     let sum = 0, n = 0, mine = null;
     const fac = {};
@@ -38,7 +40,11 @@ export function createStationInfo(store, dir) {
         const o = (fac[f] ||= { yes: 0, no: 0, mine: null });
         for (const [u, v] of Object.entries(votes)) { if (v) o.yes++; else o.no++; if (u === userId) o.mine = !!v; }
       }
-      for (const ph of c.photos) photos.push({ id: ph.id, mine: ph.by === userId, at: ph.at });
+      for (const ph of c.photos) {
+        const mine = ph.by === userId;
+        if (ph.hidden && !mine) continue;
+        photos.push({ id: ph.id, mine, at: ph.at, ...(ph.hidden ? { hidden: true } : {}) });
+      }
     }
     photos.sort((a, b) => b.at - a.at);
     return { rating: { avg: n ? Math.round((sum / n) * 10) / 10 : null, n, mine }, facilities: fac, photos: photos.slice(0, MAX_PHOTOS_PER_STATION) };
@@ -79,12 +85,46 @@ export function createStationInfo(store, dir) {
     return { ok: true, id };
   }
 
-  /** Fotoğraf baytları ya da null (yok / kayıtlı değil). */
-  function readPhoto(id) {
+  const find = (id) => { for (const c of Object.values(cells())) { const ph = c.photos.find((x) => x.id === id); if (ph) return ph; } return null; };
+
+  /** Fotoğraf baytları ya da null (yok / kayıtlı değil / gizli ve isteyen yükleyen ya da yönetici değil). */
+  function readPhoto(id, userId = null, admin = false) {
     if (!ID_RE.test(id)) return null;
-    const known = Object.values(cells()).some((c) => c.photos.some((x) => x.id === id));
-    if (!known || !existsSync(photoFile(id))) return null;
+    const ph = find(id);
+    if (!ph || !existsSync(photoFile(id))) return null;
+    if (ph.hidden && !admin && ph.by !== userId) return null;
     return readFileSync(photoFile(id));
+  }
+
+  /** Başkasının fotoğrafını bildir: hemen gizlenir. Aynı kişi tekrar bildirirse sorun değil (tek kayıt). */
+  function reportPhoto(userId, id) {
+    if (!ID_RE.test(id)) return { error: 'geçersiz' };
+    const ph = find(id);
+    if (!ph) return { error: 'yok' };
+    if (ph.by === userId) return { error: 'kendi fotoğrafın' };
+    const reps = (ph.reports ||= []);
+    if (reps.includes(userId)) return { ok: true }; // aynı kişinin bildirimi bir kez sayılır; yönetici geri yüklediyse aynı kişi tekrar gizleyemez
+    if (reps.length < 20) reps.push(userId);
+    if (!ph.hidden) { ph.hidden = true; ph.hiddenAt = Date.now(); }
+    store.save();
+    return { ok: true };
+  }
+
+  /** Yönetici: bildirilip gizlenmiş fotoğraflar, en yeni önce: [{ id, by, at, hiddenAt, reports }]. */
+  function reported() {
+    const out = [];
+    for (const c of Object.values(cells())) for (const ph of c.photos) if (ph.hidden) out.push({ id: ph.id, by: ph.by, at: ph.at, hiddenAt: ph.hiddenAt || ph.at, reports: (ph.reports || []).length });
+    return out.sort((a, b) => b.hiddenAt - a.hiddenAt);
+  }
+
+  /** Yönetici: bildirimi reddet, fotoğraf yeniden görünür. Bildirenler kayıtlı kalır (aynı kişiler tekrar gizleyemez). */
+  function restorePhoto(id) {
+    const ph = ID_RE.test(id) ? find(id) : null;
+    if (!ph) return { error: 'yok' };
+    delete ph.hidden;
+    delete ph.hiddenAt;
+    store.save();
+    return { ok: true };
   }
 
   /** Kendi fotoğrafını (ya da yönetici herhangi birini) sil. */
@@ -107,6 +147,7 @@ export function createStationInfo(store, dir) {
     for (const [k, c] of Object.entries(cells())) {
       delete c.rate[userId];
       for (const votes of Object.values(c.fac)) delete votes[userId];
+      for (const ph of c.photos) if (ph.reports) ph.reports = ph.reports.filter((u) => u !== userId); // bildiren hesap silinince kimliği de kalkar
       for (const ph of c.photos.filter((x) => x.by === userId)) rm(ph.id);
       c.photos = c.photos.filter((x) => x.by !== userId);
       if (!Object.keys(c.rate).length && !c.photos.length && !Object.values(c.fac).some((v) => Object.keys(v).length)) delete cells()[k];
@@ -114,5 +155,5 @@ export function createStationInfo(store, dir) {
     store.save();
   }
 
-  return { summary, rate, facility, addPhoto, readPhoto, deletePhoto, forget };
+  return { summary, rate, facility, addPhoto, readPhoto, reportPhoto, reported, restorePhoto, deletePhoto, forget };
 }

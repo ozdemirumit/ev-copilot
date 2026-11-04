@@ -8,7 +8,7 @@ import { tr, t } from '../i18n/index.js';
 import { fetchAvailability } from '../routing/occupancyClient.js';
 import { slotEl, livePrice } from '../routing/slots.js';
 import { getSession, proxyFetch, proxyHas } from '../net/proxy.js';
-import { fetchInfo, ratePoint, markFacility, shrinkPhoto, uploadPhoto, photoUrl, deletePhoto, FACILITIES } from '../account/stationInfo.js';
+import { fetchInfo, ratePoint, markFacility, shrinkPhoto, uploadPhoto, photoUrl, deletePhoto, reportPhoto, FACILITIES } from '../account/stationInfo.js';
 import { goToStation } from '../nav/nearby.js';
 
 const $ = (id) => document.getElementById(id);
@@ -65,14 +65,22 @@ async function load(s, box) {
   paintLive(box, s, 'done');
 }
 
-/** Fotoğrafı tam ekran göster; kendi fotoğrafıysa silinebilir. */
-function viewPhoto(src, id, mine, onGone) {
+/** Fotoğrafı tam ekran göster; kendi fotoğrafıysa silinebilir (bildirilmişse not görünür), başkasınınsa bildirilebilir (bildirilen herkesten gizlenir). */
+function viewPhoto(src, id, mine, hidden, onGone) {
   const ov = el('div', 'photo-view');
   const img = el('img');
   img.src = src;
   img.alt = '';
   ov.append(img, btn('✕', () => ov.remove(), 'sheet-x'));
-  if (mine) ov.append(btn('🗑 Sil', async () => { if (await deletePhoto(id)) { ov.remove(); toast('Fotoğraf silindi'); onGone(); } else toast('Kaydedilemedi'); }, 'btn sm del'));
+  if (mine) {
+    if (hidden) ov.append(el('div', 'photo-note', 'Bildirildi, inceleme bekliyor'));
+    ov.append(btn('🗑 Sil', async () => { if (await deletePhoto(id)) { ov.remove(); toast('Fotoğraf silindi'); onGone(); } else toast('Kaydedilemedi'); }, 'btn sm del'));
+  } else {
+    ov.append(btn('🚩 Bildir', async () => {
+      if (!confirm('Bu fotoğraf bildirilsin mi? Bildirilen fotoğraf herkesten gizlenir ve incelenir.')) return;
+      if (await reportPhoto(id)) { ov.remove(); toast('Fotoğraf bildirildi ve gizlendi. İnceleyeceğiz.'); onGone(); } else toast('Bildirilemedi');
+    }, 'btn sm del'));
+  }
   ov.addEventListener('click', (e) => { if (e.target === ov) ov.remove(); });
   document.body.append(ov);
 }
@@ -111,15 +119,16 @@ async function loadInfo(s, box) {
   if (info.photos.length) {
     const row = el('div', 'photo-row');
     info.photos.forEach((p) => {
-      const th = el('button', 'photo-th');
+      const th = el('button', 'photo-th' + (p.mine ? ' mine' : '') + (p.hidden ? ' flagged' : ''));
       th.type = 'button';
+      if (p.hidden) th.title = tr('Bildirildi, inceleme bekliyor');
       row.append(th);
       photoUrl(p.id).then((u) => {
         if (!u) return th.remove();
         if (my !== token) return URL.revokeObjectURL(u);
         urls.push(u);
         th.style.backgroundImage = `url("${u}")`;
-        th.addEventListener('click', () => viewPhoto(u, p.id, p.mine, again));
+        th.addEventListener('click', () => viewPhoto(u, p.id, p.mine, !!p.hidden, again));
       });
     });
     ph.append(row);
@@ -145,6 +154,7 @@ async function loadInfo(s, box) {
   const acts = el('div', 'row wrap');
   acts.append(btn('📷 Fotoğraf çek', () => add(true)), btn('🖼️ Galeriden seç', () => add(false)));
   ph.append(acts, el('div', 'small muted', 'Fotoğrafta kişi ve plaka görünmesin.'));
+  if (info.photos.some((p) => p.mine)) ph.append(el('div', 'small muted', 'Yeşil çerçeveli fotoğraflar senin: açıp silebilirsin.'));
   box.replaceChildren(rate, fac, ph);
 }
 

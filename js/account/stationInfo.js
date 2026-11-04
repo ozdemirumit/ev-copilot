@@ -71,6 +71,11 @@ export async function photoUrl(id) {
   } catch { return null; }
 }
 
+/** Başkasının fotoğrafını bildir: sunucu fotoğrafı hemen herkesten gizler, yönetici inceler. */
+export async function reportPhoto(id) {
+  try { return (await proxyFetch(`/v1/station/photo/${id}/report`, { method: 'POST', signal: AbortSignal.timeout(12000) })).ok; } catch { return false; }
+}
+
 export async function deletePhoto(id) {
   try { return (await proxyFetch('/v1/station/photo/' + id, { method: 'DELETE', signal: AbortSignal.timeout(12000) })).ok; } catch { return false; }
 }

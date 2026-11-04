@@ -27,7 +27,8 @@ const privacy = (cfg) => `
             <tr><td><b>Oturum:</b> rastgele oturum belirteci</td><td>Giriş açık kalsın diye. Sunucuda yalnızca belirtecin özeti saklanır; 180 gün geçerlidir.</td></tr>
             <tr><td><b>Eşitlenen veriler:</b> ayarlar, araç profili, kayıtlı yerler ve son hedefler, kendi istasyonların, operatör fiyatların, yolculuk ve şarj geçmişi</td><td>Giriş yaptığında; ayarlarını ve geçmişini cihazlar arasında eşitlemek için. Geçmiş kayıtları başlangıç ve varış konumunu yaklaşık 11 metre hassasiyetle, süreyi, enerjiyi ve sıcaklığı içerir.</td></tr>
             <tr><td><b>Cihaz kaydı:</b> cihazında üretilen rastgele kimlik, uygulama sürümü, platform (web ya da Android), ilk ve son görülme zamanı</td><td>Kullanım sayısını görmek ve kötüye kullanımı önlemek için. IP adresin bu kayıtta saklanmaz. Hesaba bağlı olmayan kayıtlar 90 gün sonra silinir.</td></tr>
-            <tr><td><b>Topluluk katkıları:</b> fiyat bildirimi (istasyon konumu ve kWh fiyatı), “burada şarj ediyorum” bildirimi, puan, olanak oyu (tuvalet, kafe vb.), istasyon fotoğrafı</td><td>Bunları sen gönderirsen. Diğer giriş yapmış kullanıcılar toplu puanı, oyları ve fotoğrafı görür; kimin gönderdiği görünmez. “Şarj ediyorum” bildirimi ayarlardan kapatılabilir, yaklaşık 100 metrelik bir bölgeye indirgenir ve 3 saat sonra silinir; ev ve iş konumları gönderilmez. Fotoğraflardan konum (EXIF) bilgisi temizlenir; fotoğrafta kişi ya da plaka görünmemesine dikkat et.</td></tr>
+            <tr><td><b>Topluluk katkıları:</b> fiyat bildirimi (istasyon konumu ve kWh fiyatı), “burada şarj ediyorum” bildirimi, puan, olanak oyu (tuvalet, kafe vb.), istasyon fotoğrafı</td><td>Bunları sen gönderirsen. Diğer giriş yapmış kullanıcılar toplu puanı, oyları ve fotoğrafı görür; kimin gönderdiği görünmez. “Şarj ediyorum” bildirimi ayarlardan kapatılabilir, yaklaşık 100 metrelik bir bölgeye indirgenir ve 3 saat sonra silinir; ev ve iş konumları gönderilmez. Fotoğraflardan konum (EXIF) bilgisi temizlenir; fotoğrafta kişi ya da plaka görünmemesine dikkat et. Kendi fotoğrafını istediğin an silebilirsin.</td></tr>
+            <tr><td><b>Fotoğraf bildirimleri:</b> bildiren hesap, bildirilen fotoğraf, zaman</td><td>Başkasının fotoğrafını uygunsuz bulup bildirirsen fotoğraf hemen herkesten gizlenir ve incelenir; yönetici uygun bulursa geri yükler, bulmazsa siler. Bildirdiğin hesap bu kayıtta tutulur ama fotoğrafı yükleyene ya da diğer kullanıcılara gösterilmez. Hesabını silersen bildirim kayıtlarındaki kimliğin kalkar.</td></tr>
             <tr><td><b>Sunucu kayıtları:</b> IP adresi, zaman, istek yolu ve yanıt kodu</td><td>Güvenlik ve hata ayıklama için. Konum gibi sorgu parametreleri kayda yazılmaz.</td></tr>
           </tbody>
         </table>
@@ -74,7 +75,7 @@ const privacy = (cfg) => `
         <p>Verileri; hesabı sağlamak (sözleşmenin ifası), güvenlik (meşru menfaat) ve konum, kamera ve fotoğraf yükleme gibi işlemlerde senin onayın (izin verirsin, istediğin an geri alırsın) dayanaklarıyla işliyoruz.</p>
 
         <h2>Güvenlik</h2>
-        <p>Veriler HTTPS ile iletilir. Oturum belirteçleri sunucuda yalnızca özet olarak saklanır. Sunucu, geliştiricinin işlettiği bir bilgisayardır ve erişimi kısıtlıdır; yine de hiçbir sistemin tamamen güvenli olduğu söylenemez. Bir güvenlik sorunu fark edersen lütfen <a href="mailto:${cfg.email}">${cfg.email}</a> adresine bildir.</p>
+        <p>Veriler HTTPS ile iletilir. Oturum belirteçleri sunucuda yalnızca özet olarak saklanır. Android uygulamasının verisi (oturum dahil) telefon yedeklerine ve cihaz aktarımına dahil edilmez. Sunucu, geliştiricinin işlettiği bir bilgisayardır ve erişimi kısıtlıdır; yine de hiçbir sistemin tamamen güvenli olduğu söylenemez. Bir güvenlik sorunu fark edersen lütfen <a href="mailto:${cfg.email}">${cfg.email}</a> adresine bildir.</p>
 
         <h2>Çocuklar</h2>
         <p>Uygulama 13 yaşın altındaki çocuklara yönelik değildir ve onlardan bilerek veri toplamayız.</p>
@@ -104,7 +105,7 @@ const del = (cfg) => `
         <ul>
           <li>Hesap kaydın (e-posta, ad, Google hesap numarası) ve tüm oturumların.</li>
           <li>Eşitlenen ayarların, kayıtlı yerlerin, kendi istasyonların ve yolculuk ile şarj geçmişin.</li>
-          <li>Fiyat bildirimlerin, “şarj ediyorum” bildirimlerin, puanların, olanak oyların ve yüklediğin istasyon fotoğrafları.</li>
+          <li>Fiyat bildirimlerin, “şarj ediyorum” bildirimlerin, puanların, olanak oyların, yüklediğin istasyon fotoğrafları ve başkasının fotoğrafı için yaptığın bildirimlerdeki kimliğin.</li>
           <li>Hesabına bağlı cihaz kaydı (başka bir hesaba bağlı değilse).</li>
         </ul>
 

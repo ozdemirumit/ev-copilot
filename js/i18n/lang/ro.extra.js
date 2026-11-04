@@ -257,4 +257,10 @@ export default {
   "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Verificarea limitei de viteză a drumului este activă (Premium: HERE, rezervă OpenStreetMap)",
   "Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin": "Baterie necunoscută: s-a presupus 80 %. O poți schimba cu glisorul „Baterie curentă”",
   "Sunucuya ulaşılamıyor, yeniden deneniyor…": "Serverul nu poate fi contactat, se reîncearcă…",
+  "🚩 Bildir": "🚩 Raportează",
+  "Bu fotoğraf bildirilsin mi? Bildirilen fotoğraf herkesten gizlenir ve incelenir.": "Raportezi această fotografie? O fotografie raportată este ascunsă tuturor și este verificată.",
+  "Fotoğraf bildirildi ve gizlendi. İnceleyeceğiz.": "Fotografia a fost raportată și ascunsă. O vom verifica.",
+  "Bildirilemedi": "Raportarea nu a reușit",
+  "Bildirildi, inceleme bekliyor": "Raportată, așteaptă verificarea",
+  "Yeşil çerçeveli fotoğraflar senin: açıp silebilirsin.": "Fotografiile cu cadru verde sunt ale tale: deschide una ca să o ștergi.",
 };

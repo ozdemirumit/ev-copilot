@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.83.0';
+self.APP_VERSION = '0.84.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.84.0', date: '2026-11-04',
+    notes: [
+      'YENİ: Başkasının istasyon fotoğrafını Bildir ile bildirebilirsin; bildirilen fotoğraf hemen herkesten gizlenir ve yönetici inceler (geri yükler ya da siler). Kendi fotoğrafların yeşil çerçeveli görünür; açıp Sil ile silebilirsin.',
+      'GÜVENLİK: Android uygulaması artık telefon yedeğine ve cihaz aktarımına dahil edilmiyor (oturum belirteci yedeğe girmez; sonraki APK ile).',
+    ],
+  },
   {
     v: '0.83.0', date: '2026-11-04',
     notes: [

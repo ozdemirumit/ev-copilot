@@ -26,6 +26,11 @@ input,select{border:1px solid var(--line);background:var(--card);border-radius:8
 .card b{display:block;font-size:24px;line-height:1.2}
 .card span{color:var(--mut);font-size:13px}
 .card.sm b{font-size:19px;overflow-wrap:anywhere}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.pcard img{width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--chip);display:block}
+.pcard .pm{padding:10px 12px;font-size:12.5px;color:var(--mut);display:grid;gap:3px}
+.pcard .pa{display:flex;gap:8px;padding:0 12px 12px}
 h2{font-size:15px;margin:18px 0 8px}
 .wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:12px}
 table{border-collapse:collapse;width:100%;min-width:640px}
@@ -65,13 +70,14 @@ code{background:var(--chip);padding:1px 5px;border-radius:5px;word-break:break-a
   </header>
   <main>
     <div class="tabs" id="tabs">
-      <button data-t="sum" class="on">Özet</button><button data-t="users">Kullanıcılar</button><button data-t="inv">Davetler</button><button data-t="dev">Cihazlar</button><button data-t="cost">Maliyet</button>
+      <button data-t="sum" class="on">Özet</button><button data-t="users">Kullanıcılar</button><button data-t="inv">Davetler</button><button data-t="dev">Cihazlar</button><button data-t="cost">Maliyet</button><button data-t="photos" id="tab-photos">Fotoğraflar</button>
     </div>
     <section id="t-sum"></section>
     <section id="t-users" class="hidden"></section>
     <section id="t-inv" class="hidden"></section>
     <section id="t-dev" class="hidden"></section>
     <section id="t-cost" class="hidden"></section>
+    <section id="t-photos" class="hidden"></section>
   </main>
 </div>
 <div id="toast"></div>
@@ -88,7 +94,7 @@ let TOTP = false;
 try { CODE = sessionStorage.getItem('adm') || ''; TOKEN = sessionStorage.getItem('adm_t') || ''; } catch {}
 const authed = () => (TOTP ? !!TOKEN : !!CODE);
 const EXPIRED = 'Oturum süresi doldu, tekrar giriş yap';
-let D = { sum: null, users: [], inv: [], cost: null, dev: null };
+let D = { sum: null, users: [], inv: [], cost: null, dev: null, photos: [] };
 let tab = 'sum';
 let q = '';
 
@@ -128,8 +134,8 @@ function show() {
 
 async function load() {
   try {
-    const [s, u, i, c, dv] = await Promise.all([api('/admin/summary'), api('/admin/users'), api('/admin/invites'), api('/admin/costs'), api('/admin/devices')]);
-    D = { sum: s, users: u.users || [], inv: i.invites || [], cost: c, dev: dv };
+    const [s, u, i, c, dv, ph] = await Promise.all([api('/admin/summary'), api('/admin/users'), api('/admin/invites'), api('/admin/costs'), api('/admin/devices'), api('/admin/photos')]);
+    D = { sum: s, users: u.users || [], inv: i.invites || [], cost: c, dev: dv, photos: ph.photos || [] };
     $('stamp').textContent = new Date().toLocaleTimeString('tr-TR');
     draw();
   } catch (e) { toast(e.message); }
@@ -138,7 +144,7 @@ async function load() {
 function card(big, small, compact) { const c = el('div', 'card' + (compact ? ' sm' : '')); c.append(el('b', '', big), el('span', '', small)); return c; }
 // Sağlayıcı istek türleri (server/costs.mjs KINDS) ve kota sayacı türleri için okunur adlar
 const KIND_NAMES = { google: 'Google Places', here: 'HERE istasyon', slimit: 'HERE hız limiti', mapbox: 'Mapbox rota (eski kayıtlarda arama dahil)', mapbox_search: 'Mapbox arama (istasyon)', map_mapbox: 'Mapbox harita (anahtar verme)', map_google: 'Google harita (anahtar verme)', ocm: 'OpenChargeMap', overpass: 'Overpass',
-  map: 'harita anahtarı (kota)', occupancy: 'doluluk', price: 'fiyat bildirimi', presence: 'şarj bildirimi', status: 'Dolu/Boş bildirimi', sinfo: 'istasyon bilgisi', srate: 'puan', sfac: 'olanak', sphoto: 'fotoğraf' };
+  map: 'harita anahtarı (kota)', occupancy: 'doluluk', price: 'fiyat bildirimi', presence: 'şarj bildirimi', status: 'Dolu/Boş bildirimi', sinfo: 'istasyon bilgisi', srate: 'puan', sfac: 'olanak', sphoto: 'fotoğraf', sreport: 'fotoğraf bildirimi' };
 const kindName = (k) => KIND_NAMES[k] || k;
 const provName = (k) => (k === 'here' ? 'HERE (istasyon + doluluk)' : kindName(k)); // kalıcı sayaçta 'here' doluluk sorgularını da içerir (kota sayacında içermez)
 // CSV hücresi: metin çift tırnakla (iç tırnak ikilenir); = + - @ sekme CR ile başlayan metne ' eklenir (Excel formül enjeksiyonu); sayılar olduğu gibi. Testte ayıklanıp çalıştırılır: tek satır kalmalı.
@@ -172,7 +178,7 @@ function mapSelect(value, withDefault) {
 function drawSum(root) {
   const s = D.sum; root.replaceChildren();
   const g = el('div', 'grid');
-  g.append(card(s.users.total, 'kullanıcı'), card(s.users.premium, 'Premium (yönetici dahil)'), card(s.users.active7d, 'son 7 günde giriş yapan'), card(s.users.new7d, 'son 7 günde katılan'), card(s.users.disabled, 'kapalı hesap'));
+  g.append(card(s.users.total, 'kullanıcı'), card(s.users.premium, 'Premium (yönetici dahil)'), card(s.users.active7d, 'son 7 günde giriş yapan'), card(s.users.new7d, 'son 7 günde katılan'), card(s.users.disabled, 'kapalı hesap'), card(s.moderation?.reportedPhotos ?? 0, 'bildirilen fotoğraf (inceleme bekliyor)'));
   root.append(g);
   root.append(el('h2', '', 'Davetler'));
   const gi = el('div', 'grid');
@@ -369,6 +375,43 @@ function drawCost(root) {
   root.append(table(['Kullanıcı', ...kinds.map(provName), 'Brüt USD (ay / toplam)'], data, kinds.map((_, i) => i + 1).concat(kinds.length + 1)));
 }
 
+/** Bildirilip herkesten gizlenmiş fotoğraflar: görüntüle, uygunsa geri yükle, değilse sil. Görüntü kimlikli istekle alınır (blob). */
+let photoUrls = [];
+async function photoBlobUrl(id) {
+  const auth = TOTP ? { 'X-Admin-Token': TOKEN } : { 'X-Access-Code': CODE };
+  const r = await fetch('/admin/photos/' + id + '/image', { headers: auth });
+  if (!r.ok) throw new Error('görüntü yok');
+  const u = URL.createObjectURL(await r.blob());
+  photoUrls.push(u);
+  return u;
+}
+function drawPhotos(root) {
+  photoUrls.forEach((u) => URL.revokeObjectURL(u)); photoUrls = [];
+  root.replaceChildren();
+  const list = D.photos || [];
+  $('tab-photos').textContent = list.length ? 'Fotoğraflar (' + list.length + ')' : 'Fotoğraflar';
+  root.append(el('h2', '', 'Bildirilen fotoğraflar'));
+  root.append(el('p', 'mut', 'Bir kullanıcı başkasının istasyon fotoğrafını bildirince fotoğraf hemen herkesten gizlenir (yalnızca yükleyen ve yönetici görür). Uygunsa "Geri yükle", değilse "Sil". Silinen geri getirilemez.'));
+  if (!list.length) { root.append(el('p', 'mut', 'İnceleme bekleyen bildirim yok.')); return; }
+  const g = el('div', 'pgrid');
+  for (const p of list) {
+    const c = el('div', 'pcard');
+    const img = el('img'); img.alt = 'Bildirilen fotoğraf'; img.loading = 'lazy';
+    photoBlobUrl(p.id).then((u) => { img.src = u; }).catch(() => { img.alt = 'Görüntü yüklenemedi'; });
+    const m = el('div', 'pm');
+    m.append(el('span', '', 'Yükleyen: ' + p.who), el('span', '', 'Yüklendi: ' + fmtDT(p.at)), el('span', '', 'Gizlendi: ' + fmtDT(p.hiddenAt) + ' · ' + p.reports + ' bildirim'));
+    const a = el('div', 'pa');
+    const ok = el('button', 'sm', 'Geri yükle');
+    ok.onclick = () => act(() => api('/admin/photos/' + p.id + '/restore', 'POST'), 'Fotoğraf yeniden görünür');
+    const del = el('button', 'sm bad', 'Sil');
+    del.onclick = () => confirm('Fotoğraf kalıcı olarak silinsin mi?') && act(() => api('/admin/photos/' + p.id, 'DELETE'), 'Fotoğraf silindi');
+    a.append(ok, del);
+    c.append(img, m, a);
+    g.append(c);
+  }
+  root.append(g);
+}
+
 function drawDev(root) {
   root.replaceChildren();
   const d = D.dev || { stats: {}, devices: [] }; const st = d.stats;
@@ -382,15 +425,15 @@ function drawDev(root) {
 
 function draw() {
   if (!D.sum) return;
-  drawSum($('t-sum')); drawUsers($('t-users')); drawInv($('t-inv')); drawDev($('t-dev')); drawCost($('t-cost'));
-  for (const t of ['sum', 'users', 'inv', 'dev', 'cost']) $('t-' + t).classList.toggle('hidden', t !== tab);
+  drawSum($('t-sum')); drawUsers($('t-users')); drawInv($('t-inv')); drawDev($('t-dev')); drawCost($('t-cost')); drawPhotos($('t-photos'));
+  for (const t of ['sum', 'users', 'inv', 'dev', 'cost', 'photos']) $('t-' + t).classList.toggle('hidden', t !== tab);
 }
 
 $('tabs').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return;
   tab = b.dataset.t;
   document.querySelectorAll('#tabs button').forEach((x) => x.classList.toggle('on', x === b));
-  for (const t of ['sum', 'users', 'inv', 'dev', 'cost']) $('t-' + t).classList.toggle('hidden', t !== tab);
+  for (const t of ['sum', 'users', 'inv', 'dev', 'cost', 'photos']) $('t-' + t).classList.toggle('hidden', t !== tab);
 });
 $('refresh').onclick = load;
 $('logout').onclick = () => logout();

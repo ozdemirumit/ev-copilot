@@ -43,7 +43,9 @@ node server\premium.mjs kisi@gmail.com 0       # Premium'u kaldırır
 node server\premium.mjs costs                  # kullanıcı başına Google maliyeti (bugün / bu ay / toplam, çağrı ve tahmini USD)
 ```
 
-**Yönetim paneli (tarayıcıda):** `https://evcopilot.duckdns.org/yonetim`. Yönetici kodunu (`ACCESS_CODES`'dan biri) girersin; Özet, Kullanıcılar (Premium ver/kaldır, hesabı kapat/aç), Davetler (link üret/iptal) ve Maliyet (kullanıcı başına Google, CSV) sekmeleri vardır. Kod yalnızca o sekmede tutulur, çıkışta silinir.
+**Yönetim paneli (tarayıcıda):** `https://evcopilot.duckdns.org/yonetim`. Yönetici kodunu (`ACCESS_CODES`'dan biri) girersin; Özet, Kullanıcılar (Premium ver/kaldır, hesabı kapat/aç), Davetler (link üret/iptal), Maliyet (sağlayıcı başına tahmini maliyet ve istekler, CSV) ve Fotoğraflar sekmeleri vardır. Kod yalnızca o sekmede tutulur, çıkışta silinir.
+
+**Bildirilen fotoğraflar:** bir kullanıcı başkasının istasyon fotoğrafını "🚩 Bildir" ile bildirince fotoğraf hemen herkesten gizlenir (yükleyen ve yönetici görür). Yönetim > **Fotoğraflar** sekmesi (ve Özet'teki sayaç) kuyruğu gösterir: **Geri yükle** (bildirim haksızsa; aynı kişi tekrar gizleyemez, yeni bir bildiren gizleyebilir) ya da **Sil** (kalıcı). Kişi günde en çok 10 bildirim yapar. Yükleyen kendi fotoğrafını kartta açıp "🗑 Sil" ile siler.
 
 Davet formunda e-posta yazarsan davet o Google hesabına bağlanır (başkası kullanamaz), istersen ilk girişte hediye Premium günü eklenir; SMTP ayarlıysa e-posta sunucudan gider, değilse paneldeki **E-posta uygulamamla gönder** düğmesi kendi e-posta uygulamanı açar. Kullanıcı satırından gün ya da kesin bitiş tarihiyle Premium verilir.
 

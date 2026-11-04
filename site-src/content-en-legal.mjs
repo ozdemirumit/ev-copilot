@@ -26,7 +26,8 @@ const privacy = (cfg) => `
             <tr><td><b>Session:</b> a random session token</td><td>To keep you signed in. The server stores only a hash of the token; it is valid for 180 days.</td></tr>
             <tr><td><b>Synced data:</b> settings, vehicle profile, saved places and recent destinations, your own stations, operator prices, trip and charging history</td><td>When you sign in, to sync settings and history across devices. History records contain start and end locations at about 11 metres precision, duration, energy and temperature.</td></tr>
             <tr><td><b>Device record:</b> a random ID generated on your device, app version, platform (web or Android), first and last seen time</td><td>To count usage and prevent abuse. Your IP address is not stored in this record. Records not linked to an account are deleted after 90 days.</td></tr>
-            <tr><td><b>Community contributions:</b> price reports (station location and kWh price), “I am charging here” reports, ratings, amenity votes (restroom, cafe, etc.), station photos</td><td>Only if you submit them. Other signed-in users see aggregated ratings, votes and photos; who submitted them is not shown. The “charging” report can be turned off in settings, is reduced to an area of about 100 metres and removed after 3 hours; home and work locations are not sent. Location (EXIF) data is removed from photos; avoid capturing people or number plates.</td></tr>
+            <tr><td><b>Community contributions:</b> price reports (station location and kWh price), “I am charging here” reports, ratings, amenity votes (restroom, cafe, etc.), station photos</td><td>Only if you submit them. Other signed-in users see aggregated ratings, votes and photos; who submitted them is not shown. The “charging” report can be turned off in settings, is reduced to an area of about 100 metres and removed after 3 hours; home and work locations are not sent. Location (EXIF) data is removed from photos; avoid capturing people or number plates. You can delete your own photo at any time.</td></tr>
+            <tr><td><b>Photo reports:</b> the reporting account, the reported photo, time</td><td>If you report someone else's photo as inappropriate, it is hidden from everyone immediately and reviewed; if it is fine the administrator restores it, otherwise deletes it. Your account is kept in this record but is not shown to the uploader or other users. If you delete your account, your identity is removed from report records.</td></tr>
             <tr><td><b>Server logs:</b> IP address, time, request path and status code</td><td>For security and debugging. Query parameters such as coordinates are not written to the logs.</td></tr>
           </tbody>
         </table>
@@ -73,7 +74,7 @@ const privacy = (cfg) => `
         <p>We process data to provide your account (performance of a contract), for security (legitimate interest), and for location, camera and photo uploads on the basis of your consent (you grant permission and can withdraw it at any time).</p>
 
         <h2>Security</h2>
-        <p>Data is transmitted over HTTPS. Session tokens are stored on the server only as a hash. The server is a computer operated by the developer with restricted access; still, no system can be called completely secure. If you notice a security problem, please report it to <a href="mailto:${cfg.email}">${cfg.email}</a>.</p>
+        <p>Data is transmitted over HTTPS. Session tokens are stored on the server only as a hash. The Android app's data (including your session) is excluded from phone backups and device transfers. The server is a computer operated by the developer with restricted access; still, no system can be called completely secure. If you notice a security problem, please report it to <a href="mailto:${cfg.email}">${cfg.email}</a>.</p>
 
         <h2>Children</h2>
         <p>The app is not directed at children under 13, and we do not knowingly collect data from them.</p>
@@ -103,7 +104,7 @@ const del = (cfg) => `
         <ul>
           <li>Your account record (email, name, Google account ID) and all your sessions.</li>
           <li>Your synced settings, saved places, your own stations, and trip and charging history.</li>
-          <li>Your price reports, “charging” reports, ratings, amenity votes and the station photos you uploaded.</li>
+          <li>Your price reports, “charging” reports, ratings, amenity votes, the station photos you uploaded, and your identity in reports you made about someone else's photo.</li>
           <li>The device record linked to your account (if it is not linked to another account).</li>
         </ul>
 

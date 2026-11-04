@@ -257,4 +257,10 @@ export default {
   "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Проверката на ограничението на скоростта е включена (Premium: HERE, резервно OpenStreetMap)",
   "Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin": "Батерията е неизвестна: приети са 80 %. Можеш да я промениш с плъзгача „Текуща батерия“",
   "Sunucuya ulaşılamıyor, yeniden deneniyor…": "Сървърът е недостъпен, опитвам отново…",
+  "🚩 Bildir": "🚩 Докладвай",
+  "Bu fotoğraf bildirilsin mi? Bildirilen fotoğraf herkesten gizlenir ve incelenir.": "Да докладваме ли тази снимка? Докладваната снимка се скрива за всички и се проверява.",
+  "Fotoğraf bildirildi ve gizlendi. İnceleyeceğiz.": "Снимката е докладвана и скрита. Ще я прегледаме.",
+  "Bildirilemedi": "Докладването не успя",
+  "Bildirildi, inceleme bekliyor": "Докладвана, чака проверка",
+  "Yeşil çerçeveli fotoğraflar senin: açıp silebilirsin.": "Снимките със зелена рамка са твои: отвори ги, за да ги изтриеш.",
 };

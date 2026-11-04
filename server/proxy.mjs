@@ -133,7 +133,7 @@ const once = (k, fn) => {
 };
 
 // ---------- kullanıcı başına günlük kota (Mapbox faturasını ve ortak Overpass'i korur) ----------
-const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 40), here: Number(env.HERE_DAILY_PER_USER || 800), price: 20, presence: 60, status: 30, sinfo: 600, srate: 60, sfac: 120, sphoto: 15, map: Number(env.MAP_DAILY_PER_USER || 100), slimit: Number(env.SPEEDLIMIT_DAILY_PER_USER || 40) };
+const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 40), here: Number(env.HERE_DAILY_PER_USER || 800), price: 20, presence: 60, status: 30, sinfo: 600, srate: 60, sfac: 120, sphoto: 15, sreport: 10, map: Number(env.MAP_DAILY_PER_USER || 100), slimit: Number(env.SPEEDLIMIT_DAILY_PER_USER || 40) };
 const MAP_TOTAL = Number(env.MAP_DAILY_TOTAL || 3000); // tüm kullanıcılar için günlük harita anahtarı verme tavanı (Mapbox/Google faturasını korur)
 let mapToday = { d: '', n: 0 };
 /** Harita anahtarı döndürmeden önce: toplam ve kullanıcı başı günlük hak. Yalnızca anahtar dönen çağrılar sayılır (osm sayılmaz). */
@@ -212,6 +212,7 @@ function adminSummary() {
     usageToday: byKind,
     usageByUser: usageByUser(),
     google: { callsToday: gToday.d === today() ? gToday.n : 0, dailyCap: GOOGLE_TOTAL, unitUsd: costs.unit, usd: tot },
+    moderation: { reportedPhotos: stationInfo.reported().length }, // inceleme bekleyen (gizli) fotoğraf sayısı
     estimate: costs.estimate(), // ücretli sağlayıcılar: ücretsiz kota düşülmüş tahmini USD (server/costs.mjs)
     providers: { kinds: costs.kinds, totals: costs.totals() }, // üst sağlayıcıya giden istekler (kalıcı sayaç, server/costs.mjs): tür başına bugün / bu ay / toplam
   };
@@ -480,10 +481,12 @@ async function stationInfoRoute(req, res, id, url) {
     return true;
   };
   const answer = (r) => json(res, r.ok ? 200 : r.error === 'yetkisiz' ? 403 : r.error === 'yok' ? 404 : 400, r);
+  const rp = /^\/v1\/station\/photo\/([a-f0-9]{16})\/report$/.exec(p);
+  if (rp && req.method === 'POST') { if (need('sreport')) return; return answer(stationInfo.reportPhoto(uid, rp[1])); } // başkasının fotoğrafı: bildirilince hemen gizlenir, yönetici inceler
   if (p.startsWith('/v1/station/photo/') && (req.method === 'GET' || req.method === 'DELETE')) {
     const pid = p.slice('/v1/station/photo/'.length);
     if (req.method === 'DELETE') { if (need('sfac')) return; return answer(stationInfo.deletePhoto(uid, pid, id.admin)); }
-    const buf = stationInfo.readPhoto(pid);
+    const buf = stationInfo.readPhoto(pid, uid, id.admin); // bildirilip gizlenmiş fotoğraf yalnızca yükleyene ve yöneticiye döner
     if (!buf) return json(res, 404, { error: 'yok' });
     return send(res, 200, buf, { 'Content-Type': 'image/jpeg', 'Cache-Control': 'private, max-age=31536000, immutable' }); // yalnızca kimlikli istek ulaşır; içerik değişmez
   }
@@ -664,6 +667,19 @@ const server = http.createServer(async (req, res) => {
       const b = await readJson(req, 500);
       try { maps.setDefault(b?.default); } catch (e) { return json(res, 400, { error: e.message }); }
       return json(res, 200, { ok: true, default: maps.getDefault() });
+    }
+    if (id.admin && p === '/admin/photos' && req.method === 'GET') { // bildirilip gizlenmiş fotoğraflar (inceleme kuyruğu)
+      const users = store.data.users;
+      return json(res, 200, { photos: stationInfo.reported().map((r) => ({ ...r, who: users[r.by]?.email || '(silinmiş hesap)' })) });
+    }
+    const ap = /^\/admin\/photos\/([a-f0-9]{16})(\/image|\/restore)?$/.exec(p);
+    if (id.admin && ap) {
+      if (ap[2] === '/image' && req.method === 'GET') {
+        const buf = stationInfo.readPhoto(ap[1], null, true);
+        return buf ? send(res, 200, buf, { 'Content-Type': 'image/jpeg', 'Cache-Control': 'no-store' }) : json(res, 404, { error: 'yok' });
+      }
+      if (ap[2] === '/restore' && req.method === 'POST') { const r = stationInfo.restorePhoto(ap[1]); return json(res, r.ok ? 200 : 404, r); }
+      if (!ap[2] && req.method === 'DELETE') { const r = stationInfo.deletePhoto(null, ap[1], true); return json(res, r.ok ? 200 : 404, r); }
     }
     const um = /^\/admin\/users\/(u_[A-Za-z0-9_-]+)\/map$/.exec(p);
     if (um && req.method === 'POST' && id.admin) { // kullanıcı bazlı sağlayıcı seçimi (null: varsayılanı izle)

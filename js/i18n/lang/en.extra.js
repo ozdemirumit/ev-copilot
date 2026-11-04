@@ -257,4 +257,10 @@ export default {
   "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Road speed limit check is on (Premium: HERE, OpenStreetMap as fallback)",
   "Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin": "Battery unknown: 80% assumed. You can change it with the Current battery slider",
   "Sunucuya ulaşılamıyor, yeniden deneniyor…": "Server unreachable, retrying…",
+  "🚩 Bildir": "🚩 Report",
+  "Bu fotoğraf bildirilsin mi? Bildirilen fotoğraf herkesten gizlenir ve incelenir.": "Report this photo? A reported photo is hidden from everyone and gets reviewed.",
+  "Fotoğraf bildirildi ve gizlendi. İnceleyeceğiz.": "Photo reported and hidden. We will review it.",
+  "Bildirilemedi": "Could not report",
+  "Bildirildi, inceleme bekliyor": "Reported, awaiting review",
+  "Yeşil çerçeveli fotoğraflar senin: açıp silebilirsin.": "Photos with a green frame are yours: open one to delete it.",
 };

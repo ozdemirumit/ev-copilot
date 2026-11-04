@@ -257,4 +257,10 @@ export default {
   "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Tempolimit-Prüfung an (Premium: HERE, Reserve OpenStreetMap)",
   "Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin": "Akkustand unbekannt: 80 % angenommen. Du kannst ihn mit dem Regler „Aktueller Akku“ ändern",
   "Sunucuya ulaşılamıyor, yeniden deneniyor…": "Server nicht erreichbar, neuer Versuch …",
+  "🚩 Bildir": "🚩 Melden",
+  "Bu fotoğraf bildirilsin mi? Bildirilen fotoğraf herkesten gizlenir ve incelenir.": "Dieses Foto melden? Ein gemeldetes Foto wird für alle ausgeblendet und geprüft.",
+  "Fotoğraf bildirildi ve gizlendi. İnceleyeceğiz.": "Foto gemeldet und ausgeblendet. Wir prüfen es.",
+  "Bildirilemedi": "Melden fehlgeschlagen",
+  "Bildirildi, inceleme bekliyor": "Gemeldet, wartet auf Prüfung",
+  "Yeşil çerçeveli fotoğraflar senin: açıp silebilirsin.": "Fotos mit grünem Rahmen sind deine: Öffne sie, um sie zu löschen.",
 };

@@ -257,4 +257,10 @@ export default {
   "Yol hız limiti kontrolü açık (Premium: HERE, yedek OpenStreetMap)": "Controle op wegmaximumsnelheid aan (Premium: HERE, reserve OpenStreetMap)",
   "Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin": "Accu onbekend: 80 % aangenomen. Je kunt dit wijzigen met de schuifregelaar ‘Huidige accu’",
   "Sunucuya ulaşılamıyor, yeniden deneniyor…": "Server niet bereikbaar, opnieuw proberen…",
+  "🚩 Bildir": "🚩 Melden",
+  "Bu fotoğraf bildirilsin mi? Bildirilen fotoğraf herkesten gizlenir ve incelenir.": "Deze foto melden? Een gemelde foto wordt voor iedereen verborgen en beoordeeld.",
+  "Fotoğraf bildirildi ve gizlendi. İnceleyeceğiz.": "Foto gemeld en verborgen. We beoordelen hem.",
+  "Bildirilemedi": "Melden mislukt",
+  "Bildirildi, inceleme bekliyor": "Gemeld, wacht op beoordeling",
+  "Yeşil çerçeveli fotoğraflar senin: açıp silebilirsin.": "Foto’s met een groen kader zijn van jou: open er een om hem te verwijderen.",
 };
