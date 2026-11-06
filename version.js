@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.84.8';
+self.APP_VERSION = '0.85.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.85.0', date: '2026-11-06',
+    notes: [
+      'Araç listesine 13 yeni model eklendi: Kia EV2, Renault Twingo, Citroën ë-C5 Aircross, Peugeot e-5008, Zeekr 7GT, BYD Atto 2, Leapmotor B10, Opel Grandland, Volvo EX60, Mercedes CLA, Mazda 6e, Xpeng P7+ ve yeni BMW iX3 (toplam 61 araç). Değerler tahmindir, Araç ve tüketim bölümünden düzeltilebilir.',
+      'Araç ve tüketim bölümünde seçili aracın WLTP menzili ve (varsa) test edilen gerçek menzili görünür.',
+    ],
+  },
   {
     v: '0.84.8', date: '2026-11-06',
     notes: [

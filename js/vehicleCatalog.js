@@ -2,7 +2,8 @@
 // versiyonlar arasında değişir. Araç ve tüketim bölümünden her değer elle düzeltilebilir (düzeltince "Özel araç" olur).
 // Alanlar: batteryNetKwh = net (kullanılabilir) kWh, massKg = yaklaşık boş ağırlık + sürücü, cd, frontalAreaM2 = ön alan,
 // maxDcKw = tepe DC şarj gücü (CCS). Şarj eğrisi tepe güce göre ölçeklenir (routing/chargeCurve.js).
-// Satır: [marka, model, pil/versiyon, net kWh, kg, Cd, ön alan m², tepe DC kW, (isteğe bağlı) true = tahmin değil]
+// Satır: [marka, model, pil/versiyon, net kWh, kg, Cd, ön alan m², tepe DC kW, (isteğe bağlı) true = tahmin değil,
+//         (isteğe bağlı) WLTP km, (isteğe bağlı) gerçek menzil km (karşılaştırma testi; yalnızca bilgi, hesaba girmez)]
 const ROWS = [
   ['Togg', 'T10X V2', 'Uzun Menzil (88,5 kWh)', 88.5, 2150, 0.29, 2.55, 180, true],
   ['Togg', 'T10X V2', 'Standart Menzil (52,4 kWh)', 52.4, 1950, 0.29, 2.55, 150],
@@ -52,15 +53,31 @@ const ROWS = [
   ['Nissan', 'Ariya', '87 kWh', 87, 2200, 0.297, 2.7, 130],
   ['Smart', '#1', '66 kWh', 62, 1820, 0.29, 2.5, 150],
   ['Ford', 'Mustang Mach-E', 'Extended Range', 88, 2200, 0.28, 2.7, 150],
+  // Aşağıdakiler 2026 karşılaştırma tablosundan (WLTP km ve test edilen gerçek menzil km) ve üretici/ADAC/EV Database verilerinden.
+  // Ağırlıklar sürücü dahil AB değeri. Ön alan hiçbir kaynakta yok: araç sınıfına göre TAHMİN. Cd bilinmeyenler tahmin. DC en çok 400 kW'a kırpıldı.
+  ['Kia', 'EV2', '61 kWh (GT-Line)', 58, 1660, 0.29, 2.4, 115, false, 418, 397],
+  ['Renault', 'Twingo E-Tech', '27,5 kWh', 27, 1275, 0.3, 2.1, 50, false, 261, 229],
+  ['Citroën', 'ë-C5 Aircross', '73 kWh', 73, 2110, 0.3, 2.75, 160, false, 498, 436],
+  ['Peugeot', 'e-5008', '73 kWh', 73, 2225, 0.29, 2.8, 160, false, 487, 422],
+  ['Zeekr', '7GT', 'AWD 100 kWh', 96, 2405, 0.25, 2.5, 400, false, 558, 477],
+  ['BYD', 'Atto 2', '45 kWh', 43, 1570, 0.3, 2.4, 65, false, 312, 262],
+  ['Leapmotor', 'B10', '67 kWh', 65, 1756, 0.27, 2.6, 168, false, 434, 357],
+  ['Opel', 'Grandland Electric', '73 kWh', 73, 2207, 0.29, 2.75, 160, false, 521, 425],
+  ['Volvo', 'EX60', 'P6 83 kWh', 80, 2190, 0.26, 2.6, 320, false, 614, 488],
+  ['Mercedes', 'CLA', '350 4MATIC (85 kWh)', 85, 2135, 0.21, 2.3, 320, false, 772, 613],
+  ['Mazda', '6e', '68,8 kWh', 68, 2037, 0.23, 2.35, 165, false, 479, 380],
+  ['Xpeng', 'P7+', 'Long Range 74,9 kWh', 73, 2175, 0.21, 2.35, 400, false, 530, 419],
+  ['BMW', 'iX3', '50 xDrive (2026, 108,7 kWh)', 108.7, 2360, 0.24, 2.6, 400, false, 737, 640],
 ];
 
 const slug = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-export const CATALOG = ROWS.map(([brand, model, pack, batteryNetKwh, massKg, cd, frontalAreaM2, maxDcKw, known]) => ({
+export const CATALOG = ROWS.map(([brand, model, pack, batteryNetKwh, massKg, cd, frontalAreaM2, maxDcKw, known, wltpKm, realKm]) => ({
   id: slug(`${brand}-${model}-${pack}`),
   brand, model, pack,
   name: `${brand} ${model} ${pack}${known ? '' : ' (tahmini)'}`,
   batteryNetKwh, massKg, cd, frontalAreaM2, maxDcKw,
+  ...(wltpKm ? { wltpKm } : {}), ...(realKm ? { realKm } : {}),
 }));
 
 /** Eski sürümlerde kaydedilmiş araç kimlikleri yeni kataloğa eşlenir. */

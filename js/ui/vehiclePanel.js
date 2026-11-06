@@ -23,11 +23,23 @@ export function initVehiclePanel() {
     sel.replaceChildren(...items.map((t) => new Option(t, t)));
     sel.value = value;
   };
+  // Seçili hazır aracın WLTP ve (varsa) bağımsız testteki gerçek menzili: yalnızca bilgi
+  const paintRef = (v) => {
+    const el = $('veh-ref');
+    if (!el) return;
+    const ok = v && v.wltpKm;
+    el.classList.toggle('hidden', !ok);
+    if (!ok) return;
+    el.textContent = v.realKm
+      ? `WLTP ${v.wltpKm} km · test edilen gerçek menzil ${v.realKm} km (%${Math.round((v.realKm / v.wltpKm) * 100)})`
+      : `WLTP ${v.wltpKm} km`;
+  };
   const pickPack = () => {
     const v = VEHICLES.find((x) => x.brand === brandSel.value && x.model === modelSel.value && x.pack === packSel.value);
     if (!v) return;
     selectedId = v.id;
     fill(v);
+    paintRef(v);
   };
   const fillPacks = (keep) => {
     const packs = VEHICLES.filter((x) => x.brand === brandSel.value && x.model === modelSel.value).map((x) => x.pack);
@@ -43,6 +55,7 @@ export function initVehiclePanel() {
   setOptions(modelSel, uniq(VEHICLES.filter((x) => x.brand === cur.brand).map((x) => x.model)), cur.model);
   setOptions(packSel, VEHICLES.filter((x) => x.brand === cur.brand && x.model === cur.model).map((x) => x.pack), cur.pack);
   fill(VEHICLE); // kayıtlı (düzenlenmiş olabilir) değerler
+  paintRef(cur);
   brandSel.addEventListener('change', () => fillModels());
   modelSel.addEventListener('change', () => fillPacks());
   packSel.addEventListener('change', pickPack);
@@ -60,6 +73,7 @@ export function initVehiclePanel() {
   Object.values(FIELDS).forEach((id) => $(id).addEventListener('input', () => {
     if (selectedId === 'custom') return;
     selectedId = 'custom';
+    paintRef(null);
     setOptions(brandSel, uniq(VEHICLES.map((x) => x.brand)), custom.brand);
     setOptions(modelSel, [custom.model], custom.model);
     setOptions(packSel, [custom.pack], custom.pack);
