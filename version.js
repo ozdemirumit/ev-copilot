@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.84.7';
+self.APP_VERSION = '0.84.8';
 self.APP_CHANGELOG = [
+  {
+    v: '0.84.8', date: '2026-11-06',
+    notes: [
+      'Başlıkta sayfa açılırken geçici olarak sabit Togg T10X V2 LR yazısı görünmüyor; yalnızca kullanıcının seçili aracı (marka ve model) gösteriliyor.',
+    ],
+  },
   {
     v: '0.84.7', date: '2026-11-05',
     notes: [
