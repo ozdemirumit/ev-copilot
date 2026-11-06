@@ -2,7 +2,7 @@ import { tr, t } from '../i18n/index.js';
 import { progressKm } from '../routing/progress.js';
 import { getState, patch, subscribe } from '../state.js';
 import { load, save } from '../utils/storage.js';
-import { getOperators, persistOperators, resetOperators } from '../routing/operators.js';
+import { getOperators, persistOperators, resetOperators, removeDiscovered, onOperatorsChange } from '../routing/operators.js';
 import { repriceAndReplan, refetchStations } from '../routing/controller.js';
 import { setStationOperator } from '../routing/chargerSource.js';
 import { slotEl } from '../routing/slots.js';
@@ -109,6 +109,25 @@ function renderOperators() {
       <td><input type="number" inputmode="decimal" step="0.1" min="0" aria-label="TL/kWh"></td>
       <td><input type="number" inputmode="numeric" step="10" min="1" max="400" aria-label="kW"></td>`;
     tr.children[0].textContent = op.name;
+    if (op.found) { // keşfedilen marka: istenmiyorsa silinebilir
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'btn ghost sm';
+      del.textContent = '×';
+      del.title = 'Bu markayı listeden çıkar';
+      del.addEventListener('click', () => {
+        const sel = getState('route').brands || [];
+        if (sel.includes(op.id)) { // silinen marka seçiliyse seçimden de çık, yoksa hiç istasyon kalmaz
+          const list = sel.filter((x) => x !== op.id);
+          PLANNER.brands = list;
+          save('brandPref', list);
+          patch('route', { brands: list });
+        }
+        removeDiscovered(op.id);
+        repriceAndReplan();
+      });
+      tr.children[0].append(' ', del);
+    }
     const [price, kw] = tr.querySelectorAll('input');
     price.value = op.price;
     kw.value = op.kw;
@@ -159,6 +178,15 @@ function initBrands() {
   };
   subscribe('route', paint);
   paint();
+  // Yeni marka keşfedilince (ya da silinince) çipler ve fiyat tablosu yenilenir; fiyat girilirken tablo elden bırakılmaz
+  let timer;
+  onOperatorsChange(() => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      paint();
+      if (!document.activeElement?.closest?.('#op-body')) renderOperators();
+    }, 600);
+  });
 }
 
 export function initStationsView() {

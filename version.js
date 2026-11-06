@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.85.0';
+self.APP_VERSION = '0.85.1';
 self.APP_CHANGELOG = [
+  {
+    v: '0.85.1', date: '2026-11-06',
+    notes: [
+      'Şarj markaları artık keşfediliyor: rota planı ve istasyon verisinde görülen, sabit listede (Trugo, ZES, Eşarj...) olmayan işletmeci adları marka olarak listeye eklenir (Diğer fiyatıyla). Marka çiplerinde seçilebilir, fiyat ve kW tablosundan düzeltilir, istenmeyen marka çarpıyla silinir.',
+    ],
+  },
   {
     v: '0.85.0', date: '2026-11-06',
     notes: [
