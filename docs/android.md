@@ -15,7 +15,7 @@ Web uygulaması olduğu gibi bir Android paketinin içine konur (`npm run sync` 
 - **İnternetsiz:** ilk açılış internet ister (service worker dosyaları önbelleğe alır); sonraki açılışlar internetsiz de açılır (GPS, kamera, pil tahmini, önceden planlanmış rotada navigasyon). Harita karoları, yeni rota, arama ve istasyonlar internet ister. İlk açılış başarısız olursa yerel `offline.html` sayfası ("Tekrar dene") gösterilir.
 - **APK'yı yenilemek gereken tek durum:** Android tarafı değişince (izin, eklenti, `capacitor.config.json`, `AndroidManifest.xml`). `npm.cmd run apk` derler ve sunucuya koyar.
 - Uygulamanın kökeni artık web sürümüyle aynıdır (`https://ozdemirumit.github.io`): tarayıcıdaki ayarlar APK'da da görünür.
-- Giriş (Google) sistem tarayıcısında açılır, davet `evcopilot://invite` ile uygulamaya gelir.
+- Giriş (Google) sistem tarayıcısında açılır, davet `evroutefinder://invite` (eski: `evcopilot://invite`, ikisi de kabul edilir) ile uygulamaya gelir. Paket adı `com.evroutefinder.app` (Play'e ilk yüklemeden sonra değişmez).
 
 ## APK dosyası
 **Build > Build Bundle(s) / APK(s) > Build APK(s)**. Çıktı: `android/app/build/outputs/apk/debug/app-debug.apk`. Telefona atıp "bilinmeyen kaynaktan kur" izniyle yüklenir (kişisel kullanım). Play Store için imzalı AAB aşağıdaki "Google Play" bölümünde.

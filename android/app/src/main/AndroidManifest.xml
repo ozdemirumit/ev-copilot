@@ -22,11 +22,13 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Davet linki: evcopilot://invite?code=KOD (sunucudaki /i/KOD sayfasındaki "Android uygulamasında aç") -->
+            <!-- Davet linki: evroutefinder://invite?code=KOD (sunucudaki /i/KOD sayfasındaki "Android uygulamasında aç").
+                 Eski evcopilot:// şeması sunucu sayfası güncellenene kadar kalır. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="evroutefinder" android:host="invite" />
                 <data android:scheme="evcopilot" android:host="invite" />
             </intent-filter>
 

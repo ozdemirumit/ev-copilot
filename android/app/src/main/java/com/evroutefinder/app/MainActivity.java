@@ -1,4 +1,4 @@
-package com.ozdemirumit.evcopilot;
+package com.evroutefinder.app;
 
 import com.getcapacitor.BridgeActivity;
 

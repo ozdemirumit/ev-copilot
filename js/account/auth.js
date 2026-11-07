@@ -30,14 +30,14 @@ export function captureInviteFromUrl() {
   } catch { /* adres okunamadı */ }
 }
 
-/** Android uygulaması: evcopilot://invite?code=KOD bağlantısı uygulamayı açar (Capacitor App eklentisi). */
+/** Android uygulaması: evroutefinder://invite?code=KOD (eski: evcopilot://) bağlantısı uygulamayı açar (Capacitor App eklentisi). */
 export function listenInviteDeepLink() {
   const App = globalThis.Capacitor?.Plugins?.App;
   if (!App?.addListener) return;
   const take = (url) => {
     try {
       const u = new URL(url);
-      if (u.protocol === 'evcopilot:' && u.hostname === 'invite') setPendingInvite(u.searchParams.get('code'));
+      if ((u.protocol === 'evroutefinder:' || u.protocol === 'evcopilot:') && u.hostname === 'invite') setPendingInvite(u.searchParams.get('code'));
     } catch { /* geçersiz adres */ }
   };
   App.addListener('appUrlOpen', (e) => take(e.url));

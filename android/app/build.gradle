@@ -7,10 +7,10 @@ def keystoreProps = new Properties()
 if (keystoreFile.exists()) keystoreFile.withInputStream { keystoreProps.load(it) }
 
 android {
-    namespace = "com.ozdemirumit.evcopilot"
+    namespace = "com.evroutefinder.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.ozdemirumit.evcopilot"
+        applicationId "com.evroutefinder.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // `npm run aab` sürümü version.js'ten verir (-PappVersionCode / -PappVersionName); verilmezse debug için 1 / 1.0

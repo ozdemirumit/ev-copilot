@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.85.1';
+self.APP_VERSION = '0.85.2';
 self.APP_CHANGELOG = [
+  {
+    v: '0.85.2', date: '2026-11-07',
+    notes: [
+      'Android paket adı com.evroutefinder.app oldu (Google Play yüklemesi için) ve davet bağlantısı evroutefinder://invite şemasını da kabul eder; eski evcopilot:// bağlantıları çalışmaya devam eder.',
+    ],
+  },
   {
     v: '0.85.1', date: '2026-11-06',
     notes: [

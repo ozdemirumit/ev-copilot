@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">EV Route Finder</string>
     <string name="title_activity_main">EV Route Finder</string>
-    <string name="package_name">com.ozdemirumit.evcopilot</string>
-    <string name="custom_url_scheme">com.ozdemirumit.evcopilot</string>
+    <string name="package_name">com.evroutefinder.app</string>
+    <string name="custom_url_scheme">com.evroutefinder.app</string>
 </resources>
