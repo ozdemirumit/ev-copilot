@@ -287,4 +287,9 @@ export default {
   "Diğer istasyonlar": "Autres stations",
   "Varış pili ~%{0}": "Batterie à l’arrivée ~{0} %",
   "Varış seçip Git'e dokun: rota planlanır ve navigasyon başlar.": "Choisis une destination et touche Aller : l’itinéraire est planifié et la navigation démarre.",
+  "Rotadakiler": "Sur l’itinéraire",
+  "Filtre": "Filtres",
+  "Otomatik (1 → 50 km)": "Automatique (1 → 50 km)",
+  "Tümünü göster": "Tout afficher",
+  "Daha az göster": "Afficher moins",
 };

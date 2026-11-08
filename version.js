@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.87.5';
+self.APP_VERSION = '0.87.6';
 self.APP_CHANGELOG = [
+  {
+    v: '0.87.6', date: '2026-11-09',
+    notes: [
+      'İstasyonlar ekranı yeniden düzenlendi: önce Rotadakiler, sonra Yakındakiler (ikisi de en çok 3 satır, + ile tümü), ardından Filtre, Şarj markaları (3 satır, + ile tümü) ve Ücretler. Yakındakiler 1 km çevreden başlar, boşsa 10, 25 ve 50 km çevreye genişler; sekme açılınca kendiliğinden aranır.',
+    ],
+  },
   {
     v: '0.87.5', date: '2026-11-09',
     notes: [

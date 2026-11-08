@@ -19,6 +19,7 @@ import { proxyHas } from '../net/proxy.js';
 import { startNav, syncTopPanel } from './navigator.js';
 import { icon } from '../ui/icons.js';
 import { measuredSoc } from '../physics/socEstimate.js';
+import { paintMore } from '../ui/moreToggle.js';
 
 const $ = (id) => document.getElementById(id);
 const BAT = VEHICLE.batteryNetKwh;
@@ -40,7 +41,12 @@ let occDone = 0; // son doluluk sorgusunun bittiği an
 let troubleSince = 0; // pil sorunu başladığından beri (sesli öneri, doluluk gelene kadar kısa süre beklesin)
 let elimCount = 0; // son sıralamada doluluğu dolu/arızalı çıktığı için elenen istasyon sayısı
 let focusId = null;
-let radius = load('nearRadius', 25);
+// Yarıçap: 'auto' (varsayılan) 1 km'den başlar, sonuç yoksa 10, 25, 50 km'ye genişler; sayı seçilirse yalnızca o yarıçap aranır.
+const RADIUS_STEPS = [1, 10, 25, 50];
+const NEAR_LIMIT = 3; // liste kapalıyken en çok 3 satır, "+" ile tümü
+let radiusSetting = load('nearRadiusMode', 'auto');
+let radius = radiusSetting === 'auto' ? RADIUS_STEPS[0] : Number(radiusSetting); // son aranan (sonuç veren) yarıçap
+let nearOpen = false;
 let showAc = load('nearAc', false);
 const bands = new Set(); // bu düşüş için konuşulmuş pil bantları
 
@@ -80,10 +86,15 @@ export async function refreshNearby({ force = false, silent = false } = {}) {
   busy = true;
   paintStatus('Yakındaki istasyonlar aranıyor…');
   try {
-    const res = await fetchAround(e.lat, e.lon, radius, force);
     const old = new Map(all.map((x) => [x.id, x.slots]));
-    all = res.stations;
-    for (const x of all) if (!x.slots && old.get(x.id)) x.slots = old.get(x.id); // yenilemede doluluk bilgisi kaybolmasın
+    let res;
+    for (const r of radiusSetting === 'auto' ? RADIUS_STEPS : [radius]) { // otomatik: görünür istasyon çıkana kadar 1 → 10 → 25 → 50 km
+      radius = r;
+      res = await fetchAround(e.lat, e.lon, r, force);
+      all = res.stations;
+      for (const x of all) if (!x.slots && old.get(x.id)) x.slots = old.get(x.id); // yenilemede doluluk bilgisi kaybolmasın
+      if (visible().length || res.errors.length) break; // hata varsa genişletmenin anlamı yok (aynı sunucu)
+    }
     meta = { at: Date.now(), lat: e.lat, lon: e.lon, errors: res.errors, cached: res.cached };
   } catch (err) {
     meta = { ...meta, errors: ['Arama başarısız: ' + err.message] };
@@ -189,7 +200,8 @@ function render() {
   list.replaceChildren();
   if (meta.at && !items.length) list.append(cell('p', 'small muted', showAc ? 'Bu çevrede istasyon bulunamadı.' : 'Bu çevrede hızlı (DC) istasyon bulunamadı; yavaş AC olanlar için "AC de göster"i aç.'));
 
-  shown.forEach((s) => {
+  paintMore($('near-more'), shown.length, NEAR_LIMIT, nearOpen);
+  (nearOpen ? shown : shown.slice(0, NEAR_LIMIT)).forEach((s) => {
     const row = document.createElement('div');
     row.className = 'station' + (s.id === focusId ? ' focus' : '');
     const left = document.createElement('div');
@@ -345,7 +357,7 @@ function inTrouble(e, nav) {
 /** Veri yoksa/eskiyse kendiliğinden ara (45 sn'de bir; başarısız denemeler döngüye girmesin). */
 function autoSearch(widen = false) {
   if (busy || Date.now() - meta.at < 45000) return;
-  if (widen && radius < 50) { radius = 50; save('nearRadius', radius); $('near-radius').value = '50'; }
+  if (widen && radiusSetting !== 'auto' && radius < 50) { radiusSetting = 50; radius = 50; save('nearRadiusMode', radiusSetting); $('near-radius').value = '50'; }
   refreshNearby({ silent: true, force: true });
 }
 
@@ -417,8 +429,22 @@ function watch() {
 
 export function initNearby() {
   const rad = $('near-radius');
-  rad.value = String(radius);
-  rad.addEventListener('change', () => { radius = Number(rad.value); save('nearRadius', radius); refreshNearby({ force: true }); });
+  rad.value = String(radiusSetting);
+  rad.addEventListener('change', () => {
+    radiusSetting = rad.value === 'auto' ? 'auto' : Number(rad.value);
+    radius = radiusSetting === 'auto' ? RADIUS_STEPS[0] : radiusSetting;
+    save('nearRadiusMode', radiusSetting);
+    refreshNearby({ force: true });
+  });
+  $('near-more').addEventListener('click', () => { nearOpen = !nearOpen; render(); });
+  // İstasyonlar sekmesi açılınca liste yoksa/eskiyse (5 dk) ya da 1 km'den fazla yer değiştirdiysen kendiliğinden ara
+  document.addEventListener('tabchange', (ev) => {
+    if (ev.detail !== 'stations' || busy) return;
+    const e = effective();
+    if (e.lat == null) return;
+    const moved = meta.lat == null ? Infinity : haversineKm({ lat: meta.lat, lon: meta.lon }, e);
+    if (!meta.at || Date.now() - meta.at > 5 * 60e3 || moved > 1) refreshNearby({ silent: true });
+  });
   const ac = $('near-ac');
   ac.checked = showAc;
   ac.addEventListener('change', () => { showAc = ac.checked; save('nearAc', showAc); render(); });

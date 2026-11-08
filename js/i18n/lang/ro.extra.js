@@ -287,4 +287,9 @@ export default {
   "Diğer istasyonlar": "Alte stații",
   "Varış pili ~%{0}": "Baterie la sosire ~{0}%",
   "Varış seçip Git'e dokun: rota planlanır ve navigasyon başlar.": "Alege o destinație și atinge Mergi: ruta este planificată și navigația pornește.",
+  "Rotadakiler": "Pe traseu",
+  "Filtre": "Filtre",
+  "Otomatik (1 → 50 km)": "Automat (1 → 50 km)",
+  "Tümünü göster": "Arată tot",
+  "Daha az göster": "Arată mai puțin",
 };

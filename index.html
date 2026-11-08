@@ -347,10 +347,37 @@
 
   <!-- ===== 4) İSTASYONLAR ===== -->
   <section class="tab" id="tab-stations" data-title="İstasyonlar">
+    <!-- 1) Rotadakiler (rota varsa): en çok 3, + ile tümü -->
+    <div class="card hidden" id="route-stations-card">
+      <h2 id="station-title">Rotadakiler</h2>
+      <p class="small muted" id="station-hint" style="margin:0 0 8px">Rota planlayınca rotadaki istasyonlar burada listelenir.</p>
+      <p class="small hidden" id="station-warn" style="margin:0 0 8px;color:var(--warn,#f5b942)"></p>
+      <button class="btn hidden" id="station-retry" type="button" style="margin-bottom:8px">🔄 İstasyonları yeniden ara</button>
+      <div id="station-list"></div>
+      <button class="more-btn hidden" id="station-more" type="button" aria-expanded="false"></button>
+    </div>
+
+    <!-- 2) Yakındakiler: 1 km, boşsa 10, 25, 50 km; en çok 3, + ile tümü -->
     <div class="card stack" id="near-card">
       <h2 style="margin:0">📍 Yakınımdaki istasyonlar</h2>
+      <p class="small muted" id="near-status" style="margin:0"></p>
+      <p class="small hidden" id="near-warn" style="margin:0;color:var(--warn,#f5b942)"></p>
+      <div id="near-list"></div>
+      <button class="more-btn hidden" id="near-more" type="button" aria-expanded="false"></button>
+      <p class="small muted" style="margin:0">Fiyat ve kW operatör tablosundan alınan tahmindir (gerçek tarife değil); * işaretli kW istasyon kaydında yazmıyor. Pil ve süre tahmini kuş uçuşu mesafenin ×1,35'i yol varsayımıyla hesaplanır.</p>
+    </div>
+
+    <!-- 3) Filtre -->
+    <div class="card stack" id="filter-card">
+      <h2 style="margin:0">Filtre</h2>
+      <div class="chips" role="group" aria-label="Sıralama">
+        <button class="btn" data-sort="fast" type="button">⏱️ Hızlı</button>
+        <button class="btn" data-sort="cheap" type="button">💰 Ekonomik</button>
+        <button class="btn sel" data-sort="opt" type="button">⚖️ Optimum</button>
+      </div>
       <div class="row">
         <select id="near-radius" aria-label="Arama yarıçapı" style="flex:1">
+          <option value="auto">Otomatik (1 → 50 km)</option>
           <option value="1">1 km çevre</option>
           <option value="5">5 km çevre</option>
           <option value="10">10 km çevre</option>
@@ -363,28 +390,28 @@
         <label for="near-ac">Yavaş AC istasyonlarını da göster</label>
         <label class="switch"><input type="checkbox" id="near-ac"><i></i></label>
       </div>
-      <p class="small muted" id="near-status" style="margin:0"></p>
-      <p class="small hidden" id="near-warn" style="margin:0;color:var(--warn,#f5b942)"></p>
-      <div id="near-list"></div>
-      <p class="small muted" style="margin:0">Fiyat ve kW operatör tablosundan alınan tahmindir (gerçek tarife değil); * işaretli kW istasyon kaydında yazmıyor. Pil ve süre tahmini kuş uçuşu mesafenin ×1,35'i yol varsayımıyla hesaplanır.</p>
     </div>
 
-    <div class="chips" role="group" aria-label="Sıralama">
-      <button class="btn" data-sort="fast" type="button">⏱️ Hızlı</button>
-      <button class="btn" data-sort="cheap" type="button">💰 Ekonomik</button>
-      <button class="btn sel" data-sort="opt" type="button">⚖️ Optimum</button>
-    </div>
+    <!-- 4) Şarj markaları: 3 satır, + ile tümü -->
     <div class="card stack" id="brand-card">
       <h2 style="margin:0">Şarj markası</h2>
       <div class="chips wrap" id="brand-chips" role="group" aria-label="Şarj markası tercihi"></div>
+      <button class="more-btn hidden" id="brand-more" type="button" aria-expanded="false"></button>
       <p class="small muted" id="brand-hint" style="margin:0">Hiçbiri seçili değilse tüm markalar kullanılır. Seçtiğin markalar önceliklidir; şarj yetmezse plan gerektiğinde başka markaları da kullanır.</p>
     </div>
-    <div class="card">
-      <h2 id="station-title">İstasyonlar</h2>
-      <p class="small muted" id="station-hint" style="margin:0 0 8px">Rota planlayınca rotadaki istasyonlar burada listelenir.</p>
-      <p class="small hidden" id="station-warn" style="margin:0 0 8px;color:var(--warn,#f5b942)"></p>
-      <button class="btn hidden" id="station-retry" type="button" style="margin-bottom:8px">🔄 İstasyonları yeniden ara</button>
-      <div id="station-list"></div>
+
+    <!-- 5) Ücretler -->
+    <div class="card" data-collapsed="1">
+      <h2>Operatör birim fiyat ve güç tablosu</h2>
+      <table class="optable">
+        <thead><tr><th>Operatör</th><th>TL/kWh</th><th>kW</th></tr></thead>
+        <tbody id="op-body"></tbody>
+      </table>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost" id="op-reset" type="button">Varsayılana dön</button>
+        <span class="small muted">Varsayılan fiyatlar 01.11.2026 liste tarifesidir (üyelik indirimi yok): tablodaki fiyat DC hızlı şarj içindir, AC (yavaş) istasyonlarda işletmecinin AC tarifesi kullanılır. Kendi tarifen farklıysa düzenle.</span>
+        <span class="small muted">Fiyatlar yer tutucudur — güncel tarifeyle düzenle. kW: istasyon kaydında güç yazmıyorsa bu tablo kullanılır.</span>
+      </div>
     </div>
     <div class="card stack" id="custom-card" data-collapsed="1">
       <h2 style="margin:0">Kendi istasyonlarım</h2>
@@ -405,18 +432,6 @@
       <div id="cs-list"></div>
     </div>
 
-    <div class="card" data-collapsed="1">
-      <h2>Operatör birim fiyat ve güç tablosu</h2>
-      <table class="optable">
-        <thead><tr><th>Operatör</th><th>TL/kWh</th><th>kW</th></tr></thead>
-        <tbody id="op-body"></tbody>
-      </table>
-      <div class="row" style="margin-top:10px">
-        <button class="btn ghost" id="op-reset" type="button">Varsayılana dön</button>
-        <span class="small muted">Varsayılan fiyatlar 01.11.2026 liste tarifesidir (üyelik indirimi yok): tablodaki fiyat DC hızlı şarj içindir, AC (yavaş) istasyonlarda işletmecinin AC tarifesi kullanılır. Kendi tarifen farklıysa düzenle.</span>
-        <span class="small muted">Fiyatlar yer tutucudur — güncel tarifeyle düzenle. kW: istasyon kaydında güç yazmıyorsa bu tablo kullanılır.</span>
-      </div>
-    </div>
   </section>
 
   <!-- ===== 5) ABRP ===== -->

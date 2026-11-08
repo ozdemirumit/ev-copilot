@@ -286,5 +286,10 @@
  "Git",
  "Diğer istasyonlar",
  "Varış pili ~%{0}",
- "Varış seçip Git'e dokun: rota planlanır ve navigasyon başlar."
+ "Varış seçip Git'e dokun: rota planlanır ve navigasyon başlar.",
+ "Rotadakiler",
+ "Filtre",
+ "Otomatik (1 → 50 km)",
+ "Tümünü göster",
+ "Daha az göster"
 ]

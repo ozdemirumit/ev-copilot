@@ -287,4 +287,9 @@ export default {
   "Diğer istasyonlar": "Άλλοι σταθμοί",
   "Varış pili ~%{0}": "Μπαταρία στην άφιξη ~{0}%",
   "Varış seçip Git'e dokun: rota planlanır ve navigasyon başlar.": "Διάλεξε προορισμό και πάτα Πήγαινε: η διαδρομή σχεδιάζεται και ξεκινά η πλοήγηση.",
+  "Rotadakiler": "Στη διαδρομή",
+  "Filtre": "Φίλτρα",
+  "Otomatik (1 → 50 km)": "Αυτόματα (1 → 50 χλμ)",
+  "Tümünü göster": "Εμφάνιση όλων",
+  "Daha az göster": "Εμφάνιση λιγότερων",
 };

@@ -651,3 +651,8 @@ html[lang="tr"] .nh-flag { display: none; }
 @media (max-height: 520px) {
   body:has(#hud-speed-box.hidden):has(#hud-limit.hidden) .socbar, body.navmode .socbar { max-width: calc(100vw - var(--brand-w) - 18px - 104px); }
 }
+
+/* İstasyonlar: kapalı listelerde "+ N" / "−" düğmesi, şarj markaları en çok 3 satır */
+.more-btn { align-self: center; display: inline-flex; align-items: center; justify-content: center; min-width: 52px; min-height: 40px; padding: 0 16px; margin-top: 8px; border-radius: 20px; border: 1px solid var(--line); background: var(--card-2); color: var(--accent); font-weight: 700; font-size: 15px; }
+.more-btn:active { background: var(--accent-dim); }
+#brand-chips.clamped { overflow: hidden; }

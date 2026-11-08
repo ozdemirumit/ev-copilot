@@ -8,8 +8,11 @@ import { setStationOperator } from '../routing/chargerSource.js';
 import { slotEl } from '../routing/slots.js';
 import { PLANNER } from '../config.js';
 import { brandOk } from '../routing/planner.js';
+import { paintMore } from './moreToggle.js';
 
 const $ = (id) => document.getElementById(id);
+const ROUTE_LIMIT = 3; // Rotadakiler: kapalıyken en çok 3 satır, "+" ile tümü
+let routeOpen = false;
 const MODE_TITLE = { fast: 'Hızlı', cheap: 'Ekonomik', opt: 'Optimum (süre + maliyet)' };
 
 function text(tag, cls, content) {
@@ -25,7 +28,10 @@ function renderList() {
   const list = $('station-list');
   const hint = $('station-hint');
   list.replaceChildren();
-  $('station-title').textContent = `${tr('İstasyonlar')} · ${tr(MODE_TITLE[p.mode])}`;
+  $('station-title').textContent = `${tr('Rotadakiler')} · ${tr(MODE_TITLE[p.mode])}`;
+  // Rota yoksa "Rotadakiler" kartı hiç görünmez (hata varsa nedeni göstermek için görünür kalır)
+  $('route-stations-card').classList.toggle('hidden', !p.profile && !(p.stationInfo?.errors || []).length);
+  paintMore($('station-more'), 0, ROUTE_LIMIT, false);
 
   // Veri kaynağı sorunları kalıcı gösterilir (toast kaybolur): hata varsa neden + "yeniden ara".
   const warn = $('station-warn');
@@ -60,7 +66,9 @@ function renderList() {
   hint.textContent = t('{0} istasyon ileride, {1} tanesine ek şarj olmadan ulaşılabiliyor.', aheadCount, rows.length + planRows.length) + ' '
     + t('Aday satırlarında süre/maliyet: varış pilinden %80\'e (veya +10 puana) şarj.') + smText;
 
-  [...planRows, ...rows].forEach((r) => {
+  const allRows = [...planRows, ...rows];
+  paintMore($('station-more'), allRows.length, ROUTE_LIMIT, routeOpen);
+  (routeOpen ? allRows : allRows.slice(0, ROUTE_LIMIT)).forEach((r) => {
     const n = planned.get(r.station.id);
     const div = document.createElement('div');
     div.className = 'station';
@@ -160,7 +168,8 @@ function initBrands() {
     all.setAttribute('aria-pressed', String(!sel.length));
     all.addEventListener('click', () => setBrands([]));
     box.append(all);
-    getOperators().filter((o) => o.id !== 'other').forEach((o) => {
+    const ops = getOperators().filter((o) => o.id !== 'other');
+    [...ops.filter((o) => sel.includes(o.id)), ...ops.filter((o) => !sel.includes(o.id))].forEach((o) => { // seçili markalar önce: kapalı satırlarda gizli kalmasın
       const b = document.createElement('button');
       const on = sel.includes(o.id);
       b.type = 'button';
@@ -170,7 +179,26 @@ function initBrands() {
       b.addEventListener('click', () => setBrands(on ? sel.filter((x) => x !== o.id) : [...sel, o.id]));
       box.append(b);
     });
+    fit();
   };
+  // Kapalıyken en çok 3 satır: sığmayan çipler gizlenir, "+" ile tümü açılır. Ölçüm sekme açıkken yapılır (kapalı sekmede boyut yok).
+  let brandsOpen = false;
+  const moreBtn = $('brand-more');
+  function fit() {
+    box.style.maxHeight = '';
+    box.classList.remove('clamped');
+    const kids = [...box.children];
+    if (!kids.length || !box.offsetParent) return;
+    const top0 = kids[0].offsetTop;
+    const h = kids[0].offsetHeight;
+    const gap = parseFloat(getComputedStyle(box).rowGap) || 0;
+    const hidden = kids.filter((k) => k.offsetTop - top0 >= 3 * (h + gap) - 1).length;
+    paintMore(moreBtn, hidden, 0, brandsOpen);
+    if (hidden && !brandsOpen) { box.style.maxHeight = `${3 * h + 2 * gap}px`; box.classList.add('clamped'); }
+  }
+  moreBtn.addEventListener('click', () => { brandsOpen = !brandsOpen; fit(); });
+  document.addEventListener('tabchange', (e) => { if (e.detail === 'stations') fit(); });
+  window.addEventListener('resize', () => fit());
   const setBrands = (list) => {
     PLANNER.brands = list;
     save('brandPref', list);
@@ -206,6 +234,7 @@ export function initStationsView() {
   });
 
   $('station-retry').addEventListener('click', refetchStations);
+  $('station-more').addEventListener('click', () => { routeOpen = !routeOpen; renderList(); });
   subscribe('plan', () => { paintChips(); renderList(); });
   // Araç ilerledikçe mesafeler güncellenir (her tam km'de bir)
   let shownKm = -1;
