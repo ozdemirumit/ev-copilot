@@ -17,7 +17,9 @@ export function initDimmer() {
   let idleTimer = null;
   let loop = null;
 
-  auto.checked = load('dimAuto', true);
+  // Otomatik karartma varsayılan kapalı (bekleme/standby benzeri siyah ekran kendiliğinden açılmaz). Eski 'dimAuto' kaydı yok sayılır:
+  // yeni anahtar 'dimAuto2'. İstenirse Ayarlar'dan açılır; elle karartma düğmesi (ay simgesi) aynen çalışır.
+  auto.checked = load('dimAuto2', false);
   delay.value = load('dimDelay', 45);
   const paintDelay = () => { delayOut.textContent = delay.value + ' sn'; delay.disabled = !auto.checked; };
   paintDelay();
@@ -64,7 +66,7 @@ export function initDimmer() {
   dim.addEventListener('click', wake);
 
   btn.addEventListener('click', () => (on ? wake() : dimNow()));
-  auto.addEventListener('change', () => { save('dimAuto', auto.checked); paintDelay(); schedule(); });
+  auto.addEventListener('change', () => { save('dimAuto2', auto.checked); paintDelay(); schedule(); });
   delay.addEventListener('input', () => { save('dimDelay', Number(delay.value)); paintDelay(); schedule(); });
 
   subscribe('nav', () => {

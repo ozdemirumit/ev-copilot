@@ -27,5 +27,9 @@ ok('varış yoksa uyarır ve planlamaz', /if \(!r\.end\) return toast\(/.test(pa
 ok('navigasyon sürerken aynı varışta durdurur', /if \(stopMode\(\)\) return stopNav\(\)/.test(panel));
 ok('ipucu metni Git anlatır', !/Rotayı Planla'ya dokun/.test(panel) && !/Rotayı Planla'ya dokun/.test(html.replace(/id="btn-plan"[^>]*>[^<]*/, '')));
 
+const dim = read('js/ui/dimmer.js');
+ok('otomatik karartma varsayılan kapalı (dimAuto2, false)', /load\('dimAuto2', false\)/.test(dim) && !/id="dim-auto" checked/.test(html));
+ok('elle karartma düğmesi çalışır', /btn\.addEventListener\('click', \(\) => \(on \? wake\(\) : dimNow\(\)\)\)/.test(dim));
+
 console.log(`\n${pass} geçti, ${fail} kaldı`);
 process.exit(fail ? 1 : 0);
