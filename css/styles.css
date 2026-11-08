@@ -89,6 +89,10 @@ input[type=text], input[type=password], input[type=url], input[type=number], sel
   background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
   padding: 9px 10px; width: 100%; color: var(--text); min-width: 0;
 }
+/* Dokunmatik ekranda yazı alanları 16px: daha küçükse iOS Safari alana odaklanınca sayfayı yakınlaştırır ve içerik ekrandan taşar */
+@media (pointer: coarse) {
+  input[type=text], input[type=password], input[type=url], input[type=number], input[type=search], input[type=email], input:not([type]), select, textarea { font-size: 16px; }
+}
 input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .btn {
   background: var(--card-2); border: 1px solid var(--line); border-radius: 10px;

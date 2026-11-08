@@ -33,5 +33,7 @@ ok('karartma modülü silindi ve yüklenmiyor', !existsSync(join(root, 'js/ui/di
 ok('karartma ekranı, düğmesi ve ayarları HTML\'de yok', !/id="(dimmer|fab-dim|dim-auto|dim-delay)"/.test(html));
 ok('karartma stilleri yok', !/\.dimmer|body\.dimmed|\.dim-arrow/.test(read('css/styles.css')));
 
+ok('dokunmatik ekranda yazı alanları 16px (iOS odak yakınlaştırması yok)', /@media \(pointer: coarse\) \{\s*input\[type=text\][^}]*font-size: 16px/.test(read('css/styles.css')));
+
 console.log(`\n${pass} geçti, ${fail} kaldı`);
 process.exit(fail ? 1 : 0);
