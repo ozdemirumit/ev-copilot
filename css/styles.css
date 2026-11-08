@@ -565,8 +565,6 @@ html[lang="tr"] .nh-flag { display: none; }
 .sheet-x .ic { width: 18px; height: 18px; }
 .menu-item span { color: var(--accent); }
 .menu-item span .ic { width: 24px; height: 24px; }
-.fav-link { display: flex; align-items: center; justify-content: center; gap: 8px; }
-.fav-link .ic { width: 18px; height: 18px; color: var(--accent); }
 
 /* Pencereler: pil ayarı ve durum/kontroller */
 .sheet-dlg { color: var(--text); background: #161b23; border: 1px solid var(--line); border-radius: 20px; padding: 16px; width: min(calc(100vw - 24px), 420px); max-height: calc(var(--app-h, 100dvh) - 16px); overflow-y: auto; }
