@@ -286,4 +286,5 @@ export default {
   "Git": "Ir",
   "Diğer istasyonlar": "Otras estaciones",
   "Varış pili ~%{0}": "Batería al llegar ~{0} %",
+  "Varış seçip Git'e dokun: rota planlanır ve navigasyon başlar.": "Elige un destino y toca Ir: se planifica la ruta y empieza la navegación.",
 };

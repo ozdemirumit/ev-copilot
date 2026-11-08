@@ -286,4 +286,5 @@ export default {
   "Git": "Mergi",
   "Diğer istasyonlar": "Alte stații",
   "Varış pili ~%{0}": "Baterie la sosire ~{0}%",
+  "Varış seçip Git'e dokun: rota planlanır ve navigasyon başlar.": "Alege o destinație și atinge Mergi: ruta este planificată și navigația pornește.",
 };

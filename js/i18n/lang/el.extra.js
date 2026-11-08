@@ -286,4 +286,5 @@ export default {
   "Git": "Πήγαινε",
   "Diğer istasyonlar": "Άλλοι σταθμοί",
   "Varış pili ~%{0}": "Μπαταρία στην άφιξη ~{0}%",
+  "Varış seçip Git'e dokun: rota planlanır ve navigasyon başlar.": "Διάλεξε προορισμό και πάτα Πήγαινε: η διαδρομή σχεδιάζεται και ξεκινά η πλοήγηση.",
 };

@@ -9,6 +9,7 @@ import { createGoogleMap } from './maps/google.js';
 import { resolveProvider, forceOsm } from '../net/mapConfig.js';
 import { showTab } from './tabs.js';
 import { navCamera } from './navCamera.js';
+import { icon } from './icons.js';
 
 /** Harita çizim API'si; initMap() çağrılınca dolar (routing/controller.js, nav/* kullanır). Harita henüz yüklenmediyse çizimler sıraya alınır. */
 export const mapApi = {
@@ -30,7 +31,14 @@ function el(tag, cls, text) {
   if (text != null) d.textContent = text;
   return d;
 }
-const pinEl = (kind, label) => { const d = el('div', 'pin ' + kind); d.append(el('b', '', label)); return d; };
+// Başlangıç: içi boş beyaz nokta, varış: bayrak simgesi (A/B harfi yok). Favori yerlerde simgesi/emojisi yazılır.
+const pinEl = (kind, label) => {
+  const d = el('div', 'pin ' + kind);
+  if (kind === 'end') d.innerHTML = icon('flag');
+  else if (kind === 'start') d.append(el('i', 'dot'));
+  else d.append(el('b', '', label));
+  return d;
+};
 
 /** İstasyon iğnesi: damla biçimi, güce göre renk (AC mavi, DC turuncu, ≥150 kW mor). num: planlanan durak sırası. */
 const PIN_PATH = 'M18 45C18 45 3 28 3 17A15 15 0 0 1 33 17C33 28 18 45 18 45Z';
@@ -155,7 +163,7 @@ export function initMap() {
     inputFor(kind).value = point ? point.label || fmt(point) : '';
     whenMap(() => {
       unmark(markers[kind]);
-      markers[kind] = point ? marker(point, pinEl(kind, kind === 'start' ? 'A' : 'B'), point.label || '') : null;
+      markers[kind] = point ? marker(point, pinEl(kind), point.label || '') : null;
       const { start, end } = getState('route');
       if (start && end && doFit) fit([start, end], 40);
       else if (point && zoom && doFit) adapter.moveTo({ center: point, zoom: 12 });

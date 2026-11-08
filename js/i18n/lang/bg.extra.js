@@ -286,4 +286,5 @@ export default {
   "Git": "Тръгни",
   "Diğer istasyonlar": "Други станции",
   "Varış pili ~%{0}": "Батерия при пристигане ~{0}%",
+  "Varış seçip Git'e dokun: rota planlanır ve navigasyon başlar.": "Избери дестинация и докосни Тръгни: маршрутът се планира и навигацията започва.",
 };

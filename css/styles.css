@@ -120,6 +120,8 @@ input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; }
 .dot { border-radius: 50%; border: 2px solid #0b0f14; box-sizing: content-box; transform: translateY(50%); }
 .pin { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; border: 2px solid #fff; box-shadow: 0 2px 6px #0008; }
 .pin b { font-size: 12px; color: #fff; }
+.pin .dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; display: block; }
+.pin.end .ic { width: 14px; height: 14px; color: #fff; }
 .pin.start { background: var(--accent-dim); }
 .pin.end { background: var(--bad); }
 .pin.place { background: var(--card-2); border-color: var(--warn); }

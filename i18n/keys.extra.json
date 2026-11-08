@@ -285,5 +285,6 @@
  "Kamera okuması eski: son okunan değer gösteriliyor. Sürgüyle düzeltebilirsin.",
  "Git",
  "Diğer istasyonlar",
- "Varış pili ~%{0}"
+ "Varış pili ~%{0}",
+ "Varış seçip Git'e dokun: rota planlanır ve navigasyon başlar."
 ]

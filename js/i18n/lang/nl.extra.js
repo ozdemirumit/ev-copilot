@@ -286,4 +286,5 @@ export default {
   "Git": "Ga",
   "Diğer istasyonlar": "Andere stations",
   "Varış pili ~%{0}": "Accu bij aankomst ~{0}%",
+  "Varış seçip Git'e dokun: rota planlanır ve navigasyon başlar.": "Kies een bestemming en tik op Ga: de route wordt gepland en de navigatie start.",
 };

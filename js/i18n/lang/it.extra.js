@@ -286,4 +286,5 @@ export default {
   "Git": "Vai",
   "Diğer istasyonlar": "Altre stazioni",
   "Varış pili ~%{0}": "Batteria all’arrivo ~{0}%",
+  "Varış seçip Git'e dokun: rota planlanır ve navigasyon başlar.": "Scegli una destinazione e tocca Vai: il percorso viene pianificato e parte la navigazione.",
 };

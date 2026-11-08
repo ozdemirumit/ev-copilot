@@ -95,8 +95,10 @@
       </div>
       <p class="small muted" id="cur-soc-note" style="margin:0"></p>
       <div class="row" id="plan-actions">
-        <button class="btn primary" id="btn-plan" type="button">⚡ Rotayı Planla</button>
-        <button class="btn primary" id="btn-nav" type="button">▶ Navigasyonu başlat</button>
+        <button class="btn primary go-btn" id="btn-go" type="button">Git</button>
+        <!-- Eski iki adım: Git ikisini birden yapar (planla + navigasyonu başlat). Kimlikler ve dinleyiciler uyumluluk için duruyor. -->
+        <button class="btn primary hidden" id="btn-plan" type="button">⚡ Rotayı Planla</button>
+        <button class="btn primary hidden" id="btn-nav" type="button">▶ Navigasyonu başlat</button>
       </div>
 
       <div class="summary">
@@ -131,7 +133,7 @@
           <button class="btn sm" data-minkw="150" type="button">150</button>
         </div>
       </div>
-      <p class="small muted" id="plan-status" style="margin:0">Başlangıç ve varış seçip Rotayı Planla'ya dokun.</p>
+      <p class="small muted" id="plan-status" style="margin:0">Varış seçip Git'e dokun: rota planlanır ve navigasyon başlar.</p>
       <div id="plan-list"></div>
       <p class="small muted hidden" id="premium-hint" style="margin:0">Canlı doluluk ve kWh fiyatı Premium üyelere özeldir.</p>
       <button class="btn ghost hidden" id="btn-stops-map" type="button">📍 Durakları haritada göster</button>

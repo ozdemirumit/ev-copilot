@@ -1,6 +1,9 @@
 import { t as tpl } from '../i18n/index.js'; // 't' bu dosyada başka yerlerde yerel değişken (p.totals) olarak kullanılır
 import { progressKm } from '../routing/progress.js';
-import { getState, patch, subscribe } from '../state.js';
+import { getState, patch, subscribe, effective } from '../state.js';
+import { toast } from './toast.js';
+import { planTrip } from '../routing/controller.js';
+import { startNav, stopNav } from '../nav/navigator.js';
 import { save } from '../utils/storage.js';
 import { stationGaps } from '../routing/planner.js';
 import { slotEl, livePrice } from '../routing/slots.js';
@@ -54,6 +57,44 @@ export function initRoutePanel() {
   subscribe('route', paintKw);
   paintKw();
 
+  // Git: tek dokunuşla rota planlanır ve navigasyon başlar (başlangıç seçilmediyse şu anki konum). Navigasyon sürerken aynı varışsa durdurur.
+  // Eski "Rotayı Planla" / "Navigasyonu başlat" düğmeleri gizli durur (kimlik ve dinleyiciler uyumluluk için).
+  const go = $('btn-go');
+  const endKey = (p) => (p ? `${p.lat.toFixed(5)},${p.lon.toFixed(5)}` : '');
+  let going = false;
+  let goneTo = ''; // son Git'in varışı
+  const stopMode = () => getState('nav').active && (!goneTo || endKey(getState('route').end) === goneTo);
+  const paintGo = () => {
+    if (!getState('nav').active && !going) goneTo = '';
+    const stop = stopMode();
+    go.textContent = stop ? '⏹ Navigasyonu durdur' : 'Git';
+    go.classList.toggle('danger', stop);
+    go.classList.toggle('primary', !stop);
+    go.disabled = !stop && (going || getState('plan').status === 'loading');
+  };
+  go.addEventListener('click', async () => {
+    if (going) return;
+    if (stopMode()) return stopNav();
+    const r = getState('route');
+    if (!r.end) return toast('Önce başlangıç ve varış seç');
+    if (!r.start || r.start.label === 'Konumum') { // başlangıç yoksa ya da önceki "Konumum" ise şu anki konumdan çık
+      const e = effective();
+      if (e.lat != null) mapApi.setPoint('start', { lat: e.lat, lon: e.lon, label: 'Konumum' }, { fit: false });
+      else if (!r.start) return toast("Konum yok: üstteki 📍 ile GPS'i aç (veya Test Modu)", 4000);
+    }
+    going = true;
+    goneTo = endKey(r.end);
+    paintGo();
+    try {
+      if (await planTrip()) await startNav();
+    } finally {
+      going = false;
+      paintGo();
+    }
+  });
+  subscribe(['plan', 'nav', 'route'], paintGo);
+  paintGo();
+
   const list = $('plan-list');
   const status = $('plan-status');
   const gm = $('btn-gmaps');
@@ -72,7 +113,7 @@ export function initRoutePanel() {
 
     const busy = p.status === 'loading';
     $('btn-plan').disabled = busy;
-    if (p.status === 'none') status.textContent = "Başlangıç ve varış seçip Rotayı Planla'ya dokun.";
+    if (p.status === 'none') status.textContent = "Varış seçip Git'e dokun: rota planlanır ve navigasyon başlar.";
     else if (busy) status.textContent = p.text;
     else if (p.status === 'error' || p.status === 'infeasible') status.textContent = '⚠️ ' + p.text;
 
