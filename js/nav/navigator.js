@@ -10,6 +10,7 @@ import { speak, stopSpeech, testVoice } from '../advisor/voice.js';
 import { instruction, fmtDist, dueVoice, isMinor } from './steps.js';
 import { buildTrack, locate, headingAt, pointAtKm } from './track.js';
 import { bearing } from '../utils/geo.js';
+import { icon, setManeuverIcon } from '../ui/icons.js';
 
 const $ = (id) => document.getElementById(id);
 const THEN_MAX_M = 500; // sonraki manevra panelde yalnızca bu kadar yakınsa gösterilir
@@ -64,7 +65,7 @@ export function snapPoint(lat, lon) {
 }
 
 function paint(arrow, dist, text, road = '', warn = false, then = '') {
-  $('nav-arrow').textContent = arrow;
+  setManeuverIcon($('nav-arrow'), arrow);
   $('nav-dist').textContent = dist;
   $('nav-text').textContent = text;
   $('nav-road').textContent = road;
@@ -203,7 +204,8 @@ function paintHud(e, remainKm, eta, driveH, chargeMin) {
   const totalMin = Math.round(driveH * 60 + chargeMin);
   $('nh-speed').textContent = e.speed == null ? '--' : Math.round(e.speed);
   $('nh-eta').textContent = eta;
-  $('nh-rem').textContent = `${remainKm.toFixed(0)} km · ${totalMin >= 60 ? `${Math.floor(totalMin / 60)} sa ${totalMin % 60} dk` : `${totalMin} dk`}`;
+  $('nh-rem').textContent = `${remainKm.toFixed(0)} km`;
+  $('nh-dur').textContent = totalMin >= 60 ? `${Math.floor(totalMin / 60)} sa ${totalMin % 60} dk` : `${totalMin} dk`;
   $('nh-soc').textContent = e.soc == null ? '--' : Math.round(e.soc);
   $('nh-recenter').classList.toggle('hidden', !mapApi.dragged());
 }
@@ -344,7 +346,7 @@ export function initNavigator() {
   $('nh-overview').addEventListener('click', () => mapApi.overview());
   $('nh-recenter').addEventListener('click', () => { mapApi.recenter(); tick(); });
   subscribe('nav', () => {
-    $('nh-voice').textContent = getState('nav').voice ? '🔊' : '🔇';
+    $('nh-voice').innerHTML = icon(getState('nav').voice ? 'volume' : 'volume-off');
     $('navhud').classList.toggle('hidden', !getState('nav').active);
   });
   paintBtn();

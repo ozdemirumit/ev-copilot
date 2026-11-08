@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.86.0';
+self.APP_VERSION = '0.87.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.87.0', date: '2026-11-08',
+    notes: [
+      'Yeni görünüm: koyu arayüz, ince çizgi simgeler, geniş harita; alt menüde Harita, İstasyonlar ve Daha fazla. Favoriler Daha fazla ve İstasyonlar içinde.',
+      'Üst panel manevra ve şarj önerisini tek kartta gösterir; az kullanılan harita düğmeleri üç nokta menüsünde, durum rozetleri başlıktaki menüde.',
+      'Pil ve menzil tek düğmede: dokununca elle ayar penceresi açılır. Pil bilgisi yoksa %80 kullanılır ve Varsayılan yazar; son değer bu cihazda saklanır, kamera kapanınca korunur.',
+    ],
+  },
   {
     v: '0.86.0', date: '2026-11-08',
     notes: [

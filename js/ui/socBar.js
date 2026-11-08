@@ -1,10 +1,25 @@
-// Harita ekranında sol kenarda dikey pil sürgüsü: parmakla yukarı/aşağı sürükleyerek mevcut pil elle ayarlanır.
-// Değer yolda kendiliğinden düşer (physics/socEstimate.js); kamera okuyunca o değer geçerli olur.
+// Harita üstündeki pil + menzil hapı: dokununca elle ayar penceresi açılır (yatay sürgü, ±1, klavye).
+// Değer yolda kendiliğinden düşer (physics/socEstimate.js); kamera okuyunca o değer geçerli olur. Sürgü bırakılınca açık plan yeniden hesaplanır.
 import { getState, patch, subscribe, effective } from '../state.js';
-import { setManual, isOnline, manualLocked } from '../physics/socEstimate.js';
+import { setManual, manualLocked, socSource, DEFAULT_SOC } from '../physics/socEstimate.js';
+import { setStartSoc } from '../routing/controller.js';
+import { t } from '../i18n/index.js';
 import { toast } from './toast.js';
 
 const $ = (id) => document.getElementById(id);
+
+const LABEL = { sim: 'Test', live: 'Canlı', stale: 'Eski', manual: 'Elle', estimate: 'Tahmin', default: 'Varsayılan', none: '—' };
+const LOCK_TEXT = 'Pil kameradan canlı okunuyor: elle ayar gerekmez (kamera durursa sürgü açılır).';
+
+function noteFor(src, locked) {
+  if (src === 'sim') return 'Test Modu: pil Test sekmesindeki değerdir.';
+  if (locked) return LOCK_TEXT;
+  if (src === 'default') return t('Pil bilgisi yok: %{0} varsayılıyor. Sürgüyle ayarla ya da kamerayla okut.', DEFAULT_SOC);
+  if (src === 'manual') return 'Elle girildi: yol alındıkça tüketim modeliyle düşer, kamera okuyunca düzelir.';
+  if (src === 'estimate') return 'Son bilinen değerden tahmin ediliyor. Sürgüyle düzeltebilirsin.';
+  if (src === 'stale') return 'Kamera okuması eski: son okunan değer gösteriliyor. Sürgüyle düzeltebilirsin.';
+  return 'Son okunan değer.';
+}
 
 export function initSocBar() {
   const track = $('socbar-track');
@@ -13,35 +28,56 @@ export function initSocBar() {
   const val = $('socbar-val');
   const src = $('socbar-src');
   const bar = $('socbar');
+  const level = $('socbar-level');
+  const sheet = $('soc-sheet');
   let drag = false;
+  let commitTimer = null;
 
   const paint = () => {
     const e = effective();
     const v = e.soc;
     const pct = v == null ? 0 : Math.min(100, Math.max(0, v));
-    fill.style.height = pct + '%';
-    thumb.style.bottom = pct + '%';
-    val.textContent = v == null ? '--' : Math.round(v);
-    track.setAttribute('aria-valuenow', String(Math.round(pct)));
-    const m = getState('engine').socSrc;
+    const shown = v == null ? '--' : String(Math.round(v));
     const sim = e.source === 'sim';
-    const online = !sim && isOnline();
-    // Yeşil = pil kameradan canlı okunuyor; kırmızı = okuma yok (elle girilmiş / tahmin / kamera eski); mavi = Test Modu
-    const label = sim ? 'test' : online ? 'canlı' : m === 'manual' ? 'tahmin' : m === 'ocr' ? 'eski' : 'yok';
+    const source = sim ? 'sim' : socSource();
+    const label = LABEL[source] ?? '—';
+    const locked = !sim && manualLocked();
+    // Toplam menzil: mevcut pille %0'a kadar tahmini km (seçili araç + menzil motoru). Eşik piline kadar menzil Menzil sekmesinde.
+    const eng = getState('engine');
+    const total = eng.totalRangeKm != null && v != null ? Math.max(0, Math.round(eng.totalRangeKm)) : null;
+    const km = total == null ? '--' : String(total);
+    const low = v != null && v < getState('nav').lowSoc;
+
+    val.textContent = shown;
     src.textContent = label;
-    bar.dataset.src = sim ? 'sim' : m || 'none';
-    const cls = sim ? 'ind sim' : online ? 'ind on' : 'ind';
-    $('socbar-dot').className = cls;
+    $('socbar-range').textContent = km;
+    level.style.width = pct + '%';
+    bar.dataset.src = source;
+    bar.classList.toggle('low', low);
+    const dotCls = sim ? 'ind sim' : source === 'live' ? 'ind on' : source === 'default' || source === 'none' ? 'ind off' : 'ind';
+    $('socbar-dot').className = dotCls;
     const nhDot = $('nh-soc-dot');
-    if (nhDot) nhDot.className = cls;
-    // Toplam menzil: mevcut pille %0'a kadar tahmini km. (Eşik piline kadar menzil Menzil sekmesinde; eşik pile eşitse orada 0 görünür.)
-    const r = getState('engine').rangeKm;
-    // Rota varsa önümüzdeki yolun eğimi hesaba katılır; rota bitince ya da yoksa düz zemin tüketimi (yerel eğim yayılmaz)
-    const tr = getState('engine').totalRangeKm;
-    const total = tr != null && v != null ? Math.round(tr) : null;
-    $('socbar-range').textContent = total == null ? '--' : String(Math.max(0, total));
-    $('socbar-rangebox').title = 'Tahmini toplam menzil (%0\'a kadar)' + (r != null ? `; %${getState('route').minArrivalSoc} eşik piline kadar ${Math.max(0, Math.round(r))} km` : '');
-    bar.classList.toggle('low', v != null && v < getState('nav').lowSoc);
+    if (nhDot) nhDot.className = dotCls;
+    bar.setAttribute('aria-label', t('Pil %{0}, tahmini menzil {1} km, kaynak: {2}. Elle ayarlamak için dokun.', shown, km, label));
+    $('socbar-rangebox').title = 'Tahmini toplam menzil (%0\'a kadar)' + (eng.rangeKm != null ? `; %${getState('route').minArrivalSoc} eşik piline kadar ${Math.max(0, Math.round(eng.rangeKm))} km` : '');
+
+    // Pencere
+    fill.style.width = pct + '%';
+    thumb.style.left = pct + '%';
+    track.setAttribute('aria-valuenow', String(Math.round(pct)));
+    track.setAttribute('aria-valuetext', t('Pil %{0}, tahmini menzil {1} km', shown, km));
+    track.setAttribute('aria-disabled', String(locked));
+    track.classList.toggle('locked', locked);
+    $('soc-sheet-minus').disabled = locked;
+    $('soc-sheet-plus').disabled = locked;
+    $('soc-sheet-val').textContent = shown;
+    $('soc-sheet-range').textContent = km;
+    const chip = $('soc-sheet-src');
+    chip.textContent = label;
+    chip.dataset.src = source;
+    const note = noteFor(source, locked);
+    const noteEl = $('soc-sheet-note');
+    if (noteEl.dataset.src !== note) { noteEl.dataset.src = note; noteEl.textContent = note; } // 3 sn'lik yenileme aynı metni okutmasın
   };
 
   let lastToast = 0;
@@ -50,39 +86,56 @@ export function initSocBar() {
     if (Date.now() - lastToast > 8000) { lastToast = Date.now(); toast('Pil kameradan canlı okunuyor: elle ayar gerekmez'); }
     return true;
   };
-  const thumbY = () => {
-    const r = track.getBoundingClientRect();
-    const v = effective().soc;
-    return r.bottom - (r.height * Math.min(100, Math.max(0, v ?? 0))) / 100;
+  const apply = (v) => {
+    const next = Math.min(100, Math.max(0, Math.round(v)));
+    if (getState('sim').enabled) patch('sim', { soc: next });
+    else setManual(next);
+    return next;
   };
-  const setFromY = (clientY) => {
+  // Açık planın yeniden hesabı (ağ çağrısı yok): sürükleme bırakılınca ya da adımlar bitince bir kez
+  const commit = (delay = 250) => {
+    clearTimeout(commitTimer);
+    commitTimer = setTimeout(() => { const v = effective().soc; if (v != null) setStartSoc(Math.round(v)); }, delay);
+  };
+  const step = (d) => {
+    if (blocked()) return;
+    apply(Math.round(effective().soc ?? DEFAULT_SOC) + d);
+    commit();
+  };
+  const setFromX = (clientX) => {
     const r = track.getBoundingClientRect();
-    const v = Math.round(Math.min(100, Math.max(0, ((r.bottom - clientY) / r.height) * 100)));
-    if (getState('sim').enabled) patch('sim', { soc: v });
-    else setManual(v);
+    apply(((clientX - r.left) / r.width) * 100);
   };
 
   track.addEventListener('pointerdown', (e) => {
     if (blocked()) return;
-    if (Math.abs(e.clientY - thumbY()) > 44) return; // yanlışlıkla dokunuş (avuç, parmak) pili değiştirmesin: yalnızca başparmak yakınından
     drag = true;
     track.setPointerCapture(e.pointerId);
-    setFromY(e.clientY);
+    setFromX(e.clientX);
     e.preventDefault();
   });
-  track.addEventListener('pointermove', (e) => { if (drag) setFromY(e.clientY); });
-  ['pointerup', 'pointercancel'].forEach((ev) => track.addEventListener(ev, () => { drag = false; }));
+  track.addEventListener('pointermove', (e) => { if (drag) setFromX(e.clientX); });
+  ['pointerup', 'pointercancel'].forEach((ev) => track.addEventListener(ev, () => { if (drag) { drag = false; commit(0); } }));
   track.addEventListener('keydown', (e) => {
-    const step = e.key === 'ArrowUp' ? 1 : e.key === 'ArrowDown' ? -1 : 0;
-    if (!step) return;
+    const cur = Math.round(effective().soc ?? DEFAULT_SOC);
+    const target = { ArrowUp: cur + 1, ArrowRight: cur + 1, ArrowDown: cur - 1, ArrowLeft: cur - 1, PageUp: cur + 10, PageDown: cur - 10, Home: 0, End: 100 }[e.key];
+    if (target == null) return;
     e.preventDefault();
     if (blocked()) return;
-    const cur = effective().soc ?? 50;
-    const v = Math.min(100, Math.max(0, Math.round(cur) + step));
-    if (getState('sim').enabled) patch('sim', { soc: v }); else setManual(v);
+    apply(target);
+    commit();
   });
+  $('soc-sheet-minus').addEventListener('click', () => step(-1));
+  $('soc-sheet-plus').addEventListener('click', () => step(1));
 
-  subscribe(['live', 'sim', 'engine', 'nav'], paint);
-  setInterval(paint, 3000); // kamera okuması eskiyince (yeşil → kırmızı) değer değişmese de güncelle
+  // Pencere: değer açma/kapamada değişmez; odak açılınca sürgüye, kapanınca (tarayıcı) hapa döner
+  const close = () => sheet.close();
+  bar.addEventListener('click', () => { paint(); sheet.showModal(); track.focus(); });
+  $('soc-sheet-x').addEventListener('click', close);
+  $('soc-sheet-done').addEventListener('click', close);
+  sheet.addEventListener('click', (e) => { if (e.target === sheet) close(); }); // arka plana dokununca
+
+  subscribe(['live', 'sim', 'engine', 'nav', 'ocr', 'system'], paint);
+  setInterval(paint, 3000); // kamera okuması eskiyince (canlı → eski) değer değişmese de güncelle
   paint();
 }

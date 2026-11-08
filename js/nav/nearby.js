@@ -17,6 +17,8 @@ import { slotKind, slotEl, isFresh, livePrice } from '../routing/slots.js';
 import { fetchAvailability } from '../routing/occupancyClient.js';
 import { proxyHas } from '../net/proxy.js';
 import { startNav, syncTopPanel } from './navigator.js';
+import { icon } from '../ui/icons.js';
+import { measuredSoc } from '../physics/socEstimate.js';
 
 const $ = (id) => document.getElementById(id);
 const BAT = VEHICLE.batteryNetKwh;
@@ -108,7 +110,7 @@ async function refreshOccupancy({ force = false, every = OCC_EVERY_MS } = {}) {
     const order = [...pool.filter((s) => s.reachable), ...pool.filter((s) => !s.reachable)];
     for (let i = 0; i < 2 * OCC_BATCH && i < order.length; i += OCC_BATCH) {
       const batch = order.slice(i, i + OCC_BATCH);
-      const res = await fetchAvailability(batch, OCC_BATCH, e.soc);
+      const res = await fetchAvailability(batch, OCC_BATCH, measuredSoc(e));
       for (const [id, sl] of res) { const src = all.find((x) => x.id === id); if (src) src.slots = sl; }
       const open = batch.filter((b) => { const k = slotKind(all.find((x) => x.id === b.id) || b); return k !== 'full' && k !== 'out'; }).length;
       if (open >= 3) break;
@@ -179,6 +181,7 @@ function render() {
   paintStatus(meta.at
     ? `${items.length} istasyon · ${radius} km çevre · ${age < 1 ? 'şimdi' : age + ' dk önce'} güncellendi${meta.cached ? ' (önbellek)' : ''}`
     : 'Henüz aranmadı. Konumunu açıp "Ara"ya dokun.');
+  $('near-summary-text').textContent = meta.at && items.length ? t('Yakında {0} şarj istasyonu', items.length) : 'Şarj istasyonları';
   const warn = $('near-warn');
   warn.textContent = meta.errors.join(' · ');
   warn.classList.toggle('hidden', !meta.errors.length);
@@ -265,18 +268,28 @@ function alertEntry(s) {
   info.setAttribute('aria-expanded', String(open));
   info.append(cell('small', '', `${fmtKm(s.distKm)} km · ${s.kw} kW` + (s.reachable ? '' : ' ' + t('· yetmeyebilir'))));
   info.addEventListener('click', () => { openRow = open ? null : s.id; paintAlert(); });
-  const go = cell('button', 'btn primary sm', '🧭 Git');
+  const go = cell('button', 'btn primary sm', 'Git');
   go.type = 'button';
   go.addEventListener('click', () => goTo(s));
   row.append(info, go);
   entry.append(row);
   if (open) {
-    const parts = [s.foreign ? '' : `${s.price.toFixed(2)} TL/kWh`, s.arrive != null ? t('· varışta ~%{0}', Math.max(0, s.arrive).toFixed(0)) : ''];
-    const detail = cell('div', 'near-detail small muted', parts.filter(Boolean).join(' ').replace(/^· /, ''));
-    const slotNode = slotEl(s);
-    if (slotNode) detail.append(slotNode);
+    const detail = cell('div', 'near-detail near-metrics small', '');
+    const metric = (ic, node) => {
+      const c = cell('div', 'nm-cell', '');
+      c.innerHTML = icon(ic);
+      c.append(node);
+      detail.append(c);
+    };
+    const slotNode = slotEl(s, '');
+    if (slotNode) metric('plug', slotNode);
     const lp = livePrice(s);
-    if (lp) detail.append(' · ', cell('span', '', lp.text));
+    if (!s.foreign || lp) {
+      const price = cell('span', '', s.foreign ? '' : `${s.price.toFixed(2)} TL/kWh`);
+      if (lp) price.append(s.foreign ? '' : ' · ', cell('span', '', lp.text));
+      metric('tag', price);
+    }
+    if (s.arrive != null) metric('battery', cell('span', '', t('Varış pili ~%{0}', Math.max(0, s.arrive).toFixed(0))));
     entry.append(detail);
   }
   return entry;
@@ -292,12 +305,13 @@ function paintAlert() {
   const toggle = $('near-alert-toggle');
   toggle.classList.toggle('hidden', !stations.length && !notes.length);
   toggle.setAttribute('aria-expanded', String(open));
-  toggle.textContent = open ? '▴' : '▾';
+  toggle.innerHTML = icon(open ? 'chev-up' : 'chev-down');
   const body = $('near-alert-body');
   body.replaceChildren(...(open ? notes.map((n) => cell('div', 'small muted', n)) : []), ...(open ? stations : stations.slice(0, 1)).map(alertEntry));
   if (open && stations.length) {
-    const all3 = cell('button', 'btn ghost sm', '📋 Tüm listeyi aç');
+    const all3 = cell('button', 'near-more', 'Diğer istasyonlar');
     all3.type = 'button';
+    all3.insertAdjacentHTML('beforeend', icon('chev-right'));
     all3.addEventListener('click', () => document.querySelector('.bottomnav [data-tab="stations"]')?.click());
     body.append(all3);
   }

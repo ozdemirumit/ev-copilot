@@ -145,5 +145,6 @@ export function initVersionInfo() {
     armed = setTimeout(() => { armed = null; }, CONFIRM_MS);
   };
   brand.addEventListener('click', onTap);
+  $('btn-version').addEventListener('click', onTap);
   brand.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTap(); } });
 }

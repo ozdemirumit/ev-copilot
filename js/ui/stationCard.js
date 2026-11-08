@@ -1,6 +1,7 @@
 // Haritada bir istasyon iğnesine dokununca açılan kart: ad, operatör, güç, tahmini ve canlı/bildirilen fiyat, canlı doluluk (Premium), topluluk durumu,
 // Git / Haritalar düğmeleri, fiyat bildirimi ve topluluk bilgisi: 1-5 puan, çevredeki olanaklar (AVM, tuvalet…) ve fotoğraflar (kameradan ya da galeriden).
 // Canlı bilgi tek istasyon için sunucudan istenir (/v1/occupancy; Hollanda'da NDW, Türkiye'de topluluk).
+import { measuredSoc } from '../physics/socEstimate.js';
 import { effective } from '../state.js';
 import { mapApi } from './mapView.js';
 import { toast } from './toast.js';
@@ -59,7 +60,7 @@ async function load(s, box) {
   if (proxyHas('occupancyLocked')) return paintLive(box, s, 'locked');
   if (!proxyHas('occupancy')) return paintLive(box, s, 'none');
   paintLive(box, s, 'loading');
-  const res = await fetchAvailability([s], 1, effective().soc);
+  const res = await fetchAvailability([s], 1, measuredSoc(effective()));
   if (my !== token) return;
   if (res.has(s.id)) s.slots = res.get(s.id);
   paintLive(box, s, 'done');

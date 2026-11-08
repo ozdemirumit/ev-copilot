@@ -1,6 +1,7 @@
 import { getState, patch, effective } from '../state.js';
 import { ABRP } from '../config.js';
 import { load } from '../utils/storage.js';
+import { measuredSoc } from '../physics/socEstimate.js';
 
 let corsBlocked = false; // tarayıcı ABRP yanıtını okutmuyorsa "no-cors" ile göndermeye devam et
 let timer = null;
@@ -12,7 +13,7 @@ export function buildPacket() {
   const e = effective();
   return {
     utc: Math.floor(Date.now() / 1000),
-    soc: rnd(e.soc, 0),
+    soc: rnd(measuredSoc(e), 0),
     speed: rnd(e.speed, 0),
     lat: rnd(e.lat, 6),
     lon: rnd(e.lon, 6),

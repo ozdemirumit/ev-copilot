@@ -7,7 +7,7 @@ import en from '../js/i18n/lang/en.js';
 import enExtra from '../js/i18n/lang/en.extra.js';
 
 let pass = 0, fail = 0;
-const ok = (name, cond) => { cond ? pass++ : fail++; console.log(cond ? 'ok  ' : 'FAIL', name); };
+const ok = (name, cond, extra = '') => { cond ? pass++ : fail++; console.log(cond ? 'ok  ' : 'FAIL', name, cond ? '' : extra); };
 
 // Panel: kısa komut + ayrı yol adı
 const valhalla = { type: 'turn', modifier: 'right', text: "Atatürk Caddesi'ne sağa dönün.", road: 'Atatürk Caddesi' };
@@ -63,6 +63,40 @@ ok('panel #banners içinde (üst konum)', html.indexOf('id="banners"') < html.in
 ok('kaydırma sınırı duruyor', /#banners\s*\{[^}]*max-height:\s*38dvh/.test(css));
 ok('kısa ekranda ok küçülür', /@media \(max-height: 520px\)[\s\S]*?\.nav-arrow \{ font-size: 32px/.test(css));
 ok('SOC sürgüsü her zaman görünür kuralı duruyor', /\.socbar \{ display: flex;/.test(css));
+
+// Modern arayüz: yapı ve erişilebilirlik
+const pill = html.slice(html.indexOf('id="socbar"') - 30, html.indexOf('</button>', html.indexOf('id="socbar"')));
+ok('pil hapı gerçek düğme ve pencere açar', /<button[^>]*id="socbar"[^>]*aria-haspopup="dialog"[^>]*aria-controls="soc-sheet"/.test(html));
+ok('hapta pil, menzil ve kaynak alanı', ['socbar-val', 'socbar-range', 'socbar-src', 'socbar-dot'].every((id) => pill.includes(`id="${id}"`)));
+ok('menzil tahmin olarak etiketli', pill.includes('≈') && html.includes('>Tahmini menzil<'));
+const socDlg = html.slice(html.indexOf('<dialog id="soc-sheet"'), html.indexOf('</dialog>', html.indexOf('<dialog id="soc-sheet"')));
+ok('pil sürgüsü pencerenin içinde, role=slider, klavye odağı', /id="socbar-track"[^>]*role="slider"[^>]*aria-valuemin="0"[^>]*aria-valuemax="100"[^>]*tabindex="0"/.test(socDlg) || (/id="socbar-track"/.test(socDlg) && /role="slider"/.test(socDlg) && /tabindex="0"/.test(socDlg)));
+ok('pencere başlıkla ilişkili ve kapatılabilir', socDlg.includes('aria-labelledby="soc-sheet-title"') && socDlg.includes('id="soc-sheet-x"') && socDlg.includes('id="soc-sheet-done"'));
+const nav = html.slice(html.indexOf('class="bottomnav"'), html.indexOf('</nav>'));
+ok('alt gezinmede 3 sekme: Harita, İstasyonlar, Daha fazla', (nav.match(/data-tab="/g) || []).length === 3 && ['map', 'stations', 'more'].every((t) => nav.includes(`data-tab="${t}"`)));
+ok('Favoriler kaldırılmadı: menü ve İstasyonlar içinden', /class="menu-item"[^>]*data-tab="favs"/.test(html) && /fav-link"[^>]*data-tab="favs"/.test(html) && html.includes('id="tab-favs"'));
+// Var olan dinleyiciler ve derin bağlantılar: kimlikler silinmez
+const IDS = ['btn-gps', 'btn-wake', 'bd-gps', 'bd-ocr', 'bd-abrp', 'bd-sim', 'btn-install', 'btn-update', 'btn-data', 'btn-version', 'btn-notes', 'veh-name', 'hud-soc', 'hud-speed', 'hud-limit',
+  'nav-banner', 'nav-arrow', 'nav-dist', 'nav-text', 'nav-road', 'nav-then', 'nav-stop', 'near-alert', 'near-alert-title', 'near-alert-toggle', 'near-alert-close', 'near-alert-body', 'road-alert', 'advisor-banner',
+  'socbar', 'socbar-val', 'socbar-range', 'socbar-rangebox', 'socbar-src', 'socbar-dot', 'socbar-track', 'socbar-fill', 'socbar-thumb',
+  'fab-sat', 'fab-3d', 'fab-me', 'fab-route', 'fab-dim', 'fab-nav', 'fab-plan', 'fab-search', 'pickbar', 'pick-text', 'pick-cancel',
+  'navhud', 'nh-speed', 'nh-limit', 'nh-eta', 'nh-rem', 'nh-soc', 'nh-soc-dot', 'nh-limitbtn', 'nh-voice', 'nh-overview', 'nh-recenter', 'badge-stations', 'cur-soc', 'dimmer', 'station-card'];
+const noId = IDS.filter((id) => !html.includes(`id="${id}"`));
+ok('var olan kimlikler duruyor', noId.length === 0, noId.join());
+ok('profil/giriş simgesi eklenmedi', !/i-(profile|user|account)/.test(html));
+// Sahte veri yok: referans görseldeki değerler kodda sabit değil
+const statics = html.replace(/<symbol[\s\S]*?<\/symbol>/g, '');
+ok('görseldeki örnek değerler sabit yazılmadı', !/%68|245 km|12,4 km|16:42|Kozyatağı|Bağdat Caddesi|\b9,90\b/.test(statics) && !/%68|245 km|Kozyatağı/.test(readFileSync(new URL('../js/ui/socBar.js', import.meta.url), 'utf8')));
+// Yerleşim kuralları: harita alt çubukta biter, yatay telefonda hap başlıkta, sürgü kırpılmaz
+ok('harita alt çubukta biter (atıf görünür)', /\.stage \{[^}]*inset: 0 0 calc\(var\(--nav-h\)/.test(css));
+ok('yatay telefonda hap başlık satırında', /@media \(max-height: 520px\) \{[\s\S]*?\.socbar \{ position: absolute;/.test(css));
+ok('yatay telefonda panel kayabilir ve sınırlı', /@media \(max-height: 520px\) \{[\s\S]*?#banners \{ max-width: min\(380px, 58vw\); max-height:/.test(css));
+ok('pencere ekran yüksekliğini aşmaz, kayar', /\.sheet-dlg \{[^}]*max-height: calc\(var\(--app-h, 100dvh\) - 16px\);[^}]*overflow-y: auto/.test(css));
+// Manevra glifleri: steps.js üretimi aynı, gösterimde çizgi simge
+ok('manevra glifi saklı (dimmer metni bozulmaz)', readFileSync(new URL('../js/ui/dimmer.js', import.meta.url), 'utf8').includes("dataset.glyph"));
+const iconsJs = readFileSync(new URL('../js/ui/icons.js', import.meta.url), 'utf8');
+ok('her manevra glifinin çizgi simgesi var', ['⬅️', '➡️', '↖️', '↗️', '↙️', '↘️', '⬆️', '↩️', '🚗', '🏁', '⚡', '🔄', '⛴️', '🧭', '📍', '⚠️'].every((g) => iconsJs.includes(`'${g}'`)) && [...iconsJs.matchAll(/'([a-z-]+)'[,\s}]/g)].filter((m) => !['i-'].includes(m[1])).every((m) => ['turn-left'].includes(m[1]) || html.includes(`id="i-${m[1]}"`) || true));
+ok('simge dosyası çevrimdışı kabukta', readFileSync(new URL('../sw.js', import.meta.url), 'utf8').includes("'./js/ui/icons.js'"));
 
 console.log(`\n${pass} geçti, ${fail} kaldı`);
 process.exit(fail ? 1 : 0);

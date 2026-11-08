@@ -32,7 +32,7 @@ import { initDimmer } from './ui/dimmer.js';
 import { initSocInput } from './ui/socInput.js';
 import { initSocBar } from './ui/socBar.js';
 import { initDefaultStart } from './ui/defaultStart.js';
-import { initSocEstimate } from './physics/socEstimate.js';
+import { initSocEstimate, restoreSoc } from './physics/socEstimate.js';
 import { initMap } from './ui/mapView.js';
 import { initRoiBox } from './ui/roiBox.js';
 import { initCameraPanel } from './ui/cameraPanel.js';
@@ -66,6 +66,7 @@ import { initSimulator } from './sim/simulator.js';
 // Sıra önemli: paneller state'i okuyup boyar; motorlar en sonda başlar; sekme en son açılır.
 await initI18n(); // önce dil: sayfa metinleri çevrilir, sonra paneller kendi metinlerini yazar (gözlemci onları da çevirir)
 installMeter(); // sonraki tüm fetch çağrıları sayılsın
+restoreSoc(); // pil başlangıcı (kayıtlı son değer ya da varsayılan): paneller ilk çizimde bunu görsün
 initLangSelect();
 initVersionInfo();
 initDataUsage();

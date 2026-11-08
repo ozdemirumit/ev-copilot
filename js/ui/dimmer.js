@@ -24,11 +24,11 @@ export function initDimmer() {
 
   const text = (id) => $(id)?.textContent || '';
   const paintDim = () => {
-    $('dim-arrow').textContent = text('nav-arrow');
+    $('dim-arrow').textContent = $('nav-arrow').dataset.glyph || '';
     $('dim-dist').textContent = text('nav-dist');
     $('dim-text').textContent = text('nav-text');
     $('dim-speed').textContent = text('nh-speed');
-    $('dim-eta').textContent = `${text('nh-eta')} · ${text('nh-rem')} · menzil ${text('socbar-range')} km`;
+    $('dim-eta').textContent = `${text('nh-eta')} · ${text('nh-rem')} · ${text('nh-dur')} · menzil ${text('socbar-range')} km`;
     const warn = ['road-alert', 'near-alert-title'].map((id) => $(id)).find((x) => x && x.offsetParent && x.textContent.trim());
     $('dim-warn').textContent = warn ? '⚠ ' + warn.textContent.trim().slice(0, 120) : '';
   };

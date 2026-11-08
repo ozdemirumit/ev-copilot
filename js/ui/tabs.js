@@ -1,6 +1,8 @@
 // Ekran düzeni: harita tam ekran arka plandır; "Harita" dışındaki her sekme haritanın üstünde açılan bir sayfadır (<main>).
 // [data-tab] taşıyan her düğme sekme değiştirir; açık sayfanın düğmesine tekrar dokunmak (ya da ✕) haritaya döner.
-const PARENT = { range: 'more', camera: 'more', abrp: 'more', test: 'more', route: 'map' }; // alt sayfa açıkken alt çubukta vurgulanan düğme
+import { icon } from './icons.js';
+
+const PARENT = { range: 'more', camera: 'more', abrp: 'more', test: 'more', favs: 'more', route: 'map' }; // alt sayfa açıkken alt çubukta vurgulanan düğme
 
 let showFn = null;
 /** Başka modüllerden sekme aç ('map' = sayfaları kapat). */
@@ -25,7 +27,7 @@ export function initTabs() {
     close.className = 'sheet-x';
     close.dataset.tab = 'map';
     close.setAttribute('aria-label', 'Kapat');
-    close.textContent = '✕';
+    close.innerHTML = icon('close');
     head.append(grab, title, close);
     sec.prepend(head);
   });

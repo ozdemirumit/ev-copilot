@@ -29,6 +29,7 @@ function paint() {
 
   $('hud-soc').textContent = num(e.soc);
   $('hud-speed').textContent = num(e.speed);
+  $('hud-speed-box').classList.toggle('hidden', e.speed == null); // hız bilinmiyorsa başlıkta boş kutu durmasın
   $('cal-soc').textContent = num(e.soc);
   metric('c-soc', e.soc);
 

@@ -7,6 +7,7 @@ import { startNav, stopNav } from '../nav/navigator.js';
 import { toast } from './toast.js';
 import { save, load } from '../utils/storage.js';
 import { startGps, stopGps, locateOnce } from '../sensors/gps.js';
+import { icon } from './icons.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -92,7 +93,7 @@ export function initShell() {
     const on = getState('nav').active;
     navBtn.classList.toggle('hidden', !ready && !on);
     navBtn.classList.toggle('on', on);
-    navBtn.textContent = on ? '⏹' : '🧭';
+    navBtn.innerHTML = icon(on ? 'stop' : 'nav');
     navBtn.title = navBtn.ariaLabel = on ? 'Navigasyonu durdur' : 'Navigasyonu başlat';
   };
   navBtn.addEventListener('click', () => (getState('nav').active ? stopNav() : startNav()));
@@ -100,10 +101,28 @@ export function initShell() {
   paintNav();
 
   // Arama: Rota sayfasını açıp varış kutusuna odaklan
-  $('fab-search').addEventListener('click', () => {
+  const openSearch = () => {
     showTab('route');
     $('route-end').focus();
-  });
+  };
+  $('fab-search').addEventListener('click', openSearch);
+  $('nh-search').addEventListener('click', openSearch);
+
+  // Az kullanılan harita düğmeleri ⋯ altında; dışarı dokununca ya da Esc ile kapanır
+  const more = $('fabs-more');
+  const moreBtn = $('fab-tools');
+  const setMore = (open) => { more.classList.toggle('hidden', !open); moreBtn.setAttribute('aria-expanded', String(open)); };
+  moreBtn.addEventListener('click', () => setMore(more.classList.contains('hidden')));
+  document.addEventListener('click', (e) => { if (!$('fabs').contains(e.target)) setMore(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMore(false); });
+
+  // Durum ve kontroller penceresi (Wake Lock, durum rozetleri, sürüm): rozet/düğme kimlikleri ve dinleyicileri aynı
+  const tools = $('tools-dialog');
+  const closeTools = () => tools.close();
+  $('btn-tools').addEventListener('click', () => tools.showModal());
+  $('tools-x').addEventListener('click', closeTools);
+  $('tools-close').addEventListener('click', closeTools);
+  tools.addEventListener('click', (e) => { if (e.target === tools) closeTools(); });
 
   // Haritadan seç: sayfa kapanır, üstte yönerge çubuğu çıkar (mapView çağırır)
   const bar = $('pickbar');
