@@ -1,4 +1,6 @@
 export default {
+  "{0} kilometre sonra şarj durağı.": "Στάση φόρτισης σε {0} χιλιόμετρα.",
+  "Pil yüzde {0}. En yakın şarj istasyonu {1} kilometre.": "Μπαταρία στο {0} τοις εκατό. Πλησιέστερος σταθμός φόρτισης σε {1} χιλιόμετρα.",
   ": internet varsa yeniden planla": ": αν υπάρχει διαδίκτυο, σχεδιάστε ξανά",
   ". Buzlanma riski var": ". Υπάρχει κίνδυνος παγετού",
   "· {0} kW": "· {0} kW",

@@ -1,18 +1,18 @@
 // Dönüş dönüş navigasyon: üst banner, sesli yönlendirme, harita takibi, rotadan çıkınca yeniden rota.
 // Konum/ilerleme rangeEngine'den gelir (engine.routeKm, offRouteKm); Test Modu'nda simüle araçla aynı şekilde çalışır.
-import { locale } from '../i18n/index.js';
+import { locale, t } from '../i18n/index.js';
 import { getState, patch, subscribe, effective } from '../state.js';
 import { save } from '../utils/storage.js';
 import { mapApi } from '../ui/mapView.js';
 import { toast } from '../ui/toast.js';
 import { rerouteFromHere } from '../routing/controller.js';
 import { speak, stopSpeech, testVoice } from '../advisor/voice.js';
-import { instruction, fmtDist, spoken, isMinor } from './steps.js';
+import { instruction, fmtDist, dueVoice, isMinor } from './steps.js';
 import { buildTrack, locate, headingAt, pointAtKm } from './track.js';
 import { bearing } from '../utils/geo.js';
 
 const $ = (id) => document.getElementById(id);
-const TIERS_M = [120, 500, 2000]; // dönüşe bu kadar kala konuş (küçükten büyüğe)
+const THEN_MAX_M = 500; // sonraki manevra panelde yalnızca bu kadar yakınsa gösterilir
 const OFF_BASE_KM = 0.07; // rotadan bu kadar uzak = başka yol (GPS doğruluğu kötüyse payı büyür)
 const OFF_MAX_KM = 0.2;
 const FAR_OFF_KM = 0.4; // bu kadar uzaktaysan (yanlış çıkış vb.) beklemeden hemen yeni rota
@@ -63,13 +63,18 @@ export function snapPoint(lat, lon) {
   return { lat: p.lat, lon: p.lon, heading: headingAt(track, loc.km) };
 }
 
-function paint(arrow, dist, text, road, sub, warn = false) {
+function paint(arrow, dist, text, road = '', warn = false, then = '') {
   $('nav-arrow').textContent = arrow;
   $('nav-dist').textContent = dist;
   $('nav-text').textContent = text;
   $('nav-road').textContent = road;
-  $('nav-sub').textContent = sub;
+  $('nav-then').textContent = then;
   $('nav-banner').classList.toggle('warn', warn);
+}
+
+/** Üst panel: manevra bölümü ya da şarj önerisi bölümü görünürse açık (navigasyon yokken yalnızca şarj önerisi de gösterebilir). */
+export function syncTopPanel() {
+  $('top-panel').classList.toggle('hidden', !getState('nav').active && $('near-alert').classList.contains('hidden'));
 }
 
 const hhmm = (ms) => new Date(ms).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' });
@@ -79,24 +84,25 @@ function tick() {
   const nav = getState('nav');
   const bar = $('nav-banner');
   bar.classList.toggle('hidden', !nav.active);
+  syncTopPanel();
   if (!nav.active) return followSim();
 
   const plan = getState('plan');
   const e = effective();
 
   if (plan.status === 'loading') {
-    paint('🧭', '', 'Rota hesaplanıyor…', '', '');
+    paint('🧭', '', 'Rota hesaplanıyor…');
     if (e.lat != null) mapApi.follow(e.lat, e.lon, null, false, getState('nav').headingUp && (e.speed ?? 0) > 5 ? e.heading : null); // hesaplama sürerken araç ekrandan çıkmasın
     return;
   }
-  if (!plan.profile || !plan.steps?.length) return paint('🧭', '', 'Önce Rotayı Planla', '', '', true);
+  if (!plan.profile || !plan.steps?.length) return paint('🧭', '', 'Önce Rotayı Planla', '', true);
   if (plan.planId !== planId || !track) {
     planId = plan.planId; said = new Set(); offSince = 0; trackKm = null;
     track = plan.route?.coords ? buildTrack(plan.route.coords) : null;
     zoomNow = null; // yeni rota (yeniden rota dahil): harita zorla araca ortalanır ve zoom yeniden ayarlanır
     mapApi.recenter?.();
   }
-  if (!track || e.lat == null) return paint('📍', '', 'Konum bekleniyor…', '', 'GPS kapalıysa üstteki 📍 düğmesine dokun', true);
+  if (!track || e.lat == null) return paint('📍', '', 'Konum bekleniyor…', 'GPS kapalıysa üstteki 📍 düğmesine dokun', true);
 
   // Gerçek geometriye izdüşüm: dönüşe kalan mesafe ve rotadan sapma metre hassasiyetinde
   const loc = locate(track, e.lat, e.lon, trackKm);
@@ -111,7 +117,7 @@ function tick() {
     offSince ||= Date.now();
     const moving = e.speed == null || e.speed > 5;
     const waited = Date.now() - offSince > OFF_ROUTE_MS || loc.offKm > FAR_OFF_KM;
-    if (!rerouting) paint('⚠️', fmtDist(loc.offKm * 1000), 'Rotadan çıktınız', 'Yeni rota hesaplanıyor…', '', true);
+    if (!rerouting) paint('⚠️', fmtDist(loc.offKm * 1000), 'Rotadan çıktınız', 'Yeni rota hesaplanıyor…', true);
     if (moving && waited && !rerouting && Date.now() - lastReroute > REROUTE_COOLDOWN_MS) {
       lastReroute = Date.now();
       rerouting = true;
@@ -150,21 +156,17 @@ function tick() {
       : plan.profile.timeBetween(km, plan.profile.totalKm);
   const chargeMin = plan.stops.filter((s) => s.km > km).reduce((a, s) => a + s.minutes + s.overheadMin, 0);
   const eta = hhmm(Date.now() + driveH * 3600e3 + chargeMin * 60e3);
-  const sub = `Kalan ${remain.toFixed(0)} km · varış ${eta}` + (nextStop ? ` · ⚡ ${nextStop.station.name} ${(nextStop.km - km).toFixed(0)} km` : '');
-  paint(ins.arrow, fmtDist(distM), ins.text, ins.road, sub);
+  // Tek ikincil satır: yakın sonraki manevra; yoksa planlı şarj durağı (kalan yol ve varış alt çubukta: nh-eta, nh-rem)
   const then = steps.slice(idx + 1).find((x) => !isMinor(x));
-  $('nav-then').textContent = then && then.type !== 'arrive' ? `Sonra (${fmtDist((then.km - st.km) * 1000)} sonra): ${instruction(then).text}` : '';
+  const gapM = then ? (then.km - st.km) * 1000 : Infinity;
+  const secondary = then && then.type !== 'arrive' && gapM <= THEN_MAX_M ? t('Sonra ({0} sonra): {1}', fmtDist(gapM), instruction(then).text)
+    : nextStop ? `⚡ ${nextStop.station.name} · ${(nextStop.km - km).toFixed(0)} km` : '';
+  paint(ins.arrow, fmtDist(distM), ins.text, ins.road, false, secondary);
   paintHud(e, remain, eta, driveH, chargeMin);
 
-  // Sesli yönlendirme: her manevra için en fazla bir kez, geçilen eşiklerin hepsi "söylendi" sayılır
-  const tier = TIERS_M.find((t) => distM <= t);
-  if (tier) {
-    const key = `${idx}:${tier}`;
-    if (!said.has(key)) {
-      TIERS_M.filter((t) => t >= tier).forEach((t) => said.add(`${idx}:${t}`));
-      speak(spoken(st, tier === TIERS_M[0] ? null : distM), { key: 'nav' + key, cooldownMs: 0, interrupt: true });
-    }
-  }
+  // Sesli yönlendirme: panel metninden ayrı, yalnızca kısa manevra komutu
+  const voiceNow = dueVoice(said, idx, st, distM);
+  if (voiceNow) speak(voiceNow.text, { key: voiceNow.key, cooldownMs: 0, interrupt: true });
   if (nextStop) {
     const d = nextStop.km - km;
     const t = d <= 1.2 ? 1 : d <= 5 ? 5 : null;
@@ -172,7 +174,7 @@ function tick() {
     if (t && !said.has(key)) {
       if (t === 1) said.add(`stop:${nextStop.station.id}:5`);
       said.add(key);
-      speak(`${d >= 2 ? Math.round(d) : 1} kilometre sonra şarj durağı: ${nextStop.station.name}. Varışta tahmini pil yüzde ${Math.round(nextStop.arriveSoc)}.`, { key, cooldownMs: 0 });
+      speak(`${d >= 2 ? Math.round(d) : 1} kilometre sonra şarj durağı.`, { key, cooldownMs: 0 });
     }
   }
 

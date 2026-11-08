@@ -23,7 +23,22 @@ const ARROW = {
   left: '⬅️', right: '➡️', 'slight left': '↖️', 'slight right': '↗️', 'sharp left': '↙️', 'sharp right': '↘️', straight: '⬆️', uturn: '↩️',
 };
 
-/** Talimat: { arrow, text (Türkçe cümle), road }. Mesafe ayrıca eklenir. */
+/** Kısa dönüş komutları (sözlükte 11 dilde var): yol adı ayrı bilinen dönüşlerde sağlayıcının uzun cümlesi yerine kullanılır. */
+export const TURN_TR = {
+  left: 'Sola dönün.', right: 'Sağa dönün.', 'slight left': 'Hafifçe sola dönün.', 'slight right': 'Hafifçe sağa dönün.',
+  'sharp left': 'Keskin sola dönün.', 'sharp right': 'Keskin sağa dönün.', straight: 'Düz devam edin.', uturn: 'U dönüşü yapın.',
+};
+
+/** Yol adı ayrı biliniyorsa kısa komut: dönüşte sözlük ifadesi, diğerlerinde sondaki " (yol)" atılır; bilinmiyorsa metin aynen. */
+function conciseText(st) {
+  const text = st.text || 'Devam edin';
+  if (!st.road) return text;
+  if (st.type === 'turn' && TURN_TR[st.modifier]) return TURN_TR[st.modifier];
+  const tail = ` (${st.road})`;
+  return text.endsWith(tail) ? text.slice(0, -tail.length) : text;
+}
+
+/** Panel talimatı: { arrow, text (kısa komut), road (komutta geçmiyorsa yol adı) }. Mesafe ayrıca eklenir. */
 export function instruction(st) {
   let arrow = ARROW[st.modifier] || ARROW.straight;
   if (st.type === 'depart') arrow = '🚗';
@@ -31,7 +46,9 @@ export function instruction(st) {
   else if (st.type === 'stop') arrow = '⚡';
   else if (st.type === 'roundabout') arrow = '🔄';
   else if (st.type === 'ferry') arrow = '⛴️';
-  return { arrow, text: st.text || 'Devam edin', road: '' };
+  const text = conciseText(st);
+  const road = st.road && !text.toLocaleLowerCase('tr').includes(st.road.toLocaleLowerCase('tr')) ? st.road : '';
+  return { arrow, text, road };
 }
 
 /** Ekranda mesafe: 850 m / 2,4 km. */
@@ -47,7 +64,20 @@ export function spokenDist(m) {
   return `${Math.max(50, Math.round(m / 50) * 50)} metre`;
 }
 
-/** Sesli cümle: "500 metre sonra sağa dönün ..." (mesafe null ise doğrudan komut). */
+const VOICE_TIERS_M = [120, 500, 2000]; // dönüşe bu kadar kala konuş (küçükten büyüğe)
+
+/**
+ * Bu adım için şimdi söylenecek ses: { key, text } ya da null. Her eşik en fazla bir kez; geçilen eşikler de "söylendi" sayılır.
+ * Art arda yakın manevralarda her adımın kendi anahtarı olduğu için sonraki manevra ayrıca söylenir. Yalnızca manevra komutu konuşulur.
+ */
+export function dueVoice(said, idx, st, distM) {
+  const tier = VOICE_TIERS_M.find((t) => distM <= t);
+  if (!tier || said.has(`${idx}:${tier}`)) return null;
+  VOICE_TIERS_M.filter((t) => t >= tier).forEach((t) => said.add(`${idx}:${t}`));
+  return { key: `nav${idx}:${tier}`, text: spoken(st, tier === VOICE_TIERS_M[0] ? null : distM) };
+}
+
+/** Sesli cümle (panelden ayrı): "500 metre sonra sağa dönün." (mesafe null ise doğrudan komut); yol adı, süre, istasyon söylenmez. */
 export function spoken(st, distM) {
   const { text } = instruction(st);
   if (distM == null) return text;

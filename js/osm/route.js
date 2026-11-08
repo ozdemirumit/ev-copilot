@@ -3,6 +3,7 @@
 import { getLang, langInfo } from '../i18n/index.js';
 import { cached, TTL } from '../utils/cache.js';
 import { valhalla } from './valhalla.js';
+import { TURN_TR } from '../nav/steps.js';
 
 /** Valhalla/OSRM kodlu çizgi (hassasiyet 1e6, [lat, lon]) → GeoJSON sırası [lon, lat] dizisi. */
 export function decodePolyline6(str) {
@@ -28,10 +29,6 @@ export function decodePolyline6(str) {
 const clean = (t) => String(t || '').replace(/\s+/g, ' ').trim();
 
 const BACK = { ne: 'na', nde: 'nda', ni: 'nı' }; // art ünlüde (a ı o u) ek kalınlaşır
-const TURN_TR = {
-  left: 'Sola dönün.', right: 'Sağa dönün.', 'slight left': 'Hafifçe sola dönün.', 'slight right': 'Hafifçe sağa dönün.',
-  'sharp left': 'Keskin sola dönün.', 'sharp right': 'Keskin sağa dönün.', straight: 'Düz devam edin.', uturn: 'U dönüşü yapın.',
-};
 
 /**
  * Valhalla'nın Türkçe şablonu iki kusur bırakır: yol adı zaten "…Caddesi" ise sonuna ikinci bir "caddesi" ekler
@@ -79,6 +76,7 @@ async function routeFromValhalla(start, end, via) {
         type: exitRound ? 'continue' : st.maneuver?.type || 'continue',
         modifier,
         text: polishText(st.maneuver?.instruction, modifier),
+        road: clean(st.name),
         distM: st.distance || 0,
         staticSec: st.duration || 0, // serbest akış süresi
       };

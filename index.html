@@ -40,6 +40,7 @@
 </div>
 <div id="banners">
 <div class="advisor hidden" id="advisor-banner" role="status" aria-live="polite"></div>
+<div class="toppanel hidden" id="top-panel">
 <div class="navbar hidden" id="nav-banner" role="status" aria-live="off">
   <div class="nav-arrow" id="nav-arrow" aria-hidden="true">🧭</div>
   <div class="nav-main">
@@ -47,15 +48,19 @@
     <div class="nav-text" id="nav-text"></div>
     <div class="nav-road" id="nav-road"></div>
     <div class="nav-then" id="nav-then"></div>
-    <div class="nav-sub" id="nav-sub"></div>
   </div>
   <button class="tog" id="nav-stop" type="button" aria-label="Navigasyonu durdur" title="Navigasyonu durdur">✕</button>
 </div>
-<div class="advisor warn hidden" id="road-alert" role="alert"></div>
-<div class="advisor warn near-alert hidden" id="near-alert" role="alert">
+<div class="tp-charge hidden" id="near-alert">
+  <div class="tp-head">
+    <div class="tp-title" id="near-alert-title" role="alert"></div>
+    <button class="tog hidden" id="near-alert-toggle" type="button" aria-expanded="false" aria-controls="near-alert-body" aria-label="Daha fazla">▾</button>
+    <button class="tog" id="near-alert-close" type="button" aria-label="Uyarıyı kapat (10 dk)">✕</button>
+  </div>
   <div id="near-alert-body" class="near-body"></div>
-  <button class="btn ghost sm" id="near-alert-close" type="button" aria-label="Uyarıyı kapat (10 dk)">✕</button>
 </div>
+</div>
+<div class="advisor warn hidden" id="road-alert" role="alert"></div>
 </div>
 </div>
 

@@ -1,4 +1,4 @@
-// Navigasyonda sol kenarda dikey pil sürgüsü: parmakla yukarı/aşağı sürükleyerek mevcut pil elle ayarlanır.
+// Harita ekranında sol kenarda dikey pil sürgüsü: parmakla yukarı/aşağı sürükleyerek mevcut pil elle ayarlanır.
 // Değer yolda kendiliğinden düşer (physics/socEstimate.js); kamera okuyunca o değer geçerli olur.
 import { getState, patch, subscribe, effective } from '../state.js';
 import { setManual, isOnline, manualLocked } from '../physics/socEstimate.js';

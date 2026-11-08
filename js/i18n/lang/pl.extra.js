@@ -1,4 +1,6 @@
 export default {
+  "{0} kilometre sonra şarj durağı.": "Postój na ładowanie za {0} kilometrów.",
+  "Pil yüzde {0}. En yakın şarj istasyonu {1} kilometre.": "Bateria {0} procent. Najbliższa stacja ładowania w odległości {1} kilometrów.",
   ": internet varsa yeniden planla": ": zaplanuj ponownie, gdy będzie internet",
   ". Buzlanma riski var": ". Istnieje ryzyko oblodzenia",
   "· {0} kW": "· {0} kW",

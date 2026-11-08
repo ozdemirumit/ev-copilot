@@ -275,14 +275,24 @@ label.field { position: relative; }
 .card.collapsed > .card-head { margin-bottom: 0; }
 
 /* Navigasyon banner'ı ve yakın istasyon uyarısı */
-.navbar { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #0f2a22; border-bottom: 2px solid var(--accent); }
-.navbar.warn { background: #2b2210; border-bottom-color: var(--warn); }
-.nav-arrow { font-size: 34px; line-height: 1; width: 46px; text-align: center; flex: none; }
+.toppanel { background: #0f2a22; overflow: hidden; }
+#banners > .toppanel { border-color: var(--accent); }
+.navbar { display: flex; align-items: center; gap: 10px; padding: 8px 12px; }
+.navbar.warn { background: #2b2210; box-shadow: inset 0 -2px 0 var(--warn); }
+.nav-arrow { font-size: 46px; line-height: 1; width: 58px; text-align: center; flex: none; }
 .nav-main { flex: 1; min-width: 0; }
-.nav-dist { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
-.nav-text { font-size: 15px; font-weight: 600; }
-.nav-road, .nav-sub { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.near-alert { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.nav-dist { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.nav-text { font-size: 15px; font-weight: 600; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.nav-road, .nav-then { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav-road { color: var(--muted); }
+.nav-then { color: var(--accent); }
+.nav-road:empty, .nav-then:empty, .nav-dist:empty, .near-body:empty { display: none; }
+/* Şarj önerileri: üst panelin içinde (navigasyonda manevranın altında, navigasyon yokken tek başına) */
+.tp-charge { padding: 6px 12px 8px; font-size: 13px; }
+.navbar:not(.hidden) + .tp-charge { border-top: 1px solid var(--line); }
+.tp-head { display: flex; align-items: center; gap: 6px; }
+.tp-title { flex: 1; min-width: 0; color: var(--warn); font-weight: 600; }
+.tp-head .tog { width: 36px; height: 36px; }
 .btn.sm { padding: 6px 10px; font-size: 12px; }
 a.btn { text-decoration: none; color: var(--text); display: inline-block; }
 .station.focus { outline: 1px solid var(--accent-dim); outline-offset: 6px; border-radius: 8px; }
@@ -307,6 +317,11 @@ html { overflow: hidden; }
 .near-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .near-row small { display: block; color: var(--muted); font-weight: 400; }
 .near-row > span { min-width: 0; }
+.near-info { flex: 1; min-width: 0; min-height: 40px; padding: 2px 0; background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; text-align: left; }
+.near-info small::after { content: " ▾"; }
+.near-info[aria-expanded="true"] small::after { content: " ▴"; }
+.near-detail { padding-bottom: 4px; }
+.tp-charge .near-body { margin-top: 4px; }
 
 /* Navigasyon: araç oku (harita yön-yukarı dönerken ok hep yukarı bakar) */
 .me-arrow { width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-bottom: 30px solid #2ee6a6; filter: drop-shadow(0 2px 4px #000); transform: translateY(50%); }
@@ -319,7 +334,6 @@ html { overflow: hidden; }
 .nh-main { flex: 1; }
 .nh-btns { display: flex; gap: 6px; }
 .nh-btns button { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--card-2); font-size: 18px; }
-.navhud:not(.hidden) ~ .nav-then { font-size: 12px; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Yol hız limiti işareti */
 .limit-sign { flex: none; width: 38px; height: 38px; border-radius: 50%; background: #fff; color: #111; border: 4px solid #e53935; display: grid; place-items: center; font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums; }
@@ -474,6 +488,8 @@ body.navmode .fabs { bottom: calc(var(--nav-h) + var(--safe-b) + 92px); }
   .fabs button { width: 40px; height: 40px; font-size: 18px; }
   .navhud { bottom: calc(var(--nav-h) + var(--safe-b) + 6px); padding: 4px 10px; }
   .nh-cell b { font-size: 20px; }
+  .nav-arrow { font-size: 32px; width: 44px; }
+  .nav-dist { font-size: 22px; }
   body.navmode .fabs { bottom: calc(var(--nav-h) + var(--safe-b) + 70px); }
 }
 /* Navigasyonda en çok 6 yüzen düğme (uydu, 3B, ortala, tüm rota, karartma, durdur): kısa ekranda (yatay telefon, küçük pencere)
@@ -490,9 +506,8 @@ body.navmode .fabs { bottom: calc(var(--nav-h) + var(--safe-b) + 92px); }
   #banners { max-width: 400px; }
 }
 
-/* Navigasyonda sol kenar: dikey pil sürgüsü (parmakla yukarı/aşağı) */
-.socbar { display: none; position: absolute; left: 10px; top: calc(var(--hud-h, 72px) + 10px); bottom: calc(var(--nav-h) + var(--safe-b) + 84px); width: 46px; padding: 8px 4px; flex-direction: column; align-items: center; gap: 2px; border-radius: 23px; background: rgba(22, 31, 43, .8); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, .12); box-shadow: 0 6px 24px #000a; }
-body.navmode .socbar, body.sim-on .socbar { display: flex; } /* Test Modu'nda navigasyon açık olmasa da pil ve menzil çubuğu görünür */
+/* Harita ekranında sol kenar: dikey pil sürgüsü (parmakla yukarı/aşağı); navigasyon açık olmasa da görünür, sayfa açıkken gizlenir */
+.socbar { display: flex; position: absolute; left: 10px; top: calc(var(--hud-h, 72px) + 10px); bottom: calc(var(--nav-h) + var(--safe-b) + 84px); width: 46px; padding: 8px 4px; flex-direction: column; align-items: center; gap: 2px; border-radius: 23px; background: rgba(22, 31, 43, .8); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, .12); box-shadow: 0 6px 24px #000a; }
 .socbar b { font-size: 17px; font-variant-numeric: tabular-nums; line-height: 1; }
 .socbar-pct { font-size: 10px; color: var(--muted); line-height: 1; }
 .socbar-track { position: relative; flex: 1; width: 100%; margin: 6px 0; touch-action: none; cursor: ns-resize; }
@@ -504,7 +519,12 @@ body.navmode .socbar, body.sim-on .socbar { display: flex; } /* Test Modu'nda na
 .socbar small { font-size: 9px; color: var(--muted); line-height: 1; }
 .socbar[data-src="manual"] small { color: var(--warn); }
 body.sheet-open .socbar { display: none; }
-@media (max-height: 520px) { .socbar { bottom: calc(var(--nav-h) + var(--safe-b) + 70px); } }
+@media (max-height: 520px) {
+  .socbar { bottom: calc(var(--nav-h) + var(--safe-b) + 70px); }
+  /* Kısa ekranda üst panel yüksekliğin çoğunu alır: pil çubuğu panelin altında ezilmesin, üst çubuğun hemen altına çıkar, panel sağına kayar */
+  body:has(#top-panel:not(.hidden)) .socbar { top: calc(var(--safe-t) + 58px); }
+  body:has(#top-panel:not(.hidden)):not(.sheet-open) #banners { margin-left: 58px; }
+}
 
 /* Rotayı Planla ve Navigasyonu başlat yan yana */
 #plan-actions .btn { flex: 1; min-width: 0; padding: 12px 6px; font-size: 14px; line-height: 1.2; }

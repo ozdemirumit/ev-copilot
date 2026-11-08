@@ -44,7 +44,7 @@ function mapSteps(legs) {
       const type = exitRound ? 'continue' : KNOWN.has(m.type) ? m.type : 'continue';
       const modifier = exitRound ? 'straight' : m.modifier || null;
       return {
-        type, modifier, text: trText(type, modifier, st.name, m.exit),
+        type, modifier, text: trText(type, modifier, st.name, m.exit), road: st.name || '',
         distM: st.distance || 0,
         staticSec: st.duration || 0, // canlı trafikli süre: hız profili yavaş kesimleri buradan görür
       };

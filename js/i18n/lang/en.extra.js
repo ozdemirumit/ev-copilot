@@ -1,4 +1,6 @@
 export default {
+  "{0} kilometre sonra şarj durağı.": "Charging stop in {0} kilometers.",
+  "Pil yüzde {0}. En yakın şarj istasyonu {1} kilometre.": "Battery at {0} percent. Nearest charging station {1} kilometers away.",
   ": internet varsa yeniden planla": ": replan if you have internet",
   ". Buzlanma riski var": ". Risk of icing",
   "· {0} kW": "· {0} kW",

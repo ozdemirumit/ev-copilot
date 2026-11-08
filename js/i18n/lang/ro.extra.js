@@ -1,4 +1,6 @@
 export default {
+  "{0} kilometre sonra şarj durağı.": "Oprire pentru încărcare în {0} kilometri.",
+  "Pil yüzde {0}. En yakın şarj istasyonu {1} kilometre.": "Baterie la {0} la sută. Cea mai apropiată stație de încărcare la {1} kilometri.",
   ": internet varsa yeniden planla": ": dacă ai internet, replanifică",
   ". Buzlanma riski var": ". Există risc de polei",
   "· {0} kW": "· {0} kW",

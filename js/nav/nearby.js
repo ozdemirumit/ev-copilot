@@ -16,7 +16,7 @@ import { speak } from '../advisor/voice.js';
 import { slotKind, slotEl, isFresh, livePrice } from '../routing/slots.js';
 import { fetchAvailability } from '../routing/occupancyClient.js';
 import { proxyHas } from '../net/proxy.js';
-import { startNav } from './navigator.js';
+import { startNav, syncTopPanel } from './navigator.js';
 
 const $ = (id) => document.getElementById(id);
 const BAT = VEHICLE.batteryNetKwh;
@@ -249,38 +249,74 @@ function rankNearby() {
   return [...(ok.length ? ok : usablePool)].sort((a, b) => score(a) + pen(a) - (score(b) + pen(b)));
 }
 
-/** Uyarı çubuğu: başlık + (varsa) en yakın 3 istasyon, her biri için Git düğmesi. */
-function showAlert(title, stations = [], notes = []) {
-  const bar = $('near-alert');
-  if (!title) { bar.classList.add('hidden'); patch('nav', { alert: null }); return; }
-  const body = $('near-alert-body');
-  body.replaceChildren(Object.assign(document.createElement('div'), { textContent: title }));
-  notes.forEach((n) => body.append(cell('div', 'small muted', n)));
-  stations.forEach((s) => {
-    const row = document.createElement('div');
-    row.className = 'near-row';
-    const info = document.createElement('span');
-    info.textContent = s.name;
-    info.append(cell('small', '', `${fmtKm(s.distKm)} km · ${s.kw} kW` + (s.foreign ? '' : ` · ${s.price.toFixed(2)} TL/kWh`)
-      + (s.arrive != null ? ' ' + t('· varışta ~%{0}', Math.max(0, s.arrive).toFixed(0)) : '') + (s.reachable ? '' : ' ' + t('· yetmeyebilir'))
-      + ''));
+let alertData = null; // { title, stations, notes } üst panelde gösterilen şarj önerisi
+let alertSig = ''; // aynı içerik her 5 sn'de yeniden çizilmesin (açık satır ve odak korunur)
+let listOpen = null; // kullanıcı seçimi; null: navigasyonda yalnızca en iyi öneri, navigasyon yokken tüm öneriler
+let openRow = null; // ayrıntısı açık istasyon
+
+/** Tek öneri: ad, mesafe, güç ve Git hep görünür; ada dokununca fiyat, varış pili ve doluluk açılır. */
+function alertEntry(s) {
+  const open = openRow === s.id;
+  const entry = document.createElement('div');
+  const row = document.createElement('div');
+  row.className = 'near-row';
+  const info = cell('button', 'near-info', s.name);
+  info.type = 'button';
+  info.setAttribute('aria-expanded', String(open));
+  info.append(cell('small', '', `${fmtKm(s.distKm)} km · ${s.kw} kW` + (s.reachable ? '' : ' ' + t('· yetmeyebilir'))));
+  info.addEventListener('click', () => { openRow = open ? null : s.id; paintAlert(); });
+  const go = cell('button', 'btn primary sm', '🧭 Git');
+  go.type = 'button';
+  go.addEventListener('click', () => goTo(s));
+  row.append(info, go);
+  entry.append(row);
+  if (open) {
+    const parts = [s.foreign ? '' : `${s.price.toFixed(2)} TL/kWh`, s.arrive != null ? t('· varışta ~%{0}', Math.max(0, s.arrive).toFixed(0)) : ''];
+    const detail = cell('div', 'near-detail small muted', parts.filter(Boolean).join(' ').replace(/^· /, ''));
     const slotNode = slotEl(s);
-    if (slotNode) info.lastElementChild.append(slotNode);
+    if (slotNode) detail.append(slotNode);
     const lp = livePrice(s);
-    if (lp) info.lastElementChild.append(' · ', cell('span', '', lp.text));
-    const go = cell('button', 'btn primary sm', '🧭 Git');
-    go.type = 'button';
-    go.addEventListener('click', () => goTo(s));
-    row.append(info, go);
-    body.append(row);
-  });
-  if (stations.length) {
+    if (lp) detail.append(' · ', cell('span', '', lp.text));
+    entry.append(detail);
+  }
+  return entry;
+}
+
+function paintAlert() {
+  const { title, stations, notes } = alertData;
+  const open = listOpen ?? !getState('nav').active;
+  const sig = JSON.stringify([title, notes, open, openRow, stations.map((s) => [s.id, fmtKm(s.distKm), s.kw, s.price, s.arrive == null ? null : Math.round(s.arrive), s.reachable, slotEl(s)?.textContent, livePrice(s)?.text])]);
+  if (sig === alertSig) return;
+  alertSig = sig;
+  $('near-alert-title').textContent = title;
+  const toggle = $('near-alert-toggle');
+  toggle.classList.toggle('hidden', !stations.length && !notes.length);
+  toggle.setAttribute('aria-expanded', String(open));
+  toggle.textContent = open ? '▴' : '▾';
+  const body = $('near-alert-body');
+  body.replaceChildren(...(open ? notes.map((n) => cell('div', 'small muted', n)) : []), ...(open ? stations : stations.slice(0, 1)).map(alertEntry));
+  if (open && stations.length) {
     const all3 = cell('button', 'btn ghost sm', '📋 Tüm listeyi aç');
     all3.type = 'button';
     all3.addEventListener('click', () => document.querySelector('.bottomnav [data-tab="stations"]')?.click());
     body.append(all3);
   }
+}
+
+/** Üst paneldeki şarj bölümü: başlık + (varsa) en yakın 3 istasyon, her biri için Git düğmesi. */
+function showAlert(title, stations = [], notes = []) {
+  const bar = $('near-alert');
+  if (!title) {
+    bar.classList.add('hidden');
+    alertData = null; alertSig = ''; listOpen = null; openRow = null;
+    syncTopPanel();
+    patch('nav', { alert: null });
+    return;
+  }
+  alertData = { title, stations, notes };
+  paintAlert();
   bar.classList.remove('hidden');
+  syncTopPanel();
   patch('nav', { alert: { text: title, id: stations[0]?.id ?? null } });
 }
 
@@ -346,11 +382,7 @@ function checkLow() {
   const waitOcc = premium && !occDone && Date.now() - troubleSince < 15000; // doluluk cevabı gelsin (en çok 15 sn)
   if (!bands.has(band) && !waitOcc) {
     bands.add(band);
-    const pr = best.slots?.price;
-    const priceTxt = pr?.kwh != null ? `${pr.kwh.toFixed(2).replace('.', ',')} ${pr.currency === 'EUR' ? 'euro' : pr.currency === 'TRY' ? 'lira' : pr.currency}` : best.foreign ? null : `${best.price.toFixed(1).replace('.', ',')} lira`; // yurt dışında canlı fiyat yoksa fiyat söylenmez
-    const free = slotKind(best) === 'free' && best.slots.available != null ? ` ${best.slots.available} boş soket var.` : '';
-    const dropped = premium && elimCount > 0 ? ` ${elimCount} dolu istasyon elendi.` : '';
-    speak(`Pil yüzde ${soc}. En yakın şarj istasyonu ${best.name}, ${fmtKm(best.distKm)} kilometre. ${best.kw} kilovat${priceTxt ? `, kilovat saati ${priceTxt}` : ''}.${free}${dropped}`, { key: 'low' + band, cooldownMs: 0, interrupt: true });
+    speak(`Pil yüzde ${soc}. En yakın şarj istasyonu ${fmtKm(best.distKm)} kilometre.`, { key: 'low' + band, cooldownMs: 0, interrupt: true }); // liste, fiyat ve doluluk yalnızca üst panelde
   }
 }
 
@@ -380,6 +412,11 @@ export function initNearby() {
   let brandSig = (PLANNER.brands || []).join(',');
   subscribe('route', () => { const b = (PLANNER.brands || []).join(','); if (b !== brandSig) { brandSig = b; render(); } }); // marka tercihi değişince liste yenilenir
   $('near-alert-close').addEventListener('click', () => { dismissedUntil = Date.now() + 10 * 60e3; showAlert(null); });
+  $('near-alert-toggle').addEventListener('click', () => {
+    if (!alertData) return;
+    listOpen = !(listOpen ?? !getState('nav').active);
+    paintAlert();
+  });
   render();
   setInterval(watch, 30000);
   setInterval(() => { if (!busy) checkLow(); }, 5000); // sorun varsa 30 sn beklemeden öner/ara
