@@ -29,7 +29,11 @@ export function initTabs() {
     close.setAttribute('aria-label', 'Kapat');
     close.innerHTML = icon('close');
     head.append(grab, title, close);
-    sec.prepend(head);
+    // Başlık sabit kalsın diye içerik ayrı bir kaydırma alanına (.sheet-body) alınır; başlık bunun dışında durur
+    const body = document.createElement('div');
+    body.className = 'sheet-body';
+    body.append(...sec.childNodes);
+    sec.append(head, body);
   });
 
   function show(id) {
@@ -46,7 +50,7 @@ export function initTabs() {
       b.classList.toggle('active', cur);
       b.setAttribute('aria-current', cur ? 'page' : 'false');
     });
-    main.scrollTop = 0;
+    section?.querySelector('.sheet-body')?.scrollTo(0, 0);
     document.dispatchEvent(new CustomEvent('tabchange', { detail: shown }));
   }
   showFn = show;

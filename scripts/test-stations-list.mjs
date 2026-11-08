@@ -33,5 +33,11 @@ ok('Şarj markaları kapalıyken 3 satır', /3 \* h \+ 2 \* gap/.test(sv) && /cl
 ok('seçili markalar önce (gizli satırda kalmaz)', /ops\.filter\(\(o\) => sel\.includes\(o\.id\)\), \.\.\.ops\.filter\(\(o\) => !sel\.includes\(o\.id\)\)/.test(sv));
 ok('+ düğmesi modülü çevrimdışı kabukta', sw.includes("'./js/ui/moreToggle.js'") && read('js/ui/moreToggle.js').includes("aria-expanded"));
 
+// Sayfa başlığı (ad + ✕) kaydırmada sabit: başlık kaydırma alanının (.sheet-body) dışında
+const tabs = read('js/ui/tabs.js');
+ok('içerik .sheet-body kaydırma alanına alınır, başlık dışında kalır', /className = 'sheet-body'/.test(tabs) && /body\.append\(\.\.\.sec\.childNodes\)/.test(tabs) && /sec\.append\(head, body\)/.test(tabs));
+ok('.sheet-body kayar, başlık kaymaz', /\.sheet-body \{[^}]*overflow-y: auto/.test(css) && /\.sheet-head \{[^}]*flex: none/.test(css) && !/\.sheet-head \{[^}]*position: sticky/.test(css) && /main \{ overflow: hidden; \}/.test(css));
+ok('sayfa açılınca içerik en başa döner', /\.sheet-body'\)\?\.scrollTo\(0, 0\)/.test(tabs));
+
 console.log(`\n${pass} geçti, ${fail} kaldı`);
 process.exit(fail ? 1 : 0);

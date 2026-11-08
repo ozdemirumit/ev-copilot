@@ -71,9 +71,11 @@ button.badge.install { cursor: pointer; color: var(--accent); border-color: var(
 button.badge.install::before { content: none; }
 
 /* ---------- Layout ---------- */
-main { overflow-y: auto; overscroll-behavior: contain; }
-.tab { display: none; padding: 12px; gap: 12px; flex-direction: column; max-width: 900px; margin: 0 auto; }
-.tab.active { display: flex; }
+main { overflow: hidden; }
+/* Sayfa: sabit başlık (.sheet-head: ad + ✕) üstte, içerik (.sheet-body) altında kayar; başlık kaydırma alanının dışında olduğu için hiçbir tarayıcıda kaymaz */
+.tab { display: none; padding: 0; flex-direction: column; min-height: 0; }
+.tab.active { display: flex; flex: 1; }
+.sheet-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; gap: 12px; padding: 12px; box-sizing: border-box; width: 100%; max-width: 900px; margin: 0 auto; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .row { display: flex; gap: 8px; align-items: center; }
@@ -256,7 +258,7 @@ label.field { position: relative; }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
 @media (min-width: 760px) {
-  .tab { padding: 18px; }
+  .sheet-body { padding: 18px; }
   .grid2.wide { grid-template-columns: repeat(4, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
@@ -346,8 +348,8 @@ html { overflow: hidden; }
 
 /* Sayfa (sekme içeriği): haritanın üstünde, alt çubuğun üstünde açılır */
 main { position: fixed; z-index: 30; left: 8px; right: 8px; top: var(--hud-h, 72px); bottom: calc(var(--nav-h) + var(--safe-b) + 6px); display: none; flex: none; background: var(--bg); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 10px 44px #000d; }
-body.sheet-open main { display: block; }
-.sheet-head { position: sticky; top: -12px; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: -12px -12px 0; padding: 14px 14px 10px; background: var(--bg); border-radius: 20px 20px 0 0; }
+body.sheet-open main { display: flex; flex-direction: column; }
+.sheet-head { position: relative; flex: none; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0; padding: 14px 14px 10px; background: var(--bg); border-bottom: 1px solid var(--line); border-radius: 20px 20px 0 0; }
 .sheet-head b { font-size: 17px; }
 .sheet-head .grab { position: absolute; left: 50%; top: 6px; width: 38px; height: 4px; margin-left: -19px; border-radius: 2px; background: var(--line); }
 .sheet-x { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--card); color: var(--muted); font-size: 15px; }
