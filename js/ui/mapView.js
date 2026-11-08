@@ -18,7 +18,6 @@ export const mapApi = {
   snap: () => null, // navigator.js: konumu rotaya yapıştırır
   drawPlaces() {}, // ui/places.js kayıtlı yerleri çizer
   cam() {}, // nav/navigator.js: her karede araç + kamera (akıcı navigasyon)
-  pause() {}, // ui/dimmer.js: karartmada harita çizimini durdurur
 };
 
 let boot = async () => {};

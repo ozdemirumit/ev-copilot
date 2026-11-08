@@ -1,6 +1,6 @@
 // Git düğmesi ve işaret testi (kaynak denetimi): A/B harfleri yok, Git tek adımda planlar + navigasyonu başlatır, eski düğme kimlikleri durur.
 // Kullanım: node scripts/test-go-button.mjs
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -27,9 +27,11 @@ ok('varış yoksa uyarır ve planlamaz', /if \(!r\.end\) return toast\(/.test(pa
 ok('navigasyon sürerken aynı varışta durdurur', /if \(stopMode\(\)\) return stopNav\(\)/.test(panel));
 ok('ipucu metni Git anlatır', !/Rotayı Planla'ya dokun/.test(panel) && !/Rotayı Planla'ya dokun/.test(html.replace(/id="btn-plan"[^>]*>[^<]*/, '')));
 
-const dim = read('js/ui/dimmer.js');
-ok('otomatik karartma varsayılan kapalı (dimAuto2, false)', /load\('dimAuto2', false\)/.test(dim) && !/id="dim-auto" checked/.test(html));
-ok('elle karartma düğmesi çalışır', /btn\.addEventListener\('click', \(\) => \(on \? wake\(\) : dimNow\(\)\)\)/.test(dim));
+// Ekran karartma (bekleme/standby benzeri siyah ekran) tamamen kaldırıldı
+const app = read('js/app.js');
+ok('karartma modülü silindi ve yüklenmiyor', !existsSync(join(root, 'js/ui/dimmer.js')) && !/dimmer/.test(app) && !/dimmer/.test(read('sw.js')));
+ok('karartma ekranı, düğmesi ve ayarları HTML\'de yok', !/id="(dimmer|fab-dim|dim-auto|dim-delay)"/.test(html));
+ok('karartma stilleri yok', !/\.dimmer|body\.dimmed|\.dim-arrow/.test(read('css/styles.css')));
 
 console.log(`\n${pass} geçti, ${fail} kaldı`);
 process.exit(fail ? 1 : 0);

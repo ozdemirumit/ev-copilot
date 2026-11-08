@@ -79,8 +79,8 @@ ok('Favoriler kaldırılmadı: menü ve İstasyonlar içinden', /class="menu-ite
 const IDS = ['btn-gps', 'btn-wake', 'bd-gps', 'bd-ocr', 'bd-abrp', 'bd-sim', 'btn-install', 'btn-update', 'btn-data', 'btn-version', 'btn-notes', 'veh-name', 'hud-soc', 'hud-speed', 'hud-limit',
   'nav-banner', 'nav-arrow', 'nav-dist', 'nav-text', 'nav-road', 'nav-then', 'nav-stop', 'near-alert', 'near-alert-title', 'near-alert-toggle', 'near-alert-close', 'near-alert-body', 'road-alert', 'advisor-banner',
   'socbar', 'socbar-val', 'socbar-range', 'socbar-rangebox', 'socbar-src', 'socbar-dot', 'socbar-track', 'socbar-fill', 'socbar-thumb',
-  'fab-sat', 'fab-3d', 'fab-me', 'fab-route', 'fab-dim', 'fab-nav', 'fab-plan', 'fab-search', 'pickbar', 'pick-text', 'pick-cancel',
-  'navhud', 'nh-speed', 'nh-limit', 'nh-eta', 'nh-rem', 'nh-soc', 'nh-soc-dot', 'nh-limitbtn', 'nh-voice', 'nh-overview', 'nh-recenter', 'badge-stations', 'cur-soc', 'dimmer', 'station-card'];
+  'fab-sat', 'fab-3d', 'fab-me', 'fab-route', 'fab-nav', 'fab-plan', 'fab-search', 'pickbar', 'pick-text', 'pick-cancel',
+  'navhud', 'nh-speed', 'nh-limit', 'nh-eta', 'nh-rem', 'nh-soc', 'nh-soc-dot', 'nh-limitbtn', 'nh-voice', 'nh-overview', 'nh-recenter', 'badge-stations', 'cur-soc', 'station-card'];
 const noId = IDS.filter((id) => !html.includes(`id="${id}"`));
 ok('var olan kimlikler duruyor', noId.length === 0, noId.join());
 ok('profil/giriş simgesi eklenmedi', !/i-(profile|user|account)/.test(html));
@@ -93,7 +93,7 @@ ok('yatay telefonda hap başlık satırında', /@media \(max-height: 520px\) \{[
 ok('yatay telefonda panel kayabilir ve sınırlı', /@media \(max-height: 520px\) \{[\s\S]*?#banners \{ max-width: min\(380px, 58vw\); max-height:/.test(css));
 ok('pencere ekran yüksekliğini aşmaz, kayar', /\.sheet-dlg \{[^}]*max-height: calc\(var\(--app-h, 100dvh\) - 16px\);[^}]*overflow-y: auto/.test(css));
 // Manevra glifleri: steps.js üretimi aynı, gösterimde çizgi simge
-ok('manevra glifi saklı (dimmer metni bozulmaz)', readFileSync(new URL('../js/ui/dimmer.js', import.meta.url), 'utf8').includes("dataset.glyph"));
+ok('manevra glifi saklı (testler glif metnini okur)', readFileSync(new URL('../js/ui/icons.js', import.meta.url), 'utf8').includes("dataset.glyph"));
 const iconsJs = readFileSync(new URL('../js/ui/icons.js', import.meta.url), 'utf8');
 ok('her manevra glifinin çizgi simgesi var', ['⬅️', '➡️', '↖️', '↗️', '↙️', '↘️', '⬆️', '↩️', '🚗', '🏁', '⚡', '🔄', '⛴️', '🧭', '📍', '⚠️'].every((g) => iconsJs.includes(`'${g}'`)) && [...iconsJs.matchAll(/'([a-z-]+)'[,\s}]/g)].filter((m) => !['i-'].includes(m[1])).every((m) => ['turn-left'].includes(m[1]) || html.includes(`id="i-${m[1]}"`) || true));
 ok('simge dosyası çevrimdışı kabukta', readFileSync(new URL('../sw.js', import.meta.url), 'utf8').includes("'./js/ui/icons.js'"));

@@ -163,15 +163,6 @@
         <label for="nav-headingup">Harita gidiş yönüne dönsün (yön yukarı)</label>
         <label class="switch"><input type="checkbox" id="nav-headingup" checked><i></i></label>
       </div>
-      <div class="row between">
-        <label for="dim-auto">Navigasyonda ekranı otomatik karart (telefon pili)</label>
-        <label class="switch"><input type="checkbox" id="dim-auto"><i></i></label>
-      </div>
-      <div class="slider-row">
-        <label for="dim-delay">Dokunulmazsa kararma süresi</label>
-        <output id="dim-delay-out">45 sn</output>
-        <input type="range" id="dim-delay" min="15" max="180" step="5" value="45">
-      </div>
       <div class="slider-row">
         <label for="low-soc">Düşük pil uyarısı (yakın istasyon öner)</label>
         <output id="low-soc-out">%20</output>
@@ -716,7 +707,6 @@
         <button type="button" id="fab-sat" aria-pressed="false" aria-label="Uydu görüntüsü" title="Uydu görüntüsü"><svg class="ic" aria-hidden="true"><use href="#i-layers"/></svg></button>
         <button type="button" id="fab-3d" class="hidden" aria-pressed="true" aria-label="3B/2B görünüm" title="3B/2B görünüm">3B</button>
         <button type="button" id="fab-route" aria-label="Tüm rotayı göster" title="Tüm rotayı göster"><svg class="ic" aria-hidden="true"><use href="#i-fit"/></svg></button>
-        <button type="button" id="fab-dim" class="hidden" aria-label="Ekranı karart (pil tasarrufu)" title="Ekranı karart (pil tasarrufu)"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg></button>
         <button type="button" id="nh-limitbtn" class="nav-only" aria-label="Yol hız limiti kontrolünü aç/kapat" title="Yol hız limiti kontrolü (ücretli)"><svg class="ic" aria-hidden="true"><use href="#i-limit"/></svg></button>
         <button type="button" id="nh-voice" class="nav-only" aria-label="Sesli yönlendirme aç/kapat" title="Sesli yönlendirme aç/kapat"><svg class="ic" aria-hidden="true"><use href="#i-volume"/></svg></button>
         <button type="button" id="nh-overview" class="nav-only" aria-label="Rotanın tamamını göster" title="Rotanın tamamını göster"><svg class="ic" aria-hidden="true"><use href="#i-route"/></svg></button>
@@ -741,16 +731,6 @@
     </div>
     <button class="near-summary" id="near-summary" type="button" data-tab="stations"><svg class="ic near-pin" aria-hidden="true"><use href="#i-pin-bolt"/></svg><span class="near-sum-text" id="near-summary-text">Şarj istasyonları</span><span class="near-sum-go"><span>İstasyonları gör</span><svg class="ic" aria-hidden="true"><use href="#i-chev-right"/></svg></span></button>
   </div>
-</div>
-
-<div class="dimmer hidden" id="dimmer" role="button" tabindex="0" aria-label="Ekranı uyandırmak için dokun">
-  <div class="dim-arrow" id="dim-arrow" aria-hidden="true"></div>
-  <div class="dim-dist" id="dim-dist"></div>
-  <div class="dim-text" id="dim-text"></div>
-  <div class="dim-speed"><b id="dim-speed">--</b> km/h</div>
-  <div class="dim-eta" id="dim-eta"></div>
-  <div class="dim-warn" id="dim-warn"></div>
-  <div class="dim-hint">Uyandırmak için dokun</div>
 </div>
 
 <div class="station-card hidden" id="station-card" role="dialog" aria-label="İstasyon"></div>

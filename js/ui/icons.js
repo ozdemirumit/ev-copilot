@@ -1,4 +1,4 @@
-// Tek tip çizgi simgeler: index.html başındaki SVG sprite'ına başvurur. Manevra gösterimi: nav/steps.js düz metin glif üretir (dimmer ve testler onu okur),
+// Tek tip çizgi simgeler: index.html başındaki SVG sprite'ına başvurur. Manevra gösterimi: nav/steps.js düz metin glif üretir (testler onu okur),
 // üst panelde bu glif aynı biçimde çizgi simgeye çevrilir.
 export const icon = (name) => `<svg class="ic" aria-hidden="true"><use href="#i-${name}"/></svg>`;
 

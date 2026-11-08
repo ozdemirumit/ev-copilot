@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.87.2';
+self.APP_VERSION = '0.87.3';
 self.APP_CHANGELOG = [
+  {
+    v: '0.87.3', date: '2026-11-08',
+    notes: [
+      'Ekran karartma (bekleme/standby benzeri siyah ekran) tamamen kaldırıldı: otomatik karartma, ay simgeli elle karartma düğmesi ve ilgili ayarlar yok. Navigasyonda ekran açık kalır.',
+    ],
+  },
   {
     v: '0.87.2', date: '2026-11-08',
     notes: [

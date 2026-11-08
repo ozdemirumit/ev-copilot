@@ -42,7 +42,7 @@ const gliding = () => !!anchor && performance.now() - anchor.t < 4000;
 function frame(ts) {
   requestAnimationFrame(frame);
   if (ts - lastCam < FRAME_MS) return;
-  if (!anchor || !track || document.hidden || document.body.classList.contains('dimmed') || !getState('nav').active) { disp = null; return; }
+  if (!anchor || !track || document.hidden || !getState('nav').active) { disp = null; return; }
   lastCam = ts;
   const age = Math.min(3, (performance.now() - anchor.t) / 1000); // GPS kesilirse en çok 3 sn ileri tahmin
   const target = anchor.km + anchor.v * age;
