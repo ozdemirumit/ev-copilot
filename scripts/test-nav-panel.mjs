@@ -76,16 +76,16 @@ const nav = html.slice(html.indexOf('class="bottomnav"'), html.indexOf('</nav>')
 ok('alt gezinmede 3 sekme: Harita, İstasyonlar, Daha fazla', (nav.match(/data-tab="/g) || []).length === 3 && ['map', 'stations', 'more'].every((t) => nav.includes(`data-tab="${t}"`)));
 ok('Favoriler Daha fazla menüsünden erişilir, İstasyonlar ekranında bağlantı yok', /class="menu-item"[^>]*data-tab="favs"/.test(html) && !/fav-link/.test(html) && html.includes('id="tab-favs"'));
 // Var olan dinleyiciler ve derin bağlantılar: kimlikler silinmez
-const IDS = ['btn-gps', 'btn-wake', 'bd-gps', 'bd-ocr', 'bd-abrp', 'bd-sim', 'btn-install', 'btn-update', 'btn-data', 'btn-version', 'btn-notes', 'veh-name', 'hud-soc', 'hud-speed', 'hud-limit',
-  'nav-banner', 'nav-arrow', 'nav-dist', 'nav-text', 'nav-road', 'nav-then', 'nav-stop', 'near-alert', 'near-alert-title', 'near-alert-toggle', 'near-alert-close', 'near-alert-body', 'road-alert', 'advisor-banner',
+const IDS = ['bd-gps', 'bd-ocr', 'bd-abrp', 'bd-sim', 'btn-install', 'btn-update', 'btn-data', 'btn-version', 'btn-notes', 'veh-name', 'hud-soc', 'hud-speed', 'hud-limit',
+  'nav-banner', 'nav-arrow', 'nav-dist', 'nav-text', 'nav-road', 'nav-then', 'near-alert', 'near-alert-title', 'near-alert-toggle', 'near-alert-close', 'near-alert-body', 'road-alert', 'advisor-banner',
   'socbar', 'socbar-val', 'socbar-range', 'socbar-rangebox', 'socbar-src', 'socbar-dot', 'socbar-track', 'socbar-fill', 'socbar-thumb',
   'fab-sat', 'fab-3d', 'fab-me', 'fab-route', 'fab-nav', 'fab-plan', 'fab-search', 'pickbar', 'pick-text', 'pick-cancel',
   'navhud', 'nh-speed', 'nh-limit', 'nh-eta', 'nh-rem', 'nh-soc', 'nh-soc-dot', 'nh-limitbtn', 'nh-voice', 'nh-overview', 'nh-recenter', 'badge-stations', 'cur-soc', 'station-card'];
 const noId = IDS.filter((id) => !html.includes(`id="${id}"`));
 ok('var olan kimlikler duruyor', noId.length === 0, noId.join());
-const wakeJs = readFileSync(new URL('../js/sensors/wakeLock.js', import.meta.url), 'utf8');
-ok('Ekranı açık tut: simgenin yanında Açık/Kapalı anahtarı var', /id="btn-wake"[\s\S]{0,400}?id="wake-switch"/.test(html) && /id="wake-switch"[^>]*aria-label=/.test(html));
-ok('anahtar ve simge aynı işlevi çağırır, durumla eşitlenir', /btn\.addEventListener\('click', toggle\)/.test(wakeJs) && /sw\?\.addEventListener\('change', toggle\)/.test(wakeJs) && /sw\.checked = on/.test(wakeJs));
+const topbar = html.slice(html.indexOf('<header class="topbar">'), html.indexOf('</header>'));
+ok('üst çubukta GPS, ekran düğmesi ve üç nokta yok', !topbar.includes('btn-gps') && !topbar.includes('btn-wake') && !topbar.includes('#i-dots'));
+ok('üst çubukta hız duruyor', topbar.includes('id="hud-speed"'));
 ok('profil/giriş simgesi eklenmedi', !/i-(profile|user|account)/.test(html));
 // Sahte veri yok: referans görseldeki değerler kodda sabit değil
 const statics = html.replace(/<symbol[\s\S]*?<\/symbol>/g, '');

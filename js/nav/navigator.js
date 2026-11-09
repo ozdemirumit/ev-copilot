@@ -9,7 +9,7 @@ import { rerouteFromHere } from '../routing/controller.js';
 import { speak, stopSpeech, testVoice } from '../advisor/voice.js';
 import { instruction, fmtDist, dueVoice, isMinor } from './steps.js';
 import { buildTrack, locate, headingAt, pointAtKm } from './track.js';
-import { bearing } from '../utils/geo.js';
+import { bearing, haversineKm } from '../utils/geo.js';
 import { icon, setManeuverIcon } from '../ui/icons.js';
 
 const $ = (id) => document.getElementById(id);
@@ -20,6 +20,7 @@ const FAR_OFF_KM = 0.4; // bu kadar uzaktaysan (yanlış çıkış vb.) beklemed
 const OFF_ROUTE_MS = 6000;
 const REROUTE_COOLDOWN_MS = 45000; // başarılı yeni rotadan sonra bir daha hemen sapma kontrolü yapma
 const RETRY_MS = 12000; // yeni rota alınamadıysa (internet yok vb.) bu kadar sonra tekrar dene
+const VIA_REACHED_KM = 0.3; // ara duraktan bu kadar yakından geçilince ulaşıldı sayılır: yeniden rota oraya geri götürmesin
 
 let said = new Set();
 let planId = null;
@@ -90,6 +91,7 @@ function tick() {
 
   const plan = getState('plan');
   const e = effective();
+  paintSocRange(e);
 
   if (plan.status === 'loading') {
     paint('🧭', '', 'Rota hesaplanıyor…');
@@ -103,7 +105,13 @@ function tick() {
     zoomNow = null; // yeni rota (yeniden rota dahil): harita zorla araca ortalanır ve zoom yeniden ayarlanır
     mapApi.recenter?.();
   }
-  if (!track || e.lat == null) return paint('📍', '', 'Konum bekleniyor…', 'GPS kapalıysa üstteki 📍 düğmesine dokun', true);
+  if (!track || e.lat == null) return paint('📍', '', 'Konum bekleniyor…', 'GPS kapalıysa haritadaki konum düğmesine dokun', true);
+
+  const stopover = getState('route').via;
+  if (stopover && haversineKm({ lat: e.lat, lon: e.lon }, stopover) <= VIA_REACHED_KM) {
+    mapApi.setPoint('via', null, { fit: false });
+    toast('Ara durağa ulaşıldı');
+  }
 
   // Gerçek geometriye izdüşüm: dönüşe kalan mesafe ve rotadan sapma metre hassasiyetinde
   const loc = locate(track, e.lat, e.lon, trackKm);
@@ -164,6 +172,7 @@ function tick() {
     : nextStop ? `⚡ ${nextStop.station.name} · ${(nextStop.km - km).toFixed(0)} km` : '';
   paint(ins.arrow, fmtDist(distM), ins.text, ins.road, false, secondary);
   paintHud(e, remain, eta, driveH, chargeMin);
+  paintCharge(plan, km, nextStop);
 
   // Sesli yönlendirme: panel metninden ayrı, yalnızca kısa manevra komutu
   const voiceNow = dueVoice(said, idx, st, distM);
@@ -197,6 +206,24 @@ function followSim() {
   const z = (e.speed ?? 0) < 40 ? 17 : (e.speed ?? 0) < 80 ? 16 : 15;
   mapApi.follow(e.lat, e.lon, simFollowing ? null : z, !simFollowing); // ilk seferde yakınlaş ve odakla
   simFollowing = true;
+}
+
+const pct = (v) => new Intl.NumberFormat(locale(), { style: 'percent', maximumFractionDigits: 0 }).format(v / 100);
+const fmtMin = (m) => (m >= 60 ? `${Math.floor(m / 60)} sa ${m % 60} dk` : `${m} dk`);
+
+/** Navigasyon pil şeridi: güncel pil ve menzil (rotadan çıkılsa da güncel kalır). */
+function paintSocRange(e) {
+  const r = getState('engine').totalRangeKm;
+  $('ne-soc').textContent = e.soc == null ? '--' : pct(e.soc);
+  $('ne-range').textContent = r == null || e.soc == null ? '--' : Math.max(0, Math.round(r));
+}
+
+/** Navigasyon pil şeridi: varışta tahmini pil (plan konum ve pille yenilenir) ve sonraki planlı şarj durağına mesafe/süre. */
+function paintCharge(plan, km, nextStop) {
+  $('ne-arrive').textContent = plan.totals ? pct(plan.totals.arriveSoc) : '--';
+  $('ne-next').textContent = nextStop ? `${Math.max(0, nextStop.km - km).toFixed(0)} km` : plan.status === 'ready' ? t('Durak yok') : '--';
+  $('ne-next-t').textContent = nextStop ? fmtMin(Math.max(1, Math.round(plan.profile.timeBetween(km, nextStop.km) * 60))) : '';
+  $('ne-next-box').title = nextStop ? nextStop.station.name : '';
 }
 
 /** Harita üstü alt bilgi: hız, varış saati + kalan, pil; ortala düğmesi (harita kaydırıldıysa). */
@@ -255,8 +282,7 @@ export async function startNav() {
   const plan = getState('plan');
   if (!plan.profile || !plan.steps?.length) return toast('Önce rotayı planla');
   const e = effective();
-  if (e.lat == null) toast('Konum yok: üstteki 📍 ile GPS\'i aç (veya Test Modu)', 4000);
-  else if (!getState('system').wakeLock) toast('İpucu: ekran kapanmasın diye 🔆 düğmesine dokun', 3500);
+  if (e.lat == null) toast('Konum yok: haritadaki konum düğmesine dokun (veya Test Modu)', 4000);
   said = new Set();
   planId = plan.planId;
   track = plan.route?.coords ? buildTrack(plan.route.coords) : null; // her başlatışta güncel rotanın izi
@@ -293,7 +319,6 @@ export function initNavigator() {
     btn.classList.toggle('danger', on);
   };
   btn.addEventListener('click', () => (getState('nav').active ? stopNav() : startNav()));
-  $('nav-stop').addEventListener('click', stopNav);
   mapApi.snap = snapPoint;
 
   voice.checked = nav.voice;
@@ -348,6 +373,7 @@ export function initNavigator() {
   subscribe('nav', () => {
     $('nh-voice').innerHTML = icon(getState('nav').voice ? 'volume' : 'volume-off');
     $('navhud').classList.toggle('hidden', !getState('nav').active);
+    $('nav-ev').classList.toggle('hidden', !getState('nav').active);
   });
   paintBtn();
   setInterval(tick, 1000);

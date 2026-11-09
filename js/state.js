@@ -15,6 +15,7 @@ const store = {
   // Rota seçimleri ve kullanıcı tahminleri.
   route: {
     start: null, end: null,
+    via: null, // isteğe bağlı ara durak { lat, lon, label }
     minArrivalSoc: load('minArrival', 15),
     cruise: load('cruise', 100),
     traffic: load('trafficEst', 0),
@@ -22,7 +23,7 @@ const store = {
     trafficInfo: null, // { ratio, driveMin, freeMin } son planlamada rotadan
     consAdj: load('consAdj', 0), // % tüketim düzeltmesi (PHYSICS.consScale ile eşleşir)
     chargerMin: load('chargerMin', 10), // ara istasyona varışta en az %
-    maxChargeTo: load('maxChargeTo', 90), // durakta şarj hedefi üst sınırı %
+    maxChargeTo: load('maxChargeTo', 80), // durakta şarj hedefi üst sınırı % (kayıtlı kullanıcı değeri korunur)
     minStopAdd: load('minStopAdd', 15), // durakta en az eklenen pil puanı
     tolerance: load('tolerance', 3), // eşik toleransı ± puan
     allowSlow: load('allowSlow', true), // yavaş AC/belirsiz istasyonlar yedek aday

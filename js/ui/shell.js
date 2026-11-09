@@ -5,9 +5,8 @@ import { mapApi } from './mapView.js';
 import { showTab } from './tabs.js';
 import { startNav, stopNav } from '../nav/navigator.js';
 import { toast } from './toast.js';
-import { save, load } from '../utils/storage.js';
+import { save } from '../utils/storage.js';
 import { startGps, stopGps, locateOnce } from '../sensors/gps.js';
-import { icon } from './icons.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -76,9 +75,9 @@ export function initShell() {
       }
     }
   });
-  // Açılışta GPS açıksa (varsayılan açık) ilk gerçek konumda harita bir kez konuma odaklanır (rota/navigasyon/test varken görünüm bozulmaz)
-  let startCenter = load('gpsOn', true);
-  if (startCenter) setTimeout(() => { startCenter = false; }, 90000);
+  // Açılışta ilk gerçek konumda harita bir kez konuma odaklanır (rota/navigasyon/test varken görünüm bozulmaz)
+  let startCenter = true;
+  setTimeout(() => { startCenter = false; }, 90000);
   subscribe('live', () => {
     if (wantCenter && centerMe()) wantCenter = false;
     if (!startCenter) return;
@@ -86,17 +85,16 @@ export function initShell() {
     if (getState('live').gps === 'ok' && centerMe()) startCenter = false;
   });
 
-  // Navigasyon düğmesi: plan hazırsa görünür
+  // Git (arama satırı): navigasyon sürmüyorsa görünür. Plan hazırsa başlatır; varış seçiliyse Rota sayfasındaki Git gibi planlar + başlatır; varış yoksa sorar.
   const navBtn = $('fab-nav');
-  const paintNav = () => {
-    const ready = !!(getState('plan').profile && getState('plan').steps?.length);
-    const on = getState('nav').active;
-    navBtn.classList.toggle('hidden', !ready && !on);
-    navBtn.classList.toggle('on', on);
-    navBtn.innerHTML = icon(on ? 'stop' : 'nav');
-    navBtn.title = navBtn.ariaLabel = on ? 'Navigasyonu durdur' : 'Navigasyonu başlat';
-  };
-  navBtn.addEventListener('click', () => (getState('nav').active ? stopNav() : startNav()));
+  const planReady = () => !!(getState('plan').profile && getState('plan').steps?.length);
+  const paintNav = () => navBtn.classList.toggle('hidden', !!getState('nav').active);
+  navBtn.addEventListener('click', () => {
+    if (planReady()) return startNav();
+    if (getState('route').end) return $('btn-go').click();
+    toast('Önce varış seç');
+    openSearch();
+  });
   subscribe(['plan', 'nav'], paintNav);
   paintNav();
 
@@ -108,18 +106,33 @@ export function initShell() {
   $('fab-search').addEventListener('click', openSearch);
   $('nh-search').addEventListener('click', openSearch);
 
-  // Az kullanılan harita düğmeleri ⋯ altında; dışarı dokununca ya da Esc ile kapanır
+  // Üç nokta: harita üstünde yukarı açılan küçük simge yığını (pencere değil); dışarı dokununca, Esc ile ya da bir sayfa açılınca kapanır.
+  // Üst çubuğa/panele taşmasın diye yükseklik açılışta ölçülür; yer yetmezse CSS ikinci sütunu sola açar.
   const more = $('fabs-more');
   const moreBtn = $('fab-tools');
-  const setMore = (open) => { more.classList.toggle('hidden', !open); moreBtn.setAttribute('aria-expanded', String(open)); };
+  const fitMore = () => { more.style.maxHeight = Math.max(84, $('fabs').getBoundingClientRect().top - hud.getBoundingClientRect().bottom - 14) + 'px'; };
+  const setMore = (open) => {
+    if (open) fitMore();
+    more.classList.toggle('hidden', !open);
+    moreBtn.setAttribute('aria-expanded', String(open));
+  };
   moreBtn.addEventListener('click', () => setMore(more.classList.contains('hidden')));
+  window.addEventListener('resize', fitMore);
+  document.addEventListener('tabchange', () => setMore(false));
+  // Navigasyonu durdur: sağdaki kırmızı düğme, onay ister (yanlışlıkla dokunuşta navigasyon kesilmesin). Varsayılan odak "Devam et"te.
+  const stopDlg = $('stop-nav-dialog');
+  $('fab-stopnav').addEventListener('click', () => { setMore(false); stopDlg.showModal(); });
+  $('stop-nav-no').addEventListener('click', () => stopDlg.close());
+  $('stop-nav-yes').addEventListener('click', () => { stopDlg.close(); stopNav(); });
+  stopDlg.addEventListener('click', (e) => { if (e.target === stopDlg) stopDlg.close(); });
+  subscribe('nav', () => { if (!getState('nav').active && stopDlg.open) stopDlg.close(); }); // araya varış girerse pencere kalmasın
   document.addEventListener('click', (e) => { if (!$('fabs').contains(e.target)) setMore(false); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMore(false); });
 
-  // Durum ve kontroller penceresi (Wake Lock, durum rozetleri, sürüm): rozet/düğme kimlikleri ve dinleyicileri aynı
+  // Durum ve kontroller penceresi (yükleme, güncelleme, veri kullanımı, sürüm): Daha fazla menüsünden ve durum satırındaki sürüm numarasından açılır
   const tools = $('tools-dialog');
   const closeTools = () => tools.close();
-  $('btn-tools').addEventListener('click', () => tools.showModal());
+  for (const id of ['btn-tools', 'st-version']) $(id).addEventListener('click', () => tools.showModal());
   $('tools-x').addEventListener('click', closeTools);
   $('tools-close').addEventListener('click', closeTools);
   tools.addEventListener('click', (e) => { if (e.target === tools) closeTools(); });
@@ -129,7 +142,7 @@ export function initShell() {
   const text = $('pick-text');
   mapApi.pickBar = (mode) => {
     bar.classList.toggle('hidden', !mode);
-    if (mode) text.textContent = mode === 'start' ? 'Başlangıç için haritaya dokun' : mode === 'place' ? 'Favori için haritaya dokun' : 'Varış için haritaya dokun';
+    if (mode) text.textContent = mode === 'start' ? 'Başlangıç için haritaya dokun' : mode === 'place' ? 'Favori için haritaya dokun' : mode === 'via' ? 'Ara durak için haritaya dokun' : 'Varış için haritaya dokun';
   };
   $('pick-cancel').addEventListener('click', () => mapApi.cancelPick());
 

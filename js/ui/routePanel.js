@@ -1,9 +1,9 @@
-import { t as tpl } from '../i18n/index.js'; // 't' bu dosyada başka yerlerde yerel değişken (p.totals) olarak kullanılır
+import { t as tpl, locale } from '../i18n/index.js'; // 't' bu dosyada başka yerlerde yerel değişken (p.totals) olarak kullanılır
 import { progressKm } from '../routing/progress.js';
 import { getState, patch, subscribe, effective } from '../state.js';
 import { toast } from './toast.js';
 import { planTrip } from '../routing/controller.js';
-import { startNav, stopNav } from '../nav/navigator.js';
+import { startNav } from '../nav/navigator.js';
 import { save } from '../utils/storage.js';
 import { stationGaps } from '../routing/planner.js';
 import { slotEl, livePrice } from '../routing/slots.js';
@@ -20,14 +20,14 @@ const hm = (min) => {
   return m >= 60 ? `${Math.floor(m / 60)} sa ${m % 60} dk` : `${m} dk`;
 };
 
-/** Google Haritalar bağlantısı: başlangıç, durak(lar), varış (en çok 9 ara nokta). Anahtar gerektirmez. */
-function gmapsUrl(start, end, stops) {
+/** Google Haritalar bağlantısı: başlangıç, ara nokta(lar), varış (en çok 9 ara nokta). Anahtar gerektirmez. */
+function gmapsUrl(start, end, points) {
   const ll = (p) => `${p.lat.toFixed(6)},${p.lon.toFixed(6)}`;
   const u = new URL('https://www.google.com/maps/dir/');
   u.searchParams.set('api', '1');
   u.searchParams.set('origin', ll(start));
   u.searchParams.set('destination', ll(end));
-  if (stops.length) u.searchParams.set('waypoints', stops.slice(0, 9).map((s) => ll(s.station)).join('|'));
+  if (points.length) u.searchParams.set('waypoints', points.slice(0, 9).map(ll).join('|'));
   u.searchParams.set('travelmode', 'driving');
   return u.toString();
 }
@@ -57,8 +57,21 @@ export function initRoutePanel() {
   subscribe('route', paintKw);
   paintKw();
 
-  // Git: tek dokunuşla rota planlanır ve navigasyon başlar (başlangıç seçilmediyse şu anki konum). Navigasyon sürerken aynı varışsa durdurur.
-  // Eski "Rotayı Planla" / "Navigasyonu başlat" düğmeleri gizli durur (kimlik ve dinleyiciler uyumluluk için).
+  // Rota planla: yalnızca planlar, sonuç bu sayfada ve haritada görünür. Git: planlar ve navigasyonu başlatır. Navigasyon sürerken aynı varışta Git gizlenir; durdurma haritadaki kırmızı düğmede (onaylı).
+  // Eski "Navigasyonu başlat" düğmesi gizli durur (kimlik ve dinleyici uyumluluk için).
+  /** Planlamadan önce: varış şart; başlangıç yoksa ya da önceki "Konumum" ise şu anki konum kullanılır. Hazırsa true. */
+  const prepareRoute = () => {
+    const r = getState('route');
+    if (!r.end) { toast('Önce başlangıç ve varış seç'); return false; }
+    if (!r.start || r.start.label === 'Konumum') {
+      const e = effective();
+      if (e.lat != null) mapApi.setPoint('start', { lat: e.lat, lon: e.lon, label: 'Konumum' }, { fit: false });
+      else if (!r.start) { toast('Konum yok: haritadaki konum düğmesine dokun (veya Test Modu)', 4000); return false; }
+    }
+    return true;
+  };
+  $('btn-plan').addEventListener('click', () => { if (prepareRoute()) planTrip(); });
+
   const go = $('btn-go');
   const endKey = (p) => (p ? `${p.lat.toFixed(5)},${p.lon.toFixed(5)}` : '');
   let going = false;
@@ -67,23 +80,14 @@ export function initRoutePanel() {
   const paintGo = () => {
     if (!getState('nav').active && !going) goneTo = '';
     const stop = stopMode();
-    go.textContent = stop ? '⏹ Navigasyonu durdur' : 'Git';
-    go.classList.toggle('danger', stop);
-    go.classList.toggle('primary', !stop);
-    go.disabled = !stop && (going || getState('plan').status === 'loading');
+    go.classList.toggle('hidden', stop);
+    go.disabled = going || getState('plan').status === 'loading';
   };
   go.addEventListener('click', async () => {
     if (going) return;
-    if (stopMode()) return stopNav();
-    const r = getState('route');
-    if (!r.end) return toast('Önce başlangıç ve varış seç');
-    if (!r.start || r.start.label === 'Konumum') { // başlangıç yoksa ya da önceki "Konumum" ise şu anki konumdan çık
-      const e = effective();
-      if (e.lat != null) mapApi.setPoint('start', { lat: e.lat, lon: e.lon, label: 'Konumum' }, { fit: false });
-      else if (!r.start) return toast("Konum yok: üstteki 📍 ile GPS'i aç (veya Test Modu)", 4000);
-    }
+    if (!prepareRoute()) return;
     going = true;
-    goneTo = endKey(r.end);
+    goneTo = endKey(getState('route').end);
     paintGo();
     try {
       if (await planTrip()) await startNav();
@@ -123,6 +127,7 @@ export function initRoutePanel() {
     if (p.status === 'ready') {
       const t = p.totals;
       $('sum-time').textContent = hm(t.totalMin);
+      $('sum-arrive').textContent = new Intl.NumberFormat(locale(), { style: 'percent', maximumFractionDigits: 0 }).format(t.arriveSoc / 100);
       const stops = p.stops.filter((s) => s.km > here - 0.3); // geride kalanlar plandan çıkar
       $('sum-stops').textContent = String(stops.length);
       const gaps = stationGaps(p.stations, p.profile.totalKm);
@@ -164,6 +169,7 @@ export function initRoutePanel() {
     } else if (p.status !== 'loading') {
       $('sum-time').textContent = '—';
       $('sum-stops').textContent = '—';
+      $('sum-arrive').textContent = '—';
       if (!p.route) $('sum-dist').textContent = '—';
     }
   }
@@ -218,7 +224,12 @@ export function initRoutePanel() {
     const p = getState('plan');
     if (!start || !end) return;
     const here = curKm();
-    window.open(gmapsUrl(start, end, p.stops.filter((s) => s.km > here - 0.3)), '_blank', 'noopener'); // yalnızca kalan duraklar
+    const route = getState('route');
+    // Kalan şarj durakları ve (varsa) ara durak, rota üzerindeki sırayla
+    const points = p.stops.filter((s) => s.km > here - 0.3).map((s) => ({ km: s.km, lat: s.station.lat, lon: s.station.lon }));
+    if (route.via && p.profile) points.push({ km: p.profile.project(route.via.lat, route.via.lon, null).km, lat: route.via.lat, lon: route.via.lon });
+    points.sort((a, b) => a.km - b.km);
+    window.open(gmapsUrl(start, end, points), '_blank', 'noopener');
   });
 
   subscribe('plan', () => { paint(); paintWeather(); }); // doluluk yenilenince de (plan.availAt) yeniden çizilir

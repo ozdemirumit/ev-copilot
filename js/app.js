@@ -29,6 +29,7 @@ import { initRoadWarnings } from './nav/roadWarnings.js';
 import { initStationCard } from './ui/stationCard.js';
 import { watchCaps } from './net/proxy.js';
 import { initSocInput } from './ui/socInput.js';
+import { initRouteForm } from './ui/routeForm.js';
 import { initSocBar } from './ui/socBar.js';
 import { initDefaultStart } from './ui/defaultStart.js';
 import { initSocEstimate, restoreSoc } from './physics/socEstimate.js';
@@ -112,6 +113,7 @@ initRoadWarnings();
 initStationCard();
 watchCaps(); // sunucu özellikleri ve hesap planı (Premium) açılışta ve uygulamaya dönünce tazelenir
 initSocInput();
+initRouteForm();
 initSocBar();
 initDefaultStart();
 initSocEstimate();

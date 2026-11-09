@@ -275,6 +275,7 @@ label.field { position: relative; }
 .tog:active { background: var(--accent-dim); color: var(--accent); }
 .card.collapsed > :not(.card-head-row) { display: none !important; }
 .card.collapsed > .card-head { margin-bottom: 0; }
+.card.collapsed > #veh-saved { display: block !important; margin-top: 4px; } /* kapalı araç kartında seçili araç görünür kalır */
 
 /* Navigasyon banner'ı ve yakın istasyon uyarısı */
 .toppanel { background: rgba(22, 27, 35, .97); overflow: hidden; }
@@ -433,7 +434,7 @@ body.sheet-open .mapui { display: none; }
 @media (min-width: 900px) and (min-height: 480px) {
   main { left: 12px; right: auto; width: 440px; transform: none; }
   body.sheet-open .mapui { display: block; }
-  body.sheet-open .searchrow, body.sheet-open .near-summary { display: none; }
+  body.sheet-open .searchrow { display: none; }
   body.sheet-open .mapstack, body.sheet-open .pickbar { left: 468px; }
   #banners { max-width: 440px; }
 }
@@ -470,9 +471,24 @@ body.sheet-open .mapui { display: none; }
 .brand-text small { overflow: hidden; text-overflow: ellipsis; }
 .hud-item.soc { display: none; } /* pil hapta görünür; öğe panelin yazdığı değer için durur */
 body.navmode .hud { display: none; } /* navigasyonda hız ve limit alt şeritte */
-body.navmode #btn-gps { margin-left: auto; }
 #btn-tools { position: relative; }
 body:has(#btn-update:not(.hidden)) #btn-tools::after { content: ""; position: absolute; top: 7px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+
+/* Üst çubuğun altındaki tek satır durum şeridi: dar ekranda uzun durum metni kısalır, satır kırılmaz */
+.statusrow { display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 2px calc(8px + env(safe-area-inset-right, 0px)) 2px calc(8px + env(safe-area-inset-left, 0px)); background: var(--bg); border-bottom: 1px solid var(--line); }
+.statusrow .badge { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; padding: 0; border: 0; border-radius: 0; background: none; line-height: 16px; }
+.statusrow .badge + .badge { padding-left: 6px; border-left: 1px solid var(--line); }
+.statusrow .badge::before { content: none; }
+.statusrow #bd-traffic { flex: none; } /* kısa metinler hep tam; en uzun metinler OCR ve ABRP'de çıkar, onlar kısalır */
+button#st-version { flex: none; margin-left: auto; min-height: 24px; padding: 0 2px 0 4px; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+body:has(#btn-update:not(.hidden)) #st-version { color: var(--accent); }
+body:has(#btn-update:not(.hidden)) #st-version::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: 3px; border-radius: 50%; background: var(--accent); vertical-align: 1px; }
+@media (max-width: 359px) {
+  .statusrow { gap: 4px; padding-left: 5px; padding-right: 5px; }
+  .statusrow .badge { font-size: 10.5px; }
+  .statusrow .badge + .badge { padding-left: 4px; }
+}
 
 #banners > * { margin: 0 10px 6px; }
 .advisor { background: rgba(22, 27, 35, .97); }
@@ -507,24 +523,27 @@ body.sheet-open .socbar { display: none; }
 .fabs button { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 50%; color: var(--text); background: rgba(20, 25, 32, .95); border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 4px 16px #0008; }
 .fabs button.on, #fab-tools[aria-expanded="true"] { color: var(--accent); border-color: var(--accent-dim); }
 #fab-nav { background: var(--accent); color: #04271c; border-color: var(--accent); }
-#fab-nav.on { background: rgba(20, 25, 32, .95); color: var(--bad); border-color: rgba(255, 255, 255, .14); }
-body.navmode #fab-nav { display: none; } /* navigasyonda durdurma üst paneldeki ✕ ile */
+#fab-nav .ic { color: inherit; }
 body:not(.navmode) .nav-only { display: none; }
-.fabs-more { position: absolute; right: calc(100% + 8px); bottom: 54px; width: 208px; display: flex; flex-flow: row-reverse wrap-reverse; gap: 8px; }
+/* Üç nokta yığını: üç noktanın hemen üstünde yukarı açılır; yükseklik yetmezse (shell.js ölçer) sonraki sütun sola açılır */
+.fabs-more { position: absolute; right: 3px; bottom: calc(100% + 6px); width: 40px; display: flex; flex-flow: column wrap-reverse; justify-content: flex-end; gap: 4px; }
+.fabs .fabs-more button { width: 40px; height: 40px; }
+.fabs .fabs-more button .ic { width: 20px; height: 20px; }
+#fab-stopnav { color: var(--bad); }
+body.navmode #fab-route { display: none; } /* navigasyonda aynı işi nh-overview yapar */
 
 .searchrow { display: flex; gap: 8px; }
-.searchbar, .rota-btn, .near-summary { min-height: 48px; display: flex; align-items: center; gap: 10px; border-radius: 14px; background: rgba(20, 25, 32, .95); border: 1px solid rgba(255, 255, 255, .14); color: var(--text); box-shadow: 0 4px 16px #0008; }
+.searchbar, .rota-btn { min-height: 48px; display: flex; align-items: center; gap: 10px; border-radius: 14px; background: rgba(20, 25, 32, .95); border: 1px solid rgba(255, 255, 255, .14); color: var(--text); box-shadow: 0 4px 16px #0008; }
 .searchbar { flex: 1; min-width: 0; padding: 0 14px; color: var(--muted); text-align: left; font-size: 15px; }
 .searchbar span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .searchbar .ic { color: var(--text); }
+@media (max-width: 399px) { /* dar ekranda Git görünürken Rota planla ve Git tam yazsın: arama yalnızca simge */
+  .searchrow:has(#fab-nav:not(.hidden)) .searchbar { flex: 0 0 48px; justify-content: center; padding: 0; }
+  .searchrow:has(#fab-nav:not(.hidden)) .searchbar span { display: none; }
+}
 .rota-btn { flex: none; padding: 0 14px; font-weight: 600; white-space: nowrap; }
 .rota-btn .ic { color: var(--accent); }
-.near-summary { width: 100%; min-height: 44px; padding: 0 10px 0 12px; font-size: 14px; }
-.near-pin { color: var(--accent); }
-.near-sum-text { flex: 1; min-width: 0; text-align: left; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.near-sum-go { display: inline-flex; align-items: center; gap: 2px; flex: none; color: var(--accent); font-size: 13px; }
-.near-sum-go .ic { width: 16px; height: 16px; }
-body.navmode .searchrow, body.navmode .near-summary { display: none; }
+body.navmode .searchrow { display: none; }
 
 /* Navigasyon alt şeridi: süre · kalan yol · varış (hız ve limit solda) */
 .navhud { display: flex; align-items: center; padding: 8px 6px; min-height: 54px; background: rgba(20, 25, 32, .96); border: 1px solid rgba(255, 255, 255, .14); border-radius: 16px; box-shadow: 0 4px 16px #0008; }
@@ -598,7 +617,7 @@ html[lang="tr"] .nh-flag { display: none; }
 .socbar-track:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .soc-range-note { font-size: 11.5px; }
 .tool-row { min-height: 44px; }
-.wake-ctl { display: inline-flex; align-items: center; gap: 10px; }
+#plan-actions .btn { flex: 1 1 0; min-width: 0; }
 
 /* Kısa ekran (yatay telefon, küçük pencere): üstte tek satır başlık (pil hapı dahil), panel solda, alt satırda sekmeler ve arama/navigasyon şeridi */
 @media (max-height: 520px) {
@@ -612,7 +631,7 @@ html[lang="tr"] .nh-flag { display: none; }
   .socbar { position: absolute; top: calc(var(--safe-t) + 4px); left: calc(var(--brand-w) + 18px + env(safe-area-inset-left, 0px)); margin: 0; min-height: 36px; max-width: calc(100vw - var(--brand-w) - 18px - 196px); padding: 0 8px 0 10px; gap: 6px; }
   .socbar-main { font-size: 14px; }
   .socbar-srcline { flex: 0 1 auto; }
-  #banners { max-width: min(380px, 58vw); max-height: calc(var(--app-h, 100dvh) - 44px - var(--safe-t) - var(--nav-h) - var(--safe-b) - 34px); }
+  #banners { max-width: min(380px, 58vw); max-height: calc(var(--app-h, 100dvh) - 44px - 28px - var(--safe-t) - var(--nav-h) - var(--safe-b) - 34px); }
   .nav-arrow { font-size: 32px; width: 46px; padding-right: 8px; }
   .nav-dist { font-size: 22px; }
   .navbar { padding: 6px 10px; }
@@ -623,7 +642,6 @@ html[lang="tr"] .nh-flag { display: none; }
   .bottomnav button.active::after { bottom: 1px; }
   .mapstack { left: calc(248px + env(safe-area-inset-left, 0px)); right: 8px; bottom: calc(var(--safe-b) + 4px); flex-direction: row; align-items: center; }
   .searchrow, .navhud { flex: 1; min-width: 0; }
-  .near-summary { display: none; }
   .searchbar, .rota-btn { min-height: 40px; font-size: 14px; }
   .navhud { min-height: 40px; padding: 3px 4px; }
   .nh-cell b { font-size: 15px; }
@@ -631,7 +649,6 @@ html[lang="tr"] .nh-flag { display: none; }
   .navhud .limit-sign { width: 30px; height: 30px; font-size: 12px; }
   .fabs { position: absolute; right: 0; bottom: calc(100% + 12px); }
   .fabs button { width: 42px; height: 42px; }
-  .fabs-more { bottom: 50px; width: 192px; }
   #soc-sheet { margin: auto; }
   .soc-read > div:first-child { flex-direction: row; align-items: center; gap: 8px; }
   .soc-big { font-size: 30px; }
@@ -648,7 +665,6 @@ html[lang="tr"] .nh-flag { display: none; }
 /* Kısa dikey ekran (ör. 320×568): şarj önerisi açıkken haritaya yer kalsın */
 @media (min-height: 521px) and (max-height: 640px) {
   #banners { max-height: 34dvh; }
-  body:has(#top-panel:not(.hidden)) .near-summary { display: none; }
 }
 /* Yatay telefonda başlıkta hız/limit yoksa hap kaynağı tam yazabilsin */
 @media (max-height: 520px) {
@@ -659,3 +675,136 @@ html[lang="tr"] .nh-flag { display: none; }
 .more-btn { align-self: center; display: inline-flex; align-items: center; justify-content: center; min-width: 52px; min-height: 40px; padding: 0 16px; margin-top: 8px; border-radius: 20px; border: 1px solid var(--line); background: var(--card-2); color: var(--accent); font-weight: 700; font-size: 15px; }
 .more-btn:active { background: var(--accent-dim); }
 #brand-chips.clamped { overflow: hidden; }
+
+/* ===== BETA beyaz kart görünümü: lacivert üst bar, beyaz yüzen paneller, yeşil eylem rengi, mavi rota. Renkler beyaz zeminde en az 4.5:1 kontrast. ===== */
+:root {
+  color-scheme: light;
+  --navy: #0f2744;
+  --bg: #f2f5f9;
+  --bg-2: #dde5ee;
+  --card: #fff;
+  --card-2: #eaeff5;
+  --line: #d3dbe6;
+  --text: #12233b;
+  --muted: #56657a;
+  --accent: #0a7d44;
+  --accent-dim: #bfe8d1;
+  --warn: #a35800;
+  --bad: #c8263a;
+  --info: #1a66d6;
+  --float: 0 4px 16px rgba(15, 39, 68, .24);
+}
+
+/* Üst bar ve durum satırı: lacivert üstünde kendi renkleri */
+.topbar, .statusrow { --text: #fff; --muted: #bccadb; --line: #2c4669; --accent: #5fe3a1; --warn: #ffc46b; --bad: #ff9ca7; --info: #93c5ff; color: var(--text); background: var(--navy); }
+.topbar { min-height: 42px; padding: calc(3px + var(--safe-t)) 12px 0; border-bottom: 0; }
+.statusrow { border-bottom: 0; box-shadow: 0 2px 8px rgba(15, 39, 68, .3); }
+.statusrow .badge { color: var(--muted); }
+.statusrow .badge.ok { color: var(--accent); }
+.statusrow .badge.wait { color: var(--warn); }
+.statusrow .badge.err { color: var(--bad); }
+#bd-weather { display: inline-flex; align-items: center; gap: 3px; flex: none; }
+#bd-weather .ic { width: 14px; height: 14px; }
+.beta-tag { flex: none; padding: 0 6px; border-radius: 5px; background: #ffc46b; color: var(--navy); font: 800 10px/16px system-ui, sans-serif; letter-spacing: .5px; }
+.beta-nav { display: none; margin-left: auto; } /* durum satırı dolu: BETA normalde başlıkta, başlığın gizlendiği navigasyonda burada */
+body.navmode .beta-nav { display: inline-block; }
+body.navmode button#st-version { margin-left: 2px; }
+body.navmode .topbar { display: none; } /* navigasyonda hız alt şeritte: harita alanı büyür; durum satırı ve BETA görünür kalır */
+body.navmode .statusrow { padding-top: calc(2px + var(--safe-t)); }
+
+/* Yüzen paneller ve düğmeler */
+.socbar, .fabs button, .searchbar, .rota-btn, .navhud, .station-card, .toppanel, #banners > .toppanel { background: #fff; border-color: var(--line); box-shadow: var(--float); }
+.socbar:active { background: var(--card-2); }
+.socbar.low { border-color: var(--warn); }
+.fabs button, .searchbar .ic { color: var(--text); }
+.fabs button.on, #fab-tools[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); }
+#fab-me.gps-bad { color: var(--warn); border-color: var(--warn); }
+.searchbar { color: var(--muted); }
+.station-card { backdrop-filter: none; -webkit-backdrop-filter: none; }
+#banners > * { border-color: var(--line); box-shadow: var(--float); }
+.advisor { background: #fff; }
+.advisor.warn { background: #fff4e2; }
+.advisor.bad { background: #ffe9eb; }
+.pickbar { background: #e6f6ed; }
+.test-banner { background: #e8f1fd; border-color: #b8d2f5; }
+main { background: var(--bg); box-shadow: 0 10px 44px rgba(15, 39, 68, .35); }
+.sheet-dlg { background: #fff; }
+.sheet-dlg::backdrop { background: rgba(15, 39, 68, .45); }
+.dock { background: #fff; box-shadow: 0 -2px 10px rgba(15, 39, 68, .12); }
+
+/* Yeşil/renkli zeminde koyu yazı yerine beyaz (kontrast) */
+.btn.primary, #fab-nav { background: var(--accent); border-color: var(--accent); color: #fff; }
+.stop .num, .stop.wx .num, .spin i, .roi-label, .roi.speed .roi-label { color: #fff; }
+.pin.start { background: var(--accent); }
+.pin.via { background: #d97a00; }
+
+/* Navigasyon: mavi manevra oku, kompakt kırmızı durdurma */
+.navbar { grid-template-columns: auto minmax(0, 1fr); }
+.nav-arrow { color: var(--info); }
+.fabs #fab-stopnav { width: 46px; height: 46px; background: var(--bad); border-color: var(--bad); color: #fff; }
+.fabs #fab-stopnav .ic { fill: currentColor; }
+#stop-nav-actions .btn { flex: 1; min-height: 48px; }
+.stop-yes { background: var(--bad); border-color: var(--bad); color: #fff; }
+
+/* Navigasyon pil şeridi: pil + menzil, varışta pil, sonraki şarj */
+.nav-ev { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 5px 2px; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--float); }
+.ne-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; min-height: 44px; padding: 0 4px; background: none; border: 0; border-left: 1px solid var(--line); border-radius: 0; color: var(--text); text-align: center; }
+.ne-cell:first-child { border-left: 0; }
+.ne-cell small { color: var(--muted); font-size: 11px; white-space: nowrap; }
+.ne-v { display: flex; flex-direction: column; align-items: center; max-width: 100%; white-space: nowrap; line-height: 1.15; }
+.ne-v b { overflow: hidden; max-width: 100%; text-overflow: ellipsis; font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ne-sub { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+#ne-soc { color: var(--accent); }
+@media (max-width: 399px) { /* alt şeritte uzun süre (ör. saat + dakika) komşu hücreye taşmasın */
+  .nh-cell { padding: 0 2px; }
+  .nh-cell b { font-size: 15px; }
+  .nh-time b { font-size: 16px; }
+}
+
+/* Rota sayfası */
+.rp-carhead { display: flex; align-items: center; gap: 10px; }
+.rp-carhead > .ic { color: var(--accent); }
+.rp-carhead .btn { flex: none; min-height: 40px; }
+.rp-carname { flex: 1; min-width: 0; }
+.rp-carname b { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.rp-carname small { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.rp-socline { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.rp-socline > div { padding: 8px 10px; background: var(--bg); border-radius: 10px; }
+.rp-socline small { display: block; color: var(--muted); font-size: 11.5px; }
+.rp-socline b { color: var(--accent); font-size: 20px; font-variant-numeric: tabular-nums; }
+.soc-input label { font-size: 13px; }
+.soc-input-row { display: flex; align-items: center; gap: 10px; }
+.soc-input-row input[type=range] { flex: 1; min-width: 0; height: 40px; }
+.soc-input-row input[type=number] { flex: none; width: 68px; min-height: 44px; padding: 4px 6px; text-align: center; font-variant-numeric: tabular-nums; }
+#via-row .btn { flex: none; min-width: 44px; min-height: 44px; padding: 0 10px; align-self: flex-end; }
+.summary { grid-template-columns: repeat(4, 1fr); }
+.summary div { display: flex; flex-direction: column; justify-content: center; }
+#route-adv > summary { display: flex; align-items: center; min-height: 40px; cursor: pointer; font-weight: 600; }
+#route-adv[open] > summary { margin-bottom: 8px; }
+.rp-adv-h { margin: 8px 0 0; color: var(--muted); font-size: 12px; font-weight: 600; }
+@media (max-width: 359px) {
+  .summary { grid-template-columns: repeat(2, 1fr); }
+  .rp-carhead .btn { max-width: 104px; white-space: normal; line-height: 1.15; }
+}
+
+/* Harita öncesi pil kartı: dikey ekranda pil, menzil, tüketim ve küçük sürgü; yatay ekranda başlıktaki hap (sürgü pencerede) */
+.socbar-line2 { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.socbar-cons { flex: none; display: inline-flex; align-items: baseline; gap: 3px; font-size: 13px; font-weight: 600; }
+.socbar-cons small { color: var(--muted); font-size: 11px; font-weight: 500; }
+body.navmode .mapsoc, body.sheet-open .mapsoc { display: none; }
+@media (min-height: 521px) {
+  .mapsoc { width: min(300px, calc(100vw - 20px)); margin: 8px 0 0 10px; padding: 4px 12px 2px; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--float); }
+  .mapsoc .socbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 8px; width: 100%; max-width: none; min-height: 44px; margin: 0; padding: 2px 0; background: none; border: 0; border-radius: 0; box-shadow: none; text-align: left; }
+  .socbar-batt { grid-area: 1 / 1; }
+  .socbar-main { grid-area: 1 / 2; }
+  .socbar-chev { grid-area: 1 / 3 / span 2; }
+  .socbar-line2 { grid-area: 2 / 1 / auto / span 2; }
+  .mapsoc-slider input { display: block; height: 28px; margin: 0; }
+}
+@media (max-height: 520px) {
+  .mapsoc { display: contents; }
+  .mapsoc-slider { display: none; }
+  .socbar-srcline { display: none; }
+  .nav-ev { position: absolute; left: 0; bottom: calc(100% + 6px); width: min(340px, 52vw); }
+  .ne-cell { min-height: 36px; }
+}

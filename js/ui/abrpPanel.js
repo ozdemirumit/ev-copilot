@@ -3,6 +3,7 @@ import { getState, patch, subscribe, effective } from '../state.js';
 import { load, save, remove } from '../utils/storage.js';
 import { buildPacket, sendNow, getIntervalMs } from '../abrp/telemetry.js';
 import { ABRP } from '../config.js';
+import { abrpBadge } from './statusBadges.js';
 
 const STATUS_CLASS = { idle: '', wait: 'wait', ok: 'ok', err: 'err' };
 
@@ -22,7 +23,8 @@ export function initAbrpPanel() {
 
   const saved = load('abrp', {});
   fields.forEach((f) => { els[f].value = saved[f] || ''; });
-  patch('abrp', { enabled: !!saved.enabled });
+  // Kayıtlı gönderim açıksa ilk paket gidene kadar (en çok bir aralık) "pasif" değil "beklemede" görünür
+  patch('abrp', saved.enabled ? { enabled: true, status: 'wait', text: 'Beklemede' } : { enabled: false });
   els.enabled.checked = getState('abrp').enabled;
   syncStatus();
 
@@ -73,8 +75,10 @@ export function initAbrpPanel() {
     const cls = STATUS_CLASS[a.status];
     els.badge.className = 'badge ' + cls;
     els.badge.textContent = a.text;
-    els.topBadge.className = 'badge ' + cls;
-    els.topBadge.textContent = 'ABRP: ' + a.text.toLowerCase();
+    const [topText, topCls] = abrpBadge(a);
+    els.topBadge.className = 'badge ' + topCls;
+    els.topBadge.textContent = topText;
+    els.topBadge.title = a.text;
     els.http.textContent = a.http == null ? '—' : String(a.http);
     document.getElementById('abrp-webhook-status').textContent = a.webhook || '—';
     els.last.textContent = a.lastSentAt ? new Date(a.lastSentAt).toLocaleTimeString(locale()) : '—';

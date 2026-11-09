@@ -1,61 +1,64 @@
-import { getState, patch } from '../state.js';
+import { getState, patch, subscribe } from '../state.js';
 import { toast } from '../ui/toast.js';
-import { load, save } from '../utils/storage.js';
 
-let sentinel = null;
+// Ekranı açık tutma: navigasyon sürerken kendiliğinden istenir, bitince bırakılır (düğme yok).
+// Desteklenmiyor ya da reddedildiyse navigasyon sürer; kullanıcıya navigasyon başına en çok bir kısa uyarı gösterilir.
+const UNSUPPORTED = 'Ekran açık tutulamıyor: bu tarayıcı desteklemiyor';
+const FAILED = 'Ekran açık tutulamadı: cihazın ekran zaman aşımını uzatabilirsin';
 
-async function acquire() {
-  sentinel = await navigator.wakeLock.request('screen');
-  sentinel.addEventListener('release', () => { sentinel = null; });
+let sentinel = null; // tarayıcının verdiği kilit; yalnızca o varken ekran gerçekten açık tutuluyor
+let acquiring = null;
+let wanted = false; // navigasyon sürüyor: sekme gizlenince kilit düşer, istek kalır ve dönüşte yeniden alınır
+let warned = false;
+
+/** system.wakeLock yalnızca tutulan kilidi yansıtır. */
+function sync() {
+  const held = !!sentinel;
+  if (getState('system').wakeLock !== held) patch('system', { wakeLock: held });
+}
+
+function warnOnce(text) {
+  if (warned) return;
+  warned = true;
+  toast(text, 4000);
+}
+
+function acquire() {
+  if (sentinel || acquiring || document.visibilityState !== 'visible') return acquiring;
+  acquiring = navigator.wakeLock.request('screen').then((lock) => {
+    if (!wanted) { lock.release().catch(() => {}); return; } // beklerken navigasyon bitti
+    sentinel = lock;
+    lock.addEventListener('release', () => { // sistem de bırakabilir (sekme gizlendi, düşük pil)
+      if (sentinel === lock) { sentinel = null; sync(); }
+    });
+    sync();
+  }).catch(() => { warnOnce(FAILED); }).finally(() => { acquiring = null; });
+  return acquiring;
+}
+
+function release() {
+  const lock = sentinel;
+  sentinel = null;
+  sync();
+  lock?.release().catch(() => {});
 }
 
 export function initWakeLock() {
-  const btn = document.getElementById('btn-wake');
-  const sw = document.getElementById('wake-switch');
-  if (!('wakeLock' in navigator)) {
-    btn.disabled = true;
-    btn.title = 'Wake Lock bu tarayıcıda desteklenmiyor';
-    if (sw) { sw.disabled = true; sw.checked = false; }
-    return;
-  }
-
-  const paint = () => {
-    const on = getState('system').wakeLock;
-    btn.classList.toggle('on', on);
-    btn.setAttribute('aria-pressed', String(on));
-    if (sw) sw.checked = on;
-  };
-
-  // Simge düğmesi ve Açık/Kapalı anahtarı aynı işi yapar; ikisi de durumla eşitlenir.
-  const toggle = async () => {
-    try {
-      if (getState('system').wakeLock) {
-        patch('system', { wakeLock: false });
-        save('wakeOn', false);
-        await sentinel?.release();
-      } else {
-        await acquire();
-        patch('system', { wakeLock: true });
-        save('wakeOn', true);
-        toast('Ekran açık kalacak');
-      }
-    } catch (err) {
-      toast('Wake Lock alınamadı: ' + err.message);
-    }
-    paint();
-  };
-  btn.addEventListener('click', toggle);
-  sw?.addEventListener('change', toggle);
-
-  // Önceki oturumda açıksa uygulama açılınca yeniden almayı dene (kullanıcı dokunuşu gerekmez; olmazsa sessizce vazgeç).
-  if (load('wakeOn', false)) {
-    acquire().then(() => { patch('system', { wakeLock: true }); paint(); }).catch(() => {});
-  }
-
-  // Sekme gizlenince kilit sistem tarafından bırakılır; geri gelince yeniden al.
-  document.addEventListener('visibilitychange', async () => {
-    if (document.visibilityState === 'visible' && getState('system').wakeLock && !sentinel) {
-      try { await acquire(); } catch { patch('system', { wakeLock: false }); paint(); }
-    }
+  const supported = 'wakeLock' in navigator;
+  subscribe('nav', (nav) => {
+    const on = !!nav.active;
+    if (on === wanted) return; // nav her saniye güncellenir
+    wanted = on;
+    if (on) {
+      warned = false;
+      if (supported) acquire();
+      else warnOnce(UNSUPPORTED);
+    } else if (supported) release();
   });
+  if (supported) {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && wanted) acquire();
+    });
+  }
+  sync();
 }

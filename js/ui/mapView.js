@@ -37,6 +37,7 @@ const pinEl = (kind, label) => {
   const d = el('div', 'pin ' + kind);
   if (kind === 'end') d.innerHTML = icon('flag');
   else if (kind === 'start') d.append(el('i', 'dot'));
+  else if (kind === 'via') d.append(el('i', 'dot'));
   else d.append(el('b', '', label));
   return d;
 };
@@ -154,7 +155,8 @@ export function initMap() {
 
   const startInput = document.getElementById('route-start');
   const endInput = document.getElementById('route-end');
-  const pickBtns = { start: document.getElementById('pick-start'), end: document.getElementById('pick-end') };
+  const viaInput = document.getElementById('route-via');
+  const pickBtns = { start: document.getElementById('pick-start'), end: document.getElementById('pick-end'), via: document.getElementById('pick-via') };
 
   function setPickMode(mode) {
     pickMode = mode;
@@ -167,7 +169,7 @@ export function initMap() {
   mapApi.pickPlace = (cb) => { placeCb = cb; setPickMode('place'); };
   mapApi.cancelPick = () => { const was = pickMode; placeCb = null; setPickMode(null); showTab(was === 'place' ? 'favs' : 'route'); };
 
-  const inputFor = (kind) => (kind === 'start' ? startInput : endInput);
+  const inputFor = (kind) => (kind === 'start' ? startInput : kind === 'via' ? viaInput : endInput);
 
   function setPoint(kind, point, { zoom = false, fit: doFit = true } = {}) {
     patch('route', { [kind]: point });
@@ -175,14 +177,14 @@ export function initMap() {
     whenMap(() => {
       unmark(markers[kind]);
       markers[kind] = point ? marker(point, pinEl(kind), point.label || '') : null;
-      const { start, end } = getState('route');
-      if (start && end && doFit) fit([start, end], 40);
+      const { start, end, via } = getState('route');
+      if (start && end && doFit) fit(via ? [start, via, end] : [start, end], 40);
       else if (point && zoom && doFit) adapter.moveTo({ center: point, zoom: 12 });
     });
   }
 
   // Yer/adres arama: yazarken öneri, seçince işaret koy ve oraya git
-  ['start', 'end'].forEach((kind) => {
+  ['start', 'via', 'end'].forEach((kind) => {
     attachSearch(inputFor(kind), document.getElementById('suggest-' + kind), (r) => {
       setPoint(kind, { lat: r.lat, lon: r.lon, label: r.sub ? `${r.label}, ${r.sub.split(', ').slice(-2)[0]}` : r.label }, { zoom: true });
       if (kind === 'start' && !getState('route').end) inputFor('end').focus();
@@ -206,14 +208,16 @@ export function initMap() {
       if (label && getState('route')[kind] === pt) { pt.label = label; inputFor(kind).value = label; }
     });
     setPickMode(kind === 'start' ? 'end' : null); // başlangıçtan sonra otomatik varışa geç
-    if (kind === 'end') showTab('route'); // iki nokta da seçildi: plan sayfasına dön
+    if (kind === 'end' || kind === 'via') showTab('route'); // nokta seçildi: plan sayfasına dön
   }
 
   pickBtns.start.addEventListener('click', () => setPickMode(pickMode === 'start' ? null : 'start'));
   pickBtns.end.addEventListener('click', () => setPickMode(pickMode === 'end' ? null : 'end'));
+  pickBtns.via.addEventListener('click', () => setPickMode(pickMode === 'via' ? null : 'via'));
 
   document.getElementById('btn-clear-route').addEventListener('click', () => {
     setPoint('start', null);
+    setPoint('via', null);
     setPoint('end', null);
     setPickMode(null);
   });

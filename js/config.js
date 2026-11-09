@@ -36,7 +36,7 @@ export const PLANNER = {
   minChargeTo: 20,
   minStopAdd: load('minStopAdd', 15), // bir durakta en az eklenecek pil puanı (6 puanlık anlamsız mola olmasın)
   tolerance: load('tolerance', 3), // giriş/varış eşiğinde ± puan: altına düşmek yasak değil, cezalı (eşikte "uçurum" olmasın)
-  maxChargeTo: load('maxChargeTo', 90), // bir durakta en fazla şarj hedefi % (kullanıcı ayarlar)
+  maxChargeTo: load('maxChargeTo', 80), // bir durakta en fazla şarj hedefi % (kullanıcı ayarlar)
   chargeStep: 5,
   stopOverheadMin: 4, // fişe takma/çıkarma
   timeValueTlPerMin: 3, // "Optimum" modunda 1 dk'nın TL karşılığı

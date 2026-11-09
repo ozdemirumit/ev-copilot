@@ -201,7 +201,6 @@ function render() {
   paintStatus(meta.at
     ? `${items.length} istasyon · ${radius} km çevre · ${age < 1 ? 'şimdi' : age + ' dk önce'} güncellendi${meta.cached ? ' (önbellek)' : ''}`
     : 'Henüz aranmadı. Konumunu açıp "Ara"ya dokun.');
-  $('near-summary-text').textContent = meta.at && items.length ? t('Yakında {0} şarj istasyonu', items.length) : 'Şarj istasyonları';
   const warn = $('near-warn');
   warn.textContent = meta.errors.join(' · ');
   warn.classList.toggle('hidden', !meta.errors.length);

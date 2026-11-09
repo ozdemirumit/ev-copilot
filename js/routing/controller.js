@@ -123,6 +123,9 @@ export async function refetchStations() {
   }
 }
 
+/** Rotanın ara noktaları: önce (varsa) navigasyonda seçilen şarj istasyonu, sonra kullanıcının ara durağı. */
+export const tripWaypoints = (stopover, station) => [station, stopover].filter(Boolean);
+
 /**
  * Rotayı planla. `from` verilirse (yeniden rota: rotadan çıkıldı) başlangıç o konumdur ve istasyonlar yeniden aranmaz,
  * mevcut liste yeni rotaya izdüşürülür (sunucuya yeniden gitmemek için).
@@ -147,7 +150,7 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
   try {
     patch('plan', { status: 'loading', text: 'Rota alınıyor…', stops: [], totals: null, ranking: [], fromKm: 0, fromSoc: null });
     patch('sim', { routeKm: 0, lat: from?.lat ?? null, lon: from?.lon ?? null, play: false }); // simüle araç yeni rotanın başına (yeniden rotada bulunduğu yere)
-    const tm = [Date.now()]; const rt = await fetchRoute(start, end, via ? [via] : []); tm.push(Date.now()); // tm: aşama zamanları (yavaşlık tanısı)
+    const tm = [Date.now()]; const rt = await fetchRoute(start, end, tripWaypoints(route.via, via)); tm.push(Date.now()); // tm: aşama zamanları (yavaşlık tanısı)
     if (rt.note) toast(rt.note, 7000);
     const pts = resampleRoute(rt.coords);
     // Hız rota adımlarından: dilim başına serbest akış hızı (yol limiti/sınıfı) ve trafik çarpanı. Elle ayar yok.
@@ -305,7 +308,6 @@ const TRIP_KEY = 'trip'; // eski sürümlerin kaydı: açılışta silinir
 
 export function initRouteController() {
   kvDel(TRIP_KEY); // eski sürümlerin kayıtlı rotası
-  document.getElementById('btn-plan').addEventListener('click', () => planTrip());
   let lastMode = getState('plan').mode;
   subscribe('plan', (p) => {
     if (p.mode !== lastMode) { lastMode = p.mode; refresh(); }

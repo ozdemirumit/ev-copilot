@@ -22,13 +22,15 @@ function pick(series, t) {
     rain: num(series.precipitation[bi]),
     windSpeed: num(series.wind_speed_10m[bi]),
     windDir: num(series.wind_direction_10m[bi]), // rüzgârın GELDİĞİ yön (meteorolojik)
+    known: Number.isFinite(series.temperature_2m[bi]), // false ise temp hesap için varsayılandır: ekranda gerçek sıcaklık gibi gösterilmez
+    code: Number.isFinite(series.weather_code?.[bi]) ? series.weather_code[bi] : null, // WMO hava kodu (eski önbellekte yok)
   };
 }
 
 async function fetchSeries(points, days) {
   const lat = points.map((p) => p.lat.toFixed(3)).join(',');
   const lon = points.map((p) => p.lon.toFixed(3)).join(',');
-  const url = `${URL_BASE}?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m`
+  const url = `${URL_BASE}?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m,weather_code`
     + `&forecast_days=${days}&timezone=UTC&timeformat=unixtime&wind_speed_unit=kmh`;
   const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
   if (!res.ok) throw new Error(`Open-Meteo HTTP ${res.status}`);

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0e1116">
+  <meta name="theme-color" content="#0f2744">
   <title>EV Route Finder</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
@@ -13,7 +13,7 @@
   <script>setTimeout(function () { document.documentElement.classList.add('i18n-ready'); }, 3000);</script>
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2.5 5 13.5h6l-1 8 8-11h-6l1-8Z"/></symbol><symbol id="i-map" viewBox="0 0 24 24"><path d="m9 4.5-5.5 2v13l5.5-2 6 2 5.5-2v-13l-5.5 2-6-2Z"/><path d="M9 4.5v13M15 6.5v13"/></symbol><symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r=".9"/><circle cx="12" cy="12" r=".9"/><circle cx="19" cy="12" r=".9"/></symbol><symbol id="i-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol><symbol id="i-gps" viewBox="0 0 24 24"><path d="M12 21.5s7-6.3 7-12a7 7 0 1 0-14 0c0 5.7 7 12 7 12Z"/><circle cx="12" cy="9.5" r="2.5"/></symbol><symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></symbol><symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="18.5" r="2.5"/><circle cx="18" cy="5.5" r="2.5"/><path d="M8.5 18.5H15a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.5"/></symbol><symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol><symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></symbol><symbol id="i-nav" viewBox="0 0 24 24"><path d="m12 3 7.5 18-7.5-4-7.5 4L12 3Z"/></symbol><symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol><symbol id="i-chev-down" viewBox="0 0 24 24"><path d="m6 9.5 6 6 6-6"/></symbol><symbol id="i-chev-up" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></symbol><symbol id="i-chev-right" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3 7 7M17 17l1.7 1.7M18.7 5.3 17 7M7 17l-1.7 1.7"/></symbol><symbol id="i-volume" viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4Z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></symbol><symbol id="i-volume-off" viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4Z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/></symbol><symbol id="i-limit" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12h7"/></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.1 5.9-.8L12 3.5Z"/></symbol><symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4.5 18a9 9 0 1 1 15 0"/><path d="m12 14 4-5"/><circle cx="12" cy="14" r="1.4"/></symbol><symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 7.5h3.5L9 5h6l1.5 2.5H20a1 1 0 0 1 1 1V18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8.5a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.5"/></symbol><symbol id="i-signal" viewBox="0 0 24 24"><path d="M12 12v9M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.5 5.5a9.2 9.2 0 0 0 0 13M18.5 5.5a9.2 9.2 0 0 1 0 13"/><circle cx="12" cy="12" r="1.4"/></symbol><symbol id="i-flask" viewBox="0 0 24 24"><path d="M9.5 3h5M10.5 3v6.5L5 19a1.5 1.5 0 0 0 1.3 2.2h11.4A1.5 1.5 0 0 0 19 19l-5.5-9.5V3"/><path d="M8 15h8"/></symbol><symbol id="i-pin-bolt" viewBox="0 0 24 24"><path d="M12 21.5s7-6.3 7-12a7 7 0 1 0-14 0c0 5.7 7 12 7 12Z"/><path d="m12.8 6-3 4.3h2.4l-.9 3.7 3-4.3h-2.4l.9-3.7Z"/></symbol><symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 3v5M15 3v5M6.5 8h11v3a5.5 5.5 0 0 1-11 0V8ZM12 16.5V21"/></symbol><symbol id="i-tag" viewBox="0 0 24 24"><path d="M3.5 12.5v-8a1 1 0 0 1 1-1h8L21 12l-8.5 8.5-9-8Z"/><circle cx="8" cy="8" r="1.3"/></symbol><symbol id="i-battery" viewBox="0 0 24 24"><rect x="3" y="7.5" width="16" height="9" rx="2"/><path d="M21.5 11v2"/></symbol><symbol id="i-turn-right" viewBox="0 0 24 24"><path d="M6 20v-7a4 4 0 0 1 4-4h9"/><path d="m14.5 4.5 4.5 4.5-4.5 4.5"/></symbol><symbol id="i-turn-left" viewBox="0 0 24 24"><path d="M18 20v-7a4 4 0 0 0-4-4H5"/><path d="M9.5 4.5 5 9l4.5 4.5"/></symbol><symbol id="i-slight-right" viewBox="0 0 24 24"><path d="M8 21v-6.5a3 3 0 0 1 .9-2.1L17 4.5"/><path d="M11 4h6.5v6.5"/></symbol><symbol id="i-slight-left" viewBox="0 0 24 24"><path d="M16 21v-6.5a3 3 0 0 0-.9-2.1L7 4.5"/><path d="M13 4H6.5v6.5"/></symbol><symbol id="i-sharp-right" viewBox="0 0 24 24"><path d="M7 3.5V12a3 3 0 0 0 .9 2.1l7 7"/><path d="M9.5 21.5H16V15"/></symbol><symbol id="i-sharp-left" viewBox="0 0 24 24"><path d="M17 3.5V12a3 3 0 0 1-.9 2.1l-7 7"/><path d="M14.5 21.5H8V15"/></symbol><symbol id="i-straight" viewBox="0 0 24 24"><path d="M12 21V4"/><path d="m6 9.5 6-6 6 6"/></symbol><symbol id="i-uturn" viewBox="0 0 24 24"><path d="M17 21v-11a5.5 5.5 0 0 0-11 0v2.5"/><path d="m2 9 4 4 4-4"/></symbol><symbol id="i-flag" viewBox="0 0 24 24"><path d="M5.5 21.5V4M5.5 4.5h13l-3 4 3 4h-13"/></symbol><symbol id="i-car" viewBox="0 0 24 24"><path d="M4 16.5v-4l2-5.5a1.5 1.5 0 0 1 1.4-1h9.2A1.5 1.5 0 0 1 18 7l2 5.5v4M4 12.5h16M4 16.5h16v2.5h-3v-2.5M7 19H4v-2.5"/><circle cx="7.5" cy="14.5" r=".6"/><circle cx="16.5" cy="14.5" r=".6"/></symbol><symbol id="i-roundabout" viewBox="0 0 24 24"><circle cx="12" cy="10" r="4.5"/><path d="M12 14.5V22M16 7l3.5-3.5M16 3.5h3.5V7"/></symbol><symbol id="i-ferry" viewBox="0 0 24 24"><path d="M3 15.5 5 20h14l2-4.5L12 13l-9 2.5ZM6 14V8.5h12V14M12 8.5V4.5M3 21.5c1.5 0 1.5-1 3-1s1.5 1 3 1 1.5-1 3-1 1.5 1 3 1 1.5-1 3-1 1.5 1 3 1"/></symbol><symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3.5 2.5 20h19L12 3.5Z"/><path d="M12 10v4.5M12 17.2v.1"/></symbol><symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m15.5 8.5-2 5-5 2 2-5 5-2Z"/></symbol></defs></svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2.5 5 13.5h6l-1 8 8-11h-6l1-8Z"/></symbol><symbol id="i-map" viewBox="0 0 24 24"><path d="m9 4.5-5.5 2v13l5.5-2 6 2 5.5-2v-13l-5.5 2-6-2Z"/><path d="M9 4.5v13M15 6.5v13"/></symbol><symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r=".9"/><circle cx="12" cy="12" r=".9"/><circle cx="19" cy="12" r=".9"/></symbol><symbol id="i-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol><symbol id="i-gps" viewBox="0 0 24 24"><path d="M12 21.5s7-6.3 7-12a7 7 0 1 0-14 0c0 5.7 7 12 7 12Z"/><circle cx="12" cy="9.5" r="2.5"/></symbol><symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></symbol><symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="18.5" r="2.5"/><circle cx="18" cy="5.5" r="2.5"/><path d="M8.5 18.5H15a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.5"/></symbol><symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol><symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></symbol><symbol id="i-nav" viewBox="0 0 24 24"><path d="m12 3 7.5 18-7.5-4-7.5 4L12 3Z"/></symbol><symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol><symbol id="i-chev-down" viewBox="0 0 24 24"><path d="m6 9.5 6 6 6-6"/></symbol><symbol id="i-chev-up" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></symbol><symbol id="i-chev-right" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3 7 7M17 17l1.7 1.7M18.7 5.3 17 7M7 17l-1.7 1.7"/></symbol><symbol id="i-volume" viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4Z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></symbol><symbol id="i-volume-off" viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4Z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/></symbol><symbol id="i-limit" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12h7"/></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.1 5.9-.8L12 3.5Z"/></symbol><symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4.5 18a9 9 0 1 1 15 0"/><path d="m12 14 4-5"/><circle cx="12" cy="14" r="1.4"/></symbol><symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 7.5h3.5L9 5h6l1.5 2.5H20a1 1 0 0 1 1 1V18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8.5a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.5"/></symbol><symbol id="i-signal" viewBox="0 0 24 24"><path d="M12 12v9M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.5 5.5a9.2 9.2 0 0 0 0 13M18.5 5.5a9.2 9.2 0 0 1 0 13"/><circle cx="12" cy="12" r="1.4"/></symbol><symbol id="i-flask" viewBox="0 0 24 24"><path d="M9.5 3h5M10.5 3v6.5L5 19a1.5 1.5 0 0 0 1.3 2.2h11.4A1.5 1.5 0 0 0 19 19l-5.5-9.5V3"/><path d="M8 15h8"/></symbol><symbol id="i-pin-bolt" viewBox="0 0 24 24"><path d="M12 21.5s7-6.3 7-12a7 7 0 1 0-14 0c0 5.7 7 12 7 12Z"/><path d="m12.8 6-3 4.3h2.4l-.9 3.7 3-4.3h-2.4l.9-3.7Z"/></symbol><symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 3v5M15 3v5M6.5 8h11v3a5.5 5.5 0 0 1-11 0V8ZM12 16.5V21"/></symbol><symbol id="i-tag" viewBox="0 0 24 24"><path d="M3.5 12.5v-8a1 1 0 0 1 1-1h8L21 12l-8.5 8.5-9-8Z"/><circle cx="8" cy="8" r="1.3"/></symbol><symbol id="i-battery" viewBox="0 0 24 24"><rect x="3" y="7.5" width="16" height="9" rx="2"/><path d="M21.5 11v2"/></symbol><symbol id="i-turn-right" viewBox="0 0 24 24"><path d="M6 20v-7a4 4 0 0 1 4-4h9"/><path d="m14.5 4.5 4.5 4.5-4.5 4.5"/></symbol><symbol id="i-turn-left" viewBox="0 0 24 24"><path d="M18 20v-7a4 4 0 0 0-4-4H5"/><path d="M9.5 4.5 5 9l4.5 4.5"/></symbol><symbol id="i-slight-right" viewBox="0 0 24 24"><path d="M8 21v-6.5a3 3 0 0 1 .9-2.1L17 4.5"/><path d="M11 4h6.5v6.5"/></symbol><symbol id="i-slight-left" viewBox="0 0 24 24"><path d="M16 21v-6.5a3 3 0 0 0-.9-2.1L7 4.5"/><path d="M13 4H6.5v6.5"/></symbol><symbol id="i-sharp-right" viewBox="0 0 24 24"><path d="M7 3.5V12a3 3 0 0 0 .9 2.1l7 7"/><path d="M9.5 21.5H16V15"/></symbol><symbol id="i-sharp-left" viewBox="0 0 24 24"><path d="M17 3.5V12a3 3 0 0 1-.9 2.1l-7 7"/><path d="M14.5 21.5H8V15"/></symbol><symbol id="i-straight" viewBox="0 0 24 24"><path d="M12 21V4"/><path d="m6 9.5 6-6 6 6"/></symbol><symbol id="i-uturn" viewBox="0 0 24 24"><path d="M17 21v-11a5.5 5.5 0 0 0-11 0v2.5"/><path d="m2 9 4 4 4-4"/></symbol><symbol id="i-flag" viewBox="0 0 24 24"><path d="M5.5 21.5V4M5.5 4.5h13l-3 4 3 4h-13"/></symbol><symbol id="i-car" viewBox="0 0 24 24"><path d="M4 16.5v-4l2-5.5a1.5 1.5 0 0 1 1.4-1h9.2A1.5 1.5 0 0 1 18 7l2 5.5v4M4 12.5h16M4 16.5h16v2.5h-3v-2.5M7 19H4v-2.5"/><circle cx="7.5" cy="14.5" r=".6"/><circle cx="16.5" cy="14.5" r=".6"/></symbol><symbol id="i-roundabout" viewBox="0 0 24 24"><circle cx="12" cy="10" r="4.5"/><path d="M12 14.5V22M16 7l3.5-3.5M16 3.5h3.5V7"/></symbol><symbol id="i-ferry" viewBox="0 0 24 24"><path d="M3 15.5 5 20h14l2-4.5L12 13l-9 2.5ZM6 14V8.5h12V14M12 8.5V4.5M3 21.5c1.5 0 1.5-1 3-1s1.5 1 3 1 1.5-1 3-1 1.5 1 3 1 1.5-1 3-1 1.5 1 3 1"/></symbol><symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3.5 2.5 20h19L12 3.5Z"/><path d="M12 10v4.5M12 17.2v.1"/></symbol><symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m15.5 8.5-2 5-5 2 2-5 5-2Z"/></symbol><symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.6 1.3A3.9 3.9 0 0 1 17.5 18.5H7Z"/></symbol><symbol id="i-rain" viewBox="0 0 24 24"><path d="M7 14.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.6 1.3 3.9 3.9 0 0 1-.5 7.7H7Z"/><path d="m8.5 17.5-1 3M12.5 17.5l-1 3M16.5 17.5l-1 3"/></symbol><symbol id="i-snow" viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9"/></symbol><symbol id="i-storm" viewBox="0 0 24 24"><path d="M7 14.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.6 1.3 3.9 3.9 0 0 1-.5 7.7H7Z"/><path d="m12.5 13-2.5 4.5h3.5L11 22"/></symbol><symbol id="i-thermo" viewBox="0 0 24 24"><path d="M10 13.8V5a2.5 2.5 0 0 1 5 0v8.8a4.5 4.5 0 1 1-5 0Z"/><circle cx="12.5" cy="17.5" r="1.4"/></symbol></defs></svg>
 
 <!-- ===== Harita sahnesi: tam ekran arka plan ===== -->
 <div class="stage"><div id="map" role="application" aria-label="Harita"></div></div>
@@ -21,15 +21,21 @@
 <!-- ===== Üst çubuk: canlı HUD (haritanın üstünde yüzer) ===== -->
 <div class="hudtop" id="hudtop">
 <header class="topbar">
-  <div class="brand" id="brand" role="button" tabindex="0" title="Dokun: uygulamayı yenile"><svg class="ic brand-bolt" aria-hidden="true"><use href="#i-bolt"/></svg><span class="brand-text">EV Route Finder<small><span id="veh-name"></span></small></span></div>
+  <div class="brand" id="brand" role="button" tabindex="0" title="Dokun: uygulamayı yenile"><svg class="ic brand-bolt" aria-hidden="true"><use href="#i-bolt"/></svg><span class="brand-text">EV Route Finder<small><span id="veh-name"></span></small></span><span class="beta-tag" data-i18n-skip>BETA</span></div>
   <div class="hud" aria-live="off">
     <div class="hud-item soc"><b id="hud-soc">--</b><span>%</span></div>
     <div class="hud-item" id="hud-speed-box"><b id="hud-speed">--</b><span>km/h</span></div>
     <div class="limit-sign hidden" id="hud-limit" title="Yol hız limiti"></div>
   </div>
-  <button class="icon-btn" id="btn-gps" type="button" aria-pressed="false" title="GPS aç/kapat" aria-label="GPS aç/kapat"><svg class="ic" aria-hidden="true"><use href="#i-gps"/></svg></button>
-  <button class="icon-btn" id="btn-tools" type="button" aria-haspopup="dialog" aria-controls="tools-dialog" title="Durum ve kontroller" aria-label="Durum ve kontroller"><svg class="ic" aria-hidden="true"><use href="#i-dots"/></svg></button>
 </header>
+<div class="statusrow" id="statusrow" role="group" aria-label="Durum">
+  <span class="badge" id="bd-ocr">OCR: kapalı</span>
+  <span class="badge" id="bd-abrp">ABRP: pasif</span>
+  <span class="badge" id="bd-traffic">Trafik: —</span>
+  <span class="badge" id="bd-weather" title="Hava durumu bilinmiyor: konum ve Open-Meteo yanıtı gerekir"><svg class="ic" aria-hidden="true"><use id="bd-weather-ic" href="#i-thermo"/></svg><span id="bd-weather-t">Hava: —</span></span>
+  <span class="beta-tag beta-nav" data-i18n-skip>BETA</span>
+  <button class="ver" id="st-version" type="button" aria-haspopup="dialog" aria-controls="tools-dialog" title="Durum ve kontroller">v…</button>
+</div>
 <div id="banners">
 <div class="advisor hidden" id="advisor-banner" role="status" aria-live="polite"></div>
 <div class="toppanel hidden" id="top-panel">
@@ -40,7 +46,6 @@
     <div class="nav-text" id="nav-text"></div>
     <div class="nav-road" id="nav-road"></div>
   </div>
-  <button class="tog" id="nav-stop" type="button" aria-label="Navigasyonu durdur" title="Navigasyonu durdur"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
   <div class="nav-then" id="nav-then"></div>
 </div>
 <div class="tp-charge hidden" id="near-alert">
@@ -54,18 +59,41 @@
 </div>
 <div class="advisor warn hidden" id="road-alert" role="alert"></div>
 </div>
+<div class="mapsoc" id="mapsoc">
 <button class="socbar" id="socbar" type="button" aria-haspopup="dialog" aria-controls="soc-sheet" aria-label="Pil ve menzil">
   <span class="socbar-batt" aria-hidden="true"><i id="socbar-level"></i></span>
   <span class="socbar-main"><span class="pct-group"><span class="pct-sign">%</span><b id="socbar-val">--</b></span><span class="socbar-sep" aria-hidden="true">·</span><span class="socbar-range" id="socbar-rangebox" title="Tahmini menzil"><span aria-hidden="true">≈</span><b id="socbar-range">--</b><small>km</small></span></span>
-  <span class="socbar-srcline"><i class="ind" id="socbar-dot"></i><small id="socbar-src">—</small></span>
+  <span class="socbar-line2"><span class="socbar-cons" id="socbar-consbox" title="Tahmini tüketim (model)"><b id="socbar-cons">--</b><small>kWh/100 km</small></span><span class="socbar-srcline"><i class="ind" id="socbar-dot"></i><small id="socbar-src">—</small></span></span>
   <svg class="ic socbar-chev" aria-hidden="true"><use href="#i-chev-down"/></svg>
 </button>
+<div class="mapsoc-slider"><input type="range" id="map-soc" min="0" max="100" step="1" value="80" aria-label="Mevcut pil yüzdesi"></div>
+</div>
 </div>
 
 <main>
 
   <!-- ===== 1) ROTA ===== -->
   <section class="tab" id="tab-route" data-title="Rota">
+    <div class="card stack" id="rp-car">
+      <div class="rp-carhead">
+        <svg class="ic" aria-hidden="true"><use href="#i-car"/></svg>
+        <div class="rp-carname"><b id="rp-veh">—</b><small><span id="rp-cons">--</span> kWh/100 km</small></div>
+        <button class="btn sm" type="button" data-tab="range">Araç ve tüketim</button>
+      </div>
+      <div class="rp-socline">
+        <div><small>Mevcut pil</small><b id="rp-soc">--</b></div>
+        <div><small>Güvenli menzil</small><span><span aria-hidden="true">≈</span><b id="rp-range">--</b> km</span></div>
+      </div>
+      <div class="soc-input">
+        <label for="cur-soc">Mevcut pil (aracın şu anki şarjı)</label>
+        <div class="soc-input-row">
+          <input type="range" id="cur-soc" min="0" max="100" step="1" value="80">
+          <input type="number" id="cur-soc-num" inputmode="numeric" min="0" max="100" step="1" aria-label="Mevcut pil yüzdesi">
+        </div>
+      </div>
+      <p class="small muted" id="cur-soc-note" style="margin:0"></p>
+    </div>
+
     <div class="card stack">
       <h2>Rota</h2>
       <div class="place-chips" id="place-chips" aria-label="Kayıtlı yerler"></div>
@@ -76,6 +104,14 @@
         </label>
         <button class="btn" id="pick-start" type="button" title="Haritadan seç">🗺️ Haritadan</button>
       </div>
+      <div class="row hidden" id="via-row">
+        <label class="field" style="flex:1">Ara durak (isteğe bağlı)
+          <input type="text" id="route-via" autocomplete="off" spellcheck="false" enterkeyhint="search" placeholder="Yer veya adres ara…">
+          <ul class="suggest hidden" id="suggest-via" role="listbox"></ul>
+        </label>
+        <button class="btn" id="pick-via" type="button" title="Haritadan seç" aria-label="Haritadan seç">🗺️</button>
+        <button class="btn" id="via-remove" type="button" title="Ara durağı kaldır" aria-label="Ara durağı kaldır">✕</button>
+      </div>
       <div class="row">
         <label class="field" style="flex:1">Varış
           <input type="text" id="route-end" autocomplete="off" spellcheck="false" enterkeyhint="search" placeholder="Yer veya adres ara…">
@@ -85,19 +121,25 @@
       </div>
       <div class="stack hidden" id="recent-dest" aria-label="Son hedefler"></div>
       <div class="row wrap">
+        <button class="btn" id="btn-add-via" type="button">+ Ara durak ekle</button>
         <button class="btn" id="btn-mylocation" type="button">🎯 Konumumu başlangıç yap</button>
         <button class="btn" id="btn-clear-route" type="button">🧹 Temizle</button>
       </div>
-      <div class="slider-row">
-        <label for="cur-soc">Mevcut pil (şarj durumu)</label>
-        <output id="cur-soc-out">—</output>
-        <input type="range" id="cur-soc" min="0" max="100" step="1" value="80">
+    </div>
+
+    <div class="card stack" id="plan-card">
+      <div class="soc-input">
+        <label for="charge-target">Şarj hedefi (istasyonda bu seviyeye kadar)</label>
+        <div class="soc-input-row">
+          <input type="range" id="charge-target" min="50" max="100" step="5" value="80">
+          <input type="number" id="charge-target-num" inputmode="numeric" min="50" max="100" step="5" aria-label="Şarj hedefi yüzdesi">
+        </div>
       </div>
-      <p class="small muted" id="cur-soc-note" style="margin:0"></p>
+      <p class="small muted" style="margin:0">Mevcut pil aracın şu anki şarjıdır. Şarj hedefi, durakta en fazla ne kadar doldurulacağıdır.</p>
       <div class="row" id="plan-actions">
+        <button class="btn" id="btn-plan" type="button">Rota planla</button>
         <button class="btn primary go-btn" id="btn-go" type="button">Git</button>
-        <!-- Eski iki adım: Git ikisini birden yapar (planla + navigasyonu başlat). Kimlikler ve dinleyiciler uyumluluk için duruyor. -->
-        <button class="btn primary hidden" id="btn-plan" type="button">⚡ Rotayı Planla</button>
+        <!-- Eski adım: Git planlar + navigasyonu başlatır. Kimlik ve dinleyici uyumluluk için duruyor. -->
         <button class="btn primary hidden" id="btn-nav" type="button">▶ Navigasyonu başlat</button>
       </div>
 
@@ -105,34 +147,9 @@
         <div><b id="sum-dist">—</b><span>Mesafe (km)</span></div>
         <div><b id="sum-time">—</b><span>Süre (şarj dahil)</span></div>
         <div><b id="sum-stops">—</b><span>Şarj durağı</span></div>
+        <div><b id="sum-arrive">—</b><span>Varışta pil</span></div>
       </div>
-      <div class="slider-row">
-        <label for="min-arrival">Minimum varış pili eşiği</label>
-        <output id="min-arrival-out">%15</output>
-        <input type="range" id="min-arrival" min="5" max="40" step="1" value="15">
-      </div>
-
       <p class="small muted" id="traffic-info" style="margin:0">Süre ve hız rota planlanınca hesaplanır (canlı trafik yok: süreler trafiksiz).</p>
-
-    </div>
-
-    <div class="card stack" id="plan-card">
-      <h2 style="margin:0">Şarj planı</h2>
-      <div class="chips" role="group" aria-label="Plan modu">
-        <button class="btn sm" data-sort="fast" type="button">⏱️ Hızlı</button>
-        <button class="btn sm" data-sort="cheap" type="button">💰 Ekonomik</button>
-        <button class="btn sm sel" data-sort="opt" type="button">⚖️ Optimum</button>
-      </div>
-      <div class="stack" style="gap:6px">
-        <span class="small muted">En az şarj gücü (kW)</span>
-        <div class="chips" id="min-kw" role="group" aria-label="En az şarj gücü (kW)">
-          <button class="btn sm" data-minkw="40" type="button" title="Tüm hızlı istasyonlar ve yedek AC">AC</button>
-          <button class="btn sm" data-minkw="60" type="button">60</button>
-          <button class="btn sm" data-minkw="100" type="button">100</button>
-          <button class="btn sm" data-minkw="120" type="button">120</button>
-          <button class="btn sm" data-minkw="150" type="button">150</button>
-        </div>
-      </div>
       <p class="small muted" id="plan-status" style="margin:0">Varış seçip Git'e dokun: rota planlanır ve navigasyon başlar.</p>
       <div id="plan-list"></div>
       <p class="small muted hidden" id="premium-hint" style="margin:0">Canlı doluluk ve kWh fiyatı Premium üyelere özeldir.</p>
@@ -140,45 +157,69 @@
       <button class="btn ghost hidden" id="btn-gmaps" type="button">🧭 Google Haritalar'da aç (duraklarla)</button>
     </div>
 
-    <div class="card stack" id="nav-card">
-      <h2 style="margin:0">🧭 Navigasyon</h2>
-      <p class="small muted" style="margin:0">Rota planlandıktan sonra dönüş dönüş yönlendirme ve sesli uyarılar. Rotadan çıkarsan bulunduğun yerden yeniden rota kurar; pil düşerse yakındaki en uygun istasyonu önerir.</p>
-      <div class="row between">
-        <label for="nav-voice">Sesli yönlendirme</label>
-        <label class="switch"><input type="checkbox" id="nav-voice" checked><i></i></label>
+    <details class="card stack" id="route-adv">
+      <summary>Gelişmiş seçenekler</summary>
+      <div class="stack">
+        <div class="slider-row">
+          <label for="min-arrival">Minimum varış pili eşiği</label>
+          <output id="min-arrival-out">%15</output>
+          <input type="range" id="min-arrival" min="5" max="40" step="1" value="15">
+        </div>
+        <p class="rp-adv-h">Plan modu</p>
+        <div class="chips" role="group" aria-label="Plan modu">
+          <button class="btn sm" data-sort="fast" type="button">⏱️ Hızlı</button>
+          <button class="btn sm" data-sort="cheap" type="button">💰 Ekonomik</button>
+          <button class="btn sm sel" data-sort="opt" type="button">⚖️ Optimum</button>
+        </div>
+        <div class="stack" style="gap:6px">
+          <span class="small muted">En az şarj gücü (kW)</span>
+          <div class="chips" id="min-kw" role="group" aria-label="En az şarj gücü (kW)">
+            <button class="btn sm" data-minkw="40" type="button" title="Tüm hızlı istasyonlar ve yedek AC">AC</button>
+            <button class="btn sm" data-minkw="60" type="button">60</button>
+            <button class="btn sm" data-minkw="100" type="button">100</button>
+            <button class="btn sm" data-minkw="120" type="button">120</button>
+            <button class="btn sm" data-minkw="150" type="button">150</button>
+          </div>
+        </div>
+        <p class="rp-adv-h">🧭 Navigasyon</p>
+        <p class="small muted" style="margin:0">Rota planlandıktan sonra dönüş dönüş yönlendirme ve sesli uyarılar. Rotadan çıkarsan bulunduğun yerden yeniden rota kurar; pil düşerse yakındaki en uygun istasyonu önerir.</p>
+        <div class="row between">
+          <label for="nav-voice">Sesli yönlendirme</label>
+          <label class="switch"><input type="checkbox" id="nav-voice" checked><i></i></label>
+        </div>
+        <div class="row between">
+          <button class="btn ghost sm" id="nav-voice-test" type="button">🔊 Sesi dene</button>
+          <span class="small muted" id="nav-voice-out"></span>
+        </div>
+        <div class="row between">
+          <label for="warn-grade">Dik eğim uyarısı</label>
+          <label class="switch"><input type="checkbox" id="warn-grade" checked><i></i></label>
+        </div>
+        <div class="row between">
+          <label for="warn-cam">Hız kamerası uyarısı (OpenStreetMap; tüm kameraları kapsamaz)</label>
+          <label class="switch"><input type="checkbox" id="warn-cam" checked><i></i></label>
+        </div>
+        <div class="row between">
+          <label for="nav-headingup">Harita gidiş yönüne dönsün (yön yukarı)</label>
+          <label class="switch"><input type="checkbox" id="nav-headingup" checked><i></i></label>
+        </div>
+        <div class="slider-row">
+          <label for="low-soc">Düşük pil uyarısı (yakın istasyon öner)</label>
+          <output id="low-soc-out">%20</output>
+          <input type="range" id="low-soc" min="10" max="40" step="1" value="20">
+        </div>
+        <div class="row between">
+          <label for="limit-on">Yol hız limiti kontrolü (OpenStreetMap; ücretsiz, etiketi olmayan yolda bilinmez)</label>
+          <label class="switch"><input type="checkbox" id="limit-on"><i></i></label>
+        </div>
+        <p class="small muted" id="limit-status" style="margin:0"></p>
+        <div class="slider-row">
+          <label for="speed-alert">Hız uyarısı (yol limiti alınamazsa kullanılan eşik)</label>
+          <output id="speed-alert-out">kapalı</output>
+          <input type="range" id="speed-alert" min="0" max="150" step="5" value="0">
+        </div>
       </div>
-      <div class="row between">
-        <button class="btn ghost sm" id="nav-voice-test" type="button">🔊 Sesi dene</button>
-        <span class="small muted" id="nav-voice-out"></span>
-      </div>
-      <div class="row between">
-        <label for="warn-grade">Dik eğim uyarısı</label>
-        <label class="switch"><input type="checkbox" id="warn-grade" checked><i></i></label>
-      </div>
-      <div class="row between">
-        <label for="warn-cam">Hız kamerası uyarısı (OpenStreetMap; tüm kameraları kapsamaz)</label>
-        <label class="switch"><input type="checkbox" id="warn-cam" checked><i></i></label>
-      </div>
-      <div class="row between">
-        <label for="nav-headingup">Harita gidiş yönüne dönsün (yön yukarı)</label>
-        <label class="switch"><input type="checkbox" id="nav-headingup" checked><i></i></label>
-      </div>
-      <div class="slider-row">
-        <label for="low-soc">Düşük pil uyarısı (yakın istasyon öner)</label>
-        <output id="low-soc-out">%20</output>
-        <input type="range" id="low-soc" min="10" max="40" step="1" value="20">
-      </div>
-      <div class="row between">
-        <label for="limit-on">Yol hız limiti kontrolü (OpenStreetMap; ücretsiz, etiketi olmayan yolda bilinmez)</label>
-        <label class="switch"><input type="checkbox" id="limit-on"><i></i></label>
-      </div>
-      <p class="small muted" id="limit-status" style="margin:0"></p>
-      <div class="slider-row">
-        <label for="speed-alert">Hız uyarısı (yol limiti alınamazsa kullanılan eşik)</label>
-        <output id="speed-alert-out">kapalı</output>
-        <input type="range" id="speed-alert" min="0" max="150" step="5" value="0">
-      </div>
-    </div>
+    </details>
 
     <div class="card stack hidden" id="wx-card">
       <h2 style="margin:0">🌦️ Rota boyunca hava</h2>
@@ -187,8 +228,66 @@
     </div>
   </section>
 
-  <!-- ===== 2) MENZİL: hava / trafik / rakım / tüketim kartları ===== -->
-  <section class="tab" id="tab-range" data-title="Menzil">
+  <!-- ===== 2) ARAÇ VE MENZİL: araç seçimi + tüketim ayarları, menzil, hava / trafik / rakım kartları ===== -->
+  <section class="tab" id="tab-range" data-title="Araç ve menzil">
+    <div class="card stack" id="vehicle-card" data-collapsed="1">
+      <h2>Araç ve tüketim</h2>
+      <p class="small muted" id="veh-saved" style="margin:0"></p>
+      <label class="field">Marka
+        <select id="veh-brand"></select>
+      </label>
+      <label class="field">Model
+        <select id="veh-model"></select>
+      </label>
+      <label class="field">Pil / versiyon
+        <select id="veh-pack"></select>
+      </label>
+      <p class="small muted hidden" id="veh-ref" style="margin:0"></p>
+      <div class="grid2">
+        <label class="field">Batarya (net kWh)<input type="number" inputmode="decimal" id="veh-bat" step="0.1" min="10" max="250"></label>
+        <label class="field">Ağırlık (kg)<input type="number" inputmode="numeric" id="veh-mass" step="10" min="600" max="4000"></label>
+        <label class="field">Sürtünme katsayısı (Cd)<input type="number" inputmode="decimal" id="veh-cd" step="0.01" min="0.15" max="0.5"></label>
+        <label class="field">Ön alan (m²)<input type="number" inputmode="decimal" id="veh-area" step="0.05" min="1.5" max="4"></label>
+        <label class="field">En çok DC şarj (kW)<input type="number" inputmode="numeric" id="veh-dc" step="10" min="20" max="400"></label>
+      </div>
+      <button class="btn primary" id="veh-apply" type="button">Kaydet ve uygula (sayfa yenilenir)</button>
+
+      <p class="small muted" id="cons-info" style="margin:6px 0 0"></p>
+      <label class="field">Tüketimim (kWh/100 km, seyir hızında, düz yolda)
+        <input type="number" inputmode="decimal" id="cons-target" step="0.1" min="8" max="45" placeholder="model tahmini">
+      </label>
+      <div class="slider-row">
+        <label for="cons-adj">Tüketim düzeltmesi</label>
+        <output id="cons-adj-out">%0</output>
+        <input type="range" id="cons-adj" min="-30" max="100" step="1" value="0">
+      </div>
+      <div class="slider-row">
+        <label for="charger-min">Şarj istasyonuna giriş pili (en az)</label>
+        <output id="charger-min-out">%10</output>
+        <input type="range" id="charger-min" min="5" max="50" step="1" value="10">
+      </div>
+      <div class="slider-row">
+        <label for="max-charge">Şarj hedefi, istasyondan çıkış (en fazla)</label>
+        <output id="max-charge-out">%90</output>
+        <input type="range" id="max-charge" min="50" max="100" step="5" value="90">
+      </div>
+      <div class="slider-row">
+        <label for="min-add">Durakta en az eklenecek pil</label>
+        <output id="min-add-out">%15</output>
+        <input type="range" id="min-add" min="0" max="40" step="1" value="15">
+      </div>
+      <div class="slider-row">
+        <label for="tolerance">Eşik toleransı (± puan)</label>
+        <output id="tolerance-out">±3</output>
+        <input type="range" id="tolerance" min="0" max="8" step="1" value="3">
+      </div>
+      <div class="row between">
+        <label for="allow-slow">Yavaş AC / türü belirsiz istasyonlar da yedek olsun</label>
+        <label class="switch"><input type="checkbox" id="allow-slow" checked><i></i></label>
+      </div>
+      <p class="small muted" style="margin:0">Tüketimi fizik modeli tahmin eder; gerçek değeri yazarsan ya da düzeltme verirsen plan ve menzil buna göre değişir. Giriş pili: istasyona en az bu pille varılır (yükselirse daha erken ve daha çok durak). Şarj hedefi: durakta bu seviyeyi geçmez; plan daha az gerekiyorsa daha az şarj eder. En az eklenecek pil: 6 puanlık anlamsız molaları engeller. Tolerans: giriş/varış eşiğinin ± bu kadar altına inmek yasak değil ama cezalıdır (eşikte ani sıçrama olmaz).</p>
+    </div>
+
     <div class="grid2">
       <div class="card metric accent"><span class="k">Tahmini menzil (eşiğe kadar)</span><span class="v" id="c-range"><span class="pending">—</span><small>km</small></span></div>
       <div class="card metric"><span class="k">Pil</span><span class="v" id="c-soc">—<small>%</small></span></div>
@@ -575,10 +674,13 @@
   <section class="tab" id="tab-more" data-title="Daha fazla">
     <div class="menu">
       <button class="menu-item" type="button" data-tab="favs"><span><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg></span><b>Favoriler</b><small>Kayıtlı yerler ve son hedefler</small></button>
-      <button class="menu-item" type="button" data-tab="range"><span><svg class="ic" aria-hidden="true"><use href="#i-gauge"/></svg></span><b>Menzil</b><small>Menzil, hava, tüketim</small></button>
+      <button class="menu-item" type="button" data-tab="range"><span><svg class="ic" aria-hidden="true"><use href="#i-gauge"/></svg></span><b>Araç ve menzil</b><small>Araç seçimi, menzil, tüketim</small></button>
       <button class="menu-item" type="button" data-tab="camera" data-premium-only><span><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg></span><b>Kamera</b><small>Göstergeden pil okuma</small></button>
       <button class="menu-item" type="button" data-tab="abrp" data-premium-only><span><svg class="ic" aria-hidden="true"><use href="#i-signal"/></svg></span><b>ABRP</b><small>Canlı telemetri köprüsü</small></button>
       <button class="menu-item" type="button" data-tab="test" data-premium-only><span><svg class="ic" aria-hidden="true"><use href="#i-flask"/></svg></span><b>Test</b><small>Test modu, simülasyon</small></button>
+    </div>
+    <div class="menu">
+      <button class="menu-item" type="button" id="btn-tools" aria-haspopup="dialog" aria-controls="tools-dialog"><span><svg class="ic" aria-hidden="true"><use href="#i-dots"/></svg></span><b>Durum ve kontroller</b><small>Yükleme, güncelleme, veri kullanımı, sürüm</small></button>
     </div>
     <div class="card stack" id="lang-card">
       <label class="field" for="lang-select">🌐 Dil / Language
@@ -646,64 +748,6 @@
         <button class="btn ghost" id="ver-notes" type="button">📝 Sürüm notları</button>
       </div>
     </div>
-    <div class="card stack" id="vehicle-card" data-collapsed="1">
-      <h2>Araç ve tüketim</h2>
-      <p class="small muted" id="veh-saved" style="margin:0"></p>
-      <label class="field">Marka
-        <select id="veh-brand"></select>
-      </label>
-      <label class="field">Model
-        <select id="veh-model"></select>
-      </label>
-      <label class="field">Pil / versiyon
-        <select id="veh-pack"></select>
-      </label>
-      <p class="small muted hidden" id="veh-ref" style="margin:0"></p>
-      <div class="grid2">
-        <label class="field">Batarya (net kWh)<input type="number" inputmode="decimal" id="veh-bat" step="0.1" min="10" max="250"></label>
-        <label class="field">Ağırlık (kg)<input type="number" inputmode="numeric" id="veh-mass" step="10" min="600" max="4000"></label>
-        <label class="field">Sürtünme katsayısı (Cd)<input type="number" inputmode="decimal" id="veh-cd" step="0.01" min="0.15" max="0.5"></label>
-        <label class="field">Ön alan (m²)<input type="number" inputmode="decimal" id="veh-area" step="0.05" min="1.5" max="4"></label>
-        <label class="field">En çok DC şarj (kW)<input type="number" inputmode="numeric" id="veh-dc" step="10" min="20" max="400"></label>
-      </div>
-      <button class="btn primary" id="veh-apply" type="button">Kaydet ve uygula (sayfa yenilenir)</button>
-
-      <p class="small muted" id="cons-info" style="margin:6px 0 0"></p>
-      <label class="field">Tüketimim (kWh/100 km, seyir hızında, düz yolda)
-        <input type="number" inputmode="decimal" id="cons-target" step="0.1" min="8" max="45" placeholder="model tahmini">
-      </label>
-      <div class="slider-row">
-        <label for="cons-adj">Tüketim düzeltmesi</label>
-        <output id="cons-adj-out">%0</output>
-        <input type="range" id="cons-adj" min="-30" max="100" step="1" value="0">
-      </div>
-      <div class="slider-row">
-        <label for="charger-min">Şarj istasyonuna giriş pili (en az)</label>
-        <output id="charger-min-out">%10</output>
-        <input type="range" id="charger-min" min="5" max="50" step="1" value="10">
-      </div>
-      <div class="slider-row">
-        <label for="max-charge">Şarj hedefi, istasyondan çıkış (en fazla)</label>
-        <output id="max-charge-out">%90</output>
-        <input type="range" id="max-charge" min="50" max="100" step="5" value="90">
-      </div>
-      <div class="slider-row">
-        <label for="min-add">Durakta en az eklenecek pil</label>
-        <output id="min-add-out">%15</output>
-        <input type="range" id="min-add" min="0" max="40" step="1" value="15">
-      </div>
-      <div class="slider-row">
-        <label for="tolerance">Eşik toleransı (± puan)</label>
-        <output id="tolerance-out">±3</output>
-        <input type="range" id="tolerance" min="0" max="8" step="1" value="3">
-      </div>
-      <div class="row between">
-        <label for="allow-slow">Yavaş AC / türü belirsiz istasyonlar da yedek olsun</label>
-        <label class="switch"><input type="checkbox" id="allow-slow" checked><i></i></label>
-      </div>
-      <p class="small muted" style="margin:0">Tüketimi fizik modeli tahmin eder; gerçek değeri yazarsan ya da düzeltme verirsen plan ve menzil buna göre değişir. Giriş pili: istasyona en az bu pille varılır (yükselirse daha erken ve daha çok durak). Şarj hedefi: durakta bu seviyeyi geçmez; plan daha az gerekiyorsa daha az şarj eder. En az eklenecek pil: 6 puanlık anlamsız molaları engeller. Tolerans: giriş/varış eşiğinin ± bu kadar altına inmek yasak değil ama cezalıdır (eşikte ani sıçrama olmaz).</p>
-    </div>
-
     <div class="card stack" id="ocm-card">
       <h2 style="margin:0">🗺️ Veri ve önbellek</h2>
       <p class="small muted" style="margin:0">Harita OpenFreeMap, rota ve rakım Valhalla, yer arama Photon, istasyonlar Overpass ve OpenChargeMap, hava Open-Meteo, yol hız limiti OpenStreetMap kaynaklıdır (© OpenStreetMap katkıcıları). Hesapla giriş yapınca trafikli rota, hızlı istasyon araması ve Premium canlı doluluk ve fiyat sunucu üzerinden gelir; anahtar girmen gerekmez.</p>
@@ -743,6 +787,11 @@
   <div class="mapstack" id="mapstack">
     <div class="fabs" id="fabs">
       <div class="fabs-more hidden" id="fabs-more" role="group" aria-label="Diğer harita kontrolleri">
+        <button type="button" data-tab="favs" aria-label="Favoriler" title="Favoriler"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg></button>
+        <button type="button" data-tab="range" aria-label="Araç ve menzil" title="Araç ve menzil"><svg class="ic" aria-hidden="true"><use href="#i-gauge"/></svg></button>
+        <button type="button" data-tab="test" data-premium-only aria-label="Test Modu" title="Test Modu"><svg class="ic" aria-hidden="true"><use href="#i-flask"/></svg></button>
+        <button type="button" data-tab="camera" data-premium-only aria-label="Kamera" title="Kamera"><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg></button>
+        <button type="button" data-tab="abrp" data-premium-only aria-label="ABRP" title="ABRP"><svg class="ic" aria-hidden="true"><use href="#i-signal"/></svg></button>
         <button type="button" id="fab-sat" aria-pressed="false" aria-label="Uydu görüntüsü" title="Uydu görüntüsü"><svg class="ic" aria-hidden="true"><use href="#i-layers"/></svg></button>
         <button type="button" id="fab-3d" class="hidden" aria-pressed="true" aria-label="3B/2B görünüm" title="3B/2B görünüm">3B</button>
         <button type="button" id="fab-route" aria-label="Tüm rotayı göster" title="Tüm rotayı göster"><svg class="ic" aria-hidden="true"><use href="#i-fit"/></svg></button>
@@ -751,10 +800,15 @@
         <button type="button" id="nh-overview" class="nav-only" aria-label="Rotanın tamamını göster" title="Rotanın tamamını göster"><svg class="ic" aria-hidden="true"><use href="#i-route"/></svg></button>
         <button type="button" id="nh-search" class="nav-only" aria-label="Varış ara" title="Varış ara"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg></button>
       </div>
-      <button type="button" id="nh-recenter" class="hidden" aria-label="Aracı ortala" title="Aracı ortala"><svg class="ic" aria-hidden="true"><use href="#i-nav"/></svg></button>
-      <button type="button" id="fab-nav" class="hidden" aria-label="Navigasyonu başlat" title="Navigasyonu başlat"><svg class="ic" aria-hidden="true"><use href="#i-nav"/></svg></button>
       <button type="button" id="fab-tools" aria-expanded="false" aria-controls="fabs-more" aria-label="Diğer harita kontrolleri" title="Diğer harita kontrolleri"><svg class="ic" aria-hidden="true"><use href="#i-dots"/></svg></button>
+      <button type="button" id="fab-stopnav" class="nav-only" aria-haspopup="dialog" aria-controls="stop-nav-dialog" aria-label="Navigasyonu durdur" title="Navigasyonu durdur"><svg class="ic" aria-hidden="true"><use href="#i-stop"/></svg></button>
+      <button type="button" id="nh-recenter" class="hidden" aria-label="Aracı ortala" title="Aracı ortala"><svg class="ic" aria-hidden="true"><use href="#i-nav"/></svg></button>
       <button type="button" id="fab-me" aria-label="Haritayı bana ortala" title="Haritayı bana ortala"><svg class="ic" aria-hidden="true"><use href="#i-locate"/></svg></button>
+    </div>
+    <div class="nav-ev hidden" id="nav-ev" role="group" aria-label="Pil ve şarj">
+      <button type="button" class="ne-cell" id="ne-soc-btn" aria-haspopup="dialog" aria-controls="soc-sheet"><small>Pil</small><span class="ne-v"><b id="ne-soc">--</b><span class="ne-sub"><span aria-hidden="true">≈</span><span id="ne-range">--</span> km</span></span></button>
+      <div class="ne-cell"><small>Varışta</small><span class="ne-v"><b id="ne-arrive">--</b></span></div>
+      <div class="ne-cell" id="ne-next-box"><small>Sonraki şarj</small><span class="ne-v"><b id="ne-next">--</b><span class="ne-sub" id="ne-next-t"></span></span></div>
     </div>
     <div class="navhud hidden" id="navhud">
       <div class="nh-cell nh-speed"><b id="nh-speed">0</b><small>km/s</small></div>
@@ -766,9 +820,9 @@
     </div>
     <div class="searchrow" id="searchrow">
       <button type="button" class="searchbar" id="fab-search" aria-label="Varış ara" title="Varış ara"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><span>Nereye gitmek istersin?</span></button>
-      <button class="rota-btn" id="fab-plan" type="button" data-tab="route"><svg class="ic" aria-hidden="true"><use href="#i-route"/></svg><span>Rota</span></button>
+      <button class="rota-btn" id="fab-plan" type="button" data-tab="route"><svg class="ic" aria-hidden="true"><use href="#i-route"/></svg><span>Rota planla</span></button>
+      <button class="rota-btn hidden" id="fab-nav" type="button" title="Navigasyonu başlat"><svg class="ic" aria-hidden="true"><use href="#i-nav"/></svg><span>Git</span></button>
     </div>
-    <button class="near-summary" id="near-summary" type="button" data-tab="stations"><svg class="ic near-pin" aria-hidden="true"><use href="#i-pin-bolt"/></svg><span class="near-sum-text" id="near-summary-text">Şarj istasyonları</span><span class="near-sum-go"><span>İstasyonları gör</span><svg class="ic" aria-hidden="true"><use href="#i-chev-right"/></svg></span></button>
   </div>
 </div>
 
@@ -800,19 +854,19 @@
   <button class="btn primary" id="soc-sheet-done" type="button">Tamam</button>
 </dialog>
 
+<dialog id="stop-nav-dialog" class="sheet-dlg" aria-labelledby="stop-nav-title">
+  <div class="dlg-head"><h2 id="stop-nav-title">Navigasyon durdurulsun mu?</h2></div>
+  <p class="small muted">Rota planı korunur; Git ile yeniden başlatabilirsin.</p>
+  <div class="row" id="stop-nav-actions">
+    <button class="btn" id="stop-nav-no" type="button" autofocus>Devam et</button>
+    <button class="btn stop-yes" id="stop-nav-yes" type="button">Durdur</button>
+  </div>
+</dialog>
+
 <dialog id="tools-dialog" class="sheet-dlg" aria-labelledby="tools-title">
   <div class="dlg-head"><h2 id="tools-title">Durum ve kontroller</h2><button class="sheet-x" id="tools-x" type="button" aria-label="Kapat"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button></div>
-  <div class="row between tool-row">
-    <span>Ekranı açık tut (Wake Lock)</span>
-    <span class="wake-ctl">
-      <button class="icon-btn" id="btn-wake" type="button" aria-pressed="false" title="Ekranı açık tut (Wake Lock)" aria-label="Ekranı açık tut (Wake Lock)"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg></button>
-      <label class="switch" title="Ekranı açık tut (Wake Lock)"><input type="checkbox" id="wake-switch" aria-label="Ekranı açık tut (Wake Lock)"><i></i></label>
-    </span>
-  </div>
   <div class="badges" aria-label="Durum">
     <span class="badge" id="bd-gps">GPS: kapalı</span>
-    <span class="badge" id="bd-ocr">OCR: kapalı</span>
-    <span class="badge" id="bd-abrp">ABRP: pasif</span>
     <span class="badge test hidden" id="bd-sim">TEST MODU</span>
     <button class="badge install hidden" id="btn-install" type="button">📲 Uygulamayı yükle</button>
     <button class="badge install hidden" id="btn-update" type="button">⬆ Güncelle</button>

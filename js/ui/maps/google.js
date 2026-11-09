@@ -149,7 +149,7 @@ export async function createGoogleMap(container, key, mapId = 'DEMO_MAP_ID', { o
     },
     line(coords) {
       routeLine?.setMap(null);
-      routeLine = new gm.Polyline({ map, path: path(coords), strokeColor: '#2ee6a6', strokeWeight: 5, strokeOpacity: 0.85, zIndex: 1 });
+      routeLine = new gm.Polyline({ map, path: path(coords), strokeColor: '#1a73e8', strokeWeight: 6, strokeOpacity: 0.92, zIndex: 1 });
       // motorla aynı: tek rota çizgisi vardır, remove() onu (hangi tutamaçtan çağrılırsa) kaldırır
       return { remove: () => { routeLine?.setMap(null); routeLine = null; } };
     },

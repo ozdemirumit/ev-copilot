@@ -805,13 +805,13 @@ function fakeGm(cfg = { autoIdle: true }) {
     ok('(c) traffic(coords, []) → tüm trafik çizgileri kaldırılır', gm.polylines.every((l) => l.map === null));
     const ln = a.line(C1);
     const route = gm.polylines.at(-1);
-    ok('(c) line(coords) rota çizgisi çizer, trafik altında kalır', route.map === m && route.o.strokeColor === '#2ee6a6' && route.o.path.length === C1.length && route.o.zIndex < 2);
+    ok('(c) line(coords) rota çizgisi çizer, trafik altında kalır', route.map === m && route.o.strokeColor === '#1a73e8' && route.o.path.length === C1.length && route.o.zIndex < 2);
     a.traffic(C1, [{ from: 0, to: 3, lvl: 'heavy' }]);
     ok('(c) trafik çizgisi rota çizgisinin üstünde (zIndex)', gm.polylines.at(-1).o.zIndex > route.o.zIndex);
     a.line(C1.slice(0, 2));
-    ok('(c) ikinci line() öncekini kaldırır', route.map === null && gm.polylines.filter((l) => l.map === m && l.o.strokeColor === '#2ee6a6').length === 1);
+    ok('(c) ikinci line() öncekini kaldırır', route.map === null && gm.polylines.filter((l) => l.map === m && l.o.strokeColor === '#1a73e8').length === 1);
     ln.remove();
-    ok('(c) line().remove() rota çizgisini kaldırır', gm.polylines.filter((l) => l.map === m && l.o.strokeColor === '#2ee6a6').length === 0);
+    ok('(c) line().remove() rota çizgisini kaldırır', gm.polylines.filter((l) => l.map === m && l.o.strokeColor === '#1a73e8').length === 0);
 
     // (d) uydu: hybrid / roadmap
     a.setSatellite(true);

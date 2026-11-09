@@ -10,7 +10,7 @@ const $ = (id) => document.getElementById(id);
 
 export function initSocInput() {
   const slider = $('cur-soc');
-  const out = $('cur-soc-out');
+  const num = $('cur-soc-num');
   const note = $('cur-soc-note');
   let dragging = false;
 
@@ -19,7 +19,8 @@ export function initSocInput() {
     const v = e.soc;
     const shown = v ?? DEFAULT_SOC; // kamera/okuma yoksa plan bunu varsayar (controller.planTrip ile aynı değer); sürgü de bunu gösterir
     if (!dragging) slider.value = Math.round(shown);
-    out.textContent = '%' + Math.round(dragging ? Number(slider.value) : shown);
+    if (document.activeElement !== num) num.value = Math.round(dragging ? Number(slider.value) : shown);
+    num.disabled = e.source !== 'sim' && manualLocked();
     const online = e.source !== 'sim' && manualLocked();
     slider.disabled = online; // kamera pili şu an canlı ve sorunsuz okuyorsa kilitli; kamera kapalıysa ya da "okunamadı" durumundaysa serbest
     const ocrOk = online;
@@ -36,13 +37,26 @@ export function initSocInput() {
   slider.addEventListener('input', () => {
     dragging = true;
     const v = Number(slider.value);
-    out.textContent = '%' + v;
+    num.value = v;
     if (getState('sim').enabled) patch('sim', { soc: v });
     else setManual(v); // yol alındıkça düşer, kamera okuyunca o değer geçerli olur
   });
   slider.addEventListener('change', () => {
     dragging = false;
     setStartSoc(Number(slider.value));
+    paint();
+  });
+
+  // Sayısal giriş: sürgüyle aynı yoldan yazar; boş/geçersiz değer mevcut pili değiştirmez
+  num.addEventListener('change', () => {
+    const v = Number(num.value);
+    if (num.value !== '' && Number.isFinite(v)) {
+      const next = Math.min(100, Math.max(0, Math.round(v)));
+      if (getState('sim').enabled) patch('sim', { soc: next });
+      else setManual(next);
+      setStartSoc(next);
+    }
+    num.blur();
     paint();
   });
 

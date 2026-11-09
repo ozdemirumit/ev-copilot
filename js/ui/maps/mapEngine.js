@@ -76,7 +76,7 @@ export async function createVectorMap(lib, container, { mapOptions = {}, name, s
     if (map.getSource('route')) return;
     map.addSource('route', { type: 'geojson', data: routeData });
     map.addSource('traffic', { type: 'geojson', data: trafficData });
-    map.addLayer({ id: 'route-line', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#2ee6a6', 'line-width': 5, 'line-opacity': 0.85 } });
+    map.addLayer({ id: 'route-line', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#1a73e8', 'line-width': 6, 'line-opacity': 0.92 } });
     map.addLayer({
       id: 'traffic-line', type: 'line', source: 'traffic', layout: { 'line-join': 'round', 'line-cap': 'butt' },
       paint: { 'line-color': ['match', ['get', 'lvl'], 'moderate', '#ffb547', 'heavy', '#ff5d6c', 'severe', '#c4001d', '#ffb547'], 'line-width': 6, 'line-opacity': 0.95 },

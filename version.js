@@ -2,8 +2,43 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.89.0';
+self.APP_VERSION = '0.92.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.92.0', date: '2026-11-09',
+    notes: [
+      'BETA: Lacivert ust bar, beyaz kartlar, yesil eylem rengi ve mavi rota cizgisi',
+      'BETA: Ust durum satiri OCR, ABRP, trafik, hava simgesi ve sicaklik; hava verisi yoksa bilinmiyor yazar',
+      'BETA: GPS ve ekran acik tut dugmeleri kalkti; GPS izin varsa acik kalir, ekran navigasyonda otomatik acik tutulur',
+      'BETA: Haritada pil, menzil, tuketim ve kucuk pil surgusu; Rota planla ve Git yan yana',
+      'BETA: Rota sayfasinda arac ozeti, guvenli menzil, ara durak, sarj hedefi (varsayilan %80), varista pil, gelismis secenekler',
+      'BETA: Navigasyonda pil, menzil, varista pil, sonraki sarj; durdurma sagdaki kirmizi dugmede ve onayli',
+    ],
+  },
+  {
+    v: '0.91.1', date: '2026-11-09',
+    notes: [
+      'BETA: Ust seritte ABRP durumu kisa ve dogru: pasif, bekliyor, bagli, gonderildi, hata; ayrinti ABRP sayfasinda',
+      'BETA: Canli gonderim acikken uygulama yeniden acilinca ABRP ilk gonderime kadar yanlislikla pasif gorunuyordu',
+    ],
+  },
+  {
+    v: '0.91.0', date: '2026-11-09',
+    notes: [
+      'BETA: Rota sayfasinda Rota planla (yalnizca planlar) ve Git (planlar ve baslatir) yan yana; haritada plan hazirken Git gorunur',
+      'BETA: Haritadaki uc nokta yukari acilan kucuk simge yigini oldu: Navigasyonu durdur, Favoriler, Arac ve menzil, Test Modu, Kamera, ABRP ve harita kontrolleri',
+      'BETA: Arac secimi ve tuketim ayarlari Arac ve menzil sayfasinin basina tasindi',
+      'BETA: Haritadaki yinelenen Sarj istasyonlari satiri kaldirildi; istasyonlar alt gezinmeden acilir',
+    ],
+  },
+  {
+    v: '0.90.0', date: '2026-11-09',
+    notes: [
+      'Ust cubuk: uc nokta yerine tek dokunusla ekrani acik tut dugmesi; yalnizca kilit gercekten aliniyorsa acik gorunur, desteklenmeyen tarayicida nedenini soyler',
+      'Ust cubugun altinda tek satir durum seridi: GPS, OCR, ABRP, trafik ve surum numarasi',
+      'Yukleme, guncelleme, veri kullanimi ve surum notlari Daha fazla > Durum ve kontroller altinda; surum numarasina dokununca da acilir',
+    ],
+  },
   {
     v: '0.89.0', date: '2026-11-09',
     notes: [

@@ -1,4 +1,4 @@
-// Git düğmesi ve işaret testi (kaynak denetimi): A/B harfleri yok, Git tek adımda planlar + navigasyonu başlatır, eski düğme kimlikleri durur.
+// Git düğmesi ve işaret testi (kaynak denetimi): A/B harfleri yok, Git tek adımda planlar + navigasyonu başlatır, Rota planla yalnızca planlar.
 // Kullanım: node scripts/test-go-button.mjs
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -18,13 +18,13 @@ ok('başlangıç işareti nokta, varış işareti bayrak', /kind === 'end'\)\s*d
 ok('favori yer işareti simgesini yazar (değişmedi)', /pinEl\('place', p\.icon\)/.test(map));
 
 ok('Git düğmesi görünür', /<button[^>]*id="btn-go"[^>]*>Git<\/button>/.test(html) && !/id="btn-go"[^>]*hidden/.test(html));
-ok('Rotayı Planla düğmesi gizli ama kimliği duruyor', /<button[^>]*id="btn-plan"[^>]*class="[^"]*hidden|<button[^>]*class="[^"]*hidden[^"]*"[^>]*id="btn-plan"/.test(html));
+ok('Rota planla düğmesi görünür', /<button[^>]*id="btn-plan"[^>]*>Rota planla<\/button>/.test(html) && !/<button[^>]*id="btn-plan"[^>]*hidden/.test(html) && !/<button[^>]*hidden[^>]*id="btn-plan"/.test(html));
 ok('Navigasyonu başlat düğmesi gizli ama kimliği duruyor', /<button[^>]*class="[^"]*hidden[^"]*"[^>]*id="btn-nav"/.test(html));
 
 ok('Git önce planlar, başarılıysa navigasyonu başlatır', /if \(await planTrip\(\)\) await startNav\(\)/.test(panel));
 ok('Git başlangıç yoksa şu anki konumu kullanır', /effective\(\)/.test(panel) && /'Konumum'/.test(panel));
-ok('varış yoksa uyarır ve planlamaz', /if \(!r\.end\) return toast\(/.test(panel));
-ok('navigasyon sürerken aynı varışta durdurur', /if \(stopMode\(\)\) return stopNav\(\)/.test(panel));
+ok('varış yoksa uyarır ve planlamaz', /if \(!r\.end\) \{ toast\([^)]*\); return false; \}/.test(panel));
+ok('navigasyon sürerken aynı varışta Git gizlenir, büyük durdur düğmesi yok', /go\.classList\.toggle\('hidden', stop\)/.test(panel) && !/stopNav/.test(panel));
 ok('ipucu metni Git anlatır', !/Rotayı Planla'ya dokun/.test(panel) && !/Rotayı Planla'ya dokun/.test(html.replace(/id="btn-plan"[^>]*>[^<]*/, '')));
 
 // Ekran karartma (bekleme/standby benzeri siyah ekran) tamamen kaldırıldı

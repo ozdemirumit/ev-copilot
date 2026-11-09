@@ -3,7 +3,7 @@
 import { getState, patch, subscribe, effective } from '../state.js';
 import { setManual, manualLocked, socSource, DEFAULT_SOC } from '../physics/socEstimate.js';
 import { setStartSoc } from '../routing/controller.js';
-import { t } from '../i18n/index.js';
+import { t, tr } from '../i18n/index.js';
 import { toast } from './toast.js';
 
 const $ = (id) => document.getElementById(id);
@@ -30,6 +30,8 @@ export function initSocBar() {
   const bar = $('socbar');
   const level = $('socbar-level');
   const sheet = $('soc-sheet');
+  const mapSlider = $('map-soc');
+  let mapDrag = false;
   let drag = false;
   let commitTimer = null;
 
@@ -47,6 +49,13 @@ export function initSocBar() {
     const total = eng.totalRangeKm != null && v != null ? Math.max(0, Math.round(eng.totalRangeKm)) : null;
     const km = total == null ? '--' : String(total);
     const low = v != null && v < getState('nav').lowSoc;
+
+    // Tüketim: ölçülen varsa o, yoksa model tahmini (hangisi olduğu başlıkta yazar)
+    const cons = eng.kwh100Measured ?? eng.kwh100Est;
+    $('socbar-cons').textContent = cons == null ? '--' : cons.toFixed(1);
+    $('socbar-consbox').title = tr(eng.kwh100Measured != null ? 'Son mesafe tüketimi (ölçülen)' : 'Tahmini tüketim (model)');
+    if (!mapDrag) mapSlider.value = String(Math.round(v ?? DEFAULT_SOC));
+    mapSlider.disabled = locked; // kamera canlı okurken elle ayar kapalı (pencere sürgüsüyle aynı kural)
 
     val.textContent = shown;
     src.textContent = label;
@@ -125,6 +134,13 @@ export function initSocBar() {
     apply(target);
     commit();
   });
+  // Harita üstü küçük sürgü: pencere sürgüsüyle aynı yoldan yazar
+  mapSlider.addEventListener('input', () => {
+    mapDrag = true;
+    apply(Number(mapSlider.value));
+  });
+  mapSlider.addEventListener('change', () => { mapDrag = false; commit(0); });
+  $('ne-soc-btn').addEventListener('click', () => bar.click()); // navigasyonda hap gizli: aynı pencere
   $('soc-sheet-minus').addEventListener('click', () => step(-1));
   $('soc-sheet-plus').addEventListener('click', () => step(1));
 
