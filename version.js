@@ -2,8 +2,20 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.87.7';
+self.APP_VERSION = '0.87.9';
 self.APP_CHANGELOG = [
+  {
+    v: '0.87.9', date: '2026-11-09',
+    notes: [
+      'Istasyonlar ekranindaki Filtre kartina En az sarj gucu (kW) secimi eklendi: 22, 60, 120, 150, 180; Rotadakiler ve Yakindakiler listelerini suzer, tekrar dokununca kalkar. Plani ve dusuk pil onerisini etkilemez.',
+    ],
+  },
+  {
+    v: '0.87.8', date: '2026-11-09',
+    notes: [
+      'Durum ve kontroller penceresinde Ekranı açık tut simgesinin yanına Açık/Kapalı anahtarı eklendi (simgeyle aynı işi yapar, durumları eşit kalır).',
+    ],
+  },
   {
     v: '0.87.7', date: '2026-11-09',
     notes: [

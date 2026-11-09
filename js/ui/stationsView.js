@@ -8,6 +8,7 @@ import { setStationOperator } from '../routing/chargerSource.js';
 import { slotEl } from '../routing/slots.js';
 import { PLANNER } from '../config.js';
 import { brandOk } from '../routing/planner.js';
+import { powerListOk, initPowerFilter } from '../routing/powerFilter.js';
 import { paintMore } from './moreToggle.js';
 
 const $ = (id) => document.getElementById(id);
@@ -54,7 +55,7 @@ function renderList() {
   const ahead = (st) => st.km > here - 0.3; // geride kalan istasyonlar listeden çıkar
   const stops = p.stops.filter((s) => ahead(s.station));
   const planned = new Map(stops.map((s, i) => [s.station.id, i + 1]));
-  const rows = p.ranking.filter((r) => ahead(r.station) && !planned.has(r.station.id)).slice(0, 25);
+  const rows = p.ranking.filter((r) => ahead(r.station) && !planned.has(r.station.id) && powerListOk(r.station)).slice(0, 25); // plandakiler süzgeçten etkilenmez
   const planRows = stops.map((s) => ({ station: s.station, arrive: s.arriveSoc, to: s.leaveSoc, minutes: s.minutes + s.overheadMin, cost: s.cost }));
 
   const aheadCount = p.stations.filter(ahead).length;
@@ -219,6 +220,8 @@ function initBrands() {
 
 export function initStationsView() {
   initBrands();
+  initPowerFilter();
+  document.addEventListener('powerfilter', renderList);
   const chips = [...document.querySelectorAll('[data-sort]')];
   const paintChips = () => chips.forEach((c) => c.classList.toggle('sel', c.dataset.sort === getState('plan').mode));
 

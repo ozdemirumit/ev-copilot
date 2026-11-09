@@ -83,6 +83,9 @@ const IDS = ['btn-gps', 'btn-wake', 'bd-gps', 'bd-ocr', 'bd-abrp', 'bd-sim', 'bt
   'navhud', 'nh-speed', 'nh-limit', 'nh-eta', 'nh-rem', 'nh-soc', 'nh-soc-dot', 'nh-limitbtn', 'nh-voice', 'nh-overview', 'nh-recenter', 'badge-stations', 'cur-soc', 'station-card'];
 const noId = IDS.filter((id) => !html.includes(`id="${id}"`));
 ok('var olan kimlikler duruyor', noId.length === 0, noId.join());
+const wakeJs = readFileSync(new URL('../js/sensors/wakeLock.js', import.meta.url), 'utf8');
+ok('Ekranı açık tut: simgenin yanında Açık/Kapalı anahtarı var', /id="btn-wake"[\s\S]{0,400}?id="wake-switch"/.test(html) && /id="wake-switch"[^>]*aria-label=/.test(html));
+ok('anahtar ve simge aynı işlevi çağırır, durumla eşitlenir', /btn\.addEventListener\('click', toggle\)/.test(wakeJs) && /sw\?\.addEventListener\('change', toggle\)/.test(wakeJs) && /sw\.checked = on/.test(wakeJs));
 ok('profil/giriş simgesi eklenmedi', !/i-(profile|user|account)/.test(html));
 // Sahte veri yok: referans görseldeki değerler kodda sabit değil
 const statics = html.replace(/<symbol[\s\S]*?<\/symbol>/g, '');

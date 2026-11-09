@@ -39,5 +39,14 @@ ok('içerik .sheet-body kaydırma alanına alınır, başlık dışında kalır'
 ok('.sheet-body kayar, başlık kaymaz', /\.sheet-body \{[^}]*overflow-y: auto/.test(css) && /\.sheet-head \{[^}]*flex: none/.test(css) && !/\.sheet-head \{[^}]*position: sticky/.test(css) && /main \{ overflow: hidden; \}/.test(css));
 ok('sayfa açılınca içerik en başa döner', /\.sheet-body'\)\?\.scrollTo\(0, 0\)/.test(tabs));
 
+// En az şarj gücü süzgeci (22/60/120/150/180): Filtre kartında, listeleri süzer, planı değiştirmez
+const pf = read('js/routing/powerFilter.js');
+const fcard = sec.slice(pos('filter-card'), pos('brand-card'));
+ok('Filtre kartında 22/60/120/150/180 kW düğmeleri', [22, 60, 120, 150, 180].every((k) => fcard.includes(`data-listkw="${k}"`)) && /id="list-min-kw"/.test(fcard));
+ok('süzgeç değerleri 22, 60, 120, 150, 180 ve tekrar dokununca kalkar', /POWER_STEPS = \[22, 60, 120, 150, 180\]/.test(pf) && /v === min \? 0 : v/.test(pf));
+ok('Yakındakiler süzülür; 22 kW seçilince AC de gelir; düşük pil önerisi süzülmez', /powerListOk\(s\)/.test(nb) && /getListMinKw\(\) < PLANNER\.baseKw/.test(nb) && /visible\(\{ power: false \}\)/.test(nb));
+ok('Rotadakiler adayları süzülür, plandakiler süzülmez', /!planned\.has\(r\.station\.id\) && powerListOk\(r\.station\)/.test(sv));
+ok('süzgeç modülü çevrimdışı kabukta', sw.includes("'./js/routing/powerFilter.js'"));
+
 console.log(`\n${pass} geçti, ${fail} kaldı`);
 process.exit(fail ? 1 : 0);

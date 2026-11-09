@@ -598,6 +598,7 @@ html[lang="tr"] .nh-flag { display: none; }
 .socbar-track:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .soc-range-note { font-size: 11.5px; }
 .tool-row { min-height: 44px; }
+.wake-ctl { display: inline-flex; align-items: center; gap: 10px; }
 
 /* Kısa ekran (yatay telefon, küçük pencere): üstte tek satır başlık (pil hapı dahil), panel solda, alt satırda sekmeler ve arama/navigasyon şeridi */
 @media (max-height: 520px) {

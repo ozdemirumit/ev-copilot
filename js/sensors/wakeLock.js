@@ -11,9 +11,11 @@ async function acquire() {
 
 export function initWakeLock() {
   const btn = document.getElementById('btn-wake');
+  const sw = document.getElementById('wake-switch');
   if (!('wakeLock' in navigator)) {
     btn.disabled = true;
     btn.title = 'Wake Lock bu tarayıcıda desteklenmiyor';
+    if (sw) { sw.disabled = true; sw.checked = false; }
     return;
   }
 
@@ -21,9 +23,11 @@ export function initWakeLock() {
     const on = getState('system').wakeLock;
     btn.classList.toggle('on', on);
     btn.setAttribute('aria-pressed', String(on));
+    if (sw) sw.checked = on;
   };
 
-  btn.addEventListener('click', async () => {
+  // Simge düğmesi ve Açık/Kapalı anahtarı aynı işi yapar; ikisi de durumla eşitlenir.
+  const toggle = async () => {
     try {
       if (getState('system').wakeLock) {
         patch('system', { wakeLock: false });
@@ -39,7 +43,9 @@ export function initWakeLock() {
       toast('Wake Lock alınamadı: ' + err.message);
     }
     paint();
-  });
+  };
+  btn.addEventListener('click', toggle);
+  sw?.addEventListener('change', toggle);
 
   // Önceki oturumda açıksa uygulama açılınca yeniden almayı dene (kullanıcı dokunuşu gerekmez; olmazsa sessizce vazgeç).
   if (load('wakeOn', false)) {

@@ -386,6 +386,16 @@
         </select>
         <button class="btn primary" id="near-refresh" type="button">🔄 Ara</button>
       </div>
+      <div class="stack" style="gap:6px">
+        <span class="small muted">En az şarj gücü (kW)</span>
+        <div class="chips" id="list-min-kw" role="group" aria-label="En az şarj gücü (kW)">
+          <button class="btn sm" data-listkw="22" type="button" aria-pressed="false">22</button>
+          <button class="btn sm" data-listkw="60" type="button" aria-pressed="false">60</button>
+          <button class="btn sm" data-listkw="120" type="button" aria-pressed="false">120</button>
+          <button class="btn sm" data-listkw="150" type="button" aria-pressed="false">150</button>
+          <button class="btn sm" data-listkw="180" type="button" aria-pressed="false">180</button>
+        </div>
+      </div>
       <div class="row between">
         <label for="near-ac">Yavaş AC istasyonlarını da göster</label>
         <label class="switch"><input type="checkbox" id="near-ac"><i></i></label>
@@ -779,7 +789,10 @@
   <div class="dlg-head"><h2 id="tools-title">Durum ve kontroller</h2><button class="sheet-x" id="tools-x" type="button" aria-label="Kapat"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button></div>
   <div class="row between tool-row">
     <span>Ekranı açık tut (Wake Lock)</span>
-    <button class="icon-btn" id="btn-wake" type="button" aria-pressed="false" title="Ekranı açık tut (Wake Lock)" aria-label="Ekranı açık tut (Wake Lock)"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg></button>
+    <span class="wake-ctl">
+      <button class="icon-btn" id="btn-wake" type="button" aria-pressed="false" title="Ekranı açık tut (Wake Lock)" aria-label="Ekranı açık tut (Wake Lock)"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg></button>
+      <label class="switch" title="Ekranı açık tut (Wake Lock)"><input type="checkbox" id="wake-switch" aria-label="Ekranı açık tut (Wake Lock)"><i></i></label>
+    </span>
   </div>
   <div class="badges" aria-label="Durum">
     <span class="badge" id="bd-gps">GPS: kapalı</span>

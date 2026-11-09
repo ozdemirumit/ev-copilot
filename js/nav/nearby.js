@@ -4,6 +4,7 @@
 import { t } from '../i18n/index.js';
 import { getState, patch, effective, subscribe } from '../state.js';
 import { brandOk } from '../routing/planner.js';
+import { getListMinKw, powerListOk } from '../routing/powerFilter.js';
 import { load, save } from '../utils/storage.js';
 import { VEHICLE, PLANNER } from '../config.js';
 import { haversineKm } from '../utils/geo.js';
@@ -73,8 +74,10 @@ function enrich(list) {
   }).sort((a, b) => a.distKm - b.distKm);
 }
 
-const visible = () => {
-  const list = enrich(all).filter((s) => showAc || !s.slow);
+/** power: İstasyonlar ekranındaki "en az kW" süzgecini uygula (düşük pil önerisi uygulamaz: güvenlik). 22 kW seçiliyse AC istasyonlar da gelir. */
+const visible = ({ power = true } = {}) => {
+  const acToo = showAc || (power && getListMinKw() > 0 && getListMinKw() < PLANNER.baseKw);
+  const list = enrich(all).filter((s) => (acToo || !s.slow) && (!power || powerListOk(s)));
   const pref = list.filter(brandOk); // Şarj markası tercihi (İstasyonlar sekmesi); tercih edilen markada hiç istasyon yoksa hepsi gösterilir
   return pref.length ? pref : list;
 };
@@ -242,7 +245,7 @@ function render() {
 
 /** Önerilecek istasyonlar: ulaşılabilir olanlar önce, yol üstündekiler hafif öncelikli, kalanı yola göre sıralı. */
 function rankNearby() {
-  const items = visible().filter((s) => !s.slow);
+  const items = visible({ power: false }).filter((s) => !s.slow);
   const pool = items.length ? items : enrich(all);
   const eng = getState('engine');
   const plan = getState('plan');
@@ -449,6 +452,8 @@ export function initNearby() {
   ac.checked = showAc;
   ac.addEventListener('change', () => { showAc = ac.checked; save('nearAc', showAc); render(); });
   $('near-refresh').addEventListener('click', () => refreshNearby({ force: true }));
+  // En az kW süzgeci değişince: otomatik yarıçapta yeniden ara (liste boşalırsa 10 → 25 → 50 km'ye genişler), sabit yarıçapta yalnızca yenile
+  document.addEventListener('powerfilter', () => { if (radiusSetting === 'auto' && !busy) refreshNearby({ silent: true }); else render(); });
   let brandSig = (PLANNER.brands || []).join(',');
   subscribe('route', () => { const b = (PLANNER.brands || []).join(','); if (b !== brandSig) { brandSig = b; render(); } }); // marka tercihi değişince liste yenilenir
   $('near-alert-close').addEventListener('click', () => { dismissedUntil = Date.now() + 10 * 60e3; showAlert(null); });
