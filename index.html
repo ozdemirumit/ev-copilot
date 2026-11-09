@@ -74,24 +74,15 @@
 
   <!-- ===== 1) ROTA ===== -->
   <section class="tab" id="tab-route" data-title="Rota">
-    <div class="card stack" id="rp-car">
-      <div class="rp-carhead">
-        <svg class="ic" aria-hidden="true"><use href="#i-car"/></svg>
-        <div class="rp-carname"><b id="rp-veh">—</b><small><span id="rp-cons">--</span> kWh/100 km</small></div>
-        <button class="btn sm" type="button" data-tab="range">Araç ve tüketim</button>
-      </div>
-      <div class="rp-socline">
-        <div><small>Mevcut pil</small><b id="rp-soc">--</b></div>
-        <div><small>Güvenli menzil</small><span><span aria-hidden="true">≈</span><b id="rp-range">--</b> km</span></div>
-      </div>
-      <div class="soc-input">
-        <label for="cur-soc">Mevcut pil (aracın şu anki şarjı)</label>
+    <div class="card stack" id="rp-soc-card">
+      <div class="soc-input rp-soc-compact">
+        <label for="cur-soc">Pil</label>
         <div class="soc-input-row">
           <input type="range" id="cur-soc" min="0" max="100" step="1" value="80">
-          <input type="number" id="cur-soc-num" inputmode="numeric" min="0" max="100" step="1" aria-label="Mevcut pil yüzdesi">
+          <span class="pct-group rp-soc-num"><span class="pct-sign" aria-hidden="true">%</span><input type="number" id="cur-soc-num" inputmode="numeric" min="0" max="100" step="1" aria-label="Mevcut pil yüzdesi"></span>
         </div>
       </div>
-      <p class="small muted" id="cur-soc-note" style="margin:0"></p>
+      <p class="small muted hidden" id="cur-soc-note" style="margin:0"></p>
     </div>
 
     <div class="card stack">
@@ -160,6 +151,15 @@
     <details class="card stack" id="route-adv">
       <summary>Gelişmiş seçenekler</summary>
       <div class="stack">
+        <div class="rp-carhead" id="rp-car">
+          <svg class="ic" aria-hidden="true"><use href="#i-car"/></svg>
+          <div class="rp-carname"><b id="rp-veh">—</b><small><span id="rp-cons">--</span> kWh/100 km</small></div>
+          <button class="btn sm" type="button" data-tab="range">Araç ve tüketim</button>
+        </div>
+        <div class="row between">
+          <span class="small muted">Güvenli menzil</span>
+          <span><span aria-hidden="true">≈</span><b id="rp-range">--</b> km</span>
+        </div>
         <div class="slider-row">
           <label for="min-arrival">Minimum varış pili eşiği</label>
           <output id="min-arrival-out">%15</output>

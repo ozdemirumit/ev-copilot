@@ -1,8 +1,7 @@
-// Rota sayfasının üst bölümü: seçili araç ve tüketim özeti, mevcut pil ve güvenli menzil, şarj hedefi (sürgü + sayı), isteğe bağlı ara durak.
+// Rota sayfası formu: Gelişmiş seçeneklerdeki araç, tüketim ve güvenli menzil özeti, şarj hedefi (sürgü + sayı), isteğe bağlı ara durak.
 // Şarj hedefi Araç ve menzil sayfasındaki "max-charge" denetimine yazar: kaydetme, plan yenileme tek yerde kalır, kullanıcının kayıtlı değeri korunur.
 import { getState, subscribe, effective } from '../state.js';
 import { VEHICLE } from '../config.js';
-import { locale } from '../i18n/index.js';
 import { mapApi } from './mapView.js';
 
 const $ = (id) => document.getElementById(id);
@@ -17,14 +16,13 @@ export function clampTarget(raw) {
 }
 
 export function initRouteForm() {
-  // Araç, tüketim, pil ve güvenli menzil (eşik piline kadar): gerçek değerler; veri yoksa "--"
+  // Araç, tüketim ve güvenli menzil (eşik piline kadar): gerçek değerler; veri yoksa "--"
   const paintSummary = () => {
     const e = effective();
     const g = getState('engine');
     const cons = g.kwh100Measured ?? g.kwh100Est;
     $('rp-veh').textContent = VEHICLE.name || '—';
     $('rp-cons').textContent = cons == null ? '--' : cons.toFixed(1);
-    $('rp-soc').textContent = e.soc == null ? '--' : new Intl.NumberFormat(locale(), { style: 'percent', maximumFractionDigits: 0 }).format(e.soc / 100);
     $('rp-range').textContent = g.rangeKm == null || e.soc == null ? '--' : String(Math.max(0, Math.round(g.rangeKm)));
   };
   subscribe(['live', 'sim', 'engine', 'route'], paintSummary);

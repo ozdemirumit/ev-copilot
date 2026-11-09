@@ -32,6 +32,7 @@ export function initSocInput() {
         : ocrOk ? 'Pil kameradan canlı okunuyor: elle ayar gerekmez (kamera durursa sürgü açılır).'
           : getState('engine').socSrc === 'manual' ? 'Elle girildi: yol alındıkça tüketim modeliyle düşer, kamera okuyunca düzelir.'
             : 'Son okunan değer.';
+    note.classList.toggle('hidden', !(e.source === 'sim' || v == null || src === 'default' || online)); // olağan durum satırı yer kaplamaz; varsayım, kilit ve Test Modu görünür kalır
   };
 
   slider.addEventListener('input', () => {

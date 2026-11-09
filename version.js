@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.94.0';
+self.APP_VERSION = '0.95.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.95.0', date: '2026-11-09',
+    notes: [
+      'BETA: Rota sayfasinin ust kartinda yalnizca kompakt pil surgusu ve sayisal yuzde kaldi',
+      'BETA: Arac, tuketim ve guvenli menzil ozeti Gelismis secenekler bolumune tasindi; arac ve tuketim ayarlari Arac ve menzil sayfasinda aynen duruyor',
+      'BETA: Pil notu yalnizca varsayilan deger, kamera kilidi ve Test Modunda gorunur',
+    ],
+  },
   {
     v: '0.94.0', date: '2026-11-09',
     notes: [

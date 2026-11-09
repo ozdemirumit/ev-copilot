@@ -58,7 +58,7 @@ const between = (a, b) => { const i = html.indexOf(a); return html.slice(i, html
 
 // Varsayılan şarj hedefi 80, kullanıcı değeri korunur
 ok('şarj hedefi varsayılanı %80, kayıtlı değer okunur', /maxChargeTo: load\('maxChargeTo', 80\)/.test(read('js/state.js')) && /maxChargeTo: load\('maxChargeTo', 80\)/.test(read('js/config.js')));
-ok('mevcut pil ve şarj hedefi ayrı etiketli', html.includes('Mevcut pil (aracın şu anki şarjı)') && html.includes('Şarj hedefi (istasyonda bu seviyeye kadar)'));
+ok('mevcut pil ve şarj hedefi ayrı etiketli', html.includes('<label for="cur-soc">Pil</label>') && html.includes('Şarj hedefi (istasyonda bu seviyeye kadar)'));
 ok('iki sürgünün sayısal girişi var', ['cur-soc-num', 'charge-target-num'].every((id) => new RegExp(`<input type="number" id="${id}"[^>]*aria-label=`).test(html)));
 ok('hedef tek kaynağa yazar (max-charge)', /master\.dispatchEvent\(new Event\('input'\)\)/.test(read('js/ui/routeForm.js')));
 
@@ -72,9 +72,22 @@ ok('harita sürgüsü kamera canlıyken kilitli', /mapSlider\.disabled = locked/
 
 // Rota sayfası
 const route = between('id="tab-route"', '</section>');
-const order = ['id="rp-veh"', 'id="rp-range"', 'id="route-start"', 'id="route-via"', 'id="route-end"', 'id="charge-target"', 'id="sum-dist"', 'id="sum-time"', 'id="sum-stops"', 'id="sum-arrive"', 'id="route-adv"'];
+const order = ['id="cur-soc"', 'id="route-start"', 'id="route-via"', 'id="route-end"', 'id="charge-target"', 'id="sum-dist"', 'id="sum-time"', 'id="sum-stops"', 'id="sum-arrive"', 'id="route-adv"', 'id="rp-veh"', 'id="rp-cons"', 'id="rp-range"'];
 const idx = order.map((s) => route.indexOf(s));
-ok('sıra: araç, menzil, başlangıç, ara durak, varış, hedef, önizleme, gelişmiş', idx.every((v, i) => v >= 0 && (i === 0 || v > idx[i - 1])), idx.join());
+ok('sıra: pil, başlangıç, ara durak, varış, hedef, önizleme, gelişmiş (araç özeti gelişmişte)', idx.every((v, i) => v >= 0 && (i === 0 || v > idx[i - 1])), idx.join());
+
+// Rota sayfası üst kartı: kalıcı olarak yalnızca pil sürgüsü ve sayısal değeri
+const socCardHtml = between('id="rp-soc-card"', 'id="route-start"').split('<h2>')[0];
+ok('üst kartta yalnızca iki denetim: sürgü ve sayı', (socCardHtml.match(/<(input|select|button|textarea)\b/g) || []).length === 2 && socCardHtml.includes('id="cur-soc"') && socCardHtml.includes('id="cur-soc-num"'), socCardHtml);
+ok('üst kartta araç, tüketim, menzil yok', !/rp-veh|rp-cons|rp-range|rp-soc"|data-tab=/.test(socCardHtml));
+ok('pil sürgüsünün görünür etiketi çevrili "Pil" anahtarı', /<label for="cur-soc">Pil<\/label>/.test(socCardHtml) && JSON.parse(read('i18n/keys.json')).includes('Pil'));
+ok('araç ve tüketim gelişmişten açılır', /id="route-adv"[\s\S]*id="rp-car"[\s\S]*data-tab="range"[^>]*>Araç ve tüketim</.test(route));
+ok('araç ve tüketim denetimleri Araç ve menzil sayfasında', ['veh-brand', 'veh-model', 'veh-pack', 'cons-target', 'cons-adj'].every((id) => between('id="tab-range"', 'id="charger-min"').includes(`id="${id}"`) && html.split(`id="${id}"`).length === 2));
+{
+  const si = read('js/ui/socInput.js');
+  ok('pil notu yalnızca varsayım, kilit ve Test Modunda görünür', /note\.classList\.toggle\('hidden', !\(e\.source === 'sim' \|\| v == null \|\| src === 'default' \|\| online\)\)/.test(si));
+}
+ok('dar ekranda taşmaz (esnek sürgü)', /\.rp-soc-compact \{[^}]*display: flex/.test(css) && /\.soc-input-row input\[type=range\] \{[^}]*min-width: 0/.test(css));
 ok('gelişmiş seçenekler kapalı details', /<details class="[^"]*" id="route-adv">/.test(route) && !/id="route-adv" open/.test(route));
 ok('ara durak varsayılan gizli', /class="row hidden" id="via-row"/.test(route));
 ok('ara durak rotaya girer, yeniden rotada korunur', /fetchRoute\(start, end, tripWaypoints\(route\.via, via\)\)/.test(ctrl));
