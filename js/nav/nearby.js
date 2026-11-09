@@ -13,6 +13,7 @@ import { chargeMinutes } from '../routing/chargeCurve.js';
 import { planTrip } from '../routing/controller.js';
 import { mapApi } from '../ui/mapView.js';
 import { toast } from '../ui/toast.js';
+import { showTab } from '../ui/tabs.js';
 import { speak } from '../advisor/voice.js';
 import { slotKind, slotEl, isFresh, livePrice } from '../routing/slots.js';
 import { fetchAvailability } from '../routing/occupancyClient.js';
@@ -165,7 +166,7 @@ function goTo(s, { auto = false } = {}) {
   const dest = getState('route').end;
   const keep = dest && getState('plan').profile && haversineKm(dest, s) > 1;
   if (!(keep && getState('sim').enabled)) mapApi.setPoint('start', start, { fit: false }); // sürüş simülasyonunda istasyon üzerinden yeniden rota A'yı taşımaz
-  document.querySelector('.bottomnav [data-tab="map"]')?.click();
+  showTab('map');
   if (!keep) mapApi.setPoint('end', { lat: s.lat, lon: s.lon, label: s.name });
   const done = () => { if (getState('plan').steps?.length) startNav(); };
   if (keep) {
@@ -245,7 +246,7 @@ function render() {
     gm.rel = 'noopener';
     const show = cell('button', 'btn ghost sm', '📍 Haritada');
     show.type = 'button';
-    show.addEventListener('click', () => { focusId = s.id; mapApi.follow(s.lat, s.lon, 14, true); document.querySelector('.bottomnav [data-tab="map"]')?.click(); render(); });
+    show.addEventListener('click', () => { focusId = s.id; mapApi.follow(s.lat, s.lon, 14, true); showTab('map'); render(); });
     acts.append(go, gm, show);
     left.append(meta1, meta2, acts);
     row.append(left);
@@ -349,7 +350,7 @@ function paintAlert() {
     const all3 = cell('button', 'near-more', 'Diğer istasyonlar');
     all3.type = 'button';
     all3.insertAdjacentHTML('beforeend', icon('chev-right'));
-    all3.addEventListener('click', () => document.querySelector('.bottomnav [data-tab="stations"]')?.click());
+    all3.addEventListener('click', () => showTab('stations'));
     body.append(all3);
   }
 }

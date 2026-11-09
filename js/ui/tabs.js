@@ -2,8 +2,6 @@
 // [data-tab] taşıyan her düğme sekme değiştirir; açık sayfanın düğmesine tekrar dokunmak (ya da ✕) haritaya döner.
 import { icon } from './icons.js';
 
-const PARENT = { range: 'more', camera: 'more', abrp: 'more', test: 'more', favs: 'more', route: 'map' }; // alt sayfa açıkken alt çubukta vurgulanan düğme
-
 let showFn = null;
 /** Başka modüllerden sekme aç ('map' = sayfaları kapat). */
 export const showTab = (id) => showFn?.(id);
@@ -11,7 +9,6 @@ export const currentTab = () => document.body.dataset.view || 'map';
 
 export function initTabs() {
   const main = document.querySelector('main');
-  const pill = [...document.querySelectorAll('.bottomnav [data-tab]')];
 
   // Her sayfanın başına başlık satırı + kapat düğmesi
   document.querySelectorAll('.tab').forEach((sec) => {
@@ -44,12 +41,6 @@ export function initTabs() {
     document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === section));
     document.body.classList.toggle('sheet-open', open);
     document.body.dataset.view = shown;
-    const on = PARENT[shown] || shown;
-    pill.forEach((b) => {
-      const cur = b.dataset.tab === on;
-      b.classList.toggle('active', cur);
-      b.setAttribute('aria-current', cur ? 'page' : 'false');
-    });
     section?.querySelector('.sheet-body')?.scrollTo(0, 0);
     document.dispatchEvent(new CustomEvent('tabchange', { detail: shown }));
   }

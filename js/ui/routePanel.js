@@ -2,6 +2,7 @@ import { t as tpl, locale } from '../i18n/index.js'; // 't' bu dosyada başka ye
 import { progressKm } from '../routing/progress.js';
 import { getState, patch, subscribe, effective } from '../state.js';
 import { toast } from './toast.js';
+import { showTab } from './tabs.js';
 import { planTrip } from '../routing/controller.js';
 import { startNav } from '../nav/navigator.js';
 import { save } from '../utils/storage.js';
@@ -11,7 +12,7 @@ import { mapApi } from './mapView.js';
 import { proxyHas } from '../net/proxy.js';
 import { PLANNER } from '../config.js';
 
-const showMap = () => document.querySelector('.bottomnav [data-tab="map"]')?.click();
+const showMap = () => showTab('map');
 
 const $ = (id) => document.getElementById(id);
 
