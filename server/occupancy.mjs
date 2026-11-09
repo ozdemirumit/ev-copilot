@@ -3,9 +3,11 @@
 //     available/total, tariff_ids, last_updated) + tüm ülke OCPI 2.2.1 Tariffs dosyası (fiyat). Anahtar gerekmez.
 //  2) HERE (Browse show=ev): bağlantı bazlı canlı durum (yalnızca beslemesi canlı istasyonlar; HERE_API_KEY, yalnızca sunucuda).
 //  3) Google Places (Yeni) `evChargeOptions` (isteğe bağlı: GOOGLE_PLACES_KEY, yalnızca sunucuda; kullanıcı başına günlük kota).
+//  3b) TomTom (EV Charging Stations Availability; TOMTOM_KEY, yalnızca sunucuda): Türkiye'de operatörlerin canlı soket durumu; HERE'den sonra, Google'dan önce.
 // Başka ülkelerin ulusal erişim noktaları aynı arayüzle (adapter) eklenir. Sonuç: { src, total, available, out, at, price }.
 import { gunzipSync } from 'node:zlib';
 import { hereLookup } from './here.mjs';
+import { tomtomLookup } from './tomtom.mjs';
 
 const NDW_BBOX = process.env.NDW_BBOX_URL || 'https://dotnl.ndw.nu/api/rest/geojson/dynamic-road-status/charge-point-data/v1/features';
 const NDW_TARIFFS = process.env.NDW_TARIFFS_URL || 'https://opendata.ndw.nu/charging_point_tariffs_ocpi.json.gz';
@@ -194,6 +196,9 @@ export async function lookupAll(stations, opts = {}) {
     } catch (err) { console.error('doluluk (NDW):', err.message); }
     if (!v && opts.here?.key && opts.here.allow()) {
       try { v = await hereLookup(st, opts.here.key, opts); opts.here.onCall?.(); } catch (err) { console.error('doluluk (HERE):', err.message); }
+    }
+    if (!v && opts.tomtom?.key && opts.tomtom.allow()) { // TomTom: Türkiye'de ZES/Trugo/Eşarj/WAT/Sharz canlı soket durumu (ücretsiz plan, günlük tavanlı); Google'dan önce
+      try { v = await tomtomLookup(st, opts.tomtom.key, opts); } catch (err) { console.error('doluluk (TomTom):', typeof err?.status === 'number' ? 'HTTP ' + err.status : 'hata'); }
     }
     if (!v && opts.google?.key && googleWanted(st, opts.soc) && opts.google.allow()) {
       try { v = await googleLookup(st, opts.google.key, opts); opts.google.onCall?.(); noteGoogle(st, !!v); } catch (err) { console.error('doluluk (Google):', err.message); }

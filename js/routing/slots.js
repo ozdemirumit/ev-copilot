@@ -67,8 +67,8 @@ export function slotEl(s, lead = ' · ') {
     c.append(span(cm.report.status === 'full' ? '🔴 Dolu bildirildi' : '🟢 Boş bildirildi'), ' · ', span(ago(cm.report.at)));
     add(c);
   }
-  if (!first && (sl.src === 'google' || sl.src === 'here')) { // Google Places kuralı: Google verisi Google Maps adıyla belirtilir (çevrilmez, silinmez); HERE verisi de HERE adıyla
-    const g = span(sl.src === 'here' ? 'HERE' : 'Google Maps');
+  if (!first && (sl.src === 'google' || sl.src === 'here' || sl.src === 'tomtom')) { // Google Places kuralı: Google verisi Google Maps adıyla belirtilir (çevrilmez, silinmez); HERE ve TomTom verisi de kendi adıyla
+    const g = span(sl.src === 'here' ? 'HERE' : sl.src === 'tomtom' ? 'TomTom' : 'Google Maps');
     g.translate = false;
     g.className = 'attrib';
     wrap.append(' · ', g);

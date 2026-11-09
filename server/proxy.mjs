@@ -18,6 +18,7 @@ import { createMailer } from './mailer.mjs';
 import { createAppFiles } from './appfiles.mjs';
 import { lookupAll } from './occupancy.mjs';
 import { hereBrowse, compact } from './here.mjs';
+import { tomtomAllowed, tomtomUsage } from './tomtom.mjs';
 import { createPriceBook } from './prices.mjs';
 import { createCommunity } from './community.mjs';
 import { createStationInfo, MAX_PHOTO_BYTES } from './stationinfo.mjs';
@@ -48,6 +49,7 @@ const CODES = list(env.ACCESS_CODES);
 const MAPBOX = env.MAPBOX_TOKEN || '';
 const OCM = env.OCM_KEY || '';
 const HERE = env.HERE_API_KEY || ''; // istasyon listesi ve canlı durum (HERE Search, show=ev); yalnızca sunucuda durur
+const TOMTOM = env.TOMTOM_KEY || ''; // canlı soket doluluğu (TomTom EV Availability; Türkiye operatörleri); yalnızca sunucuda durur, günlük tavan TOMTOM_DAILY_CAP
 const GOOGLE_PLACES = env.GOOGLE_PLACES_KEY || ''; // isteğe bağlı: istasyon doluluğu (NDW'nin kapsamadığı yerler); yalnızca sunucuda durur
 const ORIGINS = new Set(list(env.ALLOW_ORIGINS || 'https://ozdemirumit.github.io,https://localhost,capacitor://localhost,http://localhost'));
 if (env.PUBLIC_URL) ORIGINS.add(String(env.PUBLIC_URL).replace(/\/+$/, '')); // yönetim paneli (/yonetim) aynı kökenden POST/DELETE yapar
@@ -208,7 +210,7 @@ function adminSummary() {
     here: { month: hereUsage().month, used: hereUsage().n, cap: HERE_CAP },
     devices: devices.stats(),
     map: { default: maps.getDefault() },
-    configured: { mapbox: !!MAPBOX, mapboxMap: maps.available().mapbox, googleMap: maps.available().google, here: !!HERE, ocm: !!OCM, googlePlaces: !!GOOGLE_PLACES, googleLogin: !!accounts.googleOn, smtp: !!mailer, premiumRequired: String(env.PREMIUM_REQUIRED ?? '1') !== '0' },
+    configured: { mapbox: !!MAPBOX, mapboxMap: maps.available().mapbox, googleMap: maps.available().google, here: !!HERE, ocm: !!OCM, tomtom: !!TOMTOM, googlePlaces: !!GOOGLE_PLACES, googleLogin: !!accounts.googleOn, smtp: !!mailer, premiumRequired: String(env.PREMIUM_REQUIRED ?? '1') !== '0' },
     usageToday: byKind,
     usageByUser: usageByUser(),
     google: { callsToday: gToday.d === today() ? gToday.n : 0, dailyCap: GOOGLE_TOTAL, unitUsd: costs.unit, usd: tot },
@@ -227,7 +229,7 @@ async function readJson(req, max) {
 }
 
 // ---------- yardımcılar ----------
-const scrub = (s) => { let t = s; for (const secret of [MAPBOX, OCM, GOOGLE_PLACES, HERE, env.MAPBOX_MAP_TOKEN, env.GOOGLE_MAPS_BROWSER_KEY, env.ADMIN_TOTP_SECRET]) if (secret) t = t.split(secret).join('***'); return t; };
+const scrub = (s) => { let t = s; for (const secret of [MAPBOX, OCM, GOOGLE_PLACES, HERE, TOMTOM,env.MAPBOX_MAP_TOKEN, env.GOOGLE_MAPS_BROWSER_KEY, env.ADMIN_TOTP_SECRET]) if (secret) t = t.split(secret).join('***'); return t; };
 function send(res, status, body, headers = {}) {
   const buf = Buffer.isBuffer(body) ? body : Buffer.from(typeof body === 'string' ? body : JSON.stringify(body));
   res.writeHead(status, { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...headers, 'Content-Length': buf.length });
@@ -452,7 +454,8 @@ async function occupancyRoute(req, res, id) {
   const google = GOOGLE_PLACES ? { key: GOOGLE_PLACES, allow: () => googleAllowed(id), onCall: () => costs.add(id, 'google') } : null; // her başarılı Google çağrısı kullanıcıya yazılır
   const here = HERE ? { key: HERE, allow: hereAllowed, onCall: () => { hereCount(); costs.add(id, 'here'); } } : null; // HERE doluluk sorgusu da 'here' türüne
   const soc = Number.isFinite(Number(b.soc)) ? Number(b.soc) : null; // pil %: Google (ücretli) yalnızca düşük pilde sorulur
-  json(res, 200, { results: await lookupAll(stations, { google, here, soc, book: priceBook, community }) });
+  const tomtom = TOMTOM ? { key: TOMTOM, allow: tomtomAllowed } : null; // günlük tavan tomtom.mjs'te sayılır (her HTTP isteği 1)
+  json(res, 200, { results: await lookupAll(stations, { google, here, tomtom, soc, book: priceBook, community }) });
 }
 
 // Topluluk: şarj başladı/bitti (varlık) ve Dolu/Boş bildirimi. Okumak Premium (/v1/occupancy), katkı vermek her hesaba açık.
@@ -703,5 +706,5 @@ server.requestTimeout = 120000;
 server.headersTimeout = 15000;
 tesla.get().catch(() => {}); // ilk kullanıcı beklemesin: açılışta Tesla listesi (diskte yoksa) önceden alınır
 server.listen(PORT, HOST, () => {
-  console.log(`EV Route Finder ara sunucusu ${HOST}:${PORT} · Mapbox ${MAPBOX ? 'var' : 'yok'} · OpenChargeMap ${OCM ? 'var' : 'yok'} · HERE ${HERE ? 'var' : 'yok'} · Google girişi ${accounts.googleOn ? 'açık' : 'kapalı'} · doluluk: NDW${HERE ? ' + HERE' : ''}${GOOGLE_PLACES ? ' + Google' : ''} · ${CODES.length} yönetici kodu${adminAuth ? ' · yönetim 2. adım: TOTP açık' : ''}`);
+  console.log(`EV Route Finder ara sunucusu ${HOST}:${PORT} · Mapbox ${MAPBOX ? 'var' : 'yok'} · OpenChargeMap ${OCM ? 'var' : 'yok'} · HERE ${HERE ? 'var' : 'yok'} · Google girişi ${accounts.googleOn ? 'açık' : 'kapalı'} · doluluk: NDW${HERE ? ' + HERE' : ''}${TOMTOM ? ' + TomTom (günlük ' + tomtomUsage().cap + ')' : ''}${GOOGLE_PLACES ? ' + Google' : ''} · ${CODES.length} yönetici kodu${adminAuth ? ' · yönetim 2. adım: TOTP açık' : ''}`);
 });
