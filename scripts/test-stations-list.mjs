@@ -44,8 +44,10 @@ const pf = read('js/routing/powerFilter.js');
 const fcard = sec.slice(pos('filter-card'), pos('brand-card'));
 ok('Filtre kartında 22/60/120/150/180 kW düğmeleri', [22, 60, 120, 150, 180].every((k) => fcard.includes(`data-listkw="${k}"`)) && /id="list-min-kw"/.test(fcard));
 ok('süzgeç değerleri 22, 60, 120, 150, 180 ve tekrar dokununca kalkar', /POWER_STEPS = \[22, 60, 120, 150, 180\]/.test(pf) && /v === min \? 0 : v/.test(pf));
-ok('Yakındakiler süzülür; 22 kW seçilince AC de gelir; düşük pil önerisi süzülmez', /powerListOk\(s\)/.test(nb) && /getListMinKw\(\) < PLANNER\.baseKw/.test(nb) && /visible\(\{ power: false \}\)/.test(nb));
-ok('Rotadakiler adayları süzülür, plandakiler süzülmez', /!planned\.has\(r\.station\.id\) && powerListOk\(r\.station\)/.test(sv));
+ok('Yakındakiler: 22 kW basamağında AC de gelir; düşük pil önerisi süzülmez', /v > 0 && v < PLANNER\.baseKw/.test(nb) && /visible\(\{ power: false \}\)/.test(nb));
+ok('uygun istasyon yoksa süzgeç bir basamak gevşer ve ekrana yazılır (iki listede de)', /loosenPower\(\(v\) => at\(v\)\.length\)/.test(nb) && /paintPowerNote\(\$\('near-power-note'\)/.test(nb) && /loosenPower\(\(v\) => cand\.filter/.test(sv) && /paintPowerNote\(\$\('route-power-note'\)/.test(sv) && /id="near-power-note"/.test(html) && /id="route-power-note"/.test(html));
+ok('Rotadakiler: plandakiler süzgeçten etkilenmez, yalnızca adaylar', /const cand = p\.ranking\.filter\(\(r\) => ahead\(r\.station\) && !planned\.has\(r\.station\.id\)\)/.test(sv));
+ok('gevşetme: seçilenden aşağı 150→120→60→22→süzgeçsiz', /filter\(\(x\) => x < from\)\.reverse\(\)\.concat\(0\)/.test(pf));
 ok('süzgeç modülü çevrimdışı kabukta', sw.includes("'./js/routing/powerFilter.js'"));
 
 console.log(`\n${pass} geçti, ${fail} kaldı`);

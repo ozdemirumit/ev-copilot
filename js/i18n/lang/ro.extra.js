@@ -292,4 +292,6 @@ export default {
   "Otomatik (1 → 50 km)": "Automat (1 → 50 km)",
   "Tümünü göster": "Arată tot",
   "Daha az göster": "Arată mai puțin",
+  "En az {0} kW için uygun istasyon yok; filtre gevşetildi: en az {1} kW gösteriliyor.": "Nu există stații de cel puțin {0} kW; filtru relaxat: se afișează cel puțin {1} kW.",
+  "En az {0} kW için uygun istasyon yok; filtre gevşetildi: tüm güçler gösteriliyor.": "Nu există stații de cel puțin {0} kW; filtru relaxat: se afișează toate puterile.",
 };

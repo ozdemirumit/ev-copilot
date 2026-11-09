@@ -8,7 +8,7 @@ import { setStationOperator } from '../routing/chargerSource.js';
 import { slotEl } from '../routing/slots.js';
 import { PLANNER } from '../config.js';
 import { brandOk } from '../routing/planner.js';
-import { powerListOk, initPowerFilter } from '../routing/powerFilter.js';
+import { loosenPower, paintPowerNote, initPowerFilter } from '../routing/powerFilter.js';
 import { paintMore } from './moreToggle.js';
 
 const $ = (id) => document.getElementById(id);
@@ -33,6 +33,7 @@ function renderList() {
   // Rota yoksa "Rotadakiler" kartı hiç görünmez (hata varsa nedeni göstermek için görünür kalır)
   $('route-stations-card').classList.toggle('hidden', !p.profile && !(p.stationInfo?.errors || []).length);
   paintMore($('station-more'), 0, ROUTE_LIMIT, false);
+  paintPowerNote($('route-power-note'), null);
 
   // Veri kaynağı sorunları kalıcı gösterilir (toast kaybolur): hata varsa neden + "yeniden ara".
   const warn = $('station-warn');
@@ -55,7 +56,10 @@ function renderList() {
   const ahead = (st) => st.km > here - 0.3; // geride kalan istasyonlar listeden çıkar
   const stops = p.stops.filter((s) => ahead(s.station));
   const planned = new Map(stops.map((s, i) => [s.station.id, i + 1]));
-  const rows = p.ranking.filter((r) => ahead(r.station) && !planned.has(r.station.id) && powerListOk(r.station)).slice(0, 25); // plandakiler süzgeçten etkilenmez
+  const cand = p.ranking.filter((r) => ahead(r.station) && !planned.has(r.station.id));
+  const pw = loosenPower((v) => cand.filter((r) => r.station.kw >= v).length); // uygun aday yoksa süzgeç gevşer
+  paintPowerNote($('route-power-note'), pw);
+  const rows = cand.filter((r) => r.station.kw >= pw.min).slice(0, 25); // plandakiler süzgeçten etkilenmez
   const planRows = stops.map((s) => ({ station: s.station, arrive: s.arriveSoc, to: s.leaveSoc, minutes: s.minutes + s.overheadMin, cost: s.cost }));
 
   const aheadCount = p.stations.filter(ahead).length;

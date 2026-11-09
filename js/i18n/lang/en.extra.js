@@ -292,4 +292,6 @@ export default {
   "Otomatik (1 → 50 km)": "Automatic (1 → 50 km)",
   "Tümünü göster": "Show all",
   "Daha az göster": "Show less",
+  "En az {0} kW için uygun istasyon yok; filtre gevşetildi: en az {1} kW gösteriliyor.": "No stations with at least {0} kW; filter loosened: showing at least {1} kW.",
+  "En az {0} kW için uygun istasyon yok; filtre gevşetildi: tüm güçler gösteriliyor.": "No stations with at least {0} kW; filter loosened: showing all power levels.",
 };

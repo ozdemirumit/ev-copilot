@@ -4,7 +4,7 @@
 import { t } from '../i18n/index.js';
 import { getState, patch, effective, subscribe } from '../state.js';
 import { brandOk } from '../routing/planner.js';
-import { getListMinKw, powerListOk } from '../routing/powerFilter.js';
+import { loosenPower, paintPowerNote } from '../routing/powerFilter.js';
 import { load, save } from '../utils/storage.js';
 import { VEHICLE, PLANNER } from '../config.js';
 import { haversineKm } from '../utils/geo.js';
@@ -75,11 +75,17 @@ function enrich(list) {
 }
 
 /** power: İstasyonlar ekranındaki "en az kW" süzgecini uygula (düşük pil önerisi uygulamaz: güvenlik). 22 kW seçiliyse AC istasyonlar da gelir. */
+let powerInfo = { min: 0, from: 0, loosened: false }; // son listede kW süzgeci gevşetildi mi (ekrana yazılır)
 const visible = ({ power = true } = {}) => {
-  const acToo = showAc || (power && getListMinKw() > 0 && getListMinKw() < PLANNER.baseKw);
-  const list = enrich(all).filter((s) => (acToo || !s.slow) && (!power || powerListOk(s)));
-  const pref = list.filter(brandOk); // Şarj markası tercihi (İstasyonlar sekmesi); tercih edilen markada hiç istasyon yoksa hepsi gösterilir
-  return pref.length ? pref : list;
+  // v: en az kW basamağı. AC istasyonlar "AC de göster" açıkken ya da 40 kW altı (22) basamakta listeye girer.
+  const at = (v) => {
+    const list = enrich(all).filter((s) => s.kw >= v && (showAc || !s.slow || (v > 0 && v < PLANNER.baseKw)));
+    const pref = list.filter(brandOk); // Şarj markası tercihi (İstasyonlar sekmesi); tercih edilen markada hiç istasyon yoksa hepsi gösterilir
+    return pref.length ? pref : list;
+  };
+  if (!power) return at(0);
+  powerInfo = loosenPower((v) => at(v).length); // uygun istasyon yoksa süzgeç bir basamak gevşer
+  return at(powerInfo.min);
 };
 
 export async function refreshNearby({ force = false, silent = false } = {}) {
@@ -199,6 +205,7 @@ function render() {
   const warn = $('near-warn');
   warn.textContent = meta.errors.join(' · ');
   warn.classList.toggle('hidden', !meta.errors.length);
+  paintPowerNote($('near-power-note'), powerInfo);
 
   list.replaceChildren();
   if (meta.at && !items.length) list.append(cell('p', 'small muted', showAc ? 'Bu çevrede istasyon bulunamadı.' : 'Bu çevrede hızlı (DC) istasyon bulunamadı; yavaş AC olanlar için "AC de göster"i aç.'));

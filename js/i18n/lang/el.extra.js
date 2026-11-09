@@ -292,4 +292,6 @@ export default {
   "Otomatik (1 → 50 km)": "Αυτόματα (1 → 50 χλμ)",
   "Tümünü göster": "Εμφάνιση όλων",
   "Daha az göster": "Εμφάνιση λιγότερων",
+  "En az {0} kW için uygun istasyon yok; filtre gevşetildi: en az {1} kW gösteriliyor.": "Δεν υπάρχουν σταθμοί με τουλάχιστον {0} kW· το φίλτρο χαλάρωσε: εμφανίζονται τουλάχιστον {1} kW.",
+  "En az {0} kW için uygun istasyon yok; filtre gevşetildi: tüm güçler gösteriliyor.": "Δεν υπάρχουν σταθμοί με τουλάχιστον {0} kW· το φίλτρο χαλάρωσε: εμφανίζονται όλες οι ισχύες.",
 };

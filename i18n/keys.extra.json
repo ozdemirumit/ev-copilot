@@ -291,5 +291,7 @@
  "Filtre",
  "Otomatik (1 → 50 km)",
  "Tümünü göster",
- "Daha az göster"
+ "Daha az göster",
+ "En az {0} kW için uygun istasyon yok; filtre gevşetildi: en az {1} kW gösteriliyor.",
+ "En az {0} kW için uygun istasyon yok; filtre gevşetildi: tüm güçler gösteriliyor."
 ]
