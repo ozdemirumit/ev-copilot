@@ -95,6 +95,18 @@ ok('ulaşılan ara durak düşer', /VIA_REACHED_KM/.test(nav) && /setPoint\('via
 ok('varışta pil plandan', /\$\('sum-arrive'\)\.textContent = new Intl\.NumberFormat/.test(panel));
 ok('kimlikler bir kez', ['cur-soc', 'min-arrival', 'min-kw', 'nav-voice', 'plan-status', 'route-via', 'charge-target'].every((id) => html.split(`id="${id}"`).length === 2));
 
+// Kompakt rota planlama
+{
+  const rd = read('js/ui/recentDest.js');
+  ok('son hedefler Rota sayfasında kapalı açılır liste', /el\('details', 'recent-fold'\)/.test(rd) && /fold\.open = wasOpen/.test(rd) && /const wasOpen = !!box\.querySelector\('details'\)\?\.open/.test(rd));
+  ok('Favoriler sekmesindeki son hedefler açık kalır', /if \(showEmpty\) \{ box\.replaceChildren\(chips, head\); return; \}/.test(rd));
+  ok('haritadan seç düğmeleri simge ve erişilebilir ad', ['pick-start', 'pick-end', 'pick-via'].every((id) => new RegExp(`id="${id}"[^>]*aria-label="Haritadan seç"`).test(route)));
+  ok('kayıtlı yerler ve araçlar yerinde', ['id="place-chips"', 'id="recent-dest"', 'id="btn-add-via"', 'id="btn-mylocation"', 'id="btn-clear-route"'].every((s) => route.includes(s)));
+  ok('Planla ve Git metriklerden sonra, gelişmişten önce', route.indexOf('id="sum-arrive"') < route.indexOf('id="plan-actions"') && route.indexOf('id="plan-actions"') < route.indexOf('id="route-adv"'));
+  ok('44 px dokunma alanı', /#tab-route input\[type=text\], #tab-route \.btn, #tab-route \.chip \{ min-height: 44px; \}/.test(css) && /\.rp-pick \{[^}]*min-height: 44px/.test(css) && /#tab-route \.tog \{ width: 44px; height: 44px; \}/.test(css));
+  ok('telefonda Rota sayfası haritayı açık bırakır, klavyede tam yükseklik', /body\.sheet-open\[data-view="route"\] main \{ top: calc\(var\(--hud-h, 72px\) \+ clamp\(/.test(css) && /main:has\(input\[type=text\]:focus\) \{ top: var\(--hud-h, 72px\); \}/.test(css));
+}
+
 // Navigasyon
 const fabs = between('id="fabs"', 'id="nav-ev"');
 const stack = between('id="fabs-more"', '</div>');

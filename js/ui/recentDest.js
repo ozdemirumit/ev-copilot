@@ -1,4 +1,4 @@
-// Son hedefler: planlanan rotaların varışları cihazda saklanır (en çok 8). Rota sayfasında Varış kutusunun altında çip olarak görünür;
+// Son hedefler: planlanan rotaların varışları cihazda saklanır (en çok 8). Rota sayfasında Varış kutusunun altında kapalı açılır liste olarak görünür;
 // dokununca varış olarak doldurulur (Rotayı Planla ile yeniden planlanır). Açılışta eski rota kendiliğinden yüklenmez.
 import { load, save } from '../utils/storage.js';
 import { haversineKm } from '../utils/geo.js';
@@ -25,12 +25,13 @@ export function initRecentDest() {
 
   function fill(box, list, showEmpty) {
     if (!showEmpty) box.classList.toggle('hidden', !list.length); // Rota sayfasında liste boşken hiç görünmez
+    const wasOpen = !!box.querySelector('details')?.open; // yeniden çizimde (ör. bir hedef silinince) açık liste kapanmasın
     if (!list.length) {
       box.replaceChildren(...(showEmpty ? [el('div', 'empty small muted', 'Henüz son hedef yok')] : []));
       return;
     }
     const head = el('div', 'row between');
-    head.append(el('span', 'small muted', showEmpty ? '' : 'Son hedefler')); // Favoriler sekmesinde başlık kartın kendi başlığı
+    head.append(el('span', 'small muted', '')); // başlık: Favoriler sekmesinde kartın kendisi, Rota sayfasında açılır listenin satırı
     const clear = el('button', 'btn ghost sm', '🧹 Listeyi temizle');
     clear.type = 'button';
     clear.addEventListener('click', () => { save(KEY, []); render(); });
@@ -41,7 +42,11 @@ export function initRecentDest() {
       const b = el('button', 'chip', `🕘 ${d.label}`);
       b.type = 'button';
       b.title = tr('Varış yap');
-      b.addEventListener('click', () => mapApi.setPoint('end', { lat: d.lat, lon: d.lon, label: d.label }, { zoom: true }));
+      b.addEventListener('click', () => {
+        mapApi.setPoint('end', { lat: d.lat, lon: d.lon, label: d.label }, { zoom: true });
+        const fold = b.closest('details'); // seçim yapıldı: Rota sayfasında liste yer kaplamasın
+        if (fold) fold.open = false;
+      });
       const x = el('button', 'chip-x', '×');
       x.type = 'button';
       x.setAttribute('aria-label', tr('Listeden sil'));
@@ -49,8 +54,13 @@ export function initRecentDest() {
       wrap.append(b, x);
       chips.append(wrap);
     });
-    box.replaceChildren(...(showEmpty ? [] : [head]), chips);
-    if (showEmpty) box.append(head);
+    if (showEmpty) { box.replaceChildren(chips, head); return; }
+    const fold = el('details', 'recent-fold');
+    fold.open = wasOpen;
+    const sum = el('summary');
+    sum.append(el('span', '', 'Son hedefler'), el('span', 'recent-count', String(list.length)));
+    fold.append(sum, chips, head);
+    box.replaceChildren(fold);
   }
 
   function render() {

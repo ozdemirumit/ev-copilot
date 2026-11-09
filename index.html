@@ -100,7 +100,7 @@
           <input type="text" id="route-start" autocomplete="off" spellcheck="false" enterkeyhint="search" placeholder="Yer veya adres ara…">
           <ul class="suggest hidden" id="suggest-start" role="listbox"></ul>
         </label>
-        <button class="btn" id="pick-start" type="button" title="Haritadan seç">🗺️ Haritadan</button>
+        <button class="btn rp-pick" id="pick-start" type="button" title="Haritadan seç" aria-label="Haritadan seç">🗺️</button>
       </div>
       <div class="row hidden" id="via-row">
         <label class="field" style="flex:1">Ara durak (isteğe bağlı)
@@ -115,10 +115,10 @@
           <input type="text" id="route-end" autocomplete="off" spellcheck="false" enterkeyhint="search" placeholder="Yer veya adres ara…">
           <ul class="suggest hidden" id="suggest-end" role="listbox"></ul>
         </label>
-        <button class="btn" id="pick-end" type="button" title="Haritadan seç">🗺️ Haritadan</button>
+        <button class="btn rp-pick" id="pick-end" type="button" title="Haritadan seç" aria-label="Haritadan seç">🗺️</button>
       </div>
       <div class="stack hidden" id="recent-dest" aria-label="Son hedefler"></div>
-      <div class="row wrap">
+      <div class="rp-tools">
         <button class="btn" id="btn-add-via" type="button">+ Ara durak ekle</button>
         <button class="btn" id="btn-mylocation" type="button">🎯 Konumumu başlangıç yap</button>
         <button class="btn" id="btn-clear-route" type="button">🧹 Temizle</button>
@@ -132,13 +132,6 @@
           <input type="range" id="charge-target" min="50" max="100" step="5" value="80">
           <input type="number" id="charge-target-num" inputmode="numeric" min="50" max="100" step="5" aria-label="Şarj hedefi yüzdesi">
         </div>
-      </div>
-      <p class="small muted" style="margin:0">Mevcut pil aracın şu anki şarjıdır. Şarj hedefi, durakta en fazla ne kadar doldurulacağıdır.</p>
-      <div class="row" id="plan-actions">
-        <button class="btn" id="btn-plan" type="button">Rota planla</button>
-        <button class="btn primary go-btn" id="btn-go" type="button">Git</button>
-        <!-- Eski adım: Git planlar + navigasyonu başlatır. Kimlik ve dinleyici uyumluluk için duruyor. -->
-        <button class="btn primary hidden" id="btn-nav" type="button">▶ Navigasyonu başlat</button>
       </div>
 
       <div class="summary">
@@ -155,9 +148,18 @@
       <button class="btn ghost hidden" id="btn-gmaps" type="button">🧭 Google Haritalar'da aç (duraklarla)</button>
     </div>
 
+    <!-- Planla ve Git: uzun sayfada altta sabit kalır (sheet-body doğrudan çocuğu olmalı) -->
+    <div class="row" id="plan-actions">
+      <button class="btn" id="btn-plan" type="button">Rota planla</button>
+      <button class="btn primary go-btn" id="btn-go" type="button">Git</button>
+      <!-- Eski adım: Git planlar + navigasyonu başlatır. Kimlik ve dinleyici uyumluluk için duruyor. -->
+      <button class="btn primary hidden" id="btn-nav" type="button">▶ Navigasyonu başlat</button>
+    </div>
+
     <details class="card stack" id="route-adv">
       <summary>Gelişmiş seçenekler</summary>
       <div class="stack">
+        <p class="small muted" style="margin:0">Mevcut pil aracın şu anki şarjıdır. Şarj hedefi, durakta en fazla ne kadar doldurulacağıdır.</p>
         <div class="rp-carhead" id="rp-car">
           <svg class="ic" aria-hidden="true"><use href="#i-car"/></svg>
           <div class="rp-carname"><b id="rp-veh">—</b><small><span id="rp-cons">--</span> kWh/100 km</small></div>
