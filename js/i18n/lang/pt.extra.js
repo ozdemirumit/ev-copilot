@@ -352,4 +352,5 @@ export default {
   "Liste": "Lista",
   "Daralt": "Recolher",
   "+ ek ücret": "+ taxa adicional",
+  "Planla": "Planear",
 };

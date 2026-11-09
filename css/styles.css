@@ -529,8 +529,8 @@ body.sheet-open .socbar { display: none; }
 .fabs { position: relative; align-self: flex-end; display: flex; flex-direction: column; gap: 8px; }
 .fabs button { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 50%; color: var(--text); background: rgba(20, 25, 32, .95); border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 4px 16px #0008; }
 .fabs button.on { color: var(--accent); border-color: var(--accent-dim); }
-#fab-nav { background: var(--accent); color: #04271c; border-color: var(--accent); }
-#fab-nav .ic { color: inherit; }
+#fab-nav, #fab-plan { background: var(--accent); color: #04271c; border-color: var(--accent); }
+#fab-nav .ic, #fab-plan .ic { color: inherit; }
 body:not(.navmode) .nav-only { display: none; }
 /* Sağ kenar sütunu: konum düğmelerinin üstünden yukarı dizilir; yükseklik yetmezse (shell.js ölçer) sonraki sütun sola açılır. Görünür 40 + 2x2 dokunma payı = 44 px */
 .fabs-more { align-self: flex-end; margin-right: 3px; width: 40px; display: flex; flex-flow: column wrap-reverse; justify-content: flex-end; gap: 4px; }
@@ -752,7 +752,7 @@ main { background: var(--bg); box-shadow: 0 10px 44px rgba(15, 39, 68, .35); }
 .dock { background: #fff; box-shadow: 0 -2px 10px rgba(15, 39, 68, .12); }
 
 /* Yeşil/renkli zeminde koyu yazı yerine beyaz (kontrast) */
-.btn.primary, #fab-nav { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary, #fab-nav, #fab-plan { background: var(--accent); border-color: var(--accent); color: #fff; }
 .stop .num, .stop.wx .num, .spin i, .roi-label, .roi.speed .roi-label { color: #fff; }
 .pin.start { background: var(--accent); }
 .pin.via { background: #d97a00; }

@@ -352,4 +352,5 @@ export default {
   "Liste": "Списък",
   "Daralt": "Свий",
   "+ ek ücret": "+ допълнителна такса",
+  "Planla": "Планирай",
 };

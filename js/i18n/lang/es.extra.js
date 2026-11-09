@@ -352,4 +352,5 @@ export default {
   "Liste": "Lista",
   "Daralt": "Contraer",
   "+ ek ücret": "+ cargo adicional",
+  "Planla": "Planificar",
 };

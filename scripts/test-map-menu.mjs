@@ -49,7 +49,7 @@ ok('Rota planla yalnızca planlar', /\$\('btn-plan'\)\.addEventListener\('click'
 ok('tek dinleyici: controller btn-plan dinlemez', !controller.includes("'btn-plan'"));
 ok('Git ve Rota planla aynı hazırlığı kullanır', /if \(!prepareRoute\(\)\) return;/.test(panel));
 const search = between('id="searchrow"', 'id="station-card"');
-ok('haritada Rota planla sayfayı açar', /id="fab-plan"[^>]*data-tab="route"[\s\S]*?<span>Rota planla<\/span>/.test(search));
+ok('haritada Planla sayfayı açar, simge + "Planla", yeşil (Git gibi)', /id="fab-plan"[^>]*data-tab="route"[\s\S]*?<use href="#i-route"\/>[\s\S]*?<span>Planla<\/span>/.test(search) && /#fab-nav, #fab-plan \{ background: var\(--accent\)/.test(readFileSync(new URL('../css/styles.css', import.meta.url), 'utf8')));
 ok('haritada Git var olan fab-nav, arama satırında', /id="fab-nav"[\s\S]*?<span>Git<\/span>/.test(search) && !fabs.includes('id="fab-nav"'));
 ok('harita Git navigasyon dışında görünür', /navBtn\.classList\.toggle\('hidden', !!getState\('nav'\)\.active\)/.test(shell));
 ok('Git düğmesi kopyalanmadı', (html.match(/>Git</g) || []).length === 2 && (html.match(/<span>Git<\/span>/g) || []).length === 1);

@@ -352,4 +352,5 @@ export default {
   "Liste": "Elenco",
   "Daralt": "Comprimi",
   "+ ek ücret": "+ costo aggiuntivo",
+  "Planla": "Pianifica",
 };

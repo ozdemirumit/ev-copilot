@@ -352,4 +352,5 @@ export default {
   "Liste": "List",
   "Daralt": "Collapse",
   "+ ek ücret": "+ extra fee",
+  "Planla": "Plan",
 };

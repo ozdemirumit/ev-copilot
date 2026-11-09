@@ -352,4 +352,5 @@ export default {
   "Liste": "Lijst",
   "Daralt": "Inklappen",
   "+ ek ücret": "+ extra kosten",
+  "Planla": "Plannen",
 };

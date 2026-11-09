@@ -352,4 +352,5 @@ export default {
   "Liste": "Λίστα",
   "Daralt": "Σύμπτυξη",
   "+ ek ücret": "+ επιπλέον χρέωση",
+  "Planla": "Σχεδίασε",
 };

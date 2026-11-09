@@ -352,4 +352,5 @@ export default {
   "Liste": "Lista",
   "Daralt": "Zwiń",
   "+ ek ücret": "+ dodatkowa opłata",
+  "Planla": "Planuj",
 };

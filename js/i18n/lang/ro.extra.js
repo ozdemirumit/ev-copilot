@@ -352,4 +352,5 @@ export default {
   "Liste": "Listă",
   "Daralt": "Restrânge",
   "+ ek ücret": "+ taxă suplimentară",
+  "Planla": "Planifică",
 };
