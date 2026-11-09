@@ -6,7 +6,7 @@ export const VARIANTS = [0, 1, 3, 2];
 const CORE_BIAS = [10, 0, 25];
 
 const TARGET_H = 96; // OCR için ROI bu yüksekliğe ölçeklenir
-const PAD = 12; // Tesseract kenara yapışık karakterleri sevmez
+export const PAD = 12; // Tesseract kenara yapışık karakterleri sevmez
 
 // ---------- Eğim düzeltme ----------
 // Telefon göstergeye açılı dururken rakamlar hem döner hem yatar (italik gibi). Düzeltme: önce dönme, sonra yatıklık
@@ -141,12 +141,10 @@ export function roiToVideoRect(video, stage, roi) {
   const visH = sh / scale / dz;
   const offX = (vw - visW) / 2;
   const offY = (vh - visH) / 2;
-  return {
-    sx: offX + roi.x * visW,
-    sy: offY + roi.y * visH,
-    sw: roi.w * visW,
-    sh: roi.h * visH,
-  };
+  // Kaynak dikdörtgen video karesinin dışına taşmaz: taşan kısım siyah okunurdu
+  const sx = Math.min(vw, Math.max(0, offX + roi.x * visW));
+  const sy = Math.min(vh, Math.max(0, offY + roi.y * visH));
+  return { sx, sy, sw: Math.min(vw - sx, roi.w * visW), sh: Math.min(vh - sy, roi.h * visH) };
 }
 
 /**

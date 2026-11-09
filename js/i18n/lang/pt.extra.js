@@ -336,4 +336,10 @@ export default {
   "Konum kapalı: izin ver ya da konum düğmesine dokun": "Localização desligada: permita ou toque no botão de localização",
   "Son mesafe tüketimi (ölçülen)": "Consumo recente (medido)",
   "Tahmini tüketim (model)": "Consumo estimado (modelo)",
+  "OCR 2 · Çevrimdışı": "OCR 2 · Offline",
+  "Eski": "Desatualizado",
+  "Son ret nedeni": "Último motivo de rejeição",
+  "Önizleme / kırpma": "Pré-visualização / recorte",
+  "Son 5 ham okuma": "Últimas 5 leituras brutas",
+  "{0} okuma": "{0} leituras",
 };

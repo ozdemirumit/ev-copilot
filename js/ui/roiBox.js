@@ -7,7 +7,7 @@ const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 function persist() {
   const o = getState('ocr');
   save('camera', {
-    roi: o.roi, roiSpeed: o.roiSpeed, speedOn: o.speedOn,
+    roi: o.roi, roiSpeed: o.roiSpeed, speedOn: o.speedOn, engine: o.engine,
     contrast: o.contrast, threshold: o.threshold, useThreshold: o.useThreshold,
     autoSkew: o.autoSkew, rot: o.rot, shear: o.shear,
   });

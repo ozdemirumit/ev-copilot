@@ -2,8 +2,17 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.92.0';
+self.APP_VERSION = '0.93.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.93.0', date: '2026-11-09',
+    notes: [
+      'BETA: iPhone Safari icin kamera onizlemesi OCR ile ayni koordinatlarla tuvale cizilir; kaydirinca kuculme gorunmez, akis lens ve zoom degismez',
+      'BETA: OCR bosluklu okumalari birlestirir (4 2 artik 42); 42 iken 4 veya 2 okuma hane kaybi sayilir, hatali tek haneden otomatik donulur, gercek tek haneli pil yasak degil',
+      'BETA: Yeni OCR 2 internet gerektirmeyen rakam tanıyici; OCR 1 (Tesseract) aynen duruyor, ikisi ayni kamera ve kutuyu kullanir',
+      'BETA: Okuma basliginda son okuma saati ve sayac; tanilamada son 5 ham okuma, ret nedeni, kirpma bilgisi ve eski deger isareti',
+    ],
+  },
   {
     v: '0.92.0', date: '2026-11-09',
     notes: [

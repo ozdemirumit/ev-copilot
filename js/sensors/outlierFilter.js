@@ -31,6 +31,11 @@ export function confusable(a, b) {
   return diff === 1;
 }
 
+/** short tek haneli ve long iki haneli long'un bir hanesi mi? (42 → 4 veya 2: hane kaybı) */
+export function isFragment(short, long) {
+  return short != null && long != null && short >= 0 && short < 10 && long >= 10 && long <= 99 && String(long).includes(String(short));
+}
+
 export function createFilter({
   min = 0, max = 100,
   allowance, // (delta, dtMs, ctx) → izin verilen mutlak sapma (üst sınırlı)
@@ -38,9 +43,11 @@ export function createFilter({
   resyncCycles = 6, confusableResyncCycles = 12, resyncFactor = () => 1,
   candidateTol = 1, pendingMaxAgeMs = 20000,
   minScore = 0.4, firstMinScore = 0.5, resyncMinScore = 0.6,
+  fragmentGuard = false, recoverCycles = 2, recoverNoEvidenceCycles = 4, recoverMinScore = 0.5, recentMax = 8, recentMaxAgeMs = 60000,
 } = {}) {
   let last = null; // { value, t }
   let pending = null; // { value, count, t }
+  let recent = []; // son çevrimler { value, digits, t }: hatalı tek haneden kurtulmak için ardışık olmayan kanıt da sayılır
 
   const bump = (value, t) => {
     const same = pending && Math.abs(value - pending.value) <= candidateTol && t - pending.t <= pendingMaxAgeMs;
@@ -51,7 +58,7 @@ export function createFilter({
   const held = () => last?.value ?? null;
 
   function accept(value, t = Date.now(), ctx = {}) {
-    const { score = 1, hint = null } = ctx;
+    const { score = 1, hint = null, digits = null } = ctx;
     if (!Number.isInteger(value) || value < min || value > max) return { ok: false, reason: 'range', value: held() };
     if (score < minScore) return { ok: false, reason: 'low-score', value: held() };
 
@@ -67,23 +74,47 @@ export function createFilter({
       return { ok: false, reason: 'verifying', value: null, count, need };
     }
 
-    const delta = value - last.value;
-    if (Math.abs(delta) <= allowance(delta, t - last.t, ctx)) { commit(value, t); return { ok: true, reason: 'ok', value }; }
+    if (score >= recoverMinScore) {
+      recent = recent.filter((r) => t - r.t <= recentMaxAgeMs).slice(-(recentMax - 1));
+      recent.push({ value, digits, t });
+    }
 
-    if (score < resyncMinScore) return { ok: false, reason: 'jump', value: last.value };
+    // Elde hatalı tek hane var (gerçek 42 iken 4 kabul edilmiş): araya 4/2 karışsa da iki haneli kanıt birikir, kilit kalmaz.
+    if (fragmentGuard && isFragment(last.value, value)) {
+      const same = recent.filter((r) => Math.abs(r.value - value) <= candidateTol);
+      const proven = same.filter((r) => r.digits >= 2).length;
+      if (proven >= recoverCycles || same.length >= recoverNoEvidenceCycles) { commit(value, t); return { ok: true, reason: 'recovered', value }; }
+      return { ok: false, reason: 'recovering', value: last.value, count: Math.max(proven, same.length), need: proven ? recoverCycles : recoverNoEvidenceCycles };
+    }
+
+    const delta = value - last.value;
+    const fragment = fragmentGuard && isFragment(value, last.value);
+    // Hane kaybı şüphesi: sapma küçük olsa bile (12 → 1) görüntüde gerçekten tek rakam görülmedikçe doğrudan kabul edilmez
+    if (Math.abs(delta) <= allowance(delta, t - last.t, ctx) && (!fragment || digits === 1)) { commit(value, t); return { ok: true, reason: 'ok', value }; }
+
+    const reason = fragment ? 'fragment' : 'jump';
+    if (score < resyncMinScore) return { ok: false, reason, value: last.value };
     const count = bump(value, t);
-    const need = (confusable(value, last.value) ? confusableResyncCycles : resyncCycles) * resyncFactor(delta, ctx);
+    // Gerçekten tek haneye düşmüşse (görüntüde tek rakam) yasak değil: yalnızca kanıt süresi kısalır
+    const need = (confusable(value, last.value) && !(fragment && digits === 1) ? confusableResyncCycles : resyncCycles) * resyncFactor(delta, ctx);
     if (count >= need) { commit(value, t); return { ok: true, reason: 'resync', value }; }
-    return { ok: false, reason: 'jump', value: last.value, count, need };
+    return { ok: false, reason, value: last.value, count, need };
   }
 
   /** Manuel kalibrasyon veya dış kaynak: referansı doğrudan ayarla. */
   function reset(value = null, t = Date.now()) {
     last = value == null ? null : { value, t };
     pending = null;
+    recent = [];
   }
 
-  return { accept, reset, get last() { return held(); } };
+  /** Motor değişti: doğrulanmış değer kalır, birikmiş aday kanıtı silinir. */
+  function clearEvidence() {
+    pending = null;
+    recent = [];
+  }
+
+  return { accept, reset, clearEvidence, get last() { return held(); } };
 }
 
 const WINDOW_MS = 5000; // bu süreye kadar yalnızca temel tolerans geçerli
@@ -102,6 +133,7 @@ export function createSocFilter({ chargePctPerMin = 3, maxJump = 2 } = {}) {
       return moving === false ? Math.min(3, 1 + 0.1 * m) : Math.min(12, maxJump + 2 * m); // duruş | deşarj
     },
     resyncFactor: (delta, { speedKmh = null } = {}) => (delta > 0 && isMoving(speedKmh) === true ? 2 : 1),
+    fragmentGuard: true,
   });
 }
 

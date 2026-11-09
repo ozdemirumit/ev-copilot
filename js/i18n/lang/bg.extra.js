@@ -336,4 +336,10 @@ export default {
   "Konum kapalı: izin ver ya da konum düğmesine dokun": "Местоположението е изключено: разрешете го или докоснете бутона",
   "Son mesafe tüketimi (ölçülen)": "Скорошен разход (измерен)",
   "Tahmini tüketim (model)": "Прогнозен разход (модел)",
+  "OCR 2 · Çevrimdışı": "OCR 2 · Офлайн",
+  "Eski": "Остаряло",
+  "Son ret nedeni": "Последна причина за отхвърляне",
+  "Önizleme / kırpma": "Преглед / изрязване",
+  "Son 5 ham okuma": "Последни 5 сурови отчитания",
+  "{0} okuma": "{0} отчитания",
 };

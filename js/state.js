@@ -31,7 +31,7 @@ const store = {
     brands: load('brandPref', []), // tercih edilen şarj markaları (operatör kimlikleri); boşsa hepsi
   },
   // OCR ayarları ve okuma durumu.
-  ocr: { ...DEFAULT_CAMERA, ...load('camera', {}), raw: null, accepted: null, status: 'idle', rawSpeed: null, speedStatus: 'idle', lastOkAt: 0, readAt: 0, stale: true, reliability: 0, speedAt: 0, speedStale: true, speedReliability: 0, note: '' },
+  ocr: { ...DEFAULT_CAMERA, ...load('camera', {}), raw: null, accepted: null, status: 'idle', rawSpeed: null, speedStatus: 'idle', lastOkAt: 0, readAt: 0, stale: true, reliability: 0, speedAt: 0, speedStale: true, speedReliability: 0, note: '', lastReadAt: 0, readCount: 0, readings: [], reason: null, rejected: null },
   // Menzil motoru çıktıları (rangeEngine yazar, kartlar okur).
   engine: {
     k: load('kCal', 1), grade: null, routeKm: null, offRouteKm: null,

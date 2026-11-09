@@ -336,4 +336,10 @@ export default {
   "Konum kapalı: izin ver ya da konum düğmesine dokun": "Locație oprită: permite-o sau atinge butonul de locație",
   "Son mesafe tüketimi (ölçülen)": "Consum recent (măsurat)",
   "Tahmini tüketim (model)": "Consum estimat (model)",
+  "OCR 2 · Çevrimdışı": "OCR 2 · Offline",
+  "Eski": "Învechit",
+  "Son ret nedeni": "Ultimul motiv de respingere",
+  "Önizleme / kırpma": "Previzualizare / decupare",
+  "Son 5 ham okuma": "Ultimele 5 citiri brute",
+  "{0} okuma": "{0} citiri",
 };

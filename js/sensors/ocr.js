@@ -1,6 +1,7 @@
 import { getState, patch, effective } from '../state.js';
 import { OCR, VEHICLE } from '../config.js';
-import { preprocess, measureRoi, VARIANTS } from './preprocess.js';
+import { preprocess, measureRoi, VARIANTS, PAD } from './preprocess.js';
+import { readCanvasDigits, digitMismatch } from './digitRecognizer.js';
 import { createSocFilter, createSpeedFilter } from './outlierFilter.js';
 import { consensus } from './ocrConsensus.js';
 import { createOcrLoop, collectSamples } from './ocrLoop.js';
@@ -72,11 +73,18 @@ function getWorker() {
  * OCR metninden % SoC çıkarır. Togg ekranında pil değeri iri rakamlardır ("75"), altında küçük "%" bulunur;
  * ROI yalnızca rakamlara oturtulmalıdır. Tesseract '%' simgesini sık sık rakam sanır ("85%" → "859"),
  * bu yüzden 3 haneli ve 100 olmayan sonuçlarda son hane atılır. Dönüş: 0..100 tamsayı veya null.
+ * Geniş aralıklı rakamlar boşlukla bölünebilir ("4 2"): aynı satırdaki gruplar birleştirilir (yalnızca ilk grubu almak 42'yi 4 okuyordu).
  */
+function digitsOf(text) {
+  const line = String(text).split(/\r?\n/).find((l) => /\d/.test(l));
+  if (!line) return null;
+  const runs = line.replace(/^\D+/, '').split('%')[0].match(/\d+/g);
+  return runs ? runs.join('') : null;
+}
+
 export function parseSoc(text) {
-  const m = String(text).match(/\d+/);
-  if (!m || m[0].length > 3) return null;
-  let digits = m[0];
+  let digits = digitsOf(text);
+  if (!digits || digits.length > 3) return null;
   if (digits.length === 3 && digits !== '100') digits = digits.slice(0, 2);
   const v = Number(digits);
   return v >= 0 && v <= 100 ? v : null;
@@ -84,9 +92,9 @@ export function parseSoc(text) {
 
 /** Ekran hızı: 0..250 tamsayı veya null. */
 export function parseSpeed(text) {
-  const m = String(text).match(/\d+/);
-  if (!m || m[0].length > 3) return null;
-  const v = Number(m[0]);
+  const digits = digitsOf(text);
+  if (!digits || digits.length > 3) return null;
+  const v = Number(digits);
   return v <= 250 ? v : null;
 }
 
@@ -96,13 +104,25 @@ export function parseSpeed(text) {
  * Değer null ise kare okunamamıştır; yine de örnek listesinde kalır ve güven skorunu düşürür.
  */
 const GOOD_CONFIDENCE = 60;
-const EMPTY_SAMPLE = { value: null, raw: null, confidence: 0, quality: 0, q: null };
+const EMPTY_SAMPLE = { value: null, raw: null, confidence: 0, quality: 0, q: null, digits: null, reason: null };
+const READINGS_MAX = 5;
 
-async function readRoi(worker, video, stage, key, roi, parse, { timeLeft, isCurrent, parsedKeys }) {
+/** Pil ROI'sinin her kare okuması tanılamaya yazılır (son 5 ham okuma, sayaç, son okuma zamanı). */
+function logReading(key, entry) {
+  if (key !== 'soc') return;
+  const o = getState('ocr');
+  const at = Date.now();
+  patch('ocr', { lastReadAt: at, readCount: (o.readCount || 0) + 1, readings: [{ at, ...entry }, ...(o.readings || [])].slice(0, READINGS_MAX) });
+}
+
+async function readRoi(worker, video, stage, key, roi, parse, { timeLeft, isCurrent, parsedKeys, engine }) {
   const o = getState('ocr');
   const q = measureRoi(video, stage, { ...o, roi });
   if (!q) return EMPTY_SAMPLE;
-  if (!q.usable) return { ...EMPTY_SAMPLE, q };
+  if (!q.usable) {
+    logReading(key, { engine, text: '', value: null, confidence: 0, digits: null, reason: q.reason, alt: null });
+    return { ...EMPTY_SAMPLE, q, reason: q.reason };
+  }
   const order = o.useThreshold ? variantOrder(q, VARIANTS, preferredVariant[key]) : [0]; // eşiksiz modda yalnızca tek yöntem anlamlı (çekirdek yöntemi eşiğe dayanır)
   const limit = parsedKeys.has(key) ? Math.min(MAX_VARIANTS_AFTER_PARSE, order.length) : order.length;
   let best = null;
@@ -110,8 +130,14 @@ async function readRoi(worker, video, stage, key, roi, parse, { timeLeft, isCurr
     if (i > 0 && timeLeft() <= 0) break;
     if (!isCurrent()) return EMPTY_SAMPLE;
     if (!preprocess(video, stage, { ...o, roi, variant: order[i] }, work)) break;
-    const { data } = await worker.recognize(work);
-    const r = { variant: order[i], value: parse(data.text), confidence: data.confidence };
+    const seg = readCanvasDigits(work, PAD); // OCR 2 sonucu; OCR 1 için hane sayısı kanıtı ve karşılaştırma
+    const read = engine === 'digit' ? { text: seg.text, confidence: seg.confidence } : (await worker.recognize(work)).data;
+    const rawValue = parse(read.text);
+    const mismatch = digitMismatch(rawValue, seg.n);
+    const r = {
+      variant: order[i], value: mismatch ? null : rawValue, rawValue, text: read.text, confidence: read.confidence, mismatch,
+      digits: seg.n, clipped: seg.clipped, alt: engine === 'digit' ? null : { text: seg.text, confidence: seg.confidence },
+    };
     const parsed = r.value != null;
     if (parsed && r.confidence >= GOOD_CONFIDENCE) { best = r; break; }
     if (!best || (parsed && (best.value == null || r.confidence > best.confidence)) || (best.value == null && !parsed && r.confidence > best.confidence)) best = r;
@@ -119,7 +145,9 @@ async function readRoi(worker, video, stage, key, roi, parse, { timeLeft, isCurr
   if (!best) return { ...EMPTY_SAMPLE, q };
   const valid = best.value != null && best.confidence >= MIN_CONFIDENCE;
   if (valid) { preferredVariant[key] = best.variant; parsedKeys.add(key); } else delete preferredVariant[key];
-  return { value: valid ? best.value : null, raw: best.value, confidence: best.confidence, quality: q.weight, q };
+  const reason = valid ? null : best.mismatch || (best.rawValue != null ? 'low-confidence' : 'no-digits');
+  logReading(key, { engine, text: String(best.text ?? '').trim(), value: best.rawValue, confidence: Math.round(best.confidence), digits: best.digits, reason, clipped: best.clipped, alt: best.alt });
+  return { value: valid ? best.value : null, raw: best.rawValue, confidence: best.confidence, quality: q.weight, q, digits: best.digits, reason };
 }
 
 const rawOf = (samples, c) => c.raw ?? samples.find((s) => s.raw != null)?.raw ?? null;
@@ -131,20 +159,24 @@ function socHint() {
   return src && src !== 'default' ? getState('live').soc : null;
 }
 
+/** Red kaydı: son 5 ham okumanın yanında neden reddedildiği görünür. */
+const rejection = (reason, value, count, need, now) => ({ reason, rejected: { reason, value, count: count ?? null, need: need ?? null, at: now } });
+
 function applySoc(samples) {
   const c = consensus(samples, { tol: SOC_TOL });
   const reliability = percent(c.score);
   const now = Date.now();
   if (c.value == null) {
-    patch('ocr', { raw: rawOf(samples, c), status: 'unreadable', stale: true, reliability });
+    const reason = [...samples].reverse().find((s) => s.reason)?.reason || (c.raw != null ? 'no-consensus' : 'no-digits');
+    patch('ocr', { raw: rawOf(samples, c), status: 'unreadable', stale: true, reliability, ...rejection(reason, rawOf(samples, c), null, null, now) });
     return;
   }
-  const res = socFilter.accept(c.value, now, { score: c.score, speedKmh: effective().speed, hint: socHint() });
+  const res = socFilter.accept(c.value, now, { score: c.score, speedKmh: effective().speed, hint: socHint(), digits: c.digits });
   if (res.ok) {
-    patch('ocr', { raw: c.value, accepted: res.value, status: 'ok', lastOkAt: now, readAt: now, stale: false, reliability }); // readAt: yalnızca gerçek kamera okuması (tahmin/elle girişte değişmez)
+    patch('ocr', { raw: c.value, accepted: res.value, status: 'ok', lastOkAt: now, readAt: now, stale: false, reliability, reason: null }); // readAt: yalnızca gerçek kamera okuması (tahmin/elle girişte değişmez)
     patch('live', { soc: res.value });
   } else {
-    patch('ocr', { raw: c.value, status: res.reason === 'verifying' ? 'verifying' : 'rejected', stale: true, reliability }); // son geçerli değer korunur
+    patch('ocr', { raw: c.value, status: res.reason === 'verifying' || res.reason === 'recovering' ? 'verifying' : 'rejected', stale: true, reliability, ...rejection(res.reason, c.value, res.count, res.need, now) }); // son geçerli değer korunur
   }
 }
 
@@ -169,7 +201,8 @@ function applySpeed(samples) {
 async function runCycle(isCurrent) {
   if (getState('sim').enabled) return; // Test Modu açıkken sensör okuması yapılmaz.
   const { video, stage } = target;
-  const worker = await getWorker();
+  const engine = getState('ocr').engine === 'digit' ? 'digit' : 'tess';
+  const worker = engine === 'tess' ? await getWorker() : null; // OCR 2 Tesseract indirmez: tamamen çevrimdışı
   if (!isCurrent()) return;
 
   const o = getState('ocr');
@@ -178,7 +211,7 @@ async function runCycle(isCurrent) {
   const speedSamples = [];
   const parsedKeys = new Set();
   const started = Date.now();
-  const ctx = { isCurrent, parsedKeys, timeLeft: () => OCR.cycleBudgetMs - (Date.now() - started) };
+  const ctx = { isCurrent, parsedKeys, engine, timeLeft: () => OCR.cycleBudgetMs - (Date.now() - started) };
   let delivered = 0;
   let lastQuality = null;
   const strong = (samples, tol) => {
@@ -241,7 +274,7 @@ export async function startOcr(video, stage) {
   patch('system', { ocr: true });
   patch('ocr', { status: 'loading', error: null });
   try {
-    await getWorker(); // ilk seferde Tesseract + dil verisi iner
+    if (getState('ocr').engine !== 'digit') await getWorker(); // ilk seferde Tesseract + dil verisi iner; OCR 2 yüklemez
   } catch (err) {
     if (token === startToken) stopOcr();
     patch('ocr', { status: 'error', error: String(err?.message || err).slice(0, 160) });
@@ -256,6 +289,21 @@ export function stopOcr() {
   loop?.stop();
   patch('system', { ocr: false });
   patch('ocr', { status: 'idle', speedStatus: 'idle', stale: true, speedStale: true });
+}
+
+/** OCR 1 (tess) / OCR 2 (digit) seçimi. Aynı kamera ve ROI; son doğrulanmış değer korunur, birikmiş aday kanıtı silinir. */
+export async function setOcrEngine(engine) {
+  if ((engine !== 'tess' && engine !== 'digit') || getState('ocr').engine === engine) return;
+  patch('ocr', { engine, reason: null });
+  socFilter.clearEvidence();
+  speedFilter.clearEvidence();
+  Object.keys(preferredVariant).forEach((k) => delete preferredVariant[k]);
+  if (engine === 'digit') dropWorker(); // kullanılmayan Tesseract belleği bırakılır
+  if (active) {
+    const { video, stage } = target;
+    stopOcr();
+    await startOcr(video, stage);
+  }
 }
 
 /** Manuel +/- veya dış kaynak: outlier filtresinin referansını ayarla. */

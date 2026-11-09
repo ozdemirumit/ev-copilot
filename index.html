@@ -368,6 +368,7 @@
   <section class="tab" id="tab-camera" data-title="Kamera" data-premium-only>
     <div class="cam-stage" id="cam-stage">
       <video id="cam-video" playsinline muted autoplay></video>
+      <canvas class="cam-mirror" id="cam-mirror" aria-hidden="true"></canvas>
       <div class="cam-empty" id="cam-empty">Kamera kapalı.<br>Başlat'a bas, sonra yeşil kutuyu Togg ekranındaki iri pil rakamlarının (ör. "75") üzerine sürükle. Küçük % işareti, pil simgesi ve mavi halka kutunun dışında kalsın.</div>
       <div class="roi" id="roi" role="group" aria-label="OCR okuma alanı">
         <span class="roi-label">% SoC</span>
@@ -396,10 +397,17 @@
     </div>
 
     <div class="card stack">
-      <h2>Okuma</h2>
+      <div class="row between ocr-head">
+        <h2>Okuma</h2>
+        <span class="small muted" id="ocr-last" aria-live="off">--</span>
+      </div>
+      <div class="ocr-engine" role="group" aria-label="OCR motoru">
+        <button class="btn" type="button" data-ocr-engine="tess">OCR 1 · Tesseract</button>
+        <button class="btn" type="button" data-ocr-engine="digit">OCR 2 · Çevrimdışı</button>
+      </div>
       <div class="ocr-read">
         <div><b id="ocr-raw">--</b><span>Ham okuma</span></div>
-        <div><b id="ocr-ok">--</b><span>Geçerli</span></div>
+        <div><b id="ocr-ok">--</b><span>Geçerli</span><em class="ocr-stale hidden" id="ocr-stale">Eski</em></div>
         <div><b id="ocr-state">—</b><span>Durum</span></div>
       </div>
       <div class="row between">
@@ -420,7 +428,11 @@
         <dt>Güvenilirlik</dt><dd id="diag-reliability">--</dd>
         <dt>Veri durumu</dt><dd id="diag-stale">--</dd>
         <dt>Kamera</dt><dd id="diag-camera">--</dd>
+        <dt>Son ret nedeni</dt><dd id="diag-reject">--</dd>
+        <dt>Önizleme / kırpma</dt><dd id="diag-geom">--</dd>
       </dl>
+      <h3 style="margin:0">Son 5 ham okuma</h3>
+      <ol class="ocr-readings" id="diag-readings"></ol>
       <p class="small muted" id="diag-note" style="margin:0"></p>
     </div>
 

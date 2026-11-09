@@ -136,6 +136,72 @@ ok('aralık dışı değer reddedilir', createSocFilter({}).accept(130, T, { sco
 }
 
 // --- Rakam karışıklığı ---
+// --- Hane kaybı: gerçek 42, OCR 42→4→2→42→4 ---
+{
+  const feed = (f, seq, digits) => { let t = 0; return seq.map((v) => { t += 5000; const d = typeof digits === 'function' ? digits(v) : digits; return f.accept(v, t, { score: 0.8, speedKmh: null, digits: d }); }); };
+  const twoDigits = (v) => (v >= 10 ? 2 : null);
+  {
+    const f = createSocFilter({ chargePctPerMin: 3, maxJump: 2 });
+    feed(f, [4, 4, 42, 4, 42], twoDigits);
+    ok('hatalı 4 kabul edilmişse araya 4 karışsa da 42 geri alınır', f.last === 42, String(f.last));
+  }
+  {
+    const f = createSocFilter({ chargePctPerMin: 3, maxJump: 2 });
+    feed(f, [4, 4, 42, 2, 42], twoDigits);
+    ok('araya 2 karışsa da 42 geri alınır', f.last === 42, String(f.last));
+  }
+  {
+    const f = createSocFilter({ chargePctPerMin: 3, maxJump: 2 });
+    const res = feed(f, [4, 4, 42, 4, 42, 2, 42, 4, 42], null);
+    ok('kanıt yoksa da kilit kalmaz (pencere içinde 4 okuma)', f.last === 42, JSON.stringify(res.map((r) => r.reason)));
+  }
+  {
+    const f = createSocFilter({ chargePctPerMin: 3, maxJump: 2 });
+    f.reset(42, 0);
+    const res = feed(f, [4, 2, 42, 4, 42, 2, 42], null);
+    ok('doğru 42 tutulurken 4/2 kabul edilmez', f.last === 42 && res[0].reason === 'fragment' && res[1].reason === 'fragment', JSON.stringify(res));
+  }
+  {
+    const f = createSocFilter({ chargePctPerMin: 3, maxJump: 2 });
+    f.reset(12, 0);
+    const r = f.accept(1, 30 * 60000, { score: 0.8, speedKmh: null, digits: null });
+    ok('uzun süre sonra da 12→1 hane kaybı doğrudan kabul edilmez', !r.ok && r.reason === 'fragment' && f.last === 12, JSON.stringify(r));
+  }
+  {
+    const f = createSocFilter({ chargePctPerMin: 3, maxJump: 2 });
+    f.reset(10, 0);
+    const r = f.accept(9, 5000, { score: 0.8, speedKmh: null, digits: 1 });
+    ok('gerçek 10→9 geçişi serbest', r.ok && f.last === 9);
+  }
+  {
+    const f = createSocFilter({ chargePctPerMin: 3, maxJump: 2 });
+    const res = feed(f, [7, 7], 1);
+    ok('ilk okuma gerçek tek hane kabul edilir', res[1].ok && f.last === 7);
+  }
+  {
+    const f = createSocFilter({ chargePctPerMin: 3, maxJump: 2 });
+    f.reset(42, 0);
+    const res = feed(f, [4, 4, 4, 4, 4, 4], 1);
+    ok('görüntüde tek rakam sürüyorsa gerçek düşüş kabul edilir (6 çevrim)', res[5].ok && f.last === 4, JSON.stringify(res));
+  }
+  {
+    const f = createSocFilter({ chargePctPerMin: 3, maxJump: 2 });
+    f.reset(42, 0);
+    const res = feed(f, [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4], null);
+    ok('kanıtsız sürekli 4 daha uzun sürer', f.last === 42 && !res.at(-1).ok);
+    feed(f, [4], null);
+    ok('kanıtsız olsa da 12. çevrimde kabul edilir (kilit yok)', f.last === 4, String(f.last));
+  }
+  {
+    const f = createSocFilter({ chargePctPerMin: 3, maxJump: 2 });
+    f.reset(4, 0);
+    feed(f, [42], 2);
+    f.clearEvidence();
+    const r = f.accept(42, 10000, { score: 0.8, speedKmh: null, digits: 2 });
+    ok('motor değişince birikmiş kanıt silinir, değer korunur', !r.ok && f.last === 4);
+  }
+}
+
 ok('7↔1 karışır', confusable(73, 13));
 ok('3↔8 karışır', confusable(83, 88) && confusable(38, 88));
 ok('hane düşmesi karışır', confusable(73, 3));

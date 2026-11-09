@@ -15,7 +15,7 @@ const SHELL = [
   './js/advisor/voice.js', './js/advisor/ecoSpeed.js', './js/advisor/fallback.js',
   './js/abrp/telemetry.js', './js/sim/simulator.js',
   './js/sensors/camera.js', './js/sensors/wakeLock.js', './js/sensors/gps.js', './js/sensors/ocr.js',
-  './js/sensors/preprocess.js', './js/sensors/binarize.js', './js/sensors/tokenOcr.js', './js/sensors/outlierFilter.js', './js/sensors/ocrConsensus.js', './js/sensors/ocrLoop.js', './js/sensors/frameQuality.js',
+  './js/sensors/preprocess.js', './js/sensors/binarize.js', './js/sensors/tokenOcr.js', './js/sensors/outlierFilter.js', './js/sensors/ocrConsensus.js', './js/sensors/ocrLoop.js', './js/sensors/frameQuality.js', './js/sensors/digitRecognizer.js', './js/sensors/digitModel.js', './js/ui/camPreview.js',
 ];
 
 // Kütüphaneler (vendor/): uygulama sürümünden BAĞIMSIZ önbellek ve önce-önbellek stratejisi. Uygulama sürümü artınca

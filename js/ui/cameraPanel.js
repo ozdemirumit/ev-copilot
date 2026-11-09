@@ -2,10 +2,12 @@ import { getState, patch, subscribe } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { persistCamera } from './roiBox.js';
 import { startCamera, stopCamera, zoomRange, setZoom, onCameraStatus, cameraDiag } from '../sensors/camera.js';
-import { invalidateSkew } from '../sensors/preprocess.js';
-import { startOcr, stopOcr, startPreview, stopPreview } from '../sensors/ocr.js';
+import { invalidateSkew, roiToVideoRect } from '../sensors/preprocess.js';
+import { startOcr, stopOcr, startPreview, stopPreview, setOcrEngine } from '../sensors/ocr.js';
+import { startCamPreview, stopCamPreview, mirrorActive } from './camPreview.js';
 import { setManual, manualLocked } from '../physics/socEstimate.js';
 import { toast } from './toast.js';
+import { t } from '../i18n/index.js';
 
 const STATUS_TEXT = {
   idle: '—', loading: 'Yükleniyor', ok: 'Geçerli', rejected: 'Reddedildi',
@@ -15,6 +17,13 @@ const HEALTH_TEXT = {
   off: 'Kapalı', live: 'Canlı', muted: 'Görüntü duraklatıldı', ended: 'Kapandı', recovering: 'Yeniden açılıyor', lost: 'Kayboldu',
 };
 const METHOD_TEXT = { label: 'en geniş açılı', facing: 'varsayılan arka', fallback: 'geri dönüldü' };
+const REASON_TEXT = {
+  range: 'Aralık dışı', 'low-score': 'Güven skoru düşük', verifying: 'Doğrulanıyor', jump: 'Fiziksel olmayan sıçrama',
+  fragment: 'Hane kaybı şüphesi', recovering: 'Eksik değerden dönüş doğrulanıyor', truncated: 'Hane eksik okundu',
+  'extra-digit': 'Fazla hane okundu', flat: 'Görüntü düz veya siyah', glare: 'Parlama', 'low-confidence': 'Motor güveni düşük',
+  'no-consensus': 'Kareler uyuşmadı', 'no-digits': 'Rakam bulunamadı',
+};
+const ENGINE_TEXT = { tess: 'OCR 1', digit: 'OCR 2' };
 
 /** Kamera sekmesi: önizleme, OCR başlat/durdur, eşik/kontrast ayarları, manuel +/- kalibrasyon. */
 export function initCameraPanel() {
@@ -50,6 +59,7 @@ export function initCameraPanel() {
     if (getState('system').camera) {
       stopOcr();
       stopPreview();
+      stopCamPreview();
       stopCamera(video);
       patch('system', { camera: false });
       return;
@@ -60,6 +70,7 @@ export function initCameraPanel() {
       await setupZoom();
       patch('system', { camera: true });
       startPreview(video, stage, $('ocr-preview'));
+      startCamPreview(video, stage, $('cam-mirror'));
     } catch (err) {
       toast('Kamera açılamadı: ' + (err.message || err.name));
     }
@@ -73,6 +84,7 @@ export function initCameraPanel() {
     } else if (event === 'lost') {
       stopOcr();
       stopPreview();
+      stopCamPreview();
       stopCamera(video);
       patch('system', { camera: false });
       toast('Kamera bağlantısı kesildi, yeniden açılamadı');
@@ -83,11 +95,16 @@ export function initCameraPanel() {
   ocrBtn.addEventListener('click', async () => {
     if (getState('system').ocr) return stopOcr();
     try {
+      patch('ocr', { readCount: 0, readings: [], rejected: null, reason: null }); // sayaç bu OCR oturumunu gösterir
       await startOcr(video, stage);
     } catch (err) {
       toast(err.message);
     }
   });
+
+  // Video kaynağı boyut değiştirirse (döndürme, yeniden yapılandırma) eğim önbelleği eskir; iOS kesintiden sonra videoyu duraklatırsa akış değiştirilmeden sürdürülür
+  video.addEventListener('resize', invalidateSkew);
+  video.addEventListener('pause', () => { if (getState('system').camera && !document.hidden) video.play().catch(() => {}); });
 
   subscribe('system', (s) => {
     camBtn.textContent = s.camera ? '⏹ Kamerayı Durdur' : '📷 Kamerayı Başlat';
@@ -155,7 +172,20 @@ export function initCameraPanel() {
   $('soc-plus').addEventListener('click', () => bump(1));
   $('soc-minus').addEventListener('click', () => bump(-1));
 
+  document.querySelectorAll('[data-ocr-engine]').forEach((b) => b.addEventListener('click', async () => {
+    try {
+      await setOcrEngine(b.dataset.ocrEngine);
+      persist();
+    } catch (err) {
+      toast(err.message);
+    }
+  }));
+
+  const timeOf = (at) => (at ? new Date(at).toLocaleTimeString() : '--');
   const paintOcr = (s) => {
+    document.querySelectorAll('[data-ocr-engine]').forEach((b) => b.classList.toggle('sel', b.dataset.ocrEngine === s.engine));
+    $('ocr-last').textContent = `${timeOf(s.lastReadAt)} · ${t('{0} okuma', s.readCount || 0)}`;
+    $('ocr-stale').classList.toggle('hidden', !(s.stale && s.accepted != null && s.status !== 'manual'));
     $('ocr-raw').textContent = s.raw == null ? '--' : s.raw;
     $('ocr-ok').textContent = s.accepted == null ? '--' : s.accepted;
     $('ocr-ok').style.opacity = s.stale && s.accepted != null && s.status !== 'manual' ? '0.55' : ''; // son doğrulanmış değer duruyor ama bu çevrimde doğrulanmadı
@@ -184,6 +214,35 @@ export function initCameraPanel() {
     $('diag-camera').textContent = getState('system').camera ? parts.join(' · ') : HEALTH_TEXT.off;
     const notes = [s.note, diag.note, diag.unsupported.length && getState('system').camera ? `Bu tarayıcıda desteklenmiyor: ${diag.unsupported.join(', ')}` : ''];
     $('diag-note').textContent = notes.filter(Boolean).join(' · ');
+    const rej = s.rejected;
+    $('diag-reject').textContent = rej ? `${timeOf(rej.at)} · ${rej.value ?? '--'} · ${REASON_TEXT[rej.reason] || rej.reason}${rej.need ? ` (${rej.count}/${rej.need})` : ''}` : '--';
+    $('diag-geom').textContent = video.videoWidth && stage.clientWidth ? geometryText(s) : '--';
+    paintReadings(s.readings || []);
+  }
+
+  function geometryText(s) {
+    const r = roiToVideoRect(video, stage, s.roi);
+    const crop = [r.sx, r.sy, r.sw, r.sh].map(Math.round);
+    return `Kutu ${stage.clientWidth}×${stage.clientHeight} · video kutusu ${video.offsetWidth}×${video.offsetHeight} · kaynak ${video.videoWidth}×${video.videoHeight} · kırpma ${crop[0]},${crop[1]} ${crop[2]}×${crop[3]} px${mirrorActive() ? ' · tuval yansıtma' : ''}`;
+  }
+
+  // Satırlar her saniye yeniden kurulmasın (seçim/ekran okuyucu kaymasın): yalnızca liste değişince
+  let readingsDrawn = null;
+  function paintReadings(list) {
+    if (list === readingsDrawn) return;
+    readingsDrawn = list;
+    $('diag-readings').replaceChildren(...list.map((e) => {
+      const li = document.createElement('li');
+      const parts = [timeOf(e.at), ENGINE_TEXT[e.engine] || e.engine, `"${e.text}"`];
+      if (e.value != null) parts.push(`→ ${e.value}`);
+      if (e.confidence) parts.push(`%${e.confidence}`);
+      if (e.digits != null) parts.push(`${e.digits} hane`);
+      if (e.alt) parts.push(`OCR 2: "${e.alt.text}" %${e.alt.confidence}`);
+      if (e.reason) parts.push(REASON_TEXT[e.reason] || e.reason);
+      if (e.clipped) parts.push('Rakam kutu kenarında');
+      li.textContent = parts.join(' · ');
+      return li;
+    }));
   }
   subscribe(['ocr', 'system'], paintDiag);
   paintDiag();

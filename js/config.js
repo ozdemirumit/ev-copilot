@@ -97,6 +97,7 @@ export const DEFAULT_CAMERA = {
   roi: { x: 0.4, y: 0.38, w: 0.2, h: 0.2 }, // 0..1, video çerçevesine göre; yalnızca iri pil rakamlarını sarmalı
   roiSpeed: { x: 0.2, y: 0.4, w: 0.16, h: 0.2 }, // ekrandaki hız rakamları
   speedOn: false,
+  engine: 'tess', // tess = OCR 1 (Tesseract), digit = OCR 2 (çevrimdışı rakam tanıyıcı)
   contrast: 1.5,
   threshold: 128,
   useThreshold: true,

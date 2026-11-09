@@ -336,4 +336,10 @@ export default {
   "Konum kapalı: izin ver ya da konum düğmesine dokun": "Η τοποθεσία είναι κλειστή: επιτρέψτε την ή πατήστε το κουμπί τοποθεσίας",
   "Son mesafe tüketimi (ölçülen)": "Πρόσφατη κατανάλωση (μετρημένη)",
   "Tahmini tüketim (model)": "Εκτιμώμενη κατανάλωση (μοντέλο)",
+  "OCR 2 · Çevrimdışı": "OCR 2 · Εκτός σύνδεσης",
+  "Eski": "Παλιό",
+  "Son ret nedeni": "Τελευταίος λόγος απόρριψης",
+  "Önizleme / kırpma": "Προεπισκόπηση / περικοπή",
+  "Son 5 ham okuma": "Τελευταίες 5 ακατέργαστες μετρήσεις",
+  "{0} okuma": "{0} μετρήσεις",
 };
