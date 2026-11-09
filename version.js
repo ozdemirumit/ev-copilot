@@ -2,8 +2,17 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.93.0';
+self.APP_VERSION = '0.94.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.94.0', date: '2026-11-09',
+    notes: [
+      'BETA: Dusuk pil onerisi varsayilan olarak tek kart: ulasilabilir, gucu kesin 150 kW ustu istasyonlar icinde gercek fiyati bilinen en ucuz',
+      'BETA: Kartta mesafe, guc ve fiyat gorunur; fiyat yoksa Fiyat bilinmiyor yazar ve en ucuz denmez; 150 kW ustu yoksa en yakin uygun istasyon acikca belirtilir',
+      'BETA: Liste dugmesi diger uygun istasyonlari ayni ust panelde acar, Daralt tek karta dondurur',
+      'BETA: Dusuk pilde otomatik arama en az 25 km yaricaptan baslar',
+    ],
+  },
   {
     v: '0.93.0', date: '2026-11-09',
     notes: [

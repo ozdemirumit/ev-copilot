@@ -341,5 +341,15 @@
  "Son ret nedeni",
  "Önizleme / kırpma",
  "Son 5 ham okuma",
- "{0} okuma"
+ "{0} okuma",
+ "Pil %{0} — en ucuz hızlı şarj (150 kW üstü):",
+ "Pil %{0} — fiyatı bilinenler içinde en ucuz (150 kW üstü):",
+ "Pil %{0} — en yakın hızlı şarj (150 kW üstü):",
+ "Pil %{0} — uygun 150 kW üstü yok, en yakın:",
+ "Pil yüzde {0}. Önerilen şarj istasyonu {1} kilometre.",
+ "{0} TL/kWh (liste)",
+ "Fiyat bilinmiyor",
+ "Liste",
+ "Daralt",
+ "+ ek ücret"
 ]

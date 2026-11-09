@@ -1,7 +1,7 @@
 // Şarj istasyonu ortak işlevleri: kullanıcının kendi istasyonları, operatör düzeltmesi/fiyat, yinelenen ayıklama, rotaya izdüşüm.
 // Veri OpenStreetMap/OpenChargeMap'ten osm/chargers.js ile gelir. Fiyat kaynaklarda yoktur: operatör tablosundan (kullanıcının
 // düzenlediği değerler) atanır. Kullanıcının elle eklediği istasyonlar ("Kendi istasyonlarım") da aday olur.
-import { PLANNER } from '../config.js';
+import { PLANNER, DEFAULT_OPERATORS } from '../config.js';
 import { operatorById } from './operators.js';
 import { haversineKm } from '../utils/geo.js';
 import { inTurkey } from './region.js';
@@ -50,12 +50,15 @@ export function setStationOperator(stationId, opId) {
 /**
  * Operatörü (varsa kullanıcı düzeltmesiyle) uygulayıp fiyat/kW'yi ata. Liste fiyatı yalnızca Türkiye içindir: dışındaki istasyonda (foreign)
  * gerçek tarife bilinmez, bu yüzden price 0 kalır (plan sıralamasında fiyat etkisiz) ve arayüz fiyat göstermez; canlı fiyat (slots.price) varsa o gösterilir.
+ * tariff: 'list' = işletmecinin liste/kullanıcı tarifesi; 'estimate' = "Diğer" ortalaması (bu istasyonun gerçek fiyatı değil; karşılaştırmaya girmez).
  */
 export function priced(s) {
   const ov = overrides()[s.id];
   const op = operatorById(ov || s.opId);
   const foreign = !inTurkey(s.lat, s.lon);
-  return { ...s, opId: ov || s.opId, opRaw: s.opRaw ?? s.opId, corrected: !!ov, opName: op.name, foreign, price: foreign ? 0 : s.slow ? (op.acPrice ?? op.price) : op.price, kw: ov ? op.kw : (s.srcKw ?? op.kw) };
+  const otherNow = operatorById('other').price;
+  const ownTariff = op.id !== 'other' && (!op.found || (op.price !== otherNow && op.price !== DEFAULT_OPERATORS.at(-1).price)); // keşfedilen marka, kullanıcı fiyatını değiştirene dek ortalamayı taşır
+  return { ...s, opId: ov || s.opId, opRaw: s.opRaw ?? s.opId, corrected: !!ov, opName: op.name, foreign, tariff: foreign ? null : ownTariff ? 'list' : 'estimate', price: foreign ? 0 : s.slow ? (op.acPrice ?? op.price) : op.price, kw: ov ? op.kw : (s.srcKw ?? op.kw) };
 }
 
 /**

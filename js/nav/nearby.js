@@ -21,6 +21,7 @@ import { startNav, syncTopPanel } from './navigator.js';
 import { icon } from '../ui/icons.js';
 import { measuredSoc } from '../physics/socEstimate.js';
 import { paintMore } from '../ui/moreToggle.js';
+import { pickEmergency, priceText, isFast, PICK_TITLES, ROUTE_OFF_KM, ROUTE_NEAR_KM } from './chargePick.js';
 
 const $ = (id) => document.getElementById(id);
 const BAT = VEHICLE.batteryNetKwh;
@@ -44,6 +45,8 @@ let elimCount = 0; // son sıralamada doluluğu dolu/arızalı çıktığı içi
 let focusId = null;
 // Yarıçap: 'auto' (varsayılan) 1 km'den başlar, sonuç yoksa 10, 25, 50 km'ye genişler; sayı seçilirse yalnızca o yarıçap aranır.
 const RADIUS_STEPS = [1, 10, 25, 50];
+const EMERGENCY_KM = 25; // düşük pilde otomatik arama en az bu yarıçaptan başlar: 1 km'de durursa 150 kW üstü istasyonlar görülmez
+const ALERT_LIST = 6; // üst panelde "Liste" açıkken en çok bu kadar istasyon
 const NEAR_LIMIT = 3; // liste kapalıyken en çok 3 satır, "+" ile tümü
 let radiusSetting = load('nearRadiusMode', 'auto');
 let radius = radiusSetting === 'auto' ? RADIUS_STEPS[0] : Number(radiusSetting); // son aranan (sonuç veren) yarıçap
@@ -76,12 +79,12 @@ function enrich(list) {
 
 /** power: İstasyonlar ekranındaki "en az kW" süzgecini uygula (düşük pil önerisi uygulamaz: güvenlik). 22 kW seçiliyse AC istasyonlar da gelir. */
 let powerInfo = { min: 0, from: 0, loosened: false }; // son listede kW süzgeci gevşetildi mi (ekrana yazılır)
-const visible = ({ power = true } = {}) => {
+const visible = ({ power = true, brand = true } = {}) => {
   // v: en az kW basamağı. AC istasyonlar "AC de göster" açıkken ya da 40 kW altı (22) basamakta listeye girer.
   const at = (v) => {
     const list = enrich(all).filter((s) => s.kw >= v && (showAc || !s.slow || (v > 0 && v < PLANNER.baseKw)));
     const pref = list.filter(brandOk); // Şarj markası tercihi (İstasyonlar sekmesi); tercih edilen markada hiç istasyon yoksa hepsi gösterilir
-    return pref.length ? pref : list;
+    return brand && pref.length ? pref : list;
   };
   if (!power) return at(0);
   powerInfo = loosenPower((v) => at(v).length); // uygun istasyon yoksa süzgeç bir basamak gevşer
@@ -97,11 +100,14 @@ export async function refreshNearby({ force = false, silent = false } = {}) {
   try {
     const old = new Map(all.map((x) => [x.id, x.slots]));
     let res;
-    for (const r of radiusSetting === 'auto' ? RADIUS_STEPS : [radius]) { // otomatik: görünür istasyon çıkana kadar 1 → 10 → 25 → 50 km
+    const low = e.soc != null && inTrouble(e, getState('nav'));
+    const steps = low ? RADIUS_STEPS.filter((r) => r >= EMERGENCY_KM) : RADIUS_STEPS;
+    for (const r of radiusSetting === 'auto' ? steps : [radius]) { // otomatik: görünür istasyon çıkana kadar 1 → 10 → 25 → 50 km (düşük pilde 25 km'den başlar)
       radius = r;
       res = await fetchAround(e.lat, e.lon, r, force);
       all = res.stations;
       for (const x of all) if (!x.slots && old.get(x.id)) x.slots = old.get(x.id); // yenilemede doluluk bilgisi kaybolmasın
+      if (low && radiusSetting === 'auto' && !res.errors.length && r < RADIUS_STEPS.at(-1) && !visible({ power: false, brand: false }).some((s) => isFast(s) && s.reachable)) continue; // düşük pilde ulaşılabilir hızlı istasyon çıkana kadar genişle
       if (visible().length || res.errors.length) break; // hata varsa genişletmenin anlamı yok (aynı sunucu)
     }
     meta = { at: Date.now(), lat: e.lat, lon: e.lon, errors: res.errors, cached: res.cached };
@@ -250,8 +256,8 @@ function render() {
 // ---------- Düşük pil: en yakın uygun istasyonu öner ----------
 
 /** Önerilecek istasyonlar: ulaşılabilir olanlar önce, yol üstündekiler hafif öncelikli, kalanı yola göre sıralı. */
-function rankNearby() {
-  const items = visible({ power: false }).filter((s) => !s.slow);
+function rankNearby({ anyBrand = false } = {}) {
+  const items = visible({ power: false, brand: !anyBrand }).filter((s) => !s.slow);
   const pool = items.length ? items : enrich(all);
   const eng = getState('engine');
   const plan = getState('plan');
@@ -273,21 +279,36 @@ function rankNearby() {
   return [...(ok.length ? ok : usablePool)].sort((a, b) => score(a) + pen(a) - (score(b) + pen(b)));
 }
 
+/** Planlı rotada: ileride ve yola yakın ya da konuma çok yakın istasyonlar; plan yoksa hepsi. */
+function routeFilter() {
+  const eng = getState('engine');
+  const plan = getState('plan');
+  if (!plan.profile || eng.routeKm == null) return () => true;
+  return (s) => {
+    if (s.roadKm <= ROUTE_NEAR_KM) return true;
+    const p = plan.profile.project(s.lat, s.lon, eng.routeKm);
+    return p.offKm < ROUTE_OFF_KM && p.km > eng.routeKm;
+  };
+}
+
 let alertData = null; // { title, stations, notes } üst panelde gösterilen şarj önerisi
 let alertSig = ''; // aynı içerik her 5 sn'de yeniden çizilmesin (açık satır ve odak korunur)
-let listOpen = null; // kullanıcı seçimi; null: navigasyonda yalnızca en iyi öneri, navigasyon yokken tüm öneriler
+let listOpen = false; // varsayılan: yalnızca önerilen tek kart; "Liste" diğer uygun istasyonları aynı panelde açar
 let openRow = null; // ayrıntısı açık istasyon
 
-/** Tek öneri: ad, mesafe, güç ve Git hep görünür; ada dokununca fiyat, varış pili ve doluluk açılır. */
+/** Tek öneri: ad, mesafe, güç, fiyat ve Git hep görünür; ada dokununca varış pili ve doluluk açılır. Güç operatör varsayımıysa ≈ ile yazılır. */
 function alertEntry(s) {
   const open = openRow === s.id;
   const entry = document.createElement('div');
   const row = document.createElement('div');
   row.className = 'near-row';
-  const info = cell('button', 'near-info', s.name);
+  const info = cell('button', 'near-info', '');
   info.type = 'button';
   info.setAttribute('aria-expanded', String(open));
-  info.append(cell('small', '', `${fmtKm(s.distKm)} km · ${s.kw} kW` + (s.reachable ? '' : ' ' + t('· yetmeyebilir'))));
+  const sub = cell('small', '', `${fmtKm(s.distKm)} km · ${s.uncertain ? '≈' : ''}${s.kw} kW · `);
+  sub.append(cell('span', '', priceText(s)));
+  if (!s.reachable) sub.append(' ' + t('· yetmeyebilir'));
+  info.append(cell('span', 'near-name', s.name), sub);
   info.addEventListener('click', () => { openRow = open ? null : s.id; paintAlert(); });
   const go = cell('button', 'btn primary sm', 'Git');
   go.type = 'button';
@@ -304,12 +325,6 @@ function alertEntry(s) {
     };
     const slotNode = slotEl(s, '');
     if (slotNode) metric('plug', slotNode);
-    const lp = livePrice(s);
-    if (!s.foreign || lp) {
-      const price = cell('span', '', s.foreign ? '' : `${s.price.toFixed(2)} TL/kWh`);
-      if (lp) price.append(s.foreign ? '' : ' · ', cell('span', '', lp.text));
-      metric('tag', price);
-    }
     if (s.arrive != null) metric('battery', cell('span', '', t('Varış pili ~%{0}', Math.max(0, s.arrive).toFixed(0))));
     entry.append(detail);
   }
@@ -318,15 +333,16 @@ function alertEntry(s) {
 
 function paintAlert() {
   const { title, stations, notes } = alertData;
-  const open = listOpen ?? !getState('nav').active;
-  const sig = JSON.stringify([title, notes, open, openRow, stations.map((s) => [s.id, fmtKm(s.distKm), s.kw, s.price, s.arrive == null ? null : Math.round(s.arrive), s.reachable, slotEl(s)?.textContent, livePrice(s)?.text])]);
+  const open = listOpen;
+  const sig = JSON.stringify([title, notes, open, openRow, stations.map((s) => [s.id, fmtKm(s.distKm), s.kw, s.uncertain, priceText(s), s.arrive == null ? null : Math.round(s.arrive), s.reachable, slotEl(s)?.textContent])]);
   if (sig === alertSig) return;
   alertSig = sig;
   $('near-alert-title').textContent = title;
   const toggle = $('near-alert-toggle');
   toggle.classList.toggle('hidden', !stations.length && !notes.length);
   toggle.setAttribute('aria-expanded', String(open));
-  toggle.innerHTML = icon(open ? 'chev-up' : 'chev-down');
+  toggle.replaceChildren(cell('span', '', open ? 'Daralt' : 'Liste'));
+  toggle.insertAdjacentHTML('beforeend', icon(open ? 'chev-up' : 'chev-down'));
   const body = $('near-alert-body');
   body.replaceChildren(...(open ? notes.map((n) => cell('div', 'small muted', n)) : []), ...(open ? stations : stations.slice(0, 1)).map(alertEntry));
   if (open && stations.length) {
@@ -338,12 +354,12 @@ function paintAlert() {
   }
 }
 
-/** Üst paneldeki şarj bölümü: başlık + (varsa) en yakın 3 istasyon, her biri için Git düğmesi. */
+/** Üst paneldeki şarj bölümü: başlık + önerilen tek istasyon; "Liste" ile diğer uygun istasyonlar, her biri için Git düğmesi. */
 function showAlert(title, stations = [], notes = []) {
   const bar = $('near-alert');
   if (!title) {
     bar.classList.add('hidden');
-    alertData = null; alertSig = ''; listOpen = null; openRow = null;
+    alertData = null; alertSig = ''; listOpen = false; openRow = null;
     syncTopPanel();
     patch('nav', { alert: null });
     return;
@@ -394,7 +410,9 @@ function checkLow() {
     autoSearch(meta.at > 0); // önceki arama boş döndüyse yarıçapı 50 km'ye çıkarıp kendiliğinden yeniden dene
     return;
   }
-  const ranked = rankNearby();
+  if (radiusSetting === 'auto' && radius < EMERGENCY_KM) autoSearch(); // pil yeni düştü: liste dar yarıçaptan kalmış olabilir
+  const pickPool = rankNearby({ anyBrand: true });
+  const ranked = rankNearby(); // elimCount bu listeye göre kalsın
   const best = ranked[0];
   if (!best) { showAlert(`Pil %${soc}: uygun istasyon bulunamadı`); autoSearch(true); return; }
   const planBroken = getState('advisor').level === 'bad';
@@ -404,12 +422,15 @@ function checkLow() {
   if (premium && occBusy && !occDone) notes.push('Doluluk kontrol ediliyor…');
   if (premium && elimCount > 0) notes.push(`${elimCount} dolu istasyon elendi`);
   if (premium && !elimCount && ranked.length && ranked.every((x) => slotKind(x) === 'full')) notes.push('Hepsi dolu görünüyor; en yakınlar listelendi');
-  showAlert(`Pil %${soc} — en yakın şarj istasyonları:` + (updated ? ' (rota otomatik güncellendi)' : ''), ranked.slice(0, 3), notes);
+  const pick = pickEmergency(pickPool, { onRoute: routeFilter(), brandOk });
+  const card = pick.station ?? best; // 150 kW üstü uygun istasyon yoksa en yakın uygun istasyon ("en ucuz" denmez)
+  const stations = [...new Set([card, ...pick.fast, ...ranked].map((s) => s.id))].slice(0, ALERT_LIST).map((id) => pickPool.find((s) => s.id === id) ?? ranked.find((s) => s.id === id));
+  showAlert(t(PICK_TITLES[pick.kind], soc) + (updated ? ' ' + t('(rota otomatik güncellendi)') : ''), stations, notes);
   // Plan sıradaki durağa/varışa ulaşılamıyor diyorsa: navigasyonda rotayı en uygun istasyon üzerinden kendiliğinden güncelle
-  if (planBroken && nav.active && getState('route').end && !updated && best.reachable && (best.arrive ?? 99) >= 5
-      && getState('plan').stops[0]?.station.id !== best.id && getState('plan').status !== 'loading') {
+  if (planBroken && nav.active && getState('route').end && !updated && card.reachable && (card.arrive ?? 99) >= 5
+      && getState('plan').stops[0]?.station.id !== card.id && getState('plan').status !== 'loading') {
     lastAutoVia = Date.now();
-    goTo(best, { auto: true });
+    goTo(card, { auto: true }); // panelde görünen istasyonun aynısı
   }
 
   // Her pil bandında (eşik, 15, 10, 5) bir kez konuş
@@ -417,7 +438,7 @@ function checkLow() {
   const waitOcc = premium && !occDone && Date.now() - troubleSince < 15000; // doluluk cevabı gelsin (en çok 15 sn)
   if (!bands.has(band) && !waitOcc) {
     bands.add(band);
-    speak(`Pil yüzde ${soc}. En yakın şarj istasyonu ${fmtKm(best.distKm)} kilometre.`, { key: 'low' + band, cooldownMs: 0, interrupt: true }); // liste, fiyat ve doluluk yalnızca üst panelde
+    speak(card.id === best.id ? `Pil yüzde ${soc}. En yakın şarj istasyonu ${fmtKm(card.distKm)} kilometre.` : `Pil yüzde ${soc}. Önerilen şarj istasyonu ${fmtKm(card.distKm)} kilometre.`, { key: 'low' + band, cooldownMs: 0, interrupt: true }); // liste, fiyat ve doluluk yalnızca üst panelde
   }
 }
 
@@ -465,7 +486,7 @@ export function initNearby() {
   $('near-alert-close').addEventListener('click', () => { dismissedUntil = Date.now() + 10 * 60e3; showAlert(null); });
   $('near-alert-toggle').addEventListener('click', () => {
     if (!alertData) return;
-    listOpen = !(listOpen ?? !getState('nav').active);
+    listOpen = !listOpen;
     paintAlert();
   });
   render();

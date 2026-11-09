@@ -819,3 +819,14 @@ body.navmode .mapsoc, body.sheet-open .mapsoc { display: none; }
   .nav-ev { position: absolute; left: 0; bottom: calc(100% + 6px); width: min(340px, 52vw); }
   .ne-cell { min-height: 36px; }
 }
+
+/* Acil şarj önerisi: varsayılan tek kart; "Liste" diğer istasyonları aynı üst panelde açar, başlık kayarken görünür kalır */
+.tp-charge .tp-head { position: sticky; top: 0; z-index: 1; background: var(--card); }
+.tp-head .tog-list { display: inline-flex; align-items: center; justify-content: center; gap: 2px; width: auto; min-width: 66px; height: 40px; padding: 0 6px 0 10px; border-radius: 12px; color: var(--accent); font-size: 13px; font-weight: 700; white-space: nowrap; }
+.near-name { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.near-info[aria-expanded="true"] .near-name { white-space: normal; }
+/* Çok kısa dikey ekranda öneri açıkken pil kartı harita düğmelerine taşmasın: sürgü pil penceresinde kalır, liste açıkken kart gizlenir */
+@media (min-height: 521px) and (max-height: 600px) {
+  body:has(#near-alert:not(.hidden)) .mapsoc-slider { display: none; }
+  body:has(#near-alert-toggle[aria-expanded="true"]) .mapsoc { display: none; }
+}
