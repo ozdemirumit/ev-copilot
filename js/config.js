@@ -60,7 +60,12 @@ export const ABRP = {
 
 export const OCR = {
   intervalMs: 5000,
-  idleIntervalMs: 15000, // pil değeri 3 okumadır değişmediyse bu aralıkla oku (telefon pili)
+  samples: 3, // pil ve hız değer sabit kalsa da bu aralıkla okunur; bir çevrimde en az bu kadar kare
+  maxSamples: 5, // kareler tutarsızsa en çok bu kadar
+  sampleGapMs: 250, // kareler arası bekleme
+  cycleBudgetMs: 3800, // çevrim içinde yeni kare/yöntem için süre sınırı (5 sn aralığa sığsın)
+  cycleTimeoutMs: 12000, // bu süreyi aşan çevrim takılmış sayılır, işçi yeniden kurulur
+  strongScore: 0.6, // bu skorda kareler yeterli sayılır, ek kare alınmaz
   maxJumpPct: 2, // 5 sn'de bundan fazla değişen pil okuması reddedilir
   maxJumpKmh: 40, // ekran hızı için
 };

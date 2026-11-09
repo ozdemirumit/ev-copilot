@@ -24,7 +24,7 @@ MBRP/
    │  ├─ camera.js            getUserMedia (arka kamera)
    │  ├─ preprocess.js        ROI kırp → gri → kontrast → otomatik eşik ve yazı rengi (binarize.js, Otsu)
    │  ├─ ocr.js               Tesseract.js, 5 sn döngü; % SoC + (opsiyonel) ekran hızı ROI'si
-   │  ├─ outlierFilter.js     5 sn'de >%2 SoC sıçramasını reddet (+ yeniden eşleme güvenliği)
+   │  ├─ outlierFilter.js     Fiziksel makullük: üst sınırlı tolerans, şarj/deşarj bağlamı, yeniden eşleme
    │  └─ wakeLock.js
    ├─ physics/
    │  ├─ model.js             Batarya gücü: aero + yuvarlanma + eğim + rejenerasyon + HVAC

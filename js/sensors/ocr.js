@@ -1,7 +1,11 @@
-import { getState, patch } from '../state.js';
-import { OCR } from '../config.js';
-import { preprocess, VARIANTS } from './preprocess.js';
-import { createFilter } from './outlierFilter.js';
+import { getState, patch, effective } from '../state.js';
+import { OCR, VEHICLE } from '../config.js';
+import { preprocess, measureRoi, VARIANTS } from './preprocess.js';
+import { createSocFilter, createSpeedFilter } from './outlierFilter.js';
+import { consensus } from './ocrConsensus.js';
+import { createOcrLoop, collectSamples } from './ocrLoop.js';
+import { variantOrder, exposureSignal } from './frameQuality.js';
+import { isCameraLive, nudgeExposure } from './camera.js';
 import { countOcrEngineOnce } from '../net/meter.js';
 
 // Tesseract dosyaları uygulamayla birlikte sunulur (vendor/tesseract): service worker ilk kullanımdan sonra bunları
@@ -15,16 +19,24 @@ const WORKER_OPTIONS = {
 };
 const MIN_CONFIDENCE = 40;
 
-const socFilter = createFilter({ maxJump: OCR.maxJumpPct });
-const speedFilter = createFilter({ maxJump: OCR.maxJumpKmh, max: 250, resyncCount: 2 });
+// En yüksek şarj hızı (%/dk): araç bilgisinden, %25 payla (bilinmiyorsa 3)
+const chargeRate = (VEHICLE.maxDcKw / VEHICLE.batteryNetKwh) * (100 / 60) * 1.25;
+const socFilter = createSocFilter({ chargePctPerMin: Number.isFinite(chargeRate) && chargeRate > 0 ? chargeRate : 3, maxJump: OCR.maxJumpPct });
+const speedFilter = createSpeedFilter({ maxJump: OCR.maxJumpKmh });
 const work = document.createElement('canvas'); // OCR'a giden görüntü; önizleme tuvalinden ayrı
 
+const SOC_TOL = 1; // aynı çevrimdeki kareler arası tolerans
+const SPEED_TOL = 3;
+const MAX_VARIANTS_AFTER_PARSE = 2; // bu çevrimde değer okunduysa kare başına en çok bu kadar yöntem (5 sn'ye sığsın)
+
 let workerPromise = null;
-let stableN = 0; // art arda aynı pil değeri okuma sayısı
-let lastSeen = null;
-let running = false;
-let timer = null;
+let loop = null;
+let active = false;
+let startToken = 0;
+let target = null; // { video, stage }
+let lastFrameToken = null; // video.currentTime: aynı kareyi iki kez okuma (donmuş görüntü başarılı okuma sayılmasın)
 let previewTimer = null;
+const preferredVariant = {}; // ROI başına son başarılı okuma yöntemi
 
 export function loadTesseract() {
   if (window.Tesseract) return Promise.resolve();
@@ -79,99 +91,171 @@ export function parseSpeed(text) {
 }
 
 /**
- * ROI'yi okur. Önce normal yöntem (Otsu); okunamazsa ya da güven düşükse "parlak çekirdek" yöntemleri sırayla denenir
- * (kamera rakamı aşırı pozlayıp etrafında ışıma yaptığında Otsu rakamı ışımayla tek leke yapar). İlk güvenli okuma döner;
- * yoksa ayrıştırılabilen en yüksek güvenli okuma, o da yoksa son deneme.
+ * ROI'yi bir kare için okur. Kalite ölçülür; okunması imkânsız kare OCR'a verilmez. Normalde önce Otsu, parlamada önce "parlak çekirdek"
+ * yöntemi denenir (kamera rakamı aşırı pozlayıp ışıma yaptığında Otsu rakamı ışımayla tek leke yapar); son başarılı yöntem öne alınır.
+ * Değer null ise kare okunamamıştır; yine de örnek listesinde kalır ve güven skorunu düşürür.
  */
 const GOOD_CONFIDENCE = 60;
-async function readRoi(worker, video, stage, roi, parse) {
+const EMPTY_SAMPLE = { value: null, raw: null, confidence: 0, quality: 0, q: null };
+
+async function readRoi(worker, video, stage, key, roi, parse, { timeLeft, isCurrent, parsedKeys }) {
   const o = getState('ocr');
+  const q = measureRoi(video, stage, { ...o, roi });
+  if (!q) return EMPTY_SAMPLE;
+  if (!q.usable) return { ...EMPTY_SAMPLE, q };
+  const order = o.useThreshold ? variantOrder(q, VARIANTS, preferredVariant[key]) : [0]; // eşiksiz modda yalnızca tek yöntem anlamlı (çekirdek yöntemi eşiğe dayanır)
+  const limit = parsedKeys.has(key) ? Math.min(MAX_VARIANTS_AFTER_PARSE, order.length) : order.length;
   let best = null;
-  for (const variant of VARIANTS) {
-    if (!preprocess(video, stage, { ...o, roi, variant }, work)) return null;
+  for (let i = 0; i < limit; i++) {
+    if (i > 0 && timeLeft() <= 0) break;
+    if (!isCurrent()) return EMPTY_SAMPLE;
+    if (!preprocess(video, stage, { ...o, roi, variant: order[i] }, work)) break;
     const { data } = await worker.recognize(work);
-    const r = { text: data.text, confidence: data.confidence, parsed: parse(data.text) != null };
-    if (r.parsed && r.confidence >= GOOD_CONFIDENCE) return r;
-    if (!best || (r.parsed && (!best.parsed || r.confidence > best.confidence)) || (!best.parsed && !r.parsed && r.confidence > best.confidence)) best = r;
-    if (!o.useThreshold) break; // eşiksiz modda yalnızca tek yöntem anlamlı (çekirdek yöntemi eşiğe dayanır)
+    const r = { variant: order[i], value: parse(data.text), confidence: data.confidence };
+    const parsed = r.value != null;
+    if (parsed && r.confidence >= GOOD_CONFIDENCE) { best = r; break; }
+    if (!best || (parsed && (best.value == null || r.confidence > best.confidence)) || (best.value == null && !parsed && r.confidence > best.confidence)) best = r;
   }
-  return best;
+  if (!best) return { ...EMPTY_SAMPLE, q };
+  const valid = best.value != null && best.confidence >= MIN_CONFIDENCE;
+  if (valid) { preferredVariant[key] = best.variant; parsedKeys.add(key); } else delete preferredVariant[key];
+  return { value: valid ? best.value : null, raw: best.value, confidence: best.confidence, quality: q.weight, q };
 }
 
-async function tick(video, stage) {
-  if (!running) return;
-  const t0 = Date.now();
-  const o = getState('ocr');
+const rawOf = (samples, c) => c.raw ?? samples.find((s) => s.raw != null)?.raw ?? null;
+const percent = (score) => Math.round((score || 0) * 100);
 
-  // Test Modu açıkken sensör okuması yapılmaz.
-  if (!getState('sim').enabled) {
-    try {
-      const worker = await getWorker();
+/** Elde güvenilir bir ön bilgi varsa (kayıtlı/elle değer) ilk okumanın doğrulanmasında ipucu olur; varsayılan %80 bilgi değildir. */
+function socHint() {
+  const src = getState('engine').socSrc;
+  return src && src !== 'default' ? getState('live').soc : null;
+}
 
-      const soc = await readRoi(worker, video, stage, o.roi, parseSoc);
-      if (!running) return;
-      if (soc) {
-        const value = parseSoc(soc.text);
-        if (value == null || soc.confidence < MIN_CONFIDENCE) {
-          patch('ocr', { raw: value, status: 'unreadable' });
-        } else {
-          const res = socFilter.accept(value, Date.now());
-          if (res.ok) {
-            patch('ocr', { raw: value, accepted: res.value, status: 'ok', lastOkAt: Date.now(), readAt: Date.now() }); // readAt: yalnızca gerçek kamera okuması (tahmin/elle girişte değişmez)
-            patch('live', { soc: res.value });
-          } else {
-            patch('ocr', { raw: value, status: 'rejected' }); // son geçerli değer korunur
-          }
-        }
-      }
-
-      if (getState('ocr').speedOn) {
-        const spd = await readRoi(worker, video, stage, o.roiSpeed, parseSpeed);
-        if (!running) return;
-        if (spd) {
-          const value = parseSpeed(spd.text);
-          if (value == null || spd.confidence < MIN_CONFIDENCE) {
-            patch('ocr', { rawSpeed: value, speedStatus: 'unreadable' });
-          } else if (speedFilter.accept(value, Date.now()).ok) {
-            patch('ocr', { rawSpeed: value, speedStatus: 'ok' });
-            patch('live', { speedScr: value, speedScrAt: Date.now() });
-          } else {
-            patch('ocr', { rawSpeed: value, speedStatus: 'rejected' });
-          }
-        }
-      }
-    } catch (err) {
-      patch('ocr', { status: 'error', error: String(err?.message || err).slice(0, 160) });
-      console.warn('OCR hatası:', err);
-    }
+function applySoc(samples) {
+  const c = consensus(samples, { tol: SOC_TOL });
+  const reliability = percent(c.score);
+  const now = Date.now();
+  if (c.value == null) {
+    patch('ocr', { raw: rawOf(samples, c), status: 'unreadable', stale: true, reliability });
+    return;
   }
-  const acc = getState('ocr').accepted;
-  stableN = acc != null && acc === lastSeen ? stableN + 1 : 0;
-  lastSeen = acc;
-  const every = stableN >= 3 ? OCR.idleIntervalMs : OCR.intervalMs; // değer oturduysa seyrek oku, değişince hemen sıklaş
-  if (running) timer = setTimeout(() => tick(video, stage), Math.max(250, every - (Date.now() - t0)));
+  const res = socFilter.accept(c.value, now, { score: c.score, speedKmh: effective().speed, hint: socHint() });
+  if (res.ok) {
+    patch('ocr', { raw: c.value, accepted: res.value, status: 'ok', lastOkAt: now, readAt: now, stale: false, reliability }); // readAt: yalnızca gerçek kamera okuması (tahmin/elle girişte değişmez)
+    patch('live', { soc: res.value });
+  } else {
+    patch('ocr', { raw: c.value, status: res.reason === 'verifying' ? 'verifying' : 'rejected', stale: true, reliability }); // son geçerli değer korunur
+  }
+}
+
+function applySpeed(samples) {
+  const c = consensus(samples, { tol: SPEED_TOL });
+  const speedReliability = percent(c.score);
+  const now = Date.now();
+  if (c.value == null) {
+    patch('ocr', { rawSpeed: rawOf(samples, c), speedStatus: 'unreadable', speedStale: true, speedReliability });
+    return;
+  }
+  const res = speedFilter.accept(c.value, now, { score: c.score });
+  if (res.ok) {
+    patch('ocr', { rawSpeed: c.value, speedStatus: 'ok', speedAt: now, speedStale: false, speedReliability });
+    patch('live', { speedScr: res.value, speedScrAt: now });
+  } else {
+    patch('ocr', { rawSpeed: c.value, speedStatus: res.reason === 'verifying' ? 'verifying' : 'rejected', speedStale: true, speedReliability });
+  }
+}
+
+/** Bir OCR çevrimi: birkaç kare örnekle, ortak karar + fiziksel makullük, sonucu yaz. Kare akmıyorsa son doğrulanmış değer korunur ve eski işaretlenir. */
+async function runCycle(isCurrent) {
+  if (getState('sim').enabled) return; // Test Modu açıkken sensör okuması yapılmaz.
+  const { video, stage } = target;
+  const worker = await getWorker();
+  if (!isCurrent()) return;
+
+  const o = getState('ocr');
+  const speedOn = o.speedOn;
+  const socSamples = [];
+  const speedSamples = [];
+  const parsedKeys = new Set();
+  const started = Date.now();
+  const ctx = { isCurrent, parsedKeys, timeLeft: () => OCR.cycleBudgetMs - (Date.now() - started) };
+  let delivered = 0;
+  let lastQuality = null;
+  const strong = (samples, tol) => {
+    const c = consensus(samples, { tol });
+    return c.value != null && c.score >= OCR.strongScore;
+  };
+
+  await collectSamples({
+    minFrames: OCR.samples, maxFrames: OCR.maxSamples, gapMs: OCR.sampleGapMs, budgetMs: OCR.cycleBudgetMs, isCurrent,
+    enough: () => strong(socSamples, SOC_TOL) && (!speedOn || strong(speedSamples, SPEED_TOL)),
+    readFrame: async () => {
+      if (!isCameraLive()) return;
+      const token = video.currentTime;
+      if (token === lastFrameToken) return; // görüntü akmıyor
+      lastFrameToken = token;
+      delivered++;
+      const soc = await readRoi(worker, video, stage, 'soc', o.roi, parseSoc, ctx);
+      socSamples.push(soc);
+      if (soc.q) lastQuality = soc.q;
+      if (speedOn && isCurrent()) speedSamples.push(await readRoi(worker, video, stage, 'speed', o.roiSpeed, parseSpeed, ctx));
+    },
+  });
+  if (!isCurrent()) return;
+
+  if (!delivered) {
+    patch('ocr', { status: 'unreadable', stale: true, reliability: 0, speedStale: true, speedStatus: speedOn ? 'unreadable' : 'idle', speedReliability: 0, note: 'Kameradan yeni görüntü gelmiyor' });
+    return;
+  }
+  patch('ocr', { note: '' });
+  applySoc(socSamples);
+  if (speedOn) applySpeed(speedSamples);
+  nudgeExposure(exposureSignal(lastQuality));
+}
+
+function failCycle(err) {
+  patch('ocr', { status: 'error', error: String(err?.message || err).slice(0, 160), stale: true, reliability: 0, speedStale: true });
+  console.warn('OCR hatası:', err);
+}
+
+/** Takılan Tesseract işçisini kapat: sonraki çevrim yenisini kurar. */
+function dropWorker() {
+  const old = workerPromise;
+  workerPromise = null;
+  old?.then((w) => w.terminate()).catch(() => {});
+}
+
+function ensureLoop() {
+  loop ||= createOcrLoop({
+    runCycle, intervalMs: OCR.intervalMs, cycleTimeoutMs: OCR.cycleTimeoutMs, onError: failCycle,
+    onTimeout: () => { dropWorker(); failCycle(new Error('OCR zaman aşımı')); },
+  });
+  return loop;
 }
 
 export async function startOcr(video, stage) {
-  if (running) return;
-  running = true;
+  if (active) return;
+  active = true;
+  const token = ++startToken;
+  target = { video, stage };
   patch('system', { ocr: true });
   patch('ocr', { status: 'loading', error: null });
   try {
     await getWorker(); // ilk seferde Tesseract + dil verisi iner
   } catch (err) {
-    stopOcr();
+    if (token === startToken) stopOcr();
     patch('ocr', { status: 'error', error: String(err?.message || err).slice(0, 160) });
     throw err;
   }
-  if (running) tick(video, stage);
+  if (active && token === startToken) ensureLoop().start();
 }
 
 export function stopOcr() {
-  running = false;
-  clearTimeout(timer);
+  active = false;
+  startToken++;
+  loop?.stop();
   patch('system', { ocr: false });
-  patch('ocr', { status: 'idle', speedStatus: 'idle' });
+  patch('ocr', { status: 'idle', speedStatus: 'idle', stale: true, speedStale: true });
 }
 
 /** Manuel +/- veya dış kaynak: outlier filtresinin referansını ayarla. */

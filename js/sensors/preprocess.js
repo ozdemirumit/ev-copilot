@@ -1,4 +1,5 @@
 import { binarize, binarizeCore } from './binarize.js';
+import { measureFrame } from './frameQuality.js';
 
 /** Okuma yöntemleri: 0 = Otsu (normal); 1..3 = parlak çekirdek, eşik kaydırmaları CORE_BIAS[variant-1]. ocr.js sırayla dener. */
 export const VARIANTS = [0, 1, 3, 2];
@@ -17,6 +18,53 @@ const SKEW_MAX = 30; // derece
 const SKEW_STEP = 2.5;
 const scratch = document.createElement('canvas');
 const rad = (d) => (d * Math.PI) / 180;
+
+// Eğim pahalıdır (625 açı çifti) ve telefon sabitken değişmez: ROI başına önbellekte tutulur. Her varyant, kare ve önizleme aynı sonucu kullanır;
+// süre dolunca, ROI değişince ya da kamera değişince (invalidateSkew) yenilenir. Okunamayan kare önbelleğe yazılmaz.
+const SKEW_TTL_MS = 30000;
+const SKEW_CACHE_MAX = 8;
+const skewCache = new Map();
+
+export function invalidateSkew() {
+  skewCache.clear();
+}
+
+/** ROI'nin küçültülmüş gri görüntüsü (kalite ölçümü ve eğim tahmini ortak kullanır). */
+function roiGray(video, r) {
+  const w = Math.max(16, Math.round((r.sw / r.sh) * SKEW_H));
+  scratch.width = w;
+  scratch.height = SKEW_H;
+  const sctx = scratch.getContext('2d', { willReadFrequently: true });
+  sctx.drawImage(video, r.sx, r.sy, r.sw, r.sh, 0, 0, w, SKEW_H);
+  const px = sctx.getImageData(0, 0, w, SKEW_H).data;
+  const g = new Uint8Array(w * SKEW_H);
+  for (let i = 0; i < g.length; i++) g[i] = 0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2];
+  return { g, w, h: SKEW_H };
+}
+
+function cachedSkew(video, r, now) {
+  const key = [r.sx, r.sy, r.sw, r.sh, video.videoWidth, video.videoHeight].map(Math.round).join();
+  const hit = skewCache.get(key);
+  if (hit && now - hit.at < SKEW_TTL_MS) return hit.skew;
+  const { g, w, h } = roiGray(video, r);
+  if (!measureFrame(g, w, h).usable) return { rot: 0, shear: 0 };
+  const pts = inkPoints(g, w, h);
+  const skew = estimateSkew(pts, w, h);
+  if (pts.length >= 40) {
+    if (skewCache.size >= SKEW_CACHE_MAX) skewCache.clear();
+    skewCache.set(key, { skew, at: now });
+  }
+  return skew;
+}
+
+/** ROI'nin bu andaki kalitesi (parlama, netlik, kontrast). Video hazır değilse null. */
+export function measureRoi(video, stage, opts) {
+  if (!video.videoWidth || !video.videoHeight) return null;
+  const r = roiToVideoRect(video, stage, opts.roi);
+  if (r.sw < 4 || r.sh < 4) return null;
+  const { g, w, h } = roiGray(video, r);
+  return measureFrame(g, w, h);
+}
 
 /** Gri değerlerden yazı piksellerinin (merkezli) koordinatları: Otsu eşiği, azınlık sınıfı = yazı. */
 function inkPoints(g, w, h) {
@@ -107,7 +155,7 @@ export function roiToVideoRect(video, stage, roi) {
  * bu yüzden ortalama parlaklık düşükse görüntü otomatik ters çevrilir.
  * Dönüş: false = video hazır değil.
  */
-export function preprocess(video, stage, opts, canvas) {
+export function preprocess(video, stage, opts, canvas, now = Date.now()) {
   if (!video.videoWidth || !video.videoHeight) return false;
   const { sx, sy, sw, sh } = roiToVideoRect(video, stage, opts.roi);
   if (sw < 4 || sh < 4) return false;
@@ -126,16 +174,7 @@ export function preprocess(video, stage, opts, canvas) {
   let rot = 0;
   let shear = 0;
   if (opts.autoSkew) {
-    const sh2 = SKEW_H;
-    const sw2 = Math.max(16, Math.round((sw / sh) * sh2));
-    scratch.width = sw2;
-    scratch.height = sh2;
-    const sctx = scratch.getContext('2d', { willReadFrequently: true });
-    sctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw2, sh2);
-    const px = sctx.getImageData(0, 0, sw2, sh2).data;
-    const g = new Uint8Array(sw2 * sh2);
-    for (let i = 0; i < g.length; i++) g[i] = 0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2];
-    ({ rot, shear } = estimateSkew(inkPoints(g, sw2, sh2), sw2, sh2));
+    ({ rot, shear } = cachedSkew(video, { sx, sy, sw, sh }, now));
   } else if (opts.rot || opts.shear) {
     rot = opts.rot || 0;
     shear = opts.shear || 0;

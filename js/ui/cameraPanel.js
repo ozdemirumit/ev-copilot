@@ -1,15 +1,20 @@
 import { getState, patch, subscribe } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { persistCamera } from './roiBox.js';
-import { startCamera, stopCamera, zoomRange, setZoom } from '../sensors/camera.js';
+import { startCamera, stopCamera, zoomRange, setZoom, onCameraStatus, cameraDiag } from '../sensors/camera.js';
+import { invalidateSkew } from '../sensors/preprocess.js';
 import { startOcr, stopOcr, startPreview, stopPreview } from '../sensors/ocr.js';
 import { setManual, manualLocked } from '../physics/socEstimate.js';
 import { toast } from './toast.js';
 
 const STATUS_TEXT = {
   idle: '—', loading: 'Yükleniyor', ok: 'Geçerli', rejected: 'Reddedildi',
-  unreadable: 'Okunamadı', manual: 'Manuel', error: 'Hata',
+  unreadable: 'Okunamadı', manual: 'Manuel', error: 'Hata', verifying: 'Doğrulanıyor',
 };
+const HEALTH_TEXT = {
+  off: 'Kapalı', live: 'Canlı', muted: 'Görüntü duraklatıldı', ended: 'Kapandı', recovering: 'Yeniden açılıyor', lost: 'Kayboldu',
+};
+const METHOD_TEXT = { label: 'en geniş açılı', facing: 'varsayılan arka', fallback: 'geri dönüldü' };
 
 /** Kamera sekmesi: önizleme, OCR başlat/durdur, eşik/kontrast ayarları, manuel +/- kalibrasyon. */
 export function initCameraPanel() {
@@ -28,6 +33,7 @@ export function initCameraPanel() {
   const paintZoom = () => { zoomOut.textContent = Number(zoom.value).toFixed(1) + '×'; };
   async function applyZoom() {
     paintZoom();
+    invalidateSkew(); // görüntü ölçeği değişti
     try { await setZoom(video, Number(zoom.value)); } catch (err) { toast('Yakınlaştırma uygulanamadı: ' + (err.message || err.name)); }
   }
   async function setupZoom() {
@@ -50,12 +56,28 @@ export function initCameraPanel() {
     }
     try {
       await startCamera(video);
+      invalidateSkew();
       await setupZoom();
       patch('system', { camera: true });
       startPreview(video, stage, $('ocr-preview'));
     } catch (err) {
       toast('Kamera açılamadı: ' + (err.message || err.name));
     }
+  });
+
+  // Kamera akışı kendiliğinden kapanırsa camera.js aynı kamerayı yeniden açar; olmazsa kamera durumu kapatılır
+  onCameraStatus((event) => {
+    if (event === 'recovered') {
+      invalidateSkew();
+      setupZoom().catch(() => {});
+    } else if (event === 'lost') {
+      stopOcr();
+      stopPreview();
+      stopCamera(video);
+      patch('system', { camera: false });
+      toast('Kamera bağlantısı kesildi, yeniden açılamadı');
+    }
+    paintDiag();
   });
 
   ocrBtn.addEventListener('click', async () => {
@@ -136,6 +158,7 @@ export function initCameraPanel() {
   const paintOcr = (s) => {
     $('ocr-raw').textContent = s.raw == null ? '--' : s.raw;
     $('ocr-ok').textContent = s.accepted == null ? '--' : s.accepted;
+    $('ocr-ok').style.opacity = s.stale && s.accepted != null && s.status !== 'manual' ? '0.55' : ''; // son doğrulanmış değer duruyor ama bu çevrimde doğrulanmadı
     $('ocr-state').textContent = STATUS_TEXT[s.status] || s.status;
     $('ocr-err').textContent = s.error ? 'OCR hatası: ' + s.error : '';
     $('ocr-err').classList.toggle('hidden', !(s.status === 'error' && s.error));
@@ -145,6 +168,26 @@ export function initCameraPanel() {
   };
   subscribe('ocr', paintOcr);
   paintOcr(getState('ocr'));
+
+  // Tanılama kartı: son doğrulanmış değerler, okuma zamanı, güvenilirlik, stale durumu ve kamera/tarayıcı sınırlamaları
+  function paintDiag() {
+    const s = getState('ocr');
+    const live = getState('live');
+    const diag = cameraDiag();
+    $('diag-soc').textContent = s.accepted == null ? '--' : `%${s.accepted}`;
+    $('diag-speed').textContent = live.speedScr == null ? '--' : `${live.speedScr} km/h${s.speedOn && s.speedStale ? ' (eski)' : ''}`;
+    $('diag-read-at').textContent = s.readAt ? `${new Date(s.readAt).toLocaleTimeString()} (${Math.max(0, Math.round((Date.now() - s.readAt) / 1000))} sn önce)` : '--';
+    $('diag-reliability').textContent = s.readAt || s.reliability ? `%${s.reliability}` : '--';
+    $('diag-stale').textContent = !getState('system').ocr ? 'OCR kapalı' : s.status === 'manual' ? 'Elle girildi' : s.stale ? 'Eski (doğrulanmadı)' : 'Güncel';
+    const parts = [diag.label || 'Arka kamera', HEALTH_TEXT[diag.health] || diag.health];
+    if (METHOD_TEXT[diag.method]) parts.push(METHOD_TEXT[diag.method]);
+    $('diag-camera').textContent = getState('system').camera ? parts.join(' · ') : HEALTH_TEXT.off;
+    const notes = [s.note, diag.note, diag.unsupported.length && getState('system').camera ? `Bu tarayıcıda desteklenmiyor: ${diag.unsupported.join(', ')}` : ''];
+    $('diag-note').textContent = notes.filter(Boolean).join(' · ');
+  }
+  subscribe(['ocr', 'system'], paintDiag);
+  paintDiag();
+  setInterval(paintDiag, 1000);
 
   // ---------- Açılışta kamerayı ve OCR'ı otomatik başlat ----------
   // Sürüşte telefon yeniden açıldığında okumanın kendiliğinden sürmesi için. Kamera izni zaten verilmişse çalışır
