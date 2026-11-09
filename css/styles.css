@@ -528,17 +528,21 @@ html[lang="tr"] .pct-sign { order: -1; }
 body.sheet-open .socbar { display: none; }
 
 /* Harita üstü: alttan yukarı yığın (konum düğmeleri, navigasyon şeridi, arama, yakın istasyonlar). Üstündeki boşluk harita atfı için. */
-.mapstack { position: absolute; left: 12px; right: 12px; bottom: calc(var(--nav-h) + var(--safe-b) + 28px); display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.mapstack { position: absolute; left: 12px; right: calc(12px + env(safe-area-inset-right, 0px)); bottom: calc(var(--nav-h) + var(--safe-b) + 28px); display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
 .mapstack > * { pointer-events: auto; }
 .fabs { position: relative; align-self: flex-end; display: flex; flex-direction: column; gap: 8px; }
 .fabs button { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 50%; color: var(--text); background: rgba(20, 25, 32, .95); border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 4px 16px #0008; }
-.fabs button.on, #fab-tools[aria-expanded="true"] { color: var(--accent); border-color: var(--accent-dim); }
+.fabs button.on { color: var(--accent); border-color: var(--accent-dim); }
 #fab-nav { background: var(--accent); color: #04271c; border-color: var(--accent); }
 #fab-nav .ic { color: inherit; }
 body:not(.navmode) .nav-only { display: none; }
-/* Üç nokta yığını: üç noktanın hemen üstünde yukarı açılır; yükseklik yetmezse (shell.js ölçer) sonraki sütun sola açılır */
-.fabs-more { position: absolute; right: 3px; bottom: calc(100% + 6px); width: 40px; display: flex; flex-flow: column wrap-reverse; justify-content: flex-end; gap: 4px; }
-.fabs .fabs-more button { width: 40px; height: 40px; }
+/* Sağ kenar sütunu: konum düğmelerinin üstünden yukarı dizilir; yükseklik yetmezse (shell.js ölçer) sonraki sütun sola açılır. Görünür 40 + 2x2 dokunma payı = 44 px */
+.fabs-more { align-self: flex-end; margin-right: 3px; width: 40px; display: flex; flex-flow: column wrap-reverse; justify-content: flex-end; gap: 4px; }
+.fabs .fabs-more button { position: relative; width: 40px; height: 40px; }
+.fabs .fabs-more button::after { content: ""; position: absolute; inset: -3px; } /* 1 px kenarlıktan taşar: 40 + 2x2 = 44 */
+.fabs.side .fabs-more { position: absolute; right: calc(100% + 8px); bottom: 0; margin-right: 0; }
+body.sheet-open .fabs-more { display: none; }
+@media (max-width: 900px) { body:has(.station-card:not(.hidden)) .fabs-more { display: none; } }
 .fabs .fabs-more button .ic { width: 20px; height: 20px; }
 #fab-stopnav { color: var(--bad); }
 body.navmode #fab-route { display: none; } /* navigasyonda aynı işi nh-overview yapar */
@@ -651,15 +655,16 @@ html[lang="tr"] .nh-flag { display: none; }
   .bottomnav button { flex-direction: row; gap: 5px; font-size: 11px; }
   .bottomnav button span .ic { width: 18px; height: 18px; }
   .bottomnav button.active::after { bottom: 1px; }
-  .mapstack { left: calc(248px + env(safe-area-inset-left, 0px)); right: 8px; bottom: calc(var(--safe-b) + 4px); flex-direction: row; align-items: center; }
+  .mapstack { left: calc(248px + env(safe-area-inset-left, 0px)); right: calc(8px + env(safe-area-inset-right, 0px)); bottom: calc(var(--safe-b) + 4px); flex-direction: row; align-items: center; }
   .searchrow, .navhud { flex: 1; min-width: 0; }
   .searchbar, .rota-btn { min-height: 40px; font-size: 14px; }
   .navhud { min-height: 40px; padding: 3px 4px; }
   .nh-cell b { font-size: 15px; }
   .nh-time b { font-size: 16px; }
   .navhud .limit-sign { width: 30px; height: 30px; font-size: 12px; }
-  .fabs { position: absolute; right: 0; bottom: calc(100% + 12px); }
+  .fabs { position: absolute; right: 0; bottom: calc(100% + 12px + var(--ev-lift, 0px)); }
   .fabs button { width: 42px; height: 42px; }
+  .fabs-more { margin-right: 1px; }
   #soc-sheet { margin: auto; }
   .soc-read > div:first-child { flex-direction: row; align-items: center; gap: 8px; }
   .soc-big { font-size: 30px; }
@@ -728,7 +733,7 @@ body.navmode .statusrow { padding-top: calc(2px + var(--safe-t)); }
 .socbar:active { background: var(--card-2); }
 .socbar.low { border-color: var(--warn); }
 .fabs button, .searchbar .ic { color: var(--text); }
-.fabs button.on, #fab-tools[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); }
+.fabs button.on { color: var(--accent); border-color: var(--accent); }
 #fab-me.gps-bad { color: var(--warn); border-color: var(--warn); }
 .searchbar { color: var(--muted); }
 .station-card { backdrop-filter: none; -webkit-backdrop-filter: none; }

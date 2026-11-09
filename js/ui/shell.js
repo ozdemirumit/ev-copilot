@@ -106,28 +106,42 @@ export function initShell() {
   $('fab-search').addEventListener('click', openSearch);
   $('nh-search').addEventListener('click', openSearch);
 
-  // Üç nokta: harita üstünde yukarı açılan küçük simge yığını (pencere değil); dışarı dokununca, Esc ile ya da bir sayfa açılınca kapanır.
-  // Üst çubuğa/panele taşmasın diye yükseklik açılışta ölçülür; yer yetmezse CSS ikinci sütunu sola açar.
+  // Sağ kenar sütunu: harita kontrolleri her zaman görünür, konum düğmelerinin üstünden yukarı dizilir.
+  // Üst panele/haritadan seç çubuğuna taşmasın diye yükseklik ölçülür; yer yetmezse CSS sonraki sütunu sola açar.
+  // İki sütuna da sığmıyorsa (küçük ekranda navigasyon) sütun konum düğmelerinin soluna geçer ve onların yüksekliğini de kullanır.
+  const RAIL_PITCH = 44; // 40 px düğme + 4 px aralık
+  const RAIL_REACH = 8 + 3 * RAIL_PITCH; // konum düğmelerinin solunda en çok 3 sütun
   const more = $('fabs-more');
-  const moreBtn = $('fab-tools');
-  const fitMore = () => { more.style.maxHeight = Math.max(84, $('fabs').getBoundingClientRect().top - hud.getBoundingClientRect().bottom - 14) + 'px'; };
-  const setMore = (open) => {
-    if (open) fitMore();
-    more.classList.toggle('hidden', !open);
-    moreBtn.setAttribute('aria-expanded', String(open));
+  const fabsBox = $('fabs');
+  const pickBox = $('pickbar');
+  const fitMore = () => {
+    const anchor = [...fabsBox.children].find((el) => el !== more && el.offsetParent);
+    if (!anchor) return; // sayfa açıkken harita arayüzü gizli
+    // Yatay ekranda pil şeridi sütunun bölgesine giriyorsa düğmeler şeridin üstünden başlar
+    const ev = $('nav-ev');
+    const lift = ev.offsetParent && getComputedStyle(ev).position === 'absolute' && ev.getBoundingClientRect().right > fabsBox.getBoundingClientRect().left - RAIL_REACH;
+    fabsBox.style.setProperty('--ev-lift', lift ? ev.offsetHeight + 6 + 'px' : '0px');
+    const box = fabsBox.getBoundingClientRect();
+    // Yatay ekranda uyarı panelleri solda durur: yalnızca sütunun ulaşabileceği bölgedekiler sınırdır
+    const limits = [...hud.children, ...$('banners').children, pickBox].filter((el) => el.id !== 'banners' && el.offsetParent && el.getBoundingClientRect().right > box.left - RAIL_REACH);
+    const top = Math.max(0, ...limits.map((el) => el.getBoundingClientRect().bottom));
+    const above = anchor.getBoundingClientRect().top - top - 16;
+    const count = [...more.children].filter((el) => el.offsetParent).length;
+    const side = count > 2 * Math.floor((above + 4) / RAIL_PITCH);
+    fabsBox.classList.toggle('side', side);
+    more.style.maxHeight = Math.max(40, side ? box.bottom - top - 8 : above) + 'px';
   };
-  moreBtn.addEventListener('click', () => setMore(more.classList.contains('hidden')));
+  const railObserver = new ResizeObserver(fitMore);
+  for (const el of [hud, pickBox, fabsBox, $('mapstack')]) railObserver.observe(el);
   window.addEventListener('resize', fitMore);
-  document.addEventListener('tabchange', () => setMore(false));
+  fitMore();
   // Navigasyonu durdur: sağdaki kırmızı düğme, onay ister (yanlışlıkla dokunuşta navigasyon kesilmesin). Varsayılan odak "Devam et"te.
   const stopDlg = $('stop-nav-dialog');
-  $('fab-stopnav').addEventListener('click', () => { setMore(false); stopDlg.showModal(); });
+  $('fab-stopnav').addEventListener('click', () => stopDlg.showModal());
   $('stop-nav-no').addEventListener('click', () => stopDlg.close());
   $('stop-nav-yes').addEventListener('click', () => { stopDlg.close(); stopNav(); });
   stopDlg.addEventListener('click', (e) => { if (e.target === stopDlg) stopDlg.close(); });
   subscribe('nav', () => { if (!getState('nav').active && stopDlg.open) stopDlg.close(); }); // araya varış girerse pencere kalmasın
-  document.addEventListener('click', (e) => { if (!$('fabs').contains(e.target)) setMore(false); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMore(false); });
 
   // Durum ve kontroller penceresi (yükleme, güncelleme, veri kullanımı, sürüm): Daha fazla menüsünden ve durum satırındaki sürüm numarasından açılır
   const tools = $('tools-dialog');

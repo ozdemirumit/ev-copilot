@@ -99,7 +99,7 @@ ok('kimlikler bir kez', ['cur-soc', 'min-arrival', 'min-kw', 'nav-voice', 'plan-
 const fabs = between('id="fabs"', 'id="nav-ev"');
 const stack = between('id="fabs-more"', '</div>');
 ok('durdur yığının dışında, her zaman görünür', fabs.includes('id="fab-stopnav"') && !stack.includes('id="fab-stopnav"'));
-ok('durdur onay penceresi açar', /\$\('fab-stopnav'\)\.addEventListener\('click', \(\) => \{ setMore\(false\); stopDlg\.showModal\(\); \}\)/.test(shell));
+ok('durdur onay penceresi açar', /\$\('fab-stopnav'\)\.addEventListener\('click', \(\) => stopDlg\.showModal\(\)\)/.test(shell));
 ok('stopNav yalnızca onaydan sonra', /\$\('stop-nav-yes'\)\.addEventListener\('click', \(\) => \{ stopDlg\.close\(\); stopNav\(\); \}\)/.test(shell));
 ok('üst paneldeki ✕ ve Rota sayfasındaki büyük durdur kalktı', !html.includes('id="nav-stop"') && !/Navigasyonu durdur'? : 'Git'/.test(panel) && !/stopNav/.test(panel));
 ok('varsayılan odak Devam et', /id="stop-nav-no"[^>]*autofocus/.test(html));

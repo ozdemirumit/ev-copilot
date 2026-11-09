@@ -1,4 +1,4 @@
-// Harita üç nokta yığını, Rota planla / Git, Araç ve menzil sayfası, alt gezinme (kaynak denetimi).
+// Harita sağ kenar kontrolleri, Rota planla / Git, Araç ve menzil sayfası, alt gezinme (kaynak denetimi).
 // Kullanım: node scripts/test-map-menu.mjs
 import { readFileSync } from 'node:fs';
 
@@ -14,14 +14,17 @@ const ok = (name, cond, extra = '') => { cond ? pass++ : fail++; console.log(con
 const between = (a, b, from = 0) => { const i = html.indexOf(a, from); return html.slice(i, html.indexOf(b, i)); };
 const tag = (src, id) => src.match(new RegExp(`<button[^>]*id="${id}"[^>]*>`))?.[0] || '';
 
-// Üç nokta yığını: küçük simgeler, yukarı açılır, açılır pencere değil
+// Sağ kenardaki harita kontrolleri: üç nokta yok, düğmeler doğrudan dikey sütunda (açılır pencere değil)
 const stack = between('id="fabs-more"', '</div>');
 const fabs = between('id="fabs"', 'id="navhud"');
 const rule = css.match(/\n\.fabs-more \{[^}]*\}/)?.[0] || '';
-ok('yığın dikey ve üç noktanın üstünde', /bottom: calc\(100% \+/.test(rule) && /flex-flow: column/.test(rule) && !/width: 208px/.test(rule), rule);
-ok('üç nokta sütunun en üstünde, yığın hemen üzerinde', /id="fabs-more"[\s\S]*<\/div>\s*<button[^>]*id="fab-tools"/.test(fabs));
-ok('simgeler küçük (normal düğmeden dar)', /\.fabs \.fabs-more button \{[^}]*width: 40px; height: 40px/.test(css));
-ok('yığın dialog/menü rolü taşımaz', !/role="(dialog|menu)"/.test(tag(html, 'fab-tools') + html.slice(html.indexOf('id="fabs-more"') - 40, html.indexOf('id="fabs-more"') + 80)));
+ok('üç nokta düğmesi kalktı', !html.includes('fab-tools') && !shell.includes('fab-tools') && !css.includes('fab-tools') && !shell.includes('setMore'));
+ok('sütun her zaman görünür (gizli başlamaz)', !/class="[^"]*hidden[^"]*" id="fabs-more"/.test(html));
+ok('sütun dikey, alttan yukarı; sığmazsa sola açılır', /flex-flow: column wrap-reverse/.test(rule) && /justify-content: flex-end/.test(rule) && !/position: absolute/.test(rule), rule);
+ok('sütun konum düğmelerinin üstünde', /id="fabs-more"[\s\S]*<\/div>\s*<button[^>]*id="fab-stopnav"/.test(fabs));
+ok('görünür boy 40, dokunma alanı 44 piksel', /\.fabs \.fabs-more button \{[^}]*width: 40px; height: 40px/.test(css) && /\.fabs \.fabs-more button::after \{[^}]*inset: -3px/.test(css) && /\.fabs-more \{[^}]*gap: 4px/.test(css));
+ok('sütun dialog/menü rolü taşımaz', !/role="(dialog|menu)"/.test(html.slice(html.indexOf('id="fabs-more"') - 40, html.indexOf('id="fabs-more"') + 80)));
+
 const targets = { favs: 'Favoriler', range: 'Araç ve menzil', test: 'Test Modu', camera: 'Kamera', abrp: 'ABRP' };
 for (const [t, label] of Object.entries(targets)) {
   const b = stack.match(new RegExp(`<button[^>]*data-tab="${t}"[^>]*>`))?.[0] || '';
@@ -30,11 +33,15 @@ for (const [t, label] of Object.entries(targets)) {
 for (const t of ['test', 'camera', 'abrp']) ok(`${t} Premium kısıtını korur`, new RegExp(`data-tab="${t}"[^>]*data-premium-only`).test(stack));
 const stop = tag(fabs, 'fab-stopnav');
 ok('Navigasyonu durdur yalnızca navigasyonda, sağ sütunda', stop.includes('nav-only') && stop.includes('aria-label="Navigasyonu durdur"') && !stack.includes('fab-stopnav'), stop);
-ok('durdur önce onay ister', /\$\('fab-stopnav'\)\.addEventListener\('click', \(\) => \{ setMore\(false\); stopDlg\.showModal\(\); \}\)/.test(shell));
+ok('durdur önce onay ister', /\$\('fab-stopnav'\)\.addEventListener\('click', \(\) => stopDlg\.showModal\(\)\)/.test(shell));
 ok('harita kontrolleri yığında duruyor', ['fab-sat', 'fab-3d', 'fab-route', 'nh-limitbtn', 'nh-voice', 'nh-overview', 'nh-search'].every((id) => stack.includes(`id="${id}"`)));
 ok('navigasyonda tüm rota düğmesi tekrarlanmaz', /body\.navmode #fab-route \{ display: none; \}/.test(css));
-ok('sayfa açılınca yığın kapanır', /addEventListener\('tabchange', \(\) => setMore\(false\)\)/.test(shell));
-ok('yığın üst paneli aşmaz: yükseklik açılışta ölçülür', /more\.style\.maxHeight = /.test(shell) && /hud\.getBoundingClientRect\(\)\.bottom/.test(shell));
+ok('sayfa açılınca sütun gizlenir', /body\.sheet-open \.fabs-more \{ display: none; \}/.test(css));
+ok('istasyon kartı açıkken dar ekranda sütun kartın arkasında kalmaz', /body:has\(\.station-card:not\(\.hidden\)\) \.fabs-more \{ display: none; \}/.test(css));
+ok('sütun üst paneli aşmaz: yükseklik ölçülür ve panel/yerleşim değişince yenilenir', /more\.style\.maxHeight = /.test(shell) && /hud\.children/.test(shell) && /new ResizeObserver\(fitMore\)/.test(shell));
+ok('sığmazsa konum düğmelerinin soluna geçer', /\.fabs\.side \.fabs-more \{[^}]*right: calc\(100% \+ 8px\); bottom: 0/.test(css) && /classList\.toggle\('side', side\)/.test(shell));
+ok('yatay ekranda pil şeridiyle örtüşmez', /--ev-lift/.test(shell) && /\.fabs \{[^}]*bottom: calc\(100% \+ 12px \+ var\(--ev-lift, 0px\)\)/.test(css));
+ok('sağ çentik güvenli alanı', /\.mapstack \{[^}]*right: calc\(8px \+ env\(safe-area-inset-right, 0px\)\)/.test(css));
 
 // Rota planla ve Git
 ok('Rota sayfasında Rota planla görünür', /<button[^>]*id="btn-plan"[^>]*>Rota planla<\/button>/.test(html) && !tag(html, 'btn-plan').includes('hidden'));
