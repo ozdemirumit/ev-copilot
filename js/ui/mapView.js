@@ -267,8 +267,10 @@ export function initMap() {
   let glideAt = 0; // son kare kamera zamanı: sürerken updateMe konumu ezmesin
   let zoomCur = null;
   let bearCur = null;
+  let pendingFollow = null; // harita henüz açılmadan gelen "konuma git" isteği: harita hazır olunca uygulanır (açılışta ilk konum haritadan önce gelebilir)
   mapApi.follow = (lat, lon, zoom = null, force = false, heading = null) => {
-    if (!adapter || paused || (!force && Date.now() - lastDrag < 15000)) return;
+    if (!adapter) { if (force) pendingFollow = { lat, lon, zoom, heading }; return; }
+    if (paused || (!force && Date.now() - lastDrag < 15000)) return;
     bearCur = null;
     zoomCur = null; // kare kamera bir sonraki karede haritanın gerçek değerinden devam eder
     if (zoom != null) zoomNow = zoom;
@@ -438,6 +440,25 @@ export function initMap() {
   }
   subscribe(['live', 'sim'], updateMe);
   readyHooks.push(updateMe);
+
+  // Açılışta harita bulunulan konuma yakınlaşır: konum haritadan önce geldiyse bekleyen istek uygulanır; henüz konum yoksa son bilinen konuma
+  // (GPS ilk konumu verince shell.js daha yakına odaklar). Son konum yalnızca bu cihazda saklanır, hesaba eşitlenmez.
+  const LAST_POS = 'lastPos';
+  let lastSaved = 0;
+  subscribe('live', () => {
+    const e = effective();
+    if (e.source !== 'live' || e.lat == null || getState('live').gps !== 'ok' || Date.now() - lastSaved < 30000) return;
+    lastSaved = Date.now();
+    save(LAST_POS, { lat: Math.round(e.lat * 1e4) / 1e4, lon: Math.round(e.lon * 1e4) / 1e4 }, { silent: true }); // ~10 m: yazma azalır
+  });
+  readyHooks.push(() => {
+    const pf = pendingFollow;
+    pendingFollow = null;
+    if (pf) return mapApi.follow(pf.lat, pf.lon, pf.zoom, true, pf.heading);
+    const lp = load(LAST_POS, null);
+    if (!lp || !Number.isFinite(lp.lat) || !Number.isFinite(lp.lon) || routeCoords || navOn || effective().lat != null) return;
+    adapter.moveTo({ center: { lat: lp.lat, lon: lp.lon }, zoom: 12 }, false);
+  });
 
   // Gizli sekmede boyut 0 olur; görününce yeniden hesapla.
   document.addEventListener('tabchange', (e) => {
