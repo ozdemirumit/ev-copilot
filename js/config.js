@@ -70,21 +70,41 @@ export const OCR = {
   maxJumpKmh: 40, // ekran hızı için
 };
 
-// Varsayılan liste tarifeleri (TL/kWh): price = DC hızlı şarj, acPrice = AC/yavaş istasyon. Kaynak: arabamsarj.com.tr/fiyatlar, 01.11.2026
-// itibarıyla (üyelik/roaming indirimleri yok); kullanıcı tabloda değiştirebilir. Yeni tarife çıkınca değerleri ve PRICES_AS_OF'u güncelle.
-export const PRICES_AS_OF = '2026-11-01';
+// Varsayılan liste tarifeleri (TL/kWh, KDV dahil): price = DC hızlı şarj (ağın ultra hızlı tarifesi varsa o, yoksa DC hızlı; ikisi de varsa yüksek olan),
+// acPrice = AC/yavaş istasyon. Kaynak: yonga.io/sarj-fiyatlari, son kontrol 06.11.2026 (işgaliye, üyelik ve peak saat sürşarjı hariç);
+// kullanıcı tabloda değiştirebilir. Yeni tarife çıkınca değerleri ve PRICES_AS_OF'u güncelle. kw: güç bilinmeyen istasyonda varsayılan
+// (ultra tarifesi olan ağlarda 150, diğerlerinde 120). match: istasyon adı/işletmeci metninde aranan küçük harfli parçalar (kısa/genel sözcükler yok).
+export const PRICES_AS_OF = '2026-11-06';
 export const DEFAULT_OPERATORS = [
   { id: 'trugo', name: 'Trugo', price: 14.98, acPrice: 9.95, kw: 180, match: ['trugo'] },
-  { id: 'zes', name: 'ZES', price: 16.49, acPrice: 9.99, kw: 180, match: ['zes'] },
-  { id: 'esarj', name: 'Eşarj', price: 13.5, acPrice: 9.9, kw: 150, match: ['eşarj', 'esarj', 'e-şarj'] },
+  { id: 'zes', name: 'ZES', price: 16.49, acPrice: 10.99, kw: 180, match: ['zes'] },
+  { id: 'esarj', name: 'Eşarj', price: 9.9, acPrice: 9.9, kw: 150, match: ['eşarj', 'esarj', 'e-şarj'] },
   { id: 'astor', name: 'Astor', price: 13.99, acPrice: 9.89, kw: 120, match: ['astor'] },
   { id: 'voltrun', name: 'Voltrun', price: 12.9, acPrice: 9.9, kw: 120, match: ['voltrun'] },
-  { id: 'sharz', name: 'Sharz.net', price: 12.99, acPrice: 9.49, kw: 120, match: ['sharz'] },
+  { id: 'sharz', name: 'Sharz.net', price: 10.99, acPrice: 8.99, kw: 150, match: ['sharz'] },
   { id: 'tesla', name: 'Tesla', price: 13, acPrice: 13, kw: 250, match: ['tesla supercharger'] }, // Supercharger, diğer markalar tarifesi (haberlerdeki son liste; Tesla uygulaması gerekir, istasyona göre değişebilir)
-  { id: 'other', name: 'Diğer', price: 12.42, acPrice: 9.49, kw: 60, match: [] }, // Diğer: sayfanın DC ve AC ortalaması
+  { id: 'neva', name: 'Neva Şarj', price: 13.9, acPrice: 9.9, kw: 120, match: ['neva şarj', 'neva sarj', 'nevasarj'] },
+  { id: 'otojet', name: 'Otojet', price: 15.49, acPrice: 10.99, kw: 150, match: ['otojet'] },
+  { id: 'otowatt', name: 'otoWATT', price: 13.99, acPrice: 10.99, kw: 120, match: ['otowatt', 'oto watt'] },
+  { id: 'wat', name: 'WAT Mobilite', price: 14.49, acPrice: 9.99, kw: 150, match: ['wat mobilite', 'watmobilite'] },
+  { id: 'sarjon', name: 'Şarjon', price: 13.99, acPrice: 10.99, kw: 150, match: ['şarjon', 'sarjon'] },
+  { id: 'sepas', name: 'Sepaş', price: 12.9, acPrice: 9.9, kw: 120, match: ['sepaş', 'sepas'] },
+  { id: 'aksa', name: 'Aksa Şarj', price: 11.99, acPrice: 9.9, kw: 120, match: ['aksa şarj', 'aksa sarj', 'aksasarj'] },
+  { id: 'epower', name: 'e-POwer', price: 11.99, acPrice: 8.99, kw: 120, match: ['e-power', 'epower'] },
+  { id: 'ovolt', name: 'ovolt', price: 11.99, acPrice: 9.99, kw: 120, match: ['ovolt'] },
+  { id: 'electrise', name: 'Electrise', price: 11, acPrice: 8.5, kw: 150, match: ['electrise'] },
+  { id: 'minus', name: 'Minus Energy', price: 12.5, acPrice: 9.2, kw: 150, match: ['minus energy', 'minusenergy'] },
+  { id: 'tuncmatik', name: 'Tunçmatik', price: 11.5, acPrice: 8.99, kw: 150, match: ['tunçmatik', 'tuncmatik'] },
+  { id: 'greenwatt', name: 'Greenwatt', price: 10.5, acPrice: 8, kw: 150, match: ['greenwatt', 'green watt'] },
+  { id: 'pirim', name: 'Pirim Şarj', price: 10.49, acPrice: 8.49, kw: 150, match: ['pirim şarj', 'pirim sarj'] },
+  { id: 'petroo', name: 'Petroo', price: 9.8, acPrice: 7.8, kw: 120, match: ['petroo'] },
+  { id: 'otopriz', name: 'Otopriz', price: 9.73, acPrice: 7.92, kw: 120, match: ['otopriz'] },
+  { id: 'elaris', name: 'Elaris', price: 10, acPrice: 9.49, kw: 120, match: ['elaris'] },
+  { id: 'polestar', name: 'Polestar', price: 10.49, acPrice: 9.29, kw: 120, match: ['polestar'] },
+  { id: 'other', name: 'Diğer', price: 12.78, acPrice: 9.78, kw: 60, match: [] }, // Diğer: kaynak sayfanın DC hızlı ve AC ortalaması (141 ağ)
 ];
-/** Önceki varsayılan fiyatlar (yer tutucu): kayıtlı fiyat bunlardan biriyse kullanıcı değiştirmemiştir, yeni varsayılana geçer. */
-export const OLD_DEFAULT_PRICES = { trugo: 9.5, zes: 10, esarj: 9.8, astor: 9.2, voltrun: 9.9, sharz: 10.5, other: 11 };
+/** Önceki varsayılan fiyatlar: kayıtlı fiyat bunlardan biriyse kullanıcı değiştirmemiştir, yeni varsayılana geçer (her marka için eski değerler listesi). */
+export const OLD_DEFAULT_PRICES = { trugo: [9.5], zes: [10], esarj: [9.8, 13.5], astor: [9.2], voltrun: [9.9], sharz: [10.5, 12.99], other: [11, 12.42] };
 
 export const DEFAULT_SIM = {
   enabled: false,

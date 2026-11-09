@@ -34,12 +34,14 @@ const changed = () => listeners.forEach((fn) => { try { fn(); } catch { /* aray�
 function build(saved) {
   const base = structuredClone(DEFAULT_OPERATORS);
   const other = base.pop();
-  const all = [...base, ...found.map((f) => foundOp(f.name, other)), other];
+  // Sonradan sabit listeye giren marka, keşfedilenler arasında kalmış olabilir: sabit liste önce eşleşir, tekrar satır olmasın
+  const dup = (name) => base.some((b) => b.match.some((m) => name.toLowerCase().includes(m)));
+  const all = [...base, ...found.filter((f) => !dup(f.name)).map((f) => foundOp(f.name, other)), other];
   if (!Array.isArray(saved)) return all;
   return all.map((d) => {
     const s = saved.find((x) => x.id === d.id);
     if (!s) return d;
-    const untouched = !d.found && s.price === OLD_DEFAULT_PRICES[d.id]; // eski yer tutucu fiyat: kullanıcı değiştirmediyse yeni liste tarifesine geç
+    const untouched = !d.found && (OLD_DEFAULT_PRICES[d.id] || []).includes(s.price); // eski varsayılan fiyat: kullanıcı değiştirmediyse yeni liste tarifesine geç
     return { ...d, price: untouched ? d.price : s.price, kw: s.kw };
   });
 }
