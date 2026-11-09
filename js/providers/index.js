@@ -2,10 +2,11 @@
 //   rota Valhalla, yer arama/adres adı Photon, şarj istasyonları Overpass (+ isteğe bağlı OpenChargeMap), hava Open-Meteo,
 //   rakım Valhalla (yedek Open-Meteo), yol hız limiti OSM maxspeed (Valhalla). Harita ui/mapView.js'te (MapLibre + OpenFreeMap).
 // Premium hesapta (sunucuda TomTom anahtarı varsa) ve harita TomTom iken rota TomTom'dan (canlı trafik, hız limiti) gelir; hata olursa aşağıdaki sıra izlenir.
-// Kullanıcı Mapbox anahtarı girerse: trafikli rota, trafik uyarısı ve istasyon araması Mapbox'tan gelir (hata olursa ücretsiz kaynağa dönülür).
+// Kullanıcı Mapbox anahtarı girerse: trafikli rota, trafik uyarısı (TomTom varsa ondan) ve istasyon araması Mapbox'tan gelir (hata olursa ücretsiz kaynağa dönülür).
 // Mapbox yokken canlı trafik, kaza/kamera verisi ve istasyon doluluğu YOKTUR: süreler serbest akış, yuvalar "bilinmiyor".
 import { fetchRoute as osmRoute } from '../osm/route.js';
-import { fetchRoute as mapboxRoute, fetchTrafficAhead as mapboxTraffic } from '../mapbox/route.js';
+import { fetchRoute as mapboxRoute } from '../mapbox/route.js';
+import { aheadFromRoute } from '../nav/aheadTraffic.js';
 import { mapboxKey } from '../mapbox/api.js';
 import { fetchRoute as tomtomRoute } from '../tomtom/route.js';
 import { proxyHas, premiumAccess } from '../net/proxy.js';
@@ -40,5 +41,15 @@ export async function fetchRoute(...a) {
   }
 }
 
-/** Konumdan varışa canlı trafik (yalnızca Mapbox anahtarıyla); yoksa null. */
-export const fetchTrafficAhead = (from, to) => (mapboxKey() ? mapboxTraffic(from, to) : Promise.resolve(null));
+/**
+ * Konumdan varışa canlı trafik: { jam, delayMin, remainH, rt } ya da kaynak yoksa null. Kaynak: TomTom rotası (TomTom kullanılabilirken, hata olursa Mapbox'a düşer),
+ * yoksa Mapbox anahtarıyla Mapbox. rt: yeni trafikli rota (yolda hız profilini tazelemek için).
+ */
+export async function fetchTrafficAhead(from, to) {
+  let rt = null;
+  if (tomtomRouteOn()) {
+    try { rt = await tomtomRoute(from, to); } catch { rt = null; }
+  }
+  if (!rt && mapboxKey()) rt = await mapboxRoute(from, to);
+  return rt ? aheadFromRoute(rt) : null;
+}

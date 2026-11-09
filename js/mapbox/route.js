@@ -140,37 +140,3 @@ async function routeFromMapbox(start, end, via, prem = false) {
   if (prem) out.limitSpans = maxspeedSpans(line, r.legs || []); // Premium navigasyonda yol hız limiti (HERE bilmeyen yerde); ücretsizde alan yok (eski biçim)
   return out;
 }
-
-/** Bitişik yoğun/yavaş kesimlerin ilk önemli kümesi (km, konumdan itibaren): { from, to, jam }. */
-export function findJam(distances, congestion, maxAheadKm = 150) {
-  const spans = [];
-  let km = 0;
-  for (let i = 0; i < distances.length; i++) {
-    const from = km;
-    km += (distances[i] || 0) / 1000;
-    const c = congestion[i];
-    if (c !== 'moderate' && c !== 'heavy' && c !== 'severe') continue;
-    const jam = c === 'heavy' || c === 'severe';
-    const last = spans.at(-1);
-    if (last && from - last.to < 0.5) { last.to = km; last.jam ||= jam; } else spans.push({ from, to: km, jam });
-  }
-  // Önemli: sıkışık ≥ 0,5 km ya da yavaş ≥ 3 km
-  return spans.find((s) => s.from <= maxAheadKm && s.to - s.from >= (s.jam ? 0.5 : 3)) || null;
-}
-
-/** Konumdan varışa canlı trafik: { jam: {from,to,jam}|null, delayMin, remainH } veya rota yoksa null. */
-export async function fetchTrafficAhead(from, to) {
-  const json = await mbfetch(`/directions/v5/mapbox/driving-traffic/${lonlat(from)};${lonlat(to)}`, {
-    overview: 'false', annotations: 'distance,congestion', alternatives: 'false',
-  }, { timeoutMs: 30000 });
-  const r = json.routes?.[0];
-  if (!r) return null;
-  const dist = [];
-  const cong = [];
-  for (const l of r.legs || []) { dist.push(...(l.annotation?.distance || [])); cong.push(...(l.annotation?.congestion || [])); }
-  return {
-    jam: findJam(dist, cong),
-    delayMin: r.duration_typical > 0 ? Math.max(0, Math.round((r.duration - r.duration_typical) / 60)) : 0,
-    remainH: r.duration / 3600,
-  };
-}

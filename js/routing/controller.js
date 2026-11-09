@@ -7,6 +7,7 @@ import { planRoute, rankStations, shown } from './planner.js';
 import { resampleRoute, buildProfile } from '../physics/routeProfile.js';
 import { densityFromRatio, speedFactor } from '../physics/traffic.js';
 import { segmentSpeeds } from '../physics/routeSpeed.js';
+import { mergeSpeeds, mergeWx } from './aheadUpdate.js';
 import { kForSpeed, relFactor, overall } from '../physics/history.js';
 import { PHYSICS, PLANNER } from '../config.js';
 import { mapApi } from '../ui/mapView.js';
@@ -259,6 +260,31 @@ async function enrichRoute(pts, speeds, planId) {
   } catch (err) {
     console.warn('Yeniden rota verisi tamamlanamadı:', err.message);
   }
+}
+
+/**
+ * Yolda: önümüzdeki rota için güncel hava (wx: [{ km, ...hava }]) ve/veya trafikli rota (rt: bulunulan konumdan varışa) alındı.
+ * Ham veri güncellenir, profil yeniden kurulur (enerji ve süre buna göre değişir), plan ağsız yeniden hesaplanır. Plan o sırada kurulamazsa
+ * eski plan korunur. Dönüş: profil güncellendi mi. planId: istek sırasında rota değiştiyse yok sayılır.
+ */
+export function updateAhead({ km, wx = null, rt = null, planId = null }) {
+  const plan = getState('plan');
+  if (!raw || !plan.profile || plan.status === 'loading' || plan.status === 'error') return false;
+  if (planId != null && plan.planId !== planId) return false;
+  const next = { ...raw };
+  let changed = false;
+  if (wx?.length) { next.wx = mergeWx(raw.wx, km, wx); changed = true; }
+  if (rt) {
+    const m = mergeSpeeds({ pts: raw.pts, speeds: raw.speeds, km, rt });
+    if (m) { next.speeds = m.speeds; changed = true; }
+  }
+  if (!changed) return false;
+  raw = next;
+  patch('plan', { profile: buildFromRaw() });
+  const pl = getState('plan');
+  const out = computePlan({ fromKm: pl.fromKm ?? 0, soc: pl.fromSoc ?? startSoc });
+  if (out && (out.result.feasible || pl.status !== 'ready')) applyPlan(out); // yeni veriyle plan kurulamıyorsa eski plan kalır
+  return true;
 }
 
 /** Mevcut pil elle değişti (Rota sayfası sürgüsü): başlangıç pilini güncelle ve açık planı ağsız yeniden hesapla. */

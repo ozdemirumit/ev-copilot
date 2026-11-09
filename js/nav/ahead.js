@@ -1,15 +1,20 @@
 // Yol önü uyarıları (seçili veri kaynağından): ileride yağmur, ileride yoğun/yavaş trafik (kaynak sunuyorsa) ve kullanıcının
-// belirlediği hız eşiği. Navigasyon açıkken periyodik yenilenir. Kaza, polis ve hız kamerası verisi yoktur; canlı trafik de yoktur (yalnızca yağış uyarısı çalışır).
+// belirlediği hız eşiği. Navigasyon açıkken periyodik yenilenir. Kaza ve polis verisi yoktur. Trafik uyarısı için canlı trafikli rota gerekir
+// (Premium'da TomTom, ya da Mapbox anahtarı); yoksa yalnızca yağış uyarısı çalışır.
+// Aynı veriler yolda enerji planına da işlenir (routing/controller.js updateAhead): trafik 10 dk'da bir, hava 20 dk'da bir.
 import { getState, patch, subscribe, effective } from '../state.js';
 import { save } from '../utils/storage.js';
 import { fetchWeather, fetchTrafficAhead } from '../providers/index.js';
 import { speak } from '../advisor/voice.js';
 import { currentLimit } from './speedLimit.js';
+import { updateAhead } from '../routing/controller.js';
+import { wxQueryKms } from '../routing/aheadUpdate.js';
 
 const $ = (id) => document.getElementById(id);
 const CHECK_MS = 5000;
 const WEATHER_EVERY_MS = 10 * 60e3;
-const TRAFFIC_EVERY_MS = 10 * 60e3; // her çağrı Routes "trafik çizgisi" ücretli: seyrek tut
+const TRAFFIC_EVERY_MS = 10 * 60e3; // her çağrı ücretli bir rota isteği (TomTom/Mapbox): seyrek tut
+const PROFILE_WX_EVERY_MS = 20 * 60e3; // plandaki hava (sıcaklık, rüzgâr, yağış) bu aralıkla yenilenir; Open-Meteo saatlik tahmini 30 dk önbelleğe alınır
 const WX_AHEAD_KM = [10, 25, 50, 75, 100, 150, 200];
 const RAIN_MM = 0.3; // mm/sa üstü "yağmur"
 const SPEED_TOLERANCE = 3; // km/h
@@ -20,6 +25,8 @@ let wxAt = 0;
 let trAt = 0;
 let busyWx = false;
 let busyTr = false;
+let pwAt = 0;
+let busyPw = false;
 let overSince = 0;
 
 const setAhead = (part) => patch('nav', { ahead: { ...getState('nav').ahead, ...part } });
@@ -61,12 +68,35 @@ async function refreshRain(km) {
   }
 }
 
-async function refreshTraffic() {
+/** Planın hava verisini bulunulan konumdan sonrası için yenile (varış saatine göre); enerji ve süre buna göre yeniden hesaplanır. */
+async function refreshProfileWx(km) {
+  busyPw = true;
+  try {
+    const id = getState('plan').planId;
+    const prof = getState('plan').profile;
+    const kms = wxQueryKms(prof.totalKm, km);
+    const now = Date.now();
+    const res = await fetchWeather(kms.map((k) => {
+      const p = prof.pointAt(k);
+      return { lat: p.lat, lon: p.lon, t: now + prof.timeBetween(km, k) * 3600e3 };
+    }));
+    updateAhead({ km, wx: kms.map((k, i) => ({ km: k, ...res[i] })), planId: id });
+  } catch (err) {
+    console.warn('Plan hava verisi yenilenemedi:', err.message);
+  } finally {
+    pwAt = Date.now();
+    busyPw = false;
+  }
+}
+
+async function refreshTraffic(km) {
   busyTr = true;
   try {
     const e = effective();
+    const id = getState('plan').planId;
     const t = await fetchTrafficAhead(e, getState('route').end);
     if (!t) return setAhead({ traffic: null });
+    if (t.rt && (getState('engine').offRouteKm ?? 0) < 1) updateAhead({ km, rt: t.rt, planId: id }); // rotadayken: yeni trafik hızları enerji ve süreye işlenir
     const { jam, delayMin } = t;
     patch('nav', { liveRemain: { h: t.remainH, at: Date.now() } });
     if (!jam) return setAhead({ traffic: delayMin >= 10 ? `🚦 Rotada trafik kaynaklı ≈ ${delayMin} dk gecikme var` : null });
@@ -104,7 +134,7 @@ function check() {
     if (nav.ahead.speed != null) setAhead({ speed: null });
   }
 
-  if (plan.planId !== planId) { planId = plan.planId; wxAt = 0; trAt = 0; setAhead({ rain: null, traffic: null }); }
+  if (plan.planId !== planId) { planId = plan.planId; wxAt = 0; trAt = 0; pwAt = Date.now(); setAhead({ rain: null, traffic: null }); }
   if (!nav.active || !plan.profile || e.lat == null) {
     if (!nav.active && (nav.ahead.rain || nav.ahead.traffic)) setAhead({ rain: null, traffic: null });
     return;
@@ -112,7 +142,8 @@ function check() {
   const km = getState('engine').routeKm;
   if (km == null || plan.profile.totalKm - km < 3) return;
   if (!busyWx && Date.now() - wxAt > WEATHER_EVERY_MS) refreshRain(km);
-  if (!busyTr && Date.now() - trAt > TRAFFIC_EVERY_MS && getState('route').end) refreshTraffic();
+  if (!busyTr && Date.now() - trAt > TRAFFIC_EVERY_MS && getState('route').end) refreshTraffic(km);
+  if (!busyPw && Date.now() - pwAt > PROFILE_WX_EVERY_MS) refreshProfileWx(km);
 }
 
 export function initAhead() {
