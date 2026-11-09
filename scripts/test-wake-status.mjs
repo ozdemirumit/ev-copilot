@@ -140,19 +140,17 @@ ok('şerit üst çubuğun hemen altında', html.indexOf('</header>') < html.inde
 ok('rozet kimlikleri tek', ['bd-gps', 'bd-ocr', 'bd-abrp', 'bd-traffic', 'bd-weather'].every((id) => html.split(`id="${id}"`).length === 2));
 ok('ekran açık tut ve GPS düğmeleri kalktı', !html.includes('btn-wake') && !html.includes('btn-gps'));
 ok('şerit tek satır: kaydırmaz, kırılmaz', /\.statusrow \{ display: flex;/.test(css) && !/\.statusrow \{[^}]*flex-wrap: wrap/.test(css) && /\.statusrow \.badge \{ flex: 0 1 auto; min-width: 0;/.test(css));
-const dlg = html.slice(html.indexOf('<dialog id="tools-dialog"'), html.indexOf('</dialog>', html.indexOf('<dialog id="tools-dialog"')));
-ok('pencerede GPS durumu, yükleme, güncelleme, veri, sürüm, notlar, test duruyor', ['bd-gps', 'btn-install', 'btn-update', 'btn-data', 'btn-version', 'btn-notes', 'bd-sim'].every((id) => dlg.includes(`id="${id}"`)));
-const more = html.slice(html.indexOf('id="tab-more"'), html.indexOf('id="lang-card"'));
-ok('pencere Daha fazla menüsünden açılır', /class="menu-item"[^>]*id="btn-tools"[^>]*aria-controls="tools-dialog"/.test(more));
-const shell = readFileSync(new URL('../js/ui/shell.js', import.meta.url), 'utf8');
-ok('pencere sürüm numarasından da açılır', /\['btn-tools', 'st-version'\][^\n]*showModal/.test(shell));
+const head = html.slice(html.indexOf('<header class="topbar">'), html.indexOf('</header>'));
+ok('üst çubukta GPS, veri, güncelleme, yükleme, test durumu', ['bd-gps', 'btn-data', 'btn-update', 'btn-install', 'bd-sim'].every((id) => head.includes('id="' + id + '"')));
+ok('Durum ve kontroller penceresi ve menü girişi kalktı', !html.includes('tools-dialog') && !html.includes('btn-tools') && !html.includes('btn-version') && !html.includes('btn-notes'));
 const verJs = readFileSync(new URL('../js/ui/versionInfo.js', import.meta.url), 'utf8');
+ok('sürüm numarası sürüm notlarını açar', /\$\('st-version'\)\.addEventListener\('click', openNotes\)/.test(verJs));
 ok('sürüm numarası version.js kaynağından', /\$\('st-version'\)\.textContent = 'v' \+ APP_VERSION/.test(verJs));
 const gpsJs = readFileSync(new URL('../js/ui/gpsControl.js', import.meta.url), 'utf8');
 ok('GPS izin varsa kendiliğinden açılır, eski kapalı kaydı engellemez', /startGps\(\)/.test(gpsJs) && !/gpsOn/.test(gpsJs));
 
 // Çeviri: yeni metinler her dilde
-const keys = ['Trafik: —', 'Trafik: veri yok', 'Trafik: akıcı', 'Trafik: +{0} dk', 'Yükleme, güncelleme, veri kullanımı, sürüm', 'Ekran açık tutulamıyor: bu tarayıcı desteklemiyor', 'Ekran açık tutulamadı: cihazın ekran zaman aşımını uzatabilirsin'];
+const keys = ['Trafik: —', 'Trafik: veri yok', 'Trafik: akıcı', 'Trafik: +{0} dk', 'Ekran açık tutulamıyor: bu tarayıcı desteklemiyor', 'Ekran açık tutulamadı: cihazın ekran zaman aşımını uzatabilirsin'];
 for (const l of ['en', 'de', 'fr', 'it', 'es', 'pt', 'nl', 'pl', 'ro', 'el', 'bg']) {
   const dict = (await import(`../js/i18n/lang/${l}.extra.js`)).default;
   const miss = keys.filter((k) => !dict[k]);

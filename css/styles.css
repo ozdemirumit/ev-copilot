@@ -212,8 +212,6 @@ body.sim-on .brand { color: var(--info); }
 /* ---------- Sürüm ve veri kullanımı ---------- */
 .brand { cursor: pointer; user-select: none; -webkit-user-select: none; }
 button.ver { background: none; border: 0; padding: 0 2px; color: var(--accent); font: inherit; font-size: 10px; font-weight: 600; cursor: pointer; }
-button#btn-version { text-decoration: underline dotted; }
-button#btn-notes { color: var(--muted); font-size: 12px; }
 button.badge.data { cursor: pointer; font: inherit; font-size: 11px; font-variant-numeric: tabular-nums; }
 button.badge.data::before { content: none; }
 .dlg { max-height: 86dvh; overflow-y: auto; }
@@ -482,8 +480,6 @@ body.sheet-open .mapui { display: none; }
 .brand-text small { overflow: hidden; text-overflow: ellipsis; }
 .hud-item.soc { display: none; } /* pil hapta görünür; öğe panelin yazdığı değer için durur */
 body.navmode .hud { display: none; } /* navigasyonda hız ve limit alt şeritte */
-#btn-tools { position: relative; }
-body:has(#btn-update:not(.hidden)) #btn-tools::after { content: ""; position: absolute; top: 7px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
 
 
 /* Üst çubuğun altındaki tek satır durum şeridi: dar ekranda uzun durum metni kısalır, satır kırılmaz */
@@ -727,6 +723,13 @@ body.navmode .beta-nav { display: inline-block; }
 body.navmode button#st-version { margin-left: 2px; }
 body.navmode .topbar { display: none; } /* navigasyonda hız alt şeritte: harita alanı büyür; durum satırı ve BETA görünür kalır */
 body.navmode .statusrow { padding-top: calc(2px + var(--safe-t)); }
+/* Üst çubukta sağda durum kümesi: GPS, veri kullanımı; Test Modu, güncelleme ve yükleme düğmeleri yalnızca gerektiğinde görünür. Sığmazsa alt satıra iner. */
+.topinfo { display: flex; flex-wrap: wrap; justify-content: flex-end; align-content: center; gap: 1px 8px; margin-left: auto; min-width: 0; max-width: 48%; }
+.topinfo .badge { padding: 0; border: 0; border-radius: 0; background: none; font-size: 11px; line-height: 15px; font-variant-numeric: tabular-nums; }
+.topinfo .badge.test { font-weight: 700; }
+.topinfo button.badge { font: inherit; font-size: 11px; cursor: pointer; }
+.topinfo button.badge.install { font-weight: 700; }
+.topinfo + .hud { margin-left: 8px; }
 
 /* Yüzen paneller ve düğmeler */
 .socbar, .fabs button, .searchbar, .rota-btn, .navhud, .station-card, .toppanel, #banners > .toppanel { background: #fff; border-color: var(--line); box-shadow: var(--float); }

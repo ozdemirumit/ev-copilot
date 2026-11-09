@@ -23,7 +23,7 @@ export function initDataUsage() {
   function paint() {
     const { total, session } = getUsage();
     const t = sum(total);
-    badge.textContent = `📶 ↑${fmtBytes(t.up)} ↓${fmtBytes(t.down)}`;
+    badge.textContent = `📶 ${fmtBytes(t.up + t.down)}`; // üst çubukta dar yer: toplam; ↑/↓ ayrımı pencerede
     if (!dlg.open) return;
 
     body.replaceChildren();

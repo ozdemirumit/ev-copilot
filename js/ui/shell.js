@@ -143,14 +143,6 @@ export function initShell() {
   stopDlg.addEventListener('click', (e) => { if (e.target === stopDlg) stopDlg.close(); });
   subscribe('nav', () => { if (!getState('nav').active && stopDlg.open) stopDlg.close(); }); // araya varış girerse pencere kalmasın
 
-  // Durum ve kontroller penceresi (yükleme, güncelleme, veri kullanımı, sürüm): Daha fazla menüsünden ve durum satırındaki sürüm numarasından açılır
-  const tools = $('tools-dialog');
-  const closeTools = () => tools.close();
-  for (const id of ['btn-tools', 'st-version']) $(id).addEventListener('click', () => tools.showModal());
-  $('tools-x').addEventListener('click', closeTools);
-  $('tools-close').addEventListener('click', closeTools);
-  tools.addEventListener('click', (e) => { if (e.target === tools) closeTools(); });
-
   // Haritadan seç: sayfa kapanır, üstte yönerge çubuğu çıkar (mapView çağırır)
   const bar = $('pickbar');
   const text = $('pick-text');

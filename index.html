@@ -22,6 +22,13 @@
 <div class="hudtop" id="hudtop">
 <header class="topbar">
   <div class="brand" id="brand" role="button" tabindex="0" title="Dokun: uygulamayı yenile"><svg class="ic brand-bolt" aria-hidden="true"><use href="#i-bolt"/></svg><span class="brand-text">EV Route Finder<small><span id="veh-name"></span></small></span><span class="beta-tag" data-i18n-skip>BETA</span></div>
+  <div class="topinfo" id="topinfo" aria-label="Durum">
+    <span class="badge test hidden" id="bd-sim">TEST MODU</span>
+    <button class="badge install hidden" id="btn-install" type="button">📲 Uygulamayı yükle</button>
+    <button class="badge install hidden" id="btn-update" type="button">⬆ Güncelle</button>
+    <span class="badge" id="bd-gps">GPS: kapalı</span>
+    <button class="badge data" id="btn-data" type="button" title="Veri kullanımı">📶 —</button>
+  </div>
   <div class="hud" aria-live="off">
     <div class="hud-item soc"><b id="hud-soc">--</b><span>%</span></div>
     <div class="hud-item" id="hud-speed-box"><b id="hud-speed">--</b><span>km/h</span></div>
@@ -34,7 +41,7 @@
   <span class="badge" id="bd-traffic">Trafik: —</span>
   <span class="badge" id="bd-weather" title="Hava durumu bilinmiyor: konum ve Open-Meteo yanıtı gerekir"><svg class="ic" aria-hidden="true"><use id="bd-weather-ic" href="#i-thermo"/></svg><span id="bd-weather-t">Hava: —</span></span>
   <span class="beta-tag beta-nav" data-i18n-skip>BETA</span>
-  <button class="ver" id="st-version" type="button" aria-haspopup="dialog" aria-controls="tools-dialog" title="Durum ve kontroller">v…</button>
+  <button class="ver" id="st-version" type="button" aria-haspopup="dialog" aria-controls="about-dialog" title="Sürüm notları">v…</button>
 </div>
 <div id="banners">
 <div class="advisor hidden" id="advisor-banner" role="status" aria-live="polite"></div>
@@ -691,9 +698,6 @@
       <button class="menu-item" type="button" data-tab="abrp" data-premium-only><span><svg class="ic" aria-hidden="true"><use href="#i-signal"/></svg></span><b>ABRP</b><small>Canlı telemetri köprüsü</small></button>
       <button class="menu-item" type="button" data-tab="test" data-premium-only><span><svg class="ic" aria-hidden="true"><use href="#i-flask"/></svg></span><b>Test</b><small>Test modu, simülasyon</small></button>
     </div>
-    <div class="menu">
-      <button class="menu-item" type="button" id="btn-tools" aria-haspopup="dialog" aria-controls="tools-dialog"><span><svg class="ic" aria-hidden="true"><use href="#i-dots"/></svg></span><b>Durum ve kontroller</b><small>Yükleme, güncelleme, veri kullanımı, sürüm</small></button>
-    </div>
     <div class="card stack" id="lang-card">
       <label class="field" for="lang-select">🌐 Dil / Language
         <select id="lang-select" aria-label="Language"></select>
@@ -872,22 +876,6 @@
     <button class="btn" id="stop-nav-no" type="button" autofocus>Devam et</button>
     <button class="btn stop-yes" id="stop-nav-yes" type="button">Durdur</button>
   </div>
-</dialog>
-
-<dialog id="tools-dialog" class="sheet-dlg" aria-labelledby="tools-title">
-  <div class="dlg-head"><h2 id="tools-title">Durum ve kontroller</h2><button class="sheet-x" id="tools-x" type="button" aria-label="Kapat"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button></div>
-  <div class="badges" aria-label="Durum">
-    <span class="badge" id="bd-gps">GPS: kapalı</span>
-    <span class="badge test hidden" id="bd-sim">TEST MODU</span>
-    <button class="badge install hidden" id="btn-install" type="button">📲 Uygulamayı yükle</button>
-    <button class="badge install hidden" id="btn-update" type="button">⬆ Güncelle</button>
-    <button class="badge data" id="btn-data" type="button" title="Veri kullanımı">📶 —</button>
-  </div>
-  <div class="row between tool-row">
-    <span>Sürüm <button class="ver" id="btn-version" type="button" title="Dokun: uygulamayı yenile">v…</button></span>
-    <button class="ver" id="btn-notes" type="button" title="Sürüm notları" aria-label="Sürüm notları">ⓘ</button>
-  </div>
-  <button class="btn" id="tools-close" type="button">Kapat</button>
 </dialog>
 
 <dialog id="qr-dialog" class="qr-dialog" aria-labelledby="qr-title">

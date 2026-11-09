@@ -61,7 +61,6 @@ async function updateNow() {
 export function initVersionInfo() {
   const $ = (id) => document.getElementById(id);
   const local = globalThis.APP_CHANGELOG || [];
-  $('btn-version').textContent = 'v' + APP_VERSION;
   $('st-version').textContent = 'v' + APP_VERSION;
   $('about-version').textContent = 'v' + APP_VERSION;
   $('ver-line').textContent = tr('Sürüm v') + APP_VERSION;
@@ -118,10 +117,10 @@ export function initVersionInfo() {
   $('about-update').addEventListener('click', doUpdate);
   $('ver-check').addEventListener('click', check);
 
-  // ⓘ: sürüm notları (yenilemeyi tetiklemez); açılırken yayındaki sürümü de denetler
+  // Üst şeritteki sürüm numarası: sürüm notları (yenilemeyi tetiklemez); açılırken yayındaki sürümü de denetler
   const dlg = $('about-dialog');
   const openNotes = (e) => { e?.stopPropagation(); dlg.showModal(); check(); };
-  $('btn-notes').addEventListener('click', openNotes);
+  $('st-version').addEventListener('click', openNotes);
   $('ver-notes').addEventListener('click', openNotes);
   $('about-close').addEventListener('click', () => dlg.close());
   $('about-x').addEventListener('click', () => dlg.close());
@@ -131,7 +130,7 @@ export function initVersionInfo() {
   setInterval(() => { if (!document.hidden) check(); }, CHECK_EVERY_MS);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
 
-  // Başlığa veya sürüm numarasına dokun → yenile
+  // Başlığa dokun → yenile
   const brand = $('brand');
   let armed = null;
   const onTap = () => {
@@ -146,6 +145,5 @@ export function initVersionInfo() {
     armed = setTimeout(() => { armed = null; }, CONFIRM_MS);
   };
   brand.addEventListener('click', onTap);
-  $('btn-version').addEventListener('click', onTap);
   brand.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTap(); } });
 }

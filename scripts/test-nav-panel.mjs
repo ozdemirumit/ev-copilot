@@ -76,7 +76,7 @@ const nav = html.slice(html.indexOf('class="bottomnav"'), html.indexOf('</nav>')
 ok('alt gezinmede 3 sekme: Harita, İstasyonlar, Daha fazla', (nav.match(/data-tab="/g) || []).length === 3 && ['map', 'stations', 'more'].every((t) => nav.includes(`data-tab="${t}"`)));
 ok('Favoriler Daha fazla menüsünden erişilir, İstasyonlar ekranında bağlantı yok', /class="menu-item"[^>]*data-tab="favs"/.test(html) && !/fav-link/.test(html) && html.includes('id="tab-favs"'));
 // Var olan dinleyiciler ve derin bağlantılar: kimlikler silinmez
-const IDS = ['bd-gps', 'bd-ocr', 'bd-abrp', 'bd-sim', 'btn-install', 'btn-update', 'btn-data', 'btn-version', 'btn-notes', 'veh-name', 'hud-soc', 'hud-speed', 'hud-limit',
+const IDS = ['bd-gps', 'bd-ocr', 'bd-abrp', 'bd-sim', 'btn-install', 'btn-update', 'btn-data', 'veh-name', 'hud-soc', 'hud-speed', 'hud-limit',
   'nav-banner', 'nav-arrow', 'nav-dist', 'nav-text', 'nav-road', 'nav-then', 'near-alert', 'near-alert-title', 'near-alert-toggle', 'near-alert-close', 'near-alert-body', 'road-alert', 'advisor-banner',
   'socbar', 'socbar-val', 'socbar-range', 'socbar-rangebox', 'socbar-src', 'socbar-dot', 'socbar-track', 'socbar-fill', 'socbar-thumb',
   'fab-sat', 'fab-3d', 'fab-me', 'fab-route', 'fab-nav', 'fab-plan', 'fab-search', 'pickbar', 'pick-text', 'pick-cancel',
