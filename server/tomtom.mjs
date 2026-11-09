@@ -4,7 +4,8 @@
 // Not: yanıtta "güncellenme zamanı" alanı YOK; bu yüzden zaman okuma anı sayılır (NDW gibi). Anahtar yalnızca isteğe eklenir, hata iletileri anahtarı içermez.
 const base = () => process.env.TOMTOM_BASE || 'https://api.tomtom.com'; // ortam değişkenleri çağrı anında okunur
 const EV_CATEGORY = '7309'; // TomTom POI kategorisi: elektrikli araç şarj istasyonu
-const MATCH_M = 150;
+const MATCH_M = 150; // marka bilinmiyorsa en çok bu uzaklık
+const BRAND_MATCH_M = 400; // marka da tutuyorsa en çok bu uzaklık
 const DC_MIN_KW = 40;
 const ID_TTL_MS = 24 * 3600e3;
 export const dailyCap = () => Number(process.env.TOMTOM_DAILY_CAP || 2000); // ücretsiz planın günlük sınırının altında kal (2.500 istek/gün)
@@ -30,15 +31,36 @@ async function getJson(path, params, key, fetchImpl) {
   return res.json();
 }
 
-/** Arama sonuçlarından istasyona en yakın, doluluk kimliği olanı seç. Dönüş: { id, dc } ya da null. */
+// ---------- Marka denetimi ----------
+// Aynı otoparkta farklı operatörlerin istasyonları yan yana olabilir; yalnızca uzaklığa bakmak başka operatörün doluluğunu gösterir (ölçüldü:
+// Otopriz istasyonuna ZES'in verisi eşleşti). Marka biliniyorsa yalnızca AYNI marka kabul edilir (400 m'ye kadar); marka iki taraftan birinde
+// bilinmiyorsa eski kural (150 m) geçerlidir.
+const GENERIC = new Set(['sarj', 'charge', 'charging', 'istasyonu', 'istasyon', 'station', 'enerji', 'energy', 'mobilite', 'elektrikli', 'arac', 'otopark', 'park', 'avm', 'hizli', 'dc', 'ac', 've', 'diger', 'other', 'bilinmeyen', 'unknown', 'kw', 'ev', 'evse']);
+const fold = (s) => String(s || '').toLocaleLowerCase('tr').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ı/g, 'i').replace(/[^a-z0-9]+/g, ' ').trim();
+/** Markayı belirten sözcükler (genel sözcükler ve ≤2 harfliler atılır). */
+export const brandTokens = (...names) => [...new Set(names.flatMap((n) => fold(n).split(' ')).filter((t) => t.length >= 3 && !GENERIC.has(t)))];
+/** İki taraf da marka biliyorsa: ortak sözcük var mı (eşit ya da ≥4 harfli biri ötekini içerir)? Biri bilinmiyorsa null (karar yok). */
+export function sameBrand(appTokens, ttTokens) {
+  if (!appTokens.length || !ttTokens.length) return null;
+  return appTokens.some((a) => ttTokens.some((b) => a === b || (Math.min(a.length, b.length) >= 4 && (a.includes(b) || b.includes(a)))));
+}
+
+/**
+ * Arama sonuçlarından istasyona uyan, doluluk kimliği olanı seç (en yakın). st.op (işletmeci) ve st.n (ad) varsa marka denetimi uygulanır:
+ * aynı marka ≤ 400 m, farklı marka reddedilir, marka bilinmiyorsa ≤ 150 m. Dönüş: { id } ya da null.
+ */
 export function pickStation(results, st) {
+  const app = brandTokens(st.op).length ? brandTokens(st.op) : brandTokens(st.n);
   let best = null;
   let bd = Infinity;
   for (const r of Array.isArray(results) ? results : []) {
     const id = r?.dataSources?.chargingAvailability?.id;
     if (!id || !r.position || !Number.isFinite(r.position.lat) || !Number.isFinite(r.position.lon)) continue;
     const d = distM(st, r.position);
-    if (d <= MATCH_M && d < bd) { bd = d; best = r; }
+    const brands = (r.poi?.brands || []).map((b) => b?.name);
+    const same = sameBrand(app, brandTokens(...brands)); // TomTom tarafında marka yoksa bilinmiyor sayılır (ad adres gibi olabilir)
+    const limit = same === true ? BRAND_MATCH_M : same === false ? -1 : MATCH_M;
+    if (d <= limit && d < bd) { bd = d; best = r; }
   }
   return best ? { id: String(best.dataSources.chargingAvailability.id) } : null;
 }
@@ -71,11 +93,11 @@ export function tomtomSlots(av, dcOnly) {
 
 /** Bir istasyonun canlı doluluğu. Dönüş: { src: 'tomtom', total, available, out, at, price: null } ya da null. */
 export async function tomtomLookup(st, key, { fetchImpl = fetch, now = Date.now() } = {}) {
-  const ck = `${st.lat.toFixed(4)},${st.lon.toFixed(4)}`;
+  const ck = `${st.lat.toFixed(4)},${st.lon.toFixed(4)}:${brandTokens(st.op, st.n).join('+')}`;
   let hit = idCache.get(ck);
   if (!hit || hit.exp < now) {
     const j = await getJson('/search/2/categorySearch/electric%20vehicle%20station.json',
-      { lat: st.lat.toFixed(5), lon: st.lon.toFixed(5), radius: String(MATCH_M), limit: '5', categorySet: EV_CATEGORY, relatedPois: 'off' }, key, fetchImpl);
+      { lat: st.lat.toFixed(5), lon: st.lon.toFixed(5), radius: String(BRAND_MATCH_M), limit: '10', categorySet: EV_CATEGORY, relatedPois: 'off' }, key, fetchImpl);
     hit = { id: pickStation(j?.results, st)?.id || null, exp: now + ID_TTL_MS };
     idCache.set(ck, hit);
     if (idCache.size > 3000) idCache.delete(idCache.keys().next().value);

@@ -187,7 +187,7 @@ const MISS_MS = 5 * 60e3; // sonuçsuzluk daha uzun saklanır (boşuna Google ü
 export async function lookupAll(stations, opts = {}) {
   const out = {};
   for (const st of stations) {
-    const key = `${st.lat.toFixed(4)},${st.lon.toFixed(4)}:${st.dc ? 1 : 0}`;
+    const key = `${st.lat.toFixed(4)},${st.lon.toFixed(4)}:${st.dc ? 1 : 0}:${st.op || ''}`;
     const hit = cache.get(key);
     if (hit && hit.exp > Date.now()) { out[st.id] = hit.v; continue; }
     let v = null;

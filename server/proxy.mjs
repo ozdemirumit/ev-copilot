@@ -447,7 +447,7 @@ async function occupancyRoute(req, res, id) {
   if (id.kind === 'user' && !accounts.isPremium(id.user)) return json(res, 402, { error: 'premium_required' }); // canlı doluluk ve fiyat yalnızca Premium üyelere
   const b = await readJson(req, 4000);
   if (!b || !Array.isArray(b.stations) || b.stations.length < 1 || b.stations.length > 6) return json(res, 400, { error: 'geçersiz gövde' });
-  const stations = b.stations.filter((s) => s && typeof s === 'object').map((s) => ({ id: String(s.id).slice(0, 40), lat: Number(s.lat), lon: Number(s.lon), dc: !!s.dc }))
+  const stations = b.stations.filter((s) => s && typeof s === 'object').map((s) => ({ id: String(s.id).slice(0, 40), lat: Number(s.lat), lon: Number(s.lon), dc: !!s.dc, n: String(s.n || '').slice(0, 60), op: String(s.op || '').slice(0, 30) }))
     .filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lon) && Math.abs(s.lat) <= 90 && Math.abs(s.lon) <= 180);
   if (!stations.length) return json(res, 400, { error: 'geçersiz istasyon' });
   if (overQuota(id, 'occupancy')) return json(res, 429, { error: 'günlük doluluk hakkı doldu' }, { 'Retry-After': '3600' });

@@ -1,6 +1,6 @@
 // TomTom canlı doluluk adaptörü (sunucu): sahte yanıtlarla, gerçek anahtar/ağ olmadan. Kullanım: node scripts/test-tomtom.mjs
 import { readFileSync } from 'node:fs';
-import { tomtomLookup, tomtomSlots, pickStation, tomtomAllowed, tomtomUsage, tomtomRoute, validPts, _clearIds } from '../server/tomtom.mjs';
+import { tomtomLookup, tomtomSlots, pickStation, brandTokens, sameBrand, tomtomAllowed, tomtomUsage, tomtomRoute, validPts, _clearIds } from '../server/tomtom.mjs';
 import { lookupAll, _clearCache } from '../server/occupancy.mjs';
 
 let pass = 0, fail = 0;
@@ -25,6 +25,21 @@ const mk = (routes) => {
 // --- saf işlevler
 ok('pickStation: ≤150 m ve kimlikli en yakın', pickStation([{ position: { lat: 41.0, lon: 28.98 }, dataSources: { chargingAvailability: { id: 'a' } } }], st)?.id === 'a');
 ok('pickStation: uzak (>150 m) ya da kimliksiz elenir', pickStation([{ position: { lat: 41.01, lon: 28.98 }, dataSources: { chargingAvailability: { id: 'a' } } }, { position: { lat: 41.0, lon: 28.98 }, dataSources: {} }], st) === null);
+// --- marka denetimli eşleşme
+{
+  const at = (dLat, brand, id) => ({ position: { lat: 41.0 + dLat, lon: 28.98 }, poi: { name: 'x', brands: brand ? [{ name: brand }] : [] }, dataSources: { chargingAvailability: { id } } });
+  const near = 0.0005; // ~55 m
+  const mid = 0.003; // ~330 m
+  ok('markaTokenları: büyük/küçük harf, Türkçe harf ve genel sözcükler', eq(brandTokens('Eşarj'), ['esarj']) && eq(brandTokens('ZES', 'Zes Şarj'), ['zes']) && eq(brandTokens('Trugo Şarj İstasyonu'), ['trugo']) && eq(brandTokens('Diğer'), []));
+  ok('sameBrand: aynı marka true, farklı false, bilinmeyen null', sameBrand(['zes'], ['zes']) === true && sameBrand(['otopriz'], ['zes']) === false && sameBrand([], ['zes']) === null && sameBrand(['zes'], []) === null);
+  ok('aynı marka 330 m uzakta kabul edilir', pickStation([at(mid, 'ZES', 'z1')], { ...st, op: 'Zes' })?.id === 'z1');
+  ok('farklı marka çok yakında (55 m) bile reddedilir (başka operatörün doluluğu gösterilmez)', pickStation([at(near, 'ZES', 'z1')], { ...st, op: 'Otopriz' }) === null);
+  ok('aynı otoparkta iki marka: doğru markanın kaydı seçilir', pickStation([at(near, 'ZES', 'z1'), at(mid, 'Trugo', 't1')], { ...st, op: 'Trugo' })?.id === 't1');
+  ok('marka bilinmiyorsa (op yok) eski kural: 150 m kabul, 330 m red', pickStation([at(near, 'ZES', 'z1')], st)?.id === 'z1' && pickStation([at(mid, 'ZES', 'z1')], st) === null);
+  ok('TomTom kaydında marka yoksa 150 m kuralı', pickStation([at(near, null, 'n1')], { ...st, op: 'Zes' })?.id === 'n1' && pickStation([at(mid, null, 'n1')], { ...st, op: 'Zes' }) === null);
+  ok('işletmeci genel ("Diğer") ise istasyon adındaki marka kullanılır', pickStation([at(mid, 'Trugo', 't1')], { ...st, op: 'Diğer', n: 'Trugo Bolu' })?.id === 't1');
+  ok('400 m dışı aynı marka da reddedilir', pickStation([at(0.005, 'ZES', 'z1')], { ...st, op: 'Zes' }) === null);
+}
 ok('tomtomSlots: sayılar (boş/dolu/arızalı)', eq(tomtomSlots(avail({ available: 2, occupied: 1, outOfService: 1, unknown: 0, reserved: 0 }), true), { total: 4, available: 2, out: 1 }));
 ok('tomtomSlots: hepsi dolu → 0/4 (dolu)', eq(tomtomSlots(avail({ available: 0, occupied: 4, outOfService: 0, unknown: 0, reserved: 0 }), true), { total: 4, available: 0, out: 0 }));
 ok('tomtomSlots: boş yok ama bilinmeyen var → belirsiz (null), "dolu" denmez', tomtomSlots(avail({ available: 0, occupied: 2, outOfService: 0, unknown: 2, reserved: 0 }), true) === null);

@@ -6,7 +6,7 @@ import { proxyFetch, proxyHas } from '../net/proxy.js';
 export async function fetchAvailability(stations, max = 2, soc = null) {
   const out = new Map();
   if (!proxyHas('occupancy')) return out;
-  const list = stations.slice(0, max).map((s) => ({ id: s.id, lat: s.lat, lon: s.lon, dc: !s.slow }));
+  const list = stations.slice(0, max).map((s) => ({ id: s.id, lat: s.lat, lon: s.lon, dc: !s.slow, n: String(s.name || '').slice(0, 60), op: String(s.opName || '').slice(0, 30) })); // ad/işletmeci: sunucu markayı denetleyerek eşleştirir
   if (!list.length) return out;
   try {
     const res = await proxyFetch('/v1/occupancy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stations: list, soc }), signal: AbortSignal.timeout(20000) });
