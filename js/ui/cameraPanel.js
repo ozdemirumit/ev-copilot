@@ -33,7 +33,8 @@ export function initCameraPanel() {
   async function setupZoom() {
     const r = zoomRange();
     zoom.min = r.min; zoom.max = r.max; zoom.step = r.step;
-    zoom.value = Math.min(r.max, Math.max(r.min, load('camZoom', 1)));
+    const saved = load('camZoom', null); // kayıt yoksa: donanım zoom'u 1'in altına iniyorsa (geniş açı) en genişi, yoksa 1×
+    zoom.value = Math.min(r.max, Math.max(r.min, saved ?? (r.hardware ? r.min : 1)));
     $('cam-zoom-kind').textContent = r.hardware ? 'kamera zoom\'u' : 'dijital (netlik azalır)';
     await applyZoom();
   }

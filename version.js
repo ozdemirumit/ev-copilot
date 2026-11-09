@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.88.2';
+self.APP_VERSION = '0.88.3';
 self.APP_CHANGELOG = [
+  {
+    v: '0.88.3', date: '2026-11-09',
+    notes: [
+      'Kamera varsa en genis acili arka kamerayi kullanir (Ultra Wide etiketi ya da donanim zoom 0.5x); kayitli zoom yoksa en genis acidan baslar',
+    ],
+  },
   {
     v: '0.88.2', date: '2026-11-09',
     notes: [
