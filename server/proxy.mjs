@@ -18,7 +18,7 @@ import { createMailer } from './mailer.mjs';
 import { createAppFiles } from './appfiles.mjs';
 import { lookupAll } from './occupancy.mjs';
 import { hereBrowse, compact } from './here.mjs';
-import { tomtomAllowed, tomtomUsage } from './tomtom.mjs';
+import { tomtomAllowed, tomtomUsage, tomtomRoute, validPts } from './tomtom.mjs';
 import { createPriceBook } from './prices.mjs';
 import { createCommunity } from './community.mjs';
 import { createStationInfo, MAX_PHOTO_BYTES } from './stationinfo.mjs';
@@ -135,7 +135,7 @@ const once = (k, fn) => {
 };
 
 // ---------- kullanıcı başına günlük kota (Mapbox faturasını ve ortak Overpass'i korur) ----------
-const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 40), here: Number(env.HERE_DAILY_PER_USER || 800), price: 20, presence: 60, status: 30, sinfo: 600, srate: 60, sfac: 120, sphoto: 15, sreport: 10, map: Number(env.MAP_DAILY_PER_USER || 100), slimit: Number(env.SPEEDLIMIT_DAILY_PER_USER || 40) };
+const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 40), here: Number(env.HERE_DAILY_PER_USER || 800), price: 20, presence: 60, status: 30, sinfo: 600, srate: 60, sfac: 120, sphoto: 15, sreport: 10, map: Number(env.MAP_DAILY_PER_USER || 100), slimit: Number(env.SPEEDLIMIT_DAILY_PER_USER || 40), tomtom: Number(env.TOMTOM_ROUTE_DAILY_PER_USER || 150) };
 const MAP_TOTAL = Number(env.MAP_DAILY_TOTAL || 3000); // tüm kullanıcılar için günlük harita anahtarı verme tavanı (Mapbox/Google faturasını korur)
 let mapToday = { d: '', n: 0 };
 /** Harita anahtarı döndürmeden önce: toplam ve kullanıcı başı günlük hak. Yalnızca anahtar dönen çağrılar sayılır (osm sayılmaz). */
@@ -210,7 +210,7 @@ function adminSummary() {
     here: { month: hereUsage().month, used: hereUsage().n, cap: HERE_CAP },
     devices: devices.stats(),
     map: { default: maps.getDefault() },
-    configured: { mapbox: !!MAPBOX, mapboxMap: maps.available().mapbox, googleMap: maps.available().google, here: !!HERE, ocm: !!OCM, tomtom: !!TOMTOM, googlePlaces: !!GOOGLE_PLACES, googleLogin: !!accounts.googleOn, smtp: !!mailer, premiumRequired: String(env.PREMIUM_REQUIRED ?? '1') !== '0' },
+    configured: { mapbox: !!MAPBOX, mapboxMap: maps.available().mapbox, googleMap: maps.available().google, here: !!HERE, ocm: !!OCM, tomtom: !!TOMTOM, tomtomMap: maps.available().tomtom, googlePlaces: !!GOOGLE_PLACES, googleLogin: !!accounts.googleOn, smtp: !!mailer, premiumRequired: String(env.PREMIUM_REQUIRED ?? '1') !== '0' },
     usageToday: byKind,
     usageByUser: usageByUser(),
     google: { callsToday: gToday.d === today() ? gToday.n : 0, dailyCap: GOOGLE_TOTAL, unitUsd: costs.unit, usd: tot },
@@ -229,7 +229,7 @@ async function readJson(req, max) {
 }
 
 // ---------- yardımcılar ----------
-const scrub = (s) => { let t = s; for (const secret of [MAPBOX, OCM, GOOGLE_PLACES, HERE, TOMTOM,env.MAPBOX_MAP_TOKEN, env.GOOGLE_MAPS_BROWSER_KEY, env.ADMIN_TOTP_SECRET]) if (secret) t = t.split(secret).join('***'); return t; };
+const scrub = (s) => { let t = s; for (const secret of [MAPBOX, OCM, GOOGLE_PLACES, HERE, TOMTOM, env.TOMTOM_MAP_KEY, env.MAPBOX_MAP_TOKEN, env.GOOGLE_MAPS_BROWSER_KEY, env.ADMIN_TOTP_SECRET]) if (secret) t = t.split(secret).join('***'); return t; };
 function send(res, status, body, headers = {}) {
   const buf = Buffer.isBuffer(body) ? body : Buffer.from(typeof body === 'string' ? body : JSON.stringify(body));
   res.writeHead(status, { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...headers, 'Content-Length': buf.length });
@@ -458,6 +458,24 @@ async function occupancyRoute(req, res, id) {
   json(res, 200, { results: await lookupAll(stations, { google, here, tomtom, soc, book: priceBook, community }) });
 }
 
+// ---------- TomTom rota (Routing API v1, canlı trafik) ----------
+// Yalnızca Premium; kullanıcı başına günlük hak TOMTOM_ROUTE_DAILY_PER_USER (yönetici muaf), tüm TomTom istekleri için günlük tavan TOMTOM_DAILY_CAP (doluluk ile ortak sayaç).
+// İstemci yalnızca noktaları verir (?pts=lat,lon:lat,lon); anahtar ve parametreler sunucuda sabittir. Trafikli rota önbelleğe alınmaz.
+async function tomtomRouteRoute(req, res, url, id) {
+  if (!TOMTOM) return json(res, 501, { error: 'Sunucuda TomTom anahtarı yok' });
+  if (!premiumOk(id)) return json(res, 402, { error: 'premium_required' });
+  const pts = url.searchParams.get('pts');
+  if (!validPts(pts)) return json(res, 400, { error: 'geçersiz noktalar' });
+  if (!tomtomAllowed()) return json(res, 402, { error: 'tomtom_cap' }); // günlük tavan doldu: uygulama Mapbox/Valhalla'ya düşer
+  if (overQuota(id, 'tomtom')) return json(res, 429, { error: 'günlük TomTom rota hakkı doldu' }, { 'Retry-After': '3600' });
+  try {
+    json(res, 200, await tomtomRoute(TOMTOM, pts));
+  } catch (err) { // yanıt gövdesi ve adres günlüğe yazılmaz
+    console.error('TomTom rota alınamadı:', typeof err?.status === 'number' ? 'HTTP ' + err.status : scrub(String(err?.name || 'hata')));
+    json(res, err?.status === 429 ? 429 : err?.status === 400 ? 400 : 502, { error: err?.status ? 'TomTom HTTP ' + err.status : 'TomTom yanıt vermedi' });
+  }
+}
+
 // Topluluk: şarj başladı/bitti (varlık) ve Dolu/Boş bildirimi. Okumak Premium (/v1/occupancy), katkı vermek her hesaba açık.
 async function communityRoute(req, res, id, kind) {
   if (id.kind !== 'user') return json(res, 403, { error: 'hesap gerekli' });
@@ -570,7 +588,7 @@ const tesla = createTesla(env.DATA_DIR || join(here, 'data'));
 const costs = createCosts(store, env);
 const devices = createDevices(store);
 const mailer = createMailer(env); // SMTP_USER/SMTP_PASS yoksa null
-const accounts = createAccounts({ onDelete: (uid) => { priceBook.forget(uid); community.forget(uid); stationInfo.forget(uid); costs.forget(uid); devices.forget(uid); }, onLink: (deviceId, uid, ip) => devices.link(deviceId, uid, ip), devicesOf: (uid) => devices.forUser(uid), costs, mailer, env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, here: !!HERE, ocm: !!OCM, overpass: true, occupancy: true }) });
+const accounts = createAccounts({ onDelete: (uid) => { priceBook.forget(uid); community.forget(uid); stationInfo.forget(uid); costs.forget(uid); devices.forget(uid); }, onLink: (deviceId, uid, ip) => devices.link(deviceId, uid, ip), devicesOf: (uid) => devices.forUser(uid), costs, mailer, env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, here: !!HERE, ocm: !!OCM, overpass: true, occupancy: true, tomtom: !!TOMTOM }) });
 
 const appFiles = createAppFiles({ dir: join(here, 'public'), send });
 
@@ -636,10 +654,11 @@ const server = http.createServer(async (req, res) => {
     if (adminAuth && id.kind === 'legacy' && pp.startsWith('/admin') && !adminTok && !isLocal(req)) return json(res, 401, { error: 'totp_required' }); // dışarıdan yalnızca erişim koduyla yönetim yok
     if (dev && id.kind === 'user') devices.link(dev, id.user.id, ip); // oturumlu istek: cihaz hesaba bağlanır (giriş öncesi anonim kayıt birleşir)
     const p = url.pathname;
-    if (p === '/health') return json(res, 200, { ok: true, mapbox: !!MAPBOX, here: !!HERE, ocm: !!OCM, overpass: true, occupancy: true, v: 3 });
+    if (p === '/health') return json(res, 200, { ok: true, mapbox: !!MAPBOX, here: !!HERE, ocm: !!OCM, tomtom: !!TOMTOM, overpass: true, occupancy: true, v: 3 });
     if (p.startsWith('/mapbox/')) return await mapbox(req, res, url, id);
     if (p.startsWith('/here/')) return await hereStations(req, res, url, id);
     if (p.startsWith('/ocm/')) return await ocm(req, res, url, id);
+    if (p === '/tomtom/route' && req.method === 'GET') return await tomtomRouteRoute(req, res, url, id);
     if (p === '/overpass') return await overpass(req, res, url, id);
     if (p === '/v1/occupancy' && req.method === 'POST') return await occupancyRoute(req, res, id);
     if (p === '/v1/speedlimits' && req.method === 'POST') return await speedLimitsRoute(req, res, id);

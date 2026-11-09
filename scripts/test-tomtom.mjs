@@ -1,6 +1,6 @@
 // TomTom canlı doluluk adaptörü (sunucu): sahte yanıtlarla, gerçek anahtar/ağ olmadan. Kullanım: node scripts/test-tomtom.mjs
 import { readFileSync } from 'node:fs';
-import { tomtomLookup, tomtomSlots, pickStation, tomtomAllowed, tomtomUsage, _clearIds } from '../server/tomtom.mjs';
+import { tomtomLookup, tomtomSlots, pickStation, tomtomAllowed, tomtomUsage, tomtomRoute, validPts, _clearIds } from '../server/tomtom.mjs';
 import { lookupAll, _clearCache } from '../server/occupancy.mjs';
 
 let pass = 0, fail = 0;
@@ -56,6 +56,23 @@ ok('tomtomSlots: boş/bozuk yanıt → null', tomtomSlots(null, true) === null &
   ok('HTTP hatası fırlatır, iletide anahtar yok', err?.status === 403 && !String(err.message).includes(KEY));
 }
 
+
+// --- rota (sunucu): sabit parametreler, nokta doğrulama, hata iletisi
+{
+  ok('validPts: geçerli noktalar', validPts('39.92080,32.85410:41.00820,28.97840') && validPts('39.9,32.8:40.1,31.2:41.0,29.0'));
+  ok('validPts: tek nokta, harf, enjeksiyon, çok uzun reddedilir', !validPts('39.9,32.8') && !validPts('a,b:c,d') && !validPts('39.9,32.8:41.0,29.0&key=x') && !validPts('39.9,32.8:41.0,29.0/../x') && !validPts(null) && !validPts('1.1,1.1:'.repeat(120) + '1.1,1.1'));
+  let seen = null;
+  const fetchImpl = async (u) => { seen = new URL(u); return { ok: true, status: 200, json: async () => ({ routes: [] }) }; };
+  await tomtomRoute(KEY, '39.9208,32.8541:41.0082,28.9784', { fetchImpl });
+  ok('rota isteği: trafik, Türkçe, trafik + hız limiti bölümleri, anahtar sorguda', seen.pathname === '/routing/1/calculateRoute/39.9208,32.8541:41.0082,28.9784/json' && seen.searchParams.get('traffic') === 'true' && seen.searchParams.get('language') === 'tr-TR' && seen.searchParams.getAll('sectionType').join() === 'traffic,speedLimit' && seen.searchParams.get('key') === KEY);
+  let err = null;
+  try { await tomtomRoute(KEY, '39.9208,32.8541:41.0082,28.9784', { fetchImpl: async () => ({ ok: false, status: 403, json: async () => ({}) }) }); } catch (e) { err = e; }
+  ok('rota: HTTP hatası status taşır, iletide anahtar yok', err?.status === 403 && !String(err.message).includes(KEY));
+  let bad = null;
+  try { await tomtomRoute(KEY, 'x', { fetchImpl }); } catch (e) { bad = e; }
+  ok('rota: geçersiz noktalar HTTP çağrısı yapmadan 400', bad?.status === 400);
+}
+
 // --- günlük tavan
 {
   const before = tomtomUsage().used;
@@ -82,7 +99,8 @@ ok('tomtomSlots: boş/bozuk yanıt → null', tomtomSlots(null, true) === null &
 // --- kaynak sözleşmeleri: anahtar yalnızca sunucuda, günlüğe ve çıktıya sızmaz
 const proxy = readFileSync(new URL('../server/proxy.mjs', import.meta.url), 'utf8');
 const tt = readFileSync(new URL('../server/tomtom.mjs', import.meta.url), 'utf8');
-ok('anahtar günlük temizleyicisinde (scrub)', /GOOGLE_PLACES, HERE, TOMTOM,/.test(proxy));
+ok('anahtar günlük temizleyicisinde (scrub)', /GOOGLE_PLACES, HERE, TOMTOM, env\.TOMTOM_MAP_KEY,/.test(proxy));
+ok('rota uç noktası: Premium şart, kullanıcı başı kota, günlük tavan, anahtar sunucuda', /p === '\/tomtom\/route'/.test(proxy) && /premiumOk\(id\)\) return json\(res, 402, \{ error: 'premium_required' \}\)/.test(proxy) && /overQuota\(id, 'tomtom'\)/.test(proxy) && /tomtom_cap/.test(proxy));
 ok('TomTom anahtarı istemciye (js/) gitmez', !/TOMTOM_KEY|tomtom\.mjs/i.test(readFileSync(new URL('../js/routing/occupancyClient.js', import.meta.url), 'utf8')));
 ok('hata iletisi yanıt gövdesi/anahtar içermez', /new Error\('TomTom HTTP ' \+ res\.status\)/.test(tt) && !/res\.text\(\)/.test(tt));
 ok('istemcide TomTom adı gösterilir (atıf)', /sl\.src === 'tomtom'/.test(readFileSync(new URL('../js/routing/slots.js', import.meta.url), 'utf8')));

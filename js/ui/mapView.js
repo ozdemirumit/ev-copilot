@@ -6,6 +6,8 @@ import { reverseLabel } from '../providers/index.js';
 import { createMapLibreMap } from './maps/maplibre.js';
 import { createMapboxMap } from './maps/mapbox.js';
 import { createGoogleMap } from './maps/google.js';
+import { createTomTomMap } from './maps/tomtom.js';
+import { setActiveMap } from '../net/activeMap.js';
 import { resolveProvider, forceOsm } from '../net/mapConfig.js';
 import { showTab } from './tabs.js';
 import { navCamera } from './navCamera.js';
@@ -88,6 +90,14 @@ export function initMap() {
           shown = true;
           return a;
         }
+        if (cfg.provider === 'tomtom') {
+          // Anahtar reddedildi (401/403): Mapbox ile aynı akış (bayrak + bildirim, harita gösterildiyse yenile; açılışta söz reddedilir ve OpenFreeMap açılır).
+          let shown = false;
+          const onAuthFail = () => { fallBackToOsm(); if (shown) setTimeout(() => location.reload(), 1500); };
+          const a = await createTomTomMap(mapEl, cfg.key, { onAuthFail });
+          shown = true;
+          return a;
+        }
         if (cfg.provider === 'google') {
           // Anahtar reddedildi (gm_authFailure). Mapbox ile aynı: harita gösterildikten sonraysa bayrak + bildirim + yenile;
           // açılış sırasındaysa söz reddedilir ve aşağıdaki catch aynı sayfa yüklemesinde OpenFreeMap açar.
@@ -111,6 +121,7 @@ export function initMap() {
       try {
         note(''); // uyarı katmanı kalksın: harita boş bir kapta kurulur
         adapter = await openAdapter();
+        setActiveMap(adapter.name || 'osm'); // TomTom rotası yalnızca TomTom haritasıyla (js/net/activeMap.js)
         adapter.onClick(onMapClick);
         adapter.onDragStart(() => { lastDrag = Date.now(); lastFollow = null; });
         queue.splice(0).forEach((fn) => fn());
@@ -118,6 +129,7 @@ export function initMap() {
       } catch (err) {
         booting = null;
         adapter = null;
+        setActiveMap(null);
         note(err.message);
       }
     })();

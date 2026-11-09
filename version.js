@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.87.11';
+self.APP_VERSION = '0.88.0';
 self.APP_CHANGELOG = [
+  {
+    v: '0.88.0', date: '2026-11-09',
+    notes: [
+      'TomTom harita ve rota eklendi: Premium hesaplarda varsayilan harita TomTom (Orbis vektor harita, TomTom uydu gorunumu), rota canli trafik, yol hiz limiti ve Turkce adimlarla TomTom uzerinden gelir (yalnizca TomTom haritasi acikken; olmazsa Mapbox veya Valhalla). Yonetici varsayilani degistirebilir. Sunucuda TomTom anahtari gerekir, sunucu yeniden baslatilmali.',
+    ],
+  },
   {
     v: '0.87.11', date: '2026-11-09',
     notes: [

@@ -1,22 +1,24 @@
-// Harita sağlayıcısı seçimi: OpenFreeMap (osm, anahtarsız) her zaman geçerli; Mapbox ve Google yalnızca .env'de anahtarı varsa ve kullanıcı premium ise
+// Harita sağlayıcısı seçimi: OpenFreeMap (osm, anahtarsız) her zaman geçerli; Mapbox, Google ve TomTom yalnızca .env'de anahtarı varsa ve kullanıcı premium ise
 // kullanılır. Sunucu varsayılanı db.json → settings.mapDefault, kullanıcı seçimi u.mapProvider (null/yok = varsayılanı izle).
 // Anahtar yalnızca premium kullanıcıya ve yalnızca seçili sağlayıcınınki döner; sonradan kalkarsa sessizce osm'ye düşer (çökme yok).
-export const PROVIDERS = ['osm', 'mapbox', 'google'];
+export const PROVIDERS = ['osm', 'mapbox', 'google', 'tomtom'];
 
 export function createMaps(store, env = {}) {
   // Güvenlik: tarayıcıya yalnızca herkese açık Mapbox belirteci ("pk.") gider; "sk." gizli belirteç yanlışlıkla konsa bile yapılandırılmamış sayılır.
   const keyOf = (p) => {
     if (p === 'mapbox') { const t = String(env.MAPBOX_MAP_TOKEN || ''); return t.startsWith('pk.') ? t : ''; }
     if (p === 'google') return String(env.GOOGLE_MAPS_BROWSER_KEY || '');
+    if (p === 'tomtom') return String(env.TOMTOM_MAP_KEY || env.TOMTOM_KEY || ''); // ayrı harita anahtarı yoksa sunucu anahtarı (TomTom: tek anahtar; tarayıcıya gider, yalnızca Premium'a)
     return '';
   };
   const usable = (p) => p === 'osm' || !!keyOf(p);
 
-  const available = () => ({ mapbox: !!keyOf('mapbox'), google: !!keyOf('google') });
+  const available = () => ({ mapbox: !!keyOf('mapbox'), google: !!keyOf('google'), tomtom: !!keyOf('tomtom') });
 
   const getDefault = () => {
     const p = store.data.settings?.mapDefault;
-    return PROVIDERS.includes(p) ? p : 'osm';
+    if (PROVIDERS.includes(p)) return p;
+    return usable('tomtom') ? 'tomtom' : 'osm'; // yönetici seçmediyse: TomTom anahtarı varsa Premium için varsayılan TomTom, yoksa OpenFreeMap
   };
 
   // Ad geçerli ve anahtarı tanımlı mı; değilse Error.
@@ -49,6 +51,7 @@ export function createMaps(store, env = {}) {
     const p = effective(u, premium);
     if (p === 'mapbox') return { provider: 'mapbox', token: keyOf('mapbox') };
     if (p === 'google') return { provider: 'google', key: keyOf('google'), mapId: env.GOOGLE_MAP_ID || 'DEMO_MAP_ID' };
+    if (p === 'tomtom') return { provider: 'tomtom', key: keyOf('tomtom') };
     return { provider: 'osm' };
   }
 

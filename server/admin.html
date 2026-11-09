@@ -164,10 +164,10 @@ function table(heads, rows, numCols = []) {
 const chip = (t, cls = '') => el('span', 'chip ' + cls, t);
 
 // Harita sağlayıcısı seçenekleri: anahtarı tanımsız Mapbox/Google pasif ve "(anahtar yok)" notlu (sunucu da reddeder)
-const MAP_NAMES = { osm: 'OpenFreeMap', mapbox: 'Mapbox', google: 'Google' };
+const MAP_NAMES = { osm: 'OpenFreeMap', mapbox: 'Mapbox', google: 'Google', tomtom: 'TomTom' };
 function mapSelect(value, withDefault) {
   const sel = el('select'); const cfg = D.sum?.configured || {};
-  const has = { osm: true, mapbox: !!cfg.mapboxMap, google: !!cfg.googleMap };
+  const has = { osm: true, mapbox: !!cfg.mapboxMap, google: !!cfg.googleMap, tomtom: !!cfg.tomtomMap };
   const opts = (withDefault ? [[ '', 'Varsayılan' ]] : []).concat(Object.keys(MAP_NAMES).map((p) => [p, MAP_NAMES[p] + (has[p] ? '' : ' (anahtar yok)')]));
   // Kayıtlı seçim anahtarı sonradan kalkmış bir sağlayıcıysa (pasif seçenek seçili) gerçekte OpenFreeMap kullanıldığı belirtilir
   for (const [v, t] of opts) { const o = el('option', '', t + (v && !has[v] && v === (value || '') ? ' → OpenFreeMap kullanılıyor' : '')); o.value = v; if (v && !has[v]) o.disabled = true; sel.append(o); }
@@ -219,7 +219,7 @@ function drawSum(root) {
   root.append(el('h2', '', 'Yapılandırma ve sunucu'));
   const on = (b) => chip(b ? 'açık' : 'kapalı', b ? 'ok' : 'warn');
   root.append(table(['Ayar', 'Durum'], [
-    ['Google ile giriş', on(s.configured.googleLogin)], ['Mapbox anahtarı', on(s.configured.mapbox)], ['Mapbox harita anahtarı', on(s.configured.mapboxMap)], ['Google harita anahtarı', on(s.configured.googleMap)], ['HERE anahtarı', on(s.configured.here)], ['OpenChargeMap anahtarı', on(s.configured.ocm)],
+    ['Google ile giriş', on(s.configured.googleLogin)], ['Mapbox anahtarı', on(s.configured.mapbox)], ['Mapbox harita anahtarı', on(s.configured.mapboxMap)], ['Google harita anahtarı', on(s.configured.googleMap)], ['HERE anahtarı', on(s.configured.here)], ['TomTom anahtarı (doluluk, rota, harita)', on(s.configured.tomtom)], ['OpenChargeMap anahtarı', on(s.configured.ocm)],
     ['Google Places anahtarı', on(s.configured.googlePlaces)], ['E-posta gönderimi (SMTP)', on(s.configured.smtp)], ['Premium zorunlu (kapalıysa herkes Premium)', on(s.configured.premiumRequired)],
     ['Mapbox aylık arama (sunucu sayacı / sınır)', s.mapbox ? `${s.mapbox.used} / ${s.mapbox.cap} (${s.mapbox.month})` : '–'], ['HERE aylık istek (sunucu sayacı / sınır)', s.here ? `${s.here.used} / ${s.here.cap} (${s.here.month})` : '–'], ['Genel adres', s.server.publicUrl || '–'], ['Çalışma süresi', dur(s.server.uptimeSec)], ['Bellek', s.server.memMb + ' MB'], ['Node', s.server.node],
   ]));

@@ -1,4 +1,4 @@
-// Harita sağlayıcısı çözümü (OpenFreeMap / Mapbox / Google). Sağlayıcıyı sunucu seçer (GET /v1/map/config, yalnızca Premium'a
+// Harita sağlayıcısı çözümü (OpenFreeMap / Mapbox / Google / TomTom). Sağlayıcıyı sunucu seçer (GET /v1/map/config, yalnızca Premium'a
 // anahtar verir); istemci yalnızca son etkin sağlayıcının ADINI cihazda saklar (evcp.mapProvider). Anahtar/belirteç yalnızca
 // dönüş değerinde, bellekte kalır: localStorage'a ya da sessionStorage'a asla yazılmaz.
 // Açılış harita için bekletilmez: oturum yoksa ya da saklı ad osm ise hemen osm (arka planda yalnızca ad tazelenir);
@@ -6,7 +6,7 @@
 import { load, save } from '../utils/storage.js';
 import { proxyFetch, proxyReady as hasCreds } from './proxy.js';
 
-const NAMES = ['osm', 'mapbox', 'google'];
+const NAMES = ['osm', 'mapbox', 'google', 'tomtom'];
 const FORCE_KEY = 'mapForceOsm'; // sessionStorage: sağlayıcı bu cihaz oturumunda çalışmadı, OpenFreeMap zorlanır
 const OSM = Object.freeze({ provider: 'osm' });
 
@@ -26,6 +26,7 @@ export const osmForced = () => { try { return sessionStorage.getItem(FORCE_KEY) 
 function parse(j) {
   if (j?.provider === 'osm') return { provider: 'osm' };
   if (j?.provider === 'mapbox' && typeof j.token === 'string' && j.token) return { provider: 'mapbox', token: j.token };
+  if (j?.provider === 'tomtom' && typeof j.key === 'string' && j.key) return { provider: 'tomtom', key: j.key };
   if (j?.provider === 'google' && typeof j.key === 'string' && j.key) return { provider: 'google', key: j.key, mapId: typeof j.mapId === 'string' && j.mapId ? j.mapId : 'DEMO_MAP_ID' };
   return null;
 }
@@ -43,7 +44,7 @@ async function fetchConfig(signal) {
 
 /**
  * Bu açılışta kullanılacak sağlayıcı. Asla reddetmez.
- * @returns {Promise<{provider:'osm'} | {provider:'mapbox', token:string} | {provider:'google', key:string, mapId:string}>}
+ * @returns {Promise<{provider:'osm'} | {provider:'mapbox', token:string} | {provider:'google', key:string, mapId:string} | {provider:'tomtom', key:string}>}
  */
 export async function resolveProvider({ timeoutMs = 3000 } = {}) {
   if (osmForced() || !hasCreds()) return { ...OSM }; // oturumsuz/anonim cihaz sunucuya sorulmaz

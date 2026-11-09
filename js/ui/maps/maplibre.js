@@ -6,7 +6,7 @@ const STYLE = 'https://tiles.openfreemap.org/styles/dark';
 const VENDOR = new URL('../../../vendor/maplibre/', import.meta.url).href;
 
 let loading = null;
-function loadMapLibre() {
+export function loadMapLibre() {
   if (window.maplibregl) return Promise.resolve(window.maplibregl);
   loading ??= new Promise((resolve, reject) => {
     const css = Object.assign(document.createElement('link'), { rel: 'stylesheet', href: VENDOR + 'maplibre-gl.css' });

@@ -86,3 +86,23 @@ export async function tomtomLookup(st, key, { fetchImpl = fetch, now = Date.now(
   return s ? { src: 'tomtom', ...s, at: now, price: null } : null;
 }
 export const _clearIds = () => idCache.clear();
+
+// ---------- Rota (Routing API v1, canlı trafik) ----------
+// Yalnızca sunucu çağırır (anahtar tarayıcıya gitmez). Sabit parametreler: trafikli en hızlı otomobil rotası, Türkçe adım metni, trafik + hız limiti
+// bölümleri, üç süre türü (canlı / trafiksiz / olağan). İstemci dönüşümü js/tomtom/route.js içindedir.
+const PTS = /^-?\d{1,2}(\.\d{1,6})?,-?\d{1,3}(\.\d{1,6})?(:-?\d{1,2}(\.\d{1,6})?,-?\d{1,3}(\.\d{1,6})?){1,25}$/;
+export const validPts = (s) => typeof s === 'string' && s.length <= 700 && PTS.test(s);
+
+/** pts: "lat,lon:lat,lon[:lat,lon…]" (en çok 27 nokta). Dönüş: TomTom yanıtı (JSON). HTTP hatası status taşır; anahtar iletilerde yoktur. */
+export async function tomtomRoute(key, pts, { fetchImpl = fetch, now = Date.now() } = {}) {
+  if (!validPts(pts)) throw Object.assign(new Error('geçersiz noktalar'), { status: 400 });
+  const u = new URL(`/routing/1/calculateRoute/${pts}/json`, base());
+  u.search = new URLSearchParams([
+    ['traffic', 'true'], ['travelMode', 'car'], ['routeType', 'fastest'], ['instructionsType', 'text'], ['language', 'tr-TR'],
+    ['sectionType', 'traffic'], ['sectionType', 'speedLimit'], ['computeTravelTimeFor', 'all'], ['routeRepresentation', 'polyline'], ['key', key],
+  ]);
+  count();
+  const res = await fetchImpl(u, { signal: AbortSignal.timeout(40000), redirect: 'error' });
+  if (!res.ok) throw Object.assign(new Error('TomTom HTTP ' + res.status), { status: res.status }); // yanıt gövdesi günlüğe yazılmaz
+  return res.json();
+}
