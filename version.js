@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.17';
+self.APP_VERSION = '0.99.18';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.18', date: '2026-11-11',
+    notes: [
+      'Rota planlama ekrani klavye acikken duzeltildi: sayfa klavyenin ustune sigar (iOS), yazarken form kompakt (pil karti ve Planla/Git gizli), odakli alan sayfanin ustune kayar ve oneri listesi gorunur',
+    ],
+  },
   {
     v: '0.99.17', date: '2026-11-11',
     notes: [

@@ -847,6 +847,13 @@ main { background: var(--bg); box-shadow: 0 10px 44px rgba(15, 39, 68, .35); }
   body.sheet-open[data-view="route"] main:has(input[type=text]:focus) { top: var(--hud-h, 72px); } /* klavye ve öneri listesi için tam yükseklik */
 }
 
+/* Ekran klavyesi (js/ui/keyboard.js): sayfa klavyenin üstüne sığar; rota alanına yazarken form kompakt (pil kartı ve Planla/Git gizli), öneri listesi görünür */
+body.kbd-open main { bottom: calc(var(--kb, 0px) + 6px); }
+body.kbd-open .dock { display: none; }
+body.typing #rp-soc-card, body.typing #plan-actions { display: none; }
+body.typing .sheet-head { padding: 8px 14px 6px; }
+body.typing .suggest { max-height: calc(var(--app-h, 100dvh) - var(--hud-h, 72px) - 175px); }
+
 /* Harita öncesi pil kartı: dikey ekranda pil, menzil, tüketim ve küçük sürgü; yatay ekranda başlıktaki hap (sürgü pencerede) */
 .socbar-line2 { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
 .socbar-cons { flex: none; display: inline-flex; align-items: baseline; gap: 3px; font-size: 13px; font-weight: 600; }
