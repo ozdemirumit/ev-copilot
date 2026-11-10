@@ -557,17 +557,17 @@ body.navmode #fab-route { display: none; } /* navigasyonda aynı işi nh-overvie
 body.navmode .searchrow { display: none; }
 
 /* Navigasyon alt şeridi: süre · kalan yol · varış (hız ve limit solda) */
-.navhud { display: flex; align-items: center; padding: 8px 6px; min-height: 54px; background: rgba(20, 25, 32, .96); border: 1px solid rgba(255, 255, 255, .14); border-radius: 16px; box-shadow: 0 4px 16px #0008; }
+.navhud { display: flex; align-items: center; padding: 4px 6px; min-height: 40px; background: rgba(20, 25, 32, .96); border: 1px solid rgba(255, 255, 255, .14); border-radius: 16px; box-shadow: 0 4px 16px #0008; }
 .nh-cell { flex: 1 1 0; min-width: 0; display: flex; align-items: baseline; justify-content: center; gap: 3px; padding: 0 4px; border-left: 1px solid var(--line); white-space: nowrap; }
 .nh-cell:first-child { border-left: 0; }
-.nh-cell b { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.nh-cell b { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .nh-cell small { font-size: 11px; color: var(--muted); }
-.nh-time b { color: var(--accent); font-weight: 700; font-size: 20px; }
+.nh-time b { color: var(--accent); font-weight: 700; font-size: 18px; }
 .nh-flag { width: 14px; height: 14px; color: var(--muted); align-self: center; }
 .nh-word { display: none; }
 html[lang="tr"] .nh-word { display: inline; }
 html[lang="tr"] .nh-flag { display: none; }
-.navhud .limit-sign { width: 34px; height: 34px; font-size: 13px; border-width: 3px; margin: 0 2px; }
+.navhud .limit-sign { width: 30px; height: 30px; font-size: 12px; border-width: 3px; margin: 0 2px; }
 
 /* Alt gezinme: tam genişlik, üç sekme, etkin sekmede zümrüt çizgi */
 .dock { position: fixed; z-index: 40; left: 0; right: 0; bottom: 0; height: calc(var(--nav-h) + var(--safe-b)); padding-bottom: var(--safe-b); background: var(--bg); border-top: 1px solid var(--line); }
