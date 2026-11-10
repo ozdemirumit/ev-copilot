@@ -356,4 +356,13 @@ export default {
   "şarj gerekmez": "δεν χρειάζεται φόρτιση",
   "Tüketim öğrenildi: {0} kWh/100 km ({1} km), düzeltme k {2}": "Η κατανάλωση καταγράφηκε: {0} kWh/100 km ({1} km), διόρθωση k {2}",
   "Kamera yoksa: yol aldıktan sonra pili elle girersen (en az 10 km yol ve 5 puan düşüş) tüketim buradan da öğrenilir.": "Χωρίς κάμερα; Αν εισαγάγεις τη μπαταρία χειροκίνητα μετά την οδήγηση (τουλάχιστον 10 km και πτώση 5 μονάδων), η κατανάλωση μαθαίνεται και έτσι.",
+  "rota": "διαδρομή",
+  "düz": "επίπεδο",
+  "eşiğe": "έως το όριο",
+  "Şimdi: son mesafe tüketimi (ölçülen)": "Τώρα: πρόσφατη μετρημένη κατανάλωση",
+  "Şimdi: tahmini tüketim (model, rotada önümüzdeki 25 km)": "Τώρα: εκτιμώμενη κατανάλωση (μοντέλο, επόμενα 25 km της διαδρομής)",
+  "Rota: menzilin dayandığı rota ortalaması": "Διαδρομή: ο μέσος όρος της διαδρομής στον οποίο βασίζεται η εμβέλεια",
+  "Düz: menzilin dayandığı düz zemin tüketimi": "Επίπεδο: η κατανάλωση σε επίπεδο έδαφος στην οποία βασίζεται η εμβέλεια",
+  "%{0} eşik piline kadar menzil: {1} km": "Εμβέλεια έως το όριο {0}%: {1} km",
+  "%{0} eşik piline kadar {1} km": "{1} km έως το όριο {0}%",
 };

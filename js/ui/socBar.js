@@ -53,7 +53,19 @@ export function initSocBar() {
     // Tüketim: ölçülen varsa o, yoksa model tahmini (hangisi olduğu başlıkta yazar)
     const cons = eng.kwh100Measured ?? eng.kwh100Est;
     $('socbar-cons').textContent = cons == null ? '--' : cons.toFixed(1);
-    $('socbar-consbox').title = tr(eng.kwh100Measured != null ? 'Son mesafe tüketimi (ölçülen)' : 'Tahmini tüketim (model)');
+    // İki tüketim: ilki şimdi (ölçülen ya da model tahmini; rotada önümüzdeki 25 km), ikincisi menzilin dayandığı ortalama (rota profili ya da düz zemin)
+    const avg = eng.rangeKwh100;
+    const route = eng.rangeSrc === 'route';
+    $('socbar-cons-lbl').textContent = tr('şimdi');
+    $('socbar-cons2').textContent = avg == null ? '--' : avg.toFixed(1);
+    $('socbar-cons2-lbl').textContent = tr(route ? 'rota' : 'düz');
+    $('socbar-consbox').title = tr(eng.kwh100Measured != null ? 'Şimdi: son mesafe tüketimi (ölçülen)' : 'Şimdi: tahmini tüketim (model, rotada önümüzdeki 25 km)') + '. ' + tr(route ? 'Rota: menzilin dayandığı rota ortalaması' : 'Düz: menzilin dayandığı düz zemin tüketimi');
+    // Eşik piline (varışta minimum pil) kadar menzil: toplam menzilin yanında
+    const thr = eng.rangeKm != null && v != null ? Math.max(0, Math.round(eng.rangeKm)) : null;
+    $('socbar-thr-lbl').textContent = tr('eşiğe');
+    $('socbar-thr-km').textContent = thr == null ? '--' : String(thr);
+    $('socbar-thr').title = t('%{0} eşik piline kadar menzil: {1} km', getState('route').minArrivalSoc, thr == null ? '--' : thr);
+    $('soc-sheet-thr').textContent = thr == null ? '' : t('%{0} eşik piline kadar {1} km', getState('route').minArrivalSoc, thr);
     if (!mapDrag) mapSlider.value = String(Math.round(v ?? DEFAULT_SOC));
     mapSlider.disabled = locked; // kamera canlı okurken elle ayar kapalı (pencere sürgüsüyle aynı kural)
 

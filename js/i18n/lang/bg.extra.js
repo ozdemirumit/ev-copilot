@@ -356,4 +356,13 @@ export default {
   "şarj gerekmez": "не е нужно зареждане",
   "Tüketim öğrenildi: {0} kWh/100 km ({1} km), düzeltme k {2}": "Консумацията е усвоена: {0} kWh/100 km ({1} km), корекция k {2}",
   "Kamera yoksa: yol aldıktan sonra pili elle girersen (en az 10 km yol ve 5 puan düşüş) tüketim buradan da öğrenilir.": "Без камера? Ако въведеш батерията ръчно след шофиране (поне 10 км и спад от 5 пункта), консумацията се усвоява и така.",
+  "rota": "маршрут",
+  "düz": "равно",
+  "eşiğe": "до прага",
+  "Şimdi: son mesafe tüketimi (ölçülen)": "Сега: последно измерена консумация",
+  "Şimdi: tahmini tüketim (model, rotada önümüzdeki 25 km)": "Сега: прогнозна консумация (модел, следващите 25 км от маршрута)",
+  "Rota: menzilin dayandığı rota ortalaması": "Маршрут: средната стойност за маршрута, на която се основава пробегът",
+  "Düz: menzilin dayandığı düz zemin tüketimi": "Равно: консумацията на равен терен, на която се основава пробегът",
+  "%{0} eşik piline kadar menzil: {1} km": "Пробег до прага от {0}%: {1} км",
+  "%{0} eşik piline kadar {1} km": "{1} км до прага от {0}%",
 };

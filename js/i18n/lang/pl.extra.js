@@ -356,4 +356,13 @@ export default {
   "şarj gerekmez": "ładowanie niepotrzebne",
   "Tüketim öğrenildi: {0} kWh/100 km ({1} km), düzeltme k {2}": "Poznano zużycie: {0} kWh/100 km ({1} km), korekta k {2}",
   "Kamera yoksa: yol aldıktan sonra pili elle girersen (en az 10 km yol ve 5 puan düşüş) tüketim buradan da öğrenilir.": "Brak kamery? Jeśli po jeździe wpiszesz baterię ręcznie (co najmniej 10 km i spadek o 5 punktów), zużycie też zostanie tak poznane.",
+  "rota": "trasa",
+  "düz": "płasko",
+  "eşiğe": "do progu",
+  "Şimdi: son mesafe tüketimi (ölçülen)": "Teraz: ostatnio zmierzone zużycie",
+  "Şimdi: tahmini tüketim (model, rotada önümüzdeki 25 km)": "Teraz: szacowane zużycie (model, następne 25 km trasy)",
+  "Rota: menzilin dayandığı rota ortalaması": "Trasa: średnia trasy, na której opiera się zasięg",
+  "Düz: menzilin dayandığı düz zemin tüketimi": "Płasko: zużycie na płaskim terenie, na którym opiera się zasięg",
+  "%{0} eşik piline kadar menzil: {1} km": "Zasięg do progu {0}%: {1} km",
+  "%{0} eşik piline kadar {1} km": "{1} km do progu {0}%",
 };

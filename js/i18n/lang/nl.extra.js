@@ -356,4 +356,13 @@ export default {
   "şarj gerekmez": "laden niet nodig",
   "Tüketim öğrenildi: {0} kWh/100 km ({1} km), düzeltme k {2}": "Verbruik geleerd: {0} kWh/100 km ({1} km), correctie k {2}",
   "Kamera yoksa: yol aldıktan sonra pili elle girersen (en az 10 km yol ve 5 puan düşüş) tüketim buradan da öğrenilir.": "Geen camera? Voer je de accu na het rijden met de hand in (minstens 10 km en 5 punten daling), dan wordt het verbruik ook zo geleerd.",
+  "rota": "route",
+  "düz": "vlak",
+  "eşiğe": "tot limiet",
+  "Şimdi: son mesafe tüketimi (ölçülen)": "Nu: recent gemeten verbruik",
+  "Şimdi: tahmini tüketim (model, rotada önümüzdeki 25 km)": "Nu: geschat verbruik (model, komende 25 km van de route)",
+  "Rota: menzilin dayandığı rota ortalaması": "Route: het routegemiddelde waarop het bereik is gebaseerd",
+  "Düz: menzilin dayandığı düz zemin tüketimi": "Vlak: het verbruik op vlak terrein waarop het bereik is gebaseerd",
+  "%{0} eşik piline kadar menzil: {1} km": "Bereik tot de {0}%-grens: {1} km",
+  "%{0} eşik piline kadar {1} km": "{1} km tot de {0}%-grens",
 };

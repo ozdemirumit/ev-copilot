@@ -355,5 +355,14 @@
  "Planla",
  "şarj gerekmez",
  "Tüketim öğrenildi: {0} kWh/100 km ({1} km), düzeltme k {2}",
- "Kamera yoksa: yol aldıktan sonra pili elle girersen (en az 10 km yol ve 5 puan düşüş) tüketim buradan da öğrenilir."
+ "Kamera yoksa: yol aldıktan sonra pili elle girersen (en az 10 km yol ve 5 puan düşüş) tüketim buradan da öğrenilir.",
+ "rota",
+ "düz",
+ "eşiğe",
+ "Şimdi: son mesafe tüketimi (ölçülen)",
+ "Şimdi: tahmini tüketim (model, rotada önümüzdeki 25 km)",
+ "Rota: menzilin dayandığı rota ortalaması",
+ "Düz: menzilin dayandığı düz zemin tüketimi",
+ "%{0} eşik piline kadar menzil: {1} km",
+ "%{0} eşik piline kadar {1} km"
 ]

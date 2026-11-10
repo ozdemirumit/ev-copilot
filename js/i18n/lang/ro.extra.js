@@ -356,4 +356,13 @@ export default {
   "şarj gerekmez": "încărcare inutilă",
   "Tüketim öğrenildi: {0} kWh/100 km ({1} km), düzeltme k {2}": "Consum învățat: {0} kWh/100 km ({1} km), corecție k {2}",
   "Kamera yoksa: yol aldıktan sonra pili elle girersen (en az 10 km yol ve 5 puan düşüş) tüketim buradan da öğrenilir.": "Fără cameră? Dacă introduci bateria manual după condus (cel puțin 10 km și o scădere de 5 puncte), consumul se învață și așa.",
+  "rota": "traseu",
+  "düz": "plat",
+  "eşiğe": "până la prag",
+  "Şimdi: son mesafe tüketimi (ölçülen)": "Acum: consum măsurat recent",
+  "Şimdi: tahmini tüketim (model, rotada önümüzdeki 25 km)": "Acum: consum estimat (model, următorii 25 km ai traseului)",
+  "Rota: menzilin dayandığı rota ortalaması": "Traseu: media traseului pe care se bazează autonomia",
+  "Düz: menzilin dayandığı düz zemin tüketimi": "Plat: consumul pe teren plat pe care se bazează autonomia",
+  "%{0} eşik piline kadar menzil: {1} km": "Autonomie până la pragul de {0}%: {1} km",
+  "%{0} eşik piline kadar {1} km": "{1} km până la pragul de {0}%",
 };

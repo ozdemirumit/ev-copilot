@@ -69,8 +69,8 @@
 <div class="mapsoc" id="mapsoc">
 <button class="socbar" id="socbar" type="button" aria-haspopup="dialog" aria-controls="soc-sheet" aria-label="Pil ve menzil">
   <span class="socbar-batt" aria-hidden="true"><i id="socbar-level"></i></span>
-  <span class="socbar-main"><span class="pct-group"><span class="pct-sign">%</span><b id="socbar-val">--</b></span><span class="socbar-sep" aria-hidden="true">·</span><span class="socbar-range" id="socbar-rangebox" title="Tahmini menzil"><span aria-hidden="true">≈</span><b id="socbar-range">--</b><small>km</small></span></span>
-  <span class="socbar-line2"><span class="socbar-cons" id="socbar-consbox" title="Tahmini tüketim (model)"><b id="socbar-cons">--</b><small>kWh/100 km</small></span><span class="socbar-srcline"><i class="ind" id="socbar-dot"></i><small id="socbar-src">—</small></span></span>
+  <span class="socbar-main"><span class="pct-group"><span class="pct-sign">%</span><b id="socbar-val">--</b></span><span class="socbar-sep" aria-hidden="true">·</span><span class="socbar-range" id="socbar-rangebox" title="Tahmini menzil"><span aria-hidden="true">≈</span><b id="socbar-range">--</b><small>km</small></span><span class="socbar-thr" id="socbar-thr" title="Eşik piline kadar menzil"><small id="socbar-thr-lbl"></small><b id="socbar-thr-km">--</b></span></span>
+  <span class="socbar-line2"><span class="socbar-cons" id="socbar-consbox" title="Tahmini tüketim (model)"><b id="socbar-cons">--</b><small id="socbar-cons-lbl"></small><span class="socbar-sep" aria-hidden="true">·</span><b id="socbar-cons2">--</b><small id="socbar-cons2-lbl"></small><small>kWh/100 km</small></span><span class="socbar-srcline"><i class="ind" id="socbar-dot"></i><small id="socbar-src">—</small></span></span>
   <svg class="ic socbar-chev" aria-hidden="true"><use href="#i-chev-down"/></svg>
 </button>
 <div class="mapsoc-slider"><input type="range" id="map-soc" min="0" max="100" step="1" value="80" aria-label="Mevcut pil yüzdesi"></div>
@@ -856,7 +856,7 @@
   <div class="dlg-head"><h2 id="soc-sheet-title">Pil durumu</h2><button class="sheet-x" id="soc-sheet-x" type="button" aria-label="Kapat"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button></div>
   <div class="soc-read">
     <div><div class="soc-big pct-group"><span class="pct-sign">%</span><b id="soc-sheet-val">--</b></div><span class="soc-chip" id="soc-sheet-src">—</span></div>
-    <div class="soc-range"><small>Tahmini menzil</small><div><span aria-hidden="true">≈</span><b id="soc-sheet-range">--</b> km</div></div>
+    <div class="soc-range"><small>Tahmini menzil</small><div><span aria-hidden="true">≈</span><b id="soc-sheet-range">--</b> km</div><small id="soc-sheet-thr"></small></div>
   </div>
   <div class="soc-slider">
     <button class="soc-step" id="soc-sheet-minus" type="button" aria-label="Pili 1 azalt">−</button>

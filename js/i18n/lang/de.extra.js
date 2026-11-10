@@ -356,4 +356,13 @@ export default {
   "şarj gerekmez": "kein Laden nötig",
   "Tüketim öğrenildi: {0} kWh/100 km ({1} km), düzeltme k {2}": "Verbrauch gelernt: {0} kWh/100 km ({1} km), Korrektur k {2}",
   "Kamera yoksa: yol aldıktan sonra pili elle girersen (en az 10 km yol ve 5 puan düşüş) tüketim buradan da öğrenilir.": "Keine Kamera? Gibst du den Akku nach der Fahrt von Hand ein (mindestens 10 km und 5 Punkte Abfall), wird der Verbrauch auch so gelernt.",
+  "rota": "Route",
+  "düz": "eben",
+  "eşiğe": "bis Limit",
+  "Şimdi: son mesafe tüketimi (ölçülen)": "Jetzt: zuletzt gemessener Verbrauch",
+  "Şimdi: tahmini tüketim (model, rotada önümüzdeki 25 km)": "Jetzt: geschätzter Verbrauch (Modell, nächste 25 km der Route)",
+  "Rota: menzilin dayandığı rota ortalaması": "Route: Routendurchschnitt, auf dem die Reichweite beruht",
+  "Düz: menzilin dayandığı düz zemin tüketimi": "Eben: Verbrauch auf ebener Strecke, auf dem die Reichweite beruht",
+  "%{0} eşik piline kadar menzil: {1} km": "Reichweite bis zur {0}-%-Grenze: {1} km",
+  "%{0} eşik piline kadar {1} km": "{1} km bis zur {0}-%-Grenze",
 };
