@@ -388,4 +388,5 @@ export default {
   "Durak değiştirildi: {0}": "Parada cambiada: {0}",
   "Bu istasyonla plan kurulamadı: {0}": "No es posible un plan con esta estación: {0}",
   "Plan kurulamadı": "No se pudo crear el plan",
+  "Durak değiştirildi: {0}. Zincir bozulduğu için diğer duraklar da yeniden düzenlendi.": "Parada cambiada: {0}. También se reorganizaron las otras paradas porque la cadena ya no funcionaba.",
 };

@@ -388,4 +388,5 @@ export default {
   "Durak değiştirildi: {0}": "Stop gewijzigd: {0}",
   "Bu istasyonla plan kurulamadı: {0}": "Met dit station is geen plan mogelijk: {0}",
   "Plan kurulamadı": "Plan kon niet worden gemaakt",
+  "Durak değiştirildi: {0}. Zincir bozulduğu için diğer duraklar da yeniden düzenlendi.": "Stop gewijzigd: {0}. Andere stops zijn ook herschikt omdat de keten niet meer werkte.",
 };

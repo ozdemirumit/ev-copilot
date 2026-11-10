@@ -387,5 +387,6 @@
  "{0} km uzakta",
  "Durak değiştirildi: {0}",
  "Bu istasyonla plan kurulamadı: {0}",
- "Plan kurulamadı"
+ "Plan kurulamadı",
+ "Durak değiştirildi: {0}. Zincir bozulduğu için diğer duraklar da yeniden düzenlendi."
 ]

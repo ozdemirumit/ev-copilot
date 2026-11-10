@@ -66,13 +66,14 @@ export function planK() {
 }
 
 /** Mevcut profil/istasyonlarla planı (yeniden) hesapla. fromKm/soc verilirse o konumdan (dinamik yeniden planlama). */
-export function computePlan({ fromKm = 0, soc = startSoc, maxFirstStopKm = Infinity, pins = null } = {}) { // pins: { pinIds, banIds } denemesi (kaydetmeden)
+export function computePlan({ fromKm = 0, soc = startSoc, maxFirstStopKm = Infinity, pins = null, onlyIds = null } = {}) { // pins: { pinIds, banIds } denemesi (kaydetmeden); onlyIds: yalnızca bu istasyonlarla planla
   const plan = getState('plan');
   const r = getState('route');
   if (!plan.profile) return null;
   const kInfo = planK();
   const k = kInfo.k;
-  const stations = plan.stations;
+  const all = plan.stations;
+  const stations = onlyIds ? all.filter((s) => onlyIds.includes(s.id)) : all;
   // Zorunlu ilk durak yalnızca hâlâ ilerideyse geçerlidir (geçildiyse veya listede yoksa yok sayılır)
   const forced = plan.forceFirstId && stations.some((s) => s.id === plan.forceFirstId && s.km > fromKm + 0.5) ? plan.forceFirstId : null;
   const result = planRoute({
@@ -81,7 +82,7 @@ export function computePlan({ fromKm = 0, soc = startSoc, maxFirstStopKm = Infin
     mustIds: (pins?.pinIds ?? plan.pinIds ?? []).filter((id) => stations.some((s) => s.id === id && s.km > fromKm + 0.5)), // kullanıcının seçtiği duraklar; geçilmiş olanlar yok sayılır
     excludeIds: pins?.banIds ?? plan.banIds ?? [],
   });
-  const ranking = rankStations({ profile: plan.profile, stations, startKm: fromKm, startSoc: soc, k, mode: plan.mode });
+  const ranking = rankStations({ profile: plan.profile, stations: all, startKm: fromKm, startSoc: soc, k, mode: plan.mode });
   return { result, ranking, kInfo };
 }
 
@@ -316,10 +317,19 @@ export function swapStop(oldId, newId) {
     pinIds: [...prev.pinIds.filter((id) => id !== oldId && id !== newId), newId],
     banIds: [...new Set([...prev.banIds.filter((id) => id !== newId), oldId])],
   };
-  const out = computePlan({ fromKm: plan.fromKm ?? 0, soc: plan.fromSoc ?? startSoc, pins: next });
+  const fromKm = plan.fromKm ?? 0;
+  const soc = plan.fromSoc ?? startSoc;
+  // 1) Yalnızca bu durak değişir: öbür duraklar aynı kalır; yeni istasyon eskisinin yerine geçer, şarj miktarı, süre ve maliyet yeniden hesaplanır
+  const chain = (plan.stops || []).filter((s) => s.km > fromKm + 0.5 && s.station.id !== oldId).map((s) => s.station.id);
+  let out = computePlan({ fromKm, soc, pins: { pinIds: [...chain, newId], banIds: next.banIds }, onlyIds: [...chain, newId] });
+  let reflowed = false;
+  if (!out?.result.feasible) { // 2) Öbür duraklarla zincir kurulamıyor (örn. yeni istasyon çok geride): yeni istasyon zorunlu, diğer duraklar yeniden düzenlenir
+    out = computePlan({ fromKm, soc, pins: next });
+    reflowed = true;
+  }
   if (!out?.result.feasible) return { ok: false, reason: out?.result.reason || 'Plan kurulamadı' };
   applyPlan(out, next);
-  return { ok: true };
+  return { ok: true, reflowed };
 }
 
 /** İstasyon fiyat/kW tablosu değişti: ağ çağrısı olmadan yeniden fiyatla ve planla. */

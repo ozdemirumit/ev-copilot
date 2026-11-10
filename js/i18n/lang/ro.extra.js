@@ -388,4 +388,5 @@ export default {
   "Durak değiştirildi: {0}": "Oprire schimbată: {0}",
   "Bu istasyonla plan kurulamadı: {0}": "Nu se poate face un plan cu această stație: {0}",
   "Plan kurulamadı": "Planul nu a putut fi creat",
+  "Durak değiştirildi: {0}. Zincir bozulduğu için diğer duraklar da yeniden düzenlendi.": "Oprire schimbată: {0}. Celelalte opriri au fost reorganizate, deoarece lanțul nu mai funcționa.",
 };

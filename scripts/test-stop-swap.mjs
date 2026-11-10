@@ -55,6 +55,23 @@ ok('geride kalan zorunlu durak planı engellemez (aynı plan)', JSON.stringify(g
 const impossible = planRoute({ ...base, startSoc: 20, stations: [st('x400', 400)], mustIds: ['x400'] });
 ok('ulaşılamayan zorunlu durak: plan kurulamaz', impossible.feasible === false);
 
+// Yalnızca o durak değişir: öbür duraklar aynı kalır (swapStop'un 1. denemesi: aday kümesi = zincir + yeni istasyon, hepsi zorunlu)
+const multi = planRoute({ ...base, startSoc: 55 });
+const mIds = multi.stops.map((s) => s.station.id);
+ok('iki duraklı temel plan', multi.feasible && mIds.length >= 2, mIds.join());
+const victim = mIds.find((id) => pickOther(id));
+const repl = pickOther(victim);
+const chain = mIds.filter((id) => id !== victim);
+const only = [...chain, repl];
+const chained = planRoute({ ...base, startSoc: 55, stations: stations.filter((s) => only.includes(s.id)), mustIds: only, excludeIds: [victim] });
+const cIds = chained.stops.map((s) => s.station.id);
+ok('zincir modu: plan kurulur', chained.feasible, chained.reason);
+ok('yeni istasyon eskisinin yerine geçer, öbür duraklar aynı', JSON.stringify(cIds) === JSON.stringify([...mIds.map((id) => (id === victim ? repl : id))].sort((a, b) => stations.find((s) => s.id === a).km - stations.find((s) => s.id === b).km)), cIds.join() + ' <- ' + mIds.join());
+ok('zincirde ek durak eklenmez', cIds.length === mIds.length);
+const rs = chained.stops.find((s) => s.station.id === repl);
+ok('yeni durak için varış/ayrılış pili ve maliyet yeniden hesaplanır', rs && rs.leaveSoc > rs.arriveSoc && rs.cost > 0 && Math.abs(rs.cost - (((rs.leaveSoc - rs.arriveSoc) / 100) * BAT / 0.95) * rs.station.price) < 0.01);
+ok('toplamlar güncel (maliyet = durak maliyetleri toplamı)', Math.abs(chained.totals.cost - chained.stops.reduce((a, s) => a + s.cost, 0)) < 0.01);
+
 // Aday listesi
 const dist = (a, b) => haversineKm({ lat: a.lat, lon: a.lon }, { lat: b.lat, lon: b.lon });
 const stop = plan0.stops.find((s) => s.station.id === oldId);
@@ -78,6 +95,7 @@ ok('yarıçap parametresi', swapCandidates({ stop, stations, dist, radiusKm: 0.5
 // Arayüz ve denetleyici bağlantıları
 const ctrl = read('js/routing/controller.js');
 ok('swapStop: yeni zorunlu, eski dışlanır; kurulamazsa plan korunur', /export function swapStop\(oldId, newId\)/.test(ctrl) && /pinIds: \[\.\.\.prev\.pinIds\.filter/.test(ctrl) && /banIds: \[\.\.\.new Set/.test(ctrl) && /if \(!out\?\.result\.feasible\) return \{ ok: false/.test(ctrl));
+ok('swapStop önce yalnızca o durağı değiştirir (zincir + yeni istasyon), olmazsa yeniden düzenler', /onlyIds: \[\.\.\.chain, newId\]/.test(ctrl) && /reflowed = true/.test(ctrl) && /const all = plan\.stations;/.test(ctrl) && /stations: all, startKm/.test(ctrl));
 ok('yeni rotada zorunlu/dışlanan listeleri sıfırlanır', /pinIds: \[\], banIds: \[\]/.test(ctrl));
 ok('computePlan zorunlu/dışlanan istasyonları planlayıcıya verir', /mustIds:/.test(ctrl) && /excludeIds:/.test(ctrl));
 const html = read('index.html');

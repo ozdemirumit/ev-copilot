@@ -388,4 +388,5 @@ export default {
   "Durak değiştirildi: {0}": "Sosta cambiata: {0}",
   "Bu istasyonla plan kurulamadı: {0}": "Impossibile pianificare con questa stazione: {0}",
   "Plan kurulamadı": "Impossibile creare il piano",
+  "Durak değiştirildi: {0}. Zincir bozulduğu için diğer duraklar da yeniden düzenlendi.": "Sosta cambiata: {0}. Anche le altre soste sono state riorganizzate perché la catena non funzionava più.",
 };

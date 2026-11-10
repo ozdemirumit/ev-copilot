@@ -48,7 +48,7 @@ export function openSwap(stop, here = 0) {
       const r = swapStop(stop.station.id, s.id);
       if (r.ok) {
         dlg.close();
-        toast(t('Durak değiştirildi: {0}', s.name), 5000);
+        toast(r.reflowed ? t('Durak değiştirildi: {0}. Zincir bozulduğu için diğer duraklar da yeniden düzenlendi.', s.name) : t('Durak değiştirildi: {0}', s.name), r.reflowed ? 8000 : 5000);
       } else {
         toast(t('Bu istasyonla plan kurulamadı: {0}', tr(r.reason || 'Plan kurulamadı')), 8000);
       }
