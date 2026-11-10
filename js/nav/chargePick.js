@@ -15,12 +15,43 @@ export function knownKw(s) {
 
 export const isFast = (s) => !s.slow && (knownKw(s) ?? 0) > MIN_FAST_KW;
 
-/** Karşılaştırılabilir kWh fiyatı: { value, currency, comparable } ya da null (bilinmiyor). Ek ücretli (oturum/süre) canlı tarife kWh ile karşılaştırılamaz. */
+/** Gerçek fiyatın izinli kaynakları: canlı (OCPI/NDW), kullanıcı bildirimi (fiyat defteri), kullanıcının girdiği tarife, belgelenmiş liste tarifesi,
+ * list = kaynağı işaretlenmemiş eski liste kaydı. "Diğer" ortalaması/keşfedilen markaya kopyalanan ortalama ve yurt dışı liste fiyatı kaynak değildir. */
+export const PRICE_SOURCES = ['live', 'reported', 'user', 'documented', 'list'];
+
+const goodKwh = (v) => typeof v === 'number' && Number.isFinite(v) && v > 0;
+const cur = (c) => (typeof c === 'string' && /^[a-z]{3}$/i.test(c.trim()) ? c.trim().toUpperCase() : null);
+
+/**
+ * Karşılaştırılabilir kWh fiyatı ya da null (bilinmiyor; asla 0 değil). Geriye uyumlu alanlar { value, currency, comparable } ile birlikte
+ * source (PRICE_SOURCES), at (bilinen zaman damgası, ms; yoksa null) ve extra (oturum/süre ek ücreti) döner.
+ * Ek ücretli canlı tarife kWh ile karşılaştırılamaz. 0, negatif, sayı olmayan ya da para birimsiz değer bilinmeyen sayılır.
+ */
 export function priceInfo(s) {
-  const p = s.slots?.price;
-  if (p?.kwh > 0 && p.currency) return { value: p.kwh, currency: p.currency, comparable: !(p.flat || p.hour || p.parkingHour) };
-  if (s.tariff === 'list' && s.price > 0) return { value: s.price, currency: 'TRY', comparable: true };
+  const p = s?.slots?.price;
+  const c = cur(p?.currency);
+  if (p && goodKwh(p.kwh) && c) {
+    const extra = !!(p.flat || p.hour || p.parkingHour);
+    const reported = p.src === 'user';
+    const at = reported ? (p.at ?? null) : (p.at ?? s.slots.at ?? s.slots.checked ?? null);
+    return { value: p.kwh, currency: c, comparable: !extra, source: reported ? 'reported' : 'live', at, extra };
+  }
+  if (s?.tariff === 'list' && !s.foreign && goodKwh(s.price)) {
+    const src = s.tariffSrc === 'documented' || s.tariffSrc === 'user' ? s.tariffSrc : 'list';
+    return { value: s.price, currency: 'TRY', comparable: true, source: src, at: null, extra: false };
+  }
   return null;
+}
+
+/** Her zaman nesne döner: bilinen fiyatta priceInfo + known true; bilinmeyende value/currency/source null ve neden
+ * (foreign: yurt dışında liste fiyatı yok, estimate: tahmini ortalama, zero: 0 değer, missing: hiç fiyat alanı yok). */
+export function priceStatus(s) {
+  const i = priceInfo(s);
+  if (i) return { known: true, ...i, reason: null };
+  const p = s?.slots?.price;
+  const reason = s?.foreign ? 'foreign' : s?.tariff === 'estimate' ? 'estimate'
+    : (p && p.kwh === 0) || (s?.tariff === 'list' && s.price === 0) ? 'zero' : 'missing';
+  return { known: false, value: null, currency: null, comparable: false, source: null, at: null, extra: false, reason };
 }
 
 /** Karttaki fiyat metni; gerçek fiyat yoksa açıkça "Fiyat bilinmiyor". Kelime çevirisi metin düğümü üzerinden yapılır. */

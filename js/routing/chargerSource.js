@@ -51,6 +51,7 @@ export function setStationOperator(stationId, opId) {
  * Operatörü (varsa kullanıcı düzeltmesiyle) uygulayıp fiyat/kW'yi ata. Liste fiyatı yalnızca Türkiye içindir: dışındaki istasyonda (foreign)
  * gerçek tarife bilinmez, bu yüzden price 0 kalır (plan sıralamasında fiyat etkisiz) ve arayüz fiyat göstermez; canlı fiyat (slots.price) varsa o gösterilir.
  * tariff: 'list' = işletmecinin liste/kullanıcı tarifesi; 'estimate' = "Diğer" ortalaması (bu istasyonun gerçek fiyatı değil; karşılaştırmaya girmez).
+ * tariffSrc: 'documented' = varsayılan liste tarifesi (AC fiyatı düzenlenemez, hep belgelenmiş), 'user' = kullanıcının girdiği/değiştirdiği tarife, null = gerçek tarife yok.
  */
 export function priced(s) {
   const ov = overrides()[s.id];
@@ -58,7 +59,9 @@ export function priced(s) {
   const foreign = !inTurkey(s.lat, s.lon);
   const otherNow = operatorById('other').price;
   const ownTariff = op.id !== 'other' && (!op.found || (op.price !== otherNow && op.price !== DEFAULT_OPERATORS.at(-1).price)); // keşfedilen marka, kullanıcı fiyatını değiştirene dek ortalamayı taşır
-  return { ...s, opId: ov || s.opId, opRaw: s.opRaw ?? s.opId, corrected: !!ov, opName: op.name, foreign, tariff: foreign ? null : ownTariff ? 'list' : 'estimate', price: foreign ? 0 : s.slow ? (op.acPrice ?? op.price) : op.price, kw: ov ? op.kw : (s.srcKw ?? op.kw) };
+  const def = DEFAULT_OPERATORS.find((d) => d.id === op.id);
+  const tariffSrc = foreign || !ownTariff ? null : op.found ? 'user' : s.slow || op.price === def?.price ? 'documented' : 'user';
+  return { ...s, opId: ov || s.opId, opRaw: s.opRaw ?? s.opId, corrected: !!ov, opName: op.name, foreign, tariff: foreign ? null : ownTariff ? 'list' : 'estimate', tariffSrc, price: foreign ? 0 : s.slow ? (op.acPrice ?? op.price) : op.price, kw: ov ? op.kw : (s.srcKw ?? op.kw) };
 }
 
 /**
