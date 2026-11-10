@@ -14,6 +14,7 @@ function set(card, btn, title, closed) {
 
 export function initCollapse() {
   document.querySelectorAll('.card').forEach((card) => {
+    if (card.hasAttribute('data-nocollapse')) return; // kapatılamayan kart (Rota: başlıkta kısayollar var)
     const heading = card.querySelector('h2, h3');
     if (!heading || heading.closest('.card') !== card) return; // başlıksız (metrik/sürgü) kartlar
     const key = card.id || heading.id || `${card.closest('.tab')?.id}:${heading.textContent.trim()}`; // metni değişen başlıklar id ile
