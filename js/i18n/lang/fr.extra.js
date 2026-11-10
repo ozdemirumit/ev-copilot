@@ -389,4 +389,5 @@ export default {
   "Bu istasyonla plan kurulamadı: {0}": "Aucun plan possible avec cette borne : {0}",
   "Plan kurulamadı": "Impossible de créer le plan",
   "Durak değiştirildi: {0}. Zincir bozulduğu için diğer duraklar da yeniden düzenlendi.": "Arrêt changé : {0}. Les autres arrêts ont aussi été réorganisés car la chaîne ne fonctionnait plus.",
+  "🔁 Değiştir": "🔁 Changer",
 };

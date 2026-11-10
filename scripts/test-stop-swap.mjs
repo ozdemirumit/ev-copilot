@@ -106,6 +106,10 @@ ok('durak satırında Değiştir düğmesi', /textContent: 'Değiştir'/.test(rp
 const ui = read('js/ui/stopSwap.js');
 ok('seçilince swapStop çağrılır, başarısızsa bildirim', /swapStop\(/.test(ui) && /toast\(/.test(ui));
 ok('5 km yarıçap', /radiusKm: 5/.test(ui) || /RADIUS_KM = 5/.test(ui));
+const card = read('js/ui/stationCard.js');
+ok('istasyon kartında Değiştir, Fiyat bildir ile aynı satırda ve sonrasında', card.indexOf("btn('💳 Fiyat bildir'") > 0 && card.indexOf("btn('🔁 Değiştir'") > card.indexOf("btn('💳 Fiyat bildir'") && /acts\.append\(btn\('🔁 Değiştir'/.test(card));
+ok('Değiştir yalnızca rotadaki (araçtan ileri) durak için', /plan'\)\.stops\?\.find\(\(x\) => x\.station\.id === s\.id && x\.km > progressKm\(\) - 0\.3\)/.test(card) && /if \(stop\) acts/.test(card));
+ok('kart kapanır, aynı değiştirme penceresi açılır', /close\(\); openSwap\(stop, progressKm\(\)\)/.test(card));
 ok('çevrimdışı kabukta yeni dosya', read('sw.js').includes("'./js/ui/stopSwap.js'"));
 
 console.log(`\n${pass} geçti, ${fail} kaldı`);

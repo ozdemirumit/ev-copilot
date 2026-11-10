@@ -389,4 +389,5 @@ export default {
   "Bu istasyonla plan kurulamadı: {0}": "С тази станция не може да се състави план: {0}",
   "Plan kurulamadı": "Планът не можа да бъде съставен",
   "Durak değiştirildi: {0}. Zincir bozulduğu için diğer duraklar da yeniden düzenlendi.": "Спирката е сменена: {0}. Другите спирки също бяха пренаредени, защото веригата вече не работеше.",
+  "🔁 Değiştir": "🔁 Смени",
 };

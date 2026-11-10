@@ -389,4 +389,5 @@ export default {
   "Bu istasyonla plan kurulamadı: {0}": "Δεν είναι δυνατός προγραμματισμός με αυτόν τον σταθμό: {0}",
   "Plan kurulamadı": "Δεν ήταν δυνατή η δημιουργία πλάνου",
   "Durak değiştirildi: {0}. Zincir bozulduğu için diğer duraklar da yeniden düzenlendi.": "Η στάση άλλαξε: {0}. Οι άλλες στάσεις αναδιατάχθηκαν επίσης, γιατί η αλυσίδα δεν λειτουργούσε πια.",
+  "🔁 Değiştir": "🔁 Αλλαγή",
 };

@@ -388,5 +388,6 @@
  "Durak değiştirildi: {0}",
  "Bu istasyonla plan kurulamadı: {0}",
  "Plan kurulamadı",
- "Durak değiştirildi: {0}. Zincir bozulduğu için diğer duraklar da yeniden düzenlendi."
+ "Durak değiştirildi: {0}. Zincir bozulduğu için diğer duraklar da yeniden düzenlendi.",
+ "🔁 Değiştir"
 ]

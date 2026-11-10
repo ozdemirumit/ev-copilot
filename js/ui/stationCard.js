@@ -2,7 +2,9 @@
 // Git / Haritalar düğmeleri, fiyat bildirimi ve topluluk bilgisi: 1-5 puan, çevredeki olanaklar (AVM, tuvalet…) ve fotoğraflar (kameradan ya da galeriden).
 // Canlı bilgi tek istasyon için sunucudan istenir (/v1/occupancy; Hollanda'da NDW, Türkiye'de topluluk).
 import { measuredSoc } from '../physics/socEstimate.js';
-import { effective } from '../state.js';
+import { effective, getState } from '../state.js';
+import { progressKm } from '../routing/progress.js';
+import { openSwap } from './stopSwap.js';
 import { mapApi } from './mapView.js';
 import { toast } from './toast.js';
 import { tr, t } from '../i18n/index.js';
@@ -189,6 +191,9 @@ function open(s) {
       } catch { toast('Fiyat gönderilemedi'); }
     }));
   }
+  // Bu istasyon rotadaki bir şarj durağıysa: 5 km çevresindeki uygun istasyonlardan biriyle değiştirilebilir (Fiyat bildir'in sağında)
+  const stop = getState('plan').stops?.find((x) => x.station.id === s.id && x.km > progressKm() - 0.3);
+  if (stop) acts.append(btn('🔁 Değiştir', () => { close(); openSwap(stop, progressKm()); }));
   const info = el('div', 'stack sc-info');
   card.replaceChildren(head, meta, price, live, acts, info);
   card.classList.remove('hidden');

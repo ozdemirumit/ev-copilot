@@ -389,4 +389,5 @@ export default {
   "Bu istasyonla plan kurulamadı: {0}": "Não é possível planear com esta estação: {0}",
   "Plan kurulamadı": "Não foi possível criar o plano",
   "Durak değiştirildi: {0}. Zincir bozulduğu için diğer duraklar da yeniden düzenlendi.": "Paragem alterada: {0}. As outras paragens também foram reorganizadas porque a cadeia deixou de funcionar.",
+  "🔁 Değiştir": "🔁 Alterar",
 };
