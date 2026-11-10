@@ -72,8 +72,8 @@ ok('menzil tahmin olarak etiketli', pill.includes('≈') && html.includes('>Tahm
 const socDlg = html.slice(html.indexOf('<dialog id="soc-sheet"'), html.indexOf('</dialog>', html.indexOf('<dialog id="soc-sheet"')));
 ok('pil sürgüsü pencerenin içinde, role=slider, klavye odağı', /id="socbar-track"[^>]*role="slider"[^>]*aria-valuemin="0"[^>]*aria-valuemax="100"[^>]*tabindex="0"/.test(socDlg) || (/id="socbar-track"/.test(socDlg) && /role="slider"/.test(socDlg) && /tabindex="0"/.test(socDlg)));
 ok('pencere başlıkla ilişkili ve kapatılabilir', socDlg.includes('aria-labelledby="soc-sheet-title"') && socDlg.includes('id="soc-sheet-x"') && socDlg.includes('id="soc-sheet-done"'));
-const rail = html.slice(html.indexOf('id="fabs-more"'), html.indexOf('id="fab-stopnav"'));
-ok('sağ yuvarlak düğmelerde İstasyonlar ve Daha fazla, alt çubuk yok', ['stations', 'more'].every((t) => rail.includes(`data-tab="${t}"`)) && !html.includes('class="bottomnav"'));
+const nav = html.slice(html.indexOf('class="bottomnav"'), html.indexOf('</nav>'));
+ok('alt gezinmede 3 sekme: Harita, İstasyonlar, Daha fazla', (nav.match(/data-tab="/g) || []).length === 3 && ['map', 'stations', 'more'].every((t) => nav.includes(`data-tab="${t}"`)));
 ok('Favoriler Daha fazla menüsünden erişilir, İstasyonlar ekranında bağlantı yok', /class="menu-item"[^>]*data-tab="favs"/.test(html) && !/fav-link/.test(html) && html.includes('id="tab-favs"'));
 // Var olan dinleyiciler ve derin bağlantılar: kimlikler silinmez
 const IDS = ['bd-gps', 'bd-ocr', 'bd-abrp', 'bd-sim', 'btn-install', 'btn-update', 'btn-data', 'veh-name', 'hud-soc', 'hud-speed', 'hud-limit',

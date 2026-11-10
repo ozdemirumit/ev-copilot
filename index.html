@@ -805,8 +805,6 @@
   <div class="mapstack" id="mapstack">
     <div class="fabs" id="fabs">
       <div class="fabs-more" id="fabs-more" role="group" aria-label="Diğer harita kontrolleri">
-        <button type="button" data-tab="stations" aria-label="İstasyonlar" title="İstasyonlar"><svg class="ic" aria-hidden="true"><use href="#i-bolt"/></svg><i class="nbadge hidden" id="badge-stations"></i></button>
-        <button type="button" data-tab="more" aria-label="Daha fazla" title="Daha fazla"><svg class="ic" aria-hidden="true"><use href="#i-dots"/></svg></button>
         <button type="button" data-tab="favs" aria-label="Favoriler" title="Favoriler"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg></button>
         <button type="button" data-tab="range" aria-label="Araç ve menzil" title="Araç ve menzil"><svg class="ic" aria-hidden="true"><use href="#i-gauge"/></svg></button>
         <button type="button" data-tab="test" data-premium-only aria-label="Test Modu" title="Test Modu"><svg class="ic" aria-hidden="true"><use href="#i-flask"/></svg></button>
@@ -847,6 +845,13 @@
 
 <div class="station-card hidden" id="station-card" role="dialog" aria-label="İstasyon"></div>
 
+<div class="dock">
+  <nav class="bottomnav" aria-label="Ana gezinme">
+    <button type="button" data-tab="map" class="active"><span><svg class="ic" aria-hidden="true"><use href="#i-map"/></svg></span>Harita</button>
+    <button type="button" data-tab="stations"><span><svg class="ic" aria-hidden="true"><use href="#i-bolt"/></svg></span>İstasyonlar<i class="nbadge hidden" id="badge-stations"></i></button>
+    <button type="button" data-tab="more"><span><svg class="ic" aria-hidden="true"><use href="#i-dots"/></svg></span>Daha fazla</button>
+  </nav>
+</div>
 
 <dialog id="soc-sheet" class="sheet-dlg" aria-labelledby="soc-sheet-title">
   <div class="dlg-head"><h2 id="soc-sheet-title">Pil durumu</h2><button class="sheet-x" id="soc-sheet-x" type="button" aria-label="Kapat"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button></div>

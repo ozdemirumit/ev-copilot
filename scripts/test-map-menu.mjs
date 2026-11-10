@@ -65,10 +65,9 @@ ok('kimlikler bir kez', ['vehicle-card', 'veh-brand', 'cons-target'].every((id) 
 ok('kapalı kartta kayıtlı araç görünür', /\.card\.collapsed > #veh-saved \{[^}]*display: block !important/.test(css));
 ok('Daha fazla menüsünden de erişilir', /class="menu-item"[^>]*data-tab="range"[\s\S]*?<b>Araç ve menzil<\/b>/.test(html));
 
-// Alt gezinme çubuğu kalktı: İstasyonlar ve Daha fazla sağdaki yuvarlak düğmelerde
-const rail = between('id="fabs-more"', 'id="fab-stopnav"');
-ok('alt gezinme çubuğu yok', !html.includes('class="bottomnav"') && !html.includes('class="dock"'));
-ok('sağ yuvarlak düğmelerde İstasyonlar (rozetli) ve Daha fazla en üstte', /^[^]*?<button[^>]*data-tab="stations"[^>]*>[^]*?id="badge-stations"[^]*?<button[^>]*data-tab="more"/.test(rail) && rail.indexOf('data-tab="stations"') < rail.indexOf('data-tab="more"') && rail.indexOf('data-tab="more"') < rail.indexOf('data-tab="favs"'));
+// Alt gezinme ve yinelenen satır
+const nav = between('class="bottomnav"', '</nav>');
+ok('alt gezinme yalnızca Harita, İstasyonlar, Daha fazla', (nav.match(/data-tab="/g) || []).length === 3 && ['Harita', 'İstasyonlar', 'Daha fazla'].every((t) => nav.includes(t)));
 ok('Şarj istasyonları satırı kalktı', !html.includes('near-summary') && !css.includes('near-summary') && !nearby.includes('near-summary'));
 ok('istasyon sayfası duruyor', html.includes('id="tab-stations"') && html.includes('id="badge-stations"'));
 

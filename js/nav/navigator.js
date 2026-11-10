@@ -5,7 +5,6 @@ import { getState, patch, subscribe, effective } from '../state.js';
 import { save } from '../utils/storage.js';
 import { mapApi } from '../ui/mapView.js';
 import { toast } from '../ui/toast.js';
-import { showTab } from '../ui/tabs.js';
 import { rerouteFromHere } from '../routing/controller.js';
 import { speak, stopSpeech, testVoice } from '../advisor/voice.js';
 import { instruction, fmtDist, dueVoice, isMinor } from './steps.js';
@@ -290,7 +289,7 @@ export async function startNav() {
   trackKm = null;
   offSince = 0;
   patch('nav', { active: true });
-  showTab('map');
+  document.querySelector('.bottomnav [data-tab="map"]')?.click();
   zoomNow = 16; zoomAt = Date.now(); speedAvg = e.speed ?? 0;
   const up = getState('nav').headingUp;
   mapApi.navView(true, up, mapApi.is3d());
