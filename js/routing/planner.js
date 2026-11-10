@@ -45,6 +45,7 @@ const detourMin = (s) => ((s.offKm * 2) / P.detourKmh) * 60;
  *  - ara istasyona varış SoC ≥ chargerMinArrival, varışa varış SoC ≥ minArrival
  *  - maxFirstStopKm: dinamik fallback'te ilk durağın bu km'den ileride olmasını yasaklar.
  *  - forceFirstId: ilk durak bu istasyon olmak zorundadır (kullanıcı "Git" ile seçti).
+ *  - mustIds: bu istasyonların hepsi plana girmek zorundadır (kullanıcı bir durağı başka istasyonla değiştirdi); excludeIds: bu istasyonlar kullanılmaz.
  */
 export function planRoute(args) {
   const attempt = (a) => {
@@ -61,11 +62,18 @@ export function planRoute(args) {
 /** Eşik altına düşme cezası: puan başına ≈ 7 dk veya 20 TL (hızlı modda 3 dk). */
 const dipPenalty = (mode, pts) => Math.max(0, pts) * (mode === 'fast' ? 3 : 20);
 
-function solve({ profile, stations, startKm = 0, startSoc, minArrival, mode = 'opt', k = 1, maxFirstStopKm = Infinity, forceFirstId = null, skipFull = false }, minAdd) {
+function solve({ profile, stations, startKm = 0, startSoc, minArrival, mode = 'opt', k = 1, maxFirstStopKm = Infinity, forceFirstId = null, skipFull = false, mustIds = null, excludeIds = null }, minAdd) {
   const tol = P.tolerance;
   const endKm = profile.totalKm;
-  const fullNear = (s) => skipFull && s.id !== forceFirstId && isFresh(s) && slotKind(s) === 'full' && s.km - startKm <= WAIT_NEAR_KM; // yakın ve taze bilgiye göre dolu
-  const cands = stations.filter((s) => s.km > startKm + 0.5 && s.km < endKm - 0.5 && usable(s) && !fullNear(s)).sort((a, b) => a.km - b.km);
+  const must = new Set(mustIds || []);
+  const ban = new Set(excludeIds || []);
+  const fullNear = (s) => skipFull && s.id !== forceFirstId && !must.has(s.id) && isFresh(s) && slotKind(s) === 'full' && s.km - startKm <= WAIT_NEAR_KM; // yakın ve taze bilgiye göre dolu
+  const cands = stations.filter((s) => s.km > startKm + 0.5 && s.km < endKm - 0.5 && usable(s) && !fullNear(s) && !ban.has(s.id)).sort((a, b) => a.km - b.km);
+  // Zorunlu duraklar: düğüm n = cands[n-1]. mustPre[i] = cands[0..i-1] içindeki zorunlu sayısı; bir kenar zorunlu durağı atlayamaz.
+  const mustPre = [0];
+  cands.forEach((s) => mustPre.push(mustPre[mustPre.length - 1] + (must.has(s.id) ? 1 : 0)));
+  const mustTotal = mustPre[cands.length];
+  const mustBetween = (n, j) => mustPre[j - 1] - mustPre[n]; // n ile j arasında (ikisi hariç) atlanan zorunlu durak sayısı
   const levels = [];
   for (let l = P.minChargeTo; l <= P.maxChargeTo; l += P.chargeStep) levels.push(l);
 
@@ -81,13 +89,14 @@ function solve({ profile, stations, startKm = 0, startSoc, minArrival, mode = 'o
       const fromKm = nodeKm[n];
 
       const arriveEnd = st.leave - (profile.energyBetween(fromKm, endKm, k) / BAT) * 100;
-      if (arriveEnd >= minArrival - tol && !(n === 0 && forceFirstId)) { // zorunlu ilk durak varsa durak atlanamaz
+      if (arriveEnd >= minArrival - tol && !(n === 0 && forceFirstId) && mustTotal - mustPre[n] === 0) { // zorunlu durak varsa atlanamaz; sonrasında zorunlu durak kalmamalı
         const total = st.metric + dipPenalty(mode, minArrival - arriveEnd);
         if (!best || total < best.metric) best = { metric: total, from: [n, si], arriveEnd };
       }
 
       for (let j = n + 1; j < states.length; j++) {
         const s = cands[j - 1];
+        if (mustBetween(n, j) > 0) break; // araya giren zorunlu durak atlanamaz (daha ilerisi de geçersiz)
         if (n === 0 && s.km > maxFirstStopKm) break;
         if (n === 0 && forceFirstId && s.id !== forceFirstId) continue; // ilk durak seçilen istasyon olmalı
         const eRoute = profile.energyBetween(fromKm, s.km, k);
@@ -163,6 +172,21 @@ function explainBreak({ profile, cands, states, nodeKm, startKm, endKm, startSoc
   const next = cands[last] ? t("sonraki aday istasyon {0}. km'de ({1} km)", nextKm.toFixed(0), (nextKm - fromKm).toFixed(0)) : t('varışa {0} km var', (endKm - fromKm).toFixed(0));
   return t('Uygun şarj zinciri bulunamadı: {0} sonrası: {1}; ama %{2} pille en fazla ~{3} km gidilebilir.', where, next, Math.round(leave), reach.toFixed(0)) + ' '
     + t('Bu aralıkta haritada istasyon eksik olabilir: İstasyon sekmesindeki "Kendi istasyonlarım"a bildiğin istasyonları ekle; ayrıca tüketimi, giriş pilini veya şarj hedefini gözden geçir (toplam tüketim ≈ %{0} pil, {1} aday istasyon).', need.toFixed(0), cands.length);
+}
+
+/**
+ * Bir şarj durağının yerine konabilecek istasyonlar: durağa radiusKm içinde, güç filtresine ve marka tercihine uygun (usable + brandOk),
+ * durağın kendisi ve plandaki öbür duraklar hariç, araçtan (fromKm) ileride. Durağa en yakın olan önce.
+ * stop: { station }; stations: plan.stations (lat, lon, km); haversine dışarıdan verilir (saf test için).
+ */
+export function swapCandidates({ stop, stations, dist, radiusKm = 5, fromKm = 0, plannedIds = [] }) {
+  const taken = new Set(plannedIds);
+  taken.delete(stop.station.id);
+  return stations
+    .filter((s) => s.id !== stop.station.id && !taken.has(s.id) && s.km > fromKm + 0.5 && usable(s) && brandOk(s))
+    .map((s) => ({ station: s, distKm: dist(s, stop.station) }))
+    .filter((r) => r.distKm <= radiusKm)
+    .sort((a, b) => a.distKm - b.distKm);
 }
 
 /**

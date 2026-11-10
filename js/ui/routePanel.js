@@ -8,6 +8,7 @@ import { save } from '../utils/storage.js';
 import { stationGaps } from '../routing/planner.js';
 import { slotEl, livePrice } from '../routing/slots.js';
 import { mapApi } from './mapView.js';
+import { openSwap } from './stopSwap.js';
 import { proxyHas } from '../net/proxy.js';
 import { PLANNER } from '../config.js';
 
@@ -163,7 +164,12 @@ export function initRoutePanel() {
         const lp = livePrice(s.station);
         const price = lp && Object.assign(document.createElement('div'), { className: 'm', textContent: lp.text });
         const extra = lp?.extra && Object.assign(document.createElement('div'), { className: 'm', textContent: 'Ek ücret var (oturum başı ya da süre)' });
-        row.append(num, title, right, meta, ...[price, extra].filter(Boolean), show);
+        const swap = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost sm swap', textContent: 'Değiştir' });
+        swap.title = 'Bu durağı yakınındaki başka bir istasyonla değiştir';
+        swap.addEventListener('click', () => openSwap(s, here));
+        const acts = Object.assign(document.createElement('div'), { className: 'stop-actions' });
+        acts.append(show, swap);
+        row.append(num, title, right, meta, ...[price, extra].filter(Boolean), acts);
         list.append(row);
       });
     } else if (p.status !== 'loading') {

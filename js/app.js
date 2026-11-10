@@ -32,6 +32,7 @@ import { initSocInput } from './ui/socInput.js';
 import { initRouteForm } from './ui/routeForm.js';
 import { initSocBar } from './ui/socBar.js';
 import { initArrivalCalib } from './ui/arrivalCalib.js';
+import { initStopSwap } from './ui/stopSwap.js';
 import { initDefaultStart } from './ui/defaultStart.js';
 import { initSocEstimate, restoreSoc } from './physics/socEstimate.js';
 import { initMap } from './ui/mapView.js';
@@ -117,6 +118,7 @@ initSocInput();
 initRouteForm();
 initSocBar();
 initArrivalCalib(); // şarj durağına varınca pil yüzdesini sorar (kamera okumuyorsa)
+initStopSwap(); // Rota sayfasında durağı değiştirme penceresi
 initDefaultStart();
 initSocEstimate();
 

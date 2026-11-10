@@ -375,5 +375,17 @@
  "Kaydedildi: tahmin %{0}, gerçek %{1}",
  "tahmin %{0} → gerçek %{1} ({2} puan)",
  "plan %{0} ({1} puan)",
- "Henüz varış kalibrasyonu yok (şarj durağına varınca uygulama pil yüzdesini sorar)."
+ "Henüz varış kalibrasyonu yok (şarj durağına varınca uygulama pil yüzdesini sorar).",
+ "Değiştir",
+ "Durağı değiştir",
+ "Bu durağı yakınındaki başka bir istasyonla değiştir",
+ "{0} çevresinde {1} km içindeki uygun istasyonlar",
+ "5 km içinde filtrelere uygun başka istasyon yok. Şarj gücü filtresini ya da marka tercihini gevşetmeyi dene.",
+ "aynı noktada",
+ "{0} km önce",
+ "{0} km sonra",
+ "{0} km uzakta",
+ "Durak değiştirildi: {0}",
+ "Bu istasyonla plan kurulamadı: {0}",
+ "Plan kurulamadı"
 ]

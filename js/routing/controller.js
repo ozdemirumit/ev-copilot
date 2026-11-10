@@ -66,7 +66,7 @@ export function planK() {
 }
 
 /** Mevcut profil/istasyonlarla planı (yeniden) hesapla. fromKm/soc verilirse o konumdan (dinamik yeniden planlama). */
-export function computePlan({ fromKm = 0, soc = startSoc, maxFirstStopKm = Infinity } = {}) {
+export function computePlan({ fromKm = 0, soc = startSoc, maxFirstStopKm = Infinity, pins = null } = {}) { // pins: { pinIds, banIds } denemesi (kaydetmeden)
   const plan = getState('plan');
   const r = getState('route');
   if (!plan.profile) return null;
@@ -78,6 +78,8 @@ export function computePlan({ fromKm = 0, soc = startSoc, maxFirstStopKm = Infin
   const result = planRoute({
     profile: plan.profile, stations, startKm: fromKm, startSoc: soc,
     minArrival: r.minArrivalSoc, mode: plan.mode, k, maxFirstStopKm, forceFirstId: forced,
+    mustIds: (pins?.pinIds ?? plan.pinIds ?? []).filter((id) => stations.some((s) => s.id === id && s.km > fromKm + 0.5)), // kullanıcının seçtiği duraklar; geçilmiş olanlar yok sayılır
+    excludeIds: pins?.banIds ?? plan.banIds ?? [],
   });
   const ranking = rankStations({ profile: plan.profile, stations, startKm: fromKm, startSoc: soc, k, mode: plan.mode });
   return { result, ranking, kInfo };
@@ -149,7 +151,7 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
   const restoreSim = () => { if (resumeSim && getState('sim').enabled) patch('sim', { play: true }); };
 
   try {
-    patch('plan', { status: 'loading', text: 'Rota alınıyor…', stops: [], totals: null, ranking: [], fromKm: 0, fromSoc: null });
+    patch('plan', { status: 'loading', text: 'Rota alınıyor…', stops: [], totals: null, ranking: [], fromKm: 0, fromSoc: null, pinIds: [], banIds: [] }); // yeni rota: elle değiştirilen duraklar sıfırlanır
     patch('sim', { routeKm: 0, lat: from?.lat ?? null, lon: from?.lon ?? null, play: false }); // simüle araç yeni rotanın başına (yeniden rotada bulunduğu yere)
     const tm = [Date.now()]; const rt = await fetchRoute(start, end, tripWaypoints(route.via, via)); tm.push(Date.now()); // tm: aşama zamanları (yavaşlık tanısı)
     if (rt.note) toast(rt.note, 7000);
@@ -300,6 +302,24 @@ export async function rerouteFromHere() {
   const e = effective();
   if (e.lat == null || getState('plan').status === 'loading') return false;
   return planTrip({ lat: e.lat, lon: e.lon, label: 'Konumum' });
+}
+
+/**
+ * Plandaki bir durağı başka istasyonla değiştir: yeni istasyon zorunlu, eski istasyon dışlanır; plan yeniden hesaplanır.
+ * Kurulamazsa eski plan korunur. Dönüş: { ok, reason }.
+ */
+export function swapStop(oldId, newId) {
+  const plan = getState('plan');
+  if (!plan.profile) return { ok: false, reason: 'Rota yok' };
+  const prev = { pinIds: plan.pinIds || [], banIds: plan.banIds || [] };
+  const next = {
+    pinIds: [...prev.pinIds.filter((id) => id !== oldId && id !== newId), newId],
+    banIds: [...new Set([...prev.banIds.filter((id) => id !== newId), oldId])],
+  };
+  const out = computePlan({ fromKm: plan.fromKm ?? 0, soc: plan.fromSoc ?? startSoc, pins: next });
+  if (!out?.result.feasible) return { ok: false, reason: out?.result.reason || 'Plan kurulamadı' };
+  applyPlan(out, next);
+  return { ok: true };
 }
 
 /** İstasyon fiyat/kW tablosu değişti: ağ çağrısı olmadan yeniden fiyatla ve planla. */
