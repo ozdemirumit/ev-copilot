@@ -7,6 +7,7 @@ import { VEHICLE } from '../config.js';
 import { isOnline } from './socEstimate.js';
 import { haversineKm } from '../utils/geo.js';
 import { sharePresence } from '../account/community.js';
+import { plausibleCharge } from './chargeSanity.js';
 
 const MAX_LOCAL = 300;
 const MIN_RISE = 3; // puan: bundan az yükselme şarj sayılmaz
@@ -19,7 +20,8 @@ const NEAR_KM = 0.3;
 let base = null; // { soc, t } durağan dönemdeki en düşük pil
 let sess = null;
 
-export const chargeLog = () => load('charges', []);
+const plausible = (r) => plausibleCharge({ kwh: r.kwh, min: r.min, maxKw: VEHICLE.maxDcKw }); // eski kötü kayıtlar da listeden süzülür
+export const chargeLog = () => load('charges', []).filter(plausible);
 
 /** Bir şarj kaydını güncelle (ör. kullanıcının bildirdiği fiyat). */
 export function updateCharge(id, part) {
@@ -50,6 +52,7 @@ function finish(now) {
   const min = (s.tEnd - s.t0) / 60e3;
   if (rise < MIN_RISE || min < MIN_MIN) return;
   const kwh = +((rise / 100) * VEHICLE.batteryNetKwh).toFixed(1);
+  if (!plausibleCharge({ kwh, min, maxKw: VEHICLE.maxDcKw })) return; // imkânsız güç: elle düzeltme/okuma boşluğu, kayda alınmaz
   const st = nearestStation(s.lat, s.lon);
   const rec = {
     id: 'ch' + s.t0.toString(36), t: s.tEnd, t0: s.t0,

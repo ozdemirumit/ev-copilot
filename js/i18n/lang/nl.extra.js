@@ -353,4 +353,5 @@ export default {
   "Daralt": "Inklappen",
   "+ ek ücret": "+ extra kosten",
   "Planla": "Plannen",
+  "şarj gerekmez": "laden niet nodig",
 };

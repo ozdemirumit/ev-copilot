@@ -353,4 +353,5 @@ export default {
   "Daralt": "Collapse",
   "+ ek ücret": "+ extra fee",
   "Planla": "Plan",
+  "şarj gerekmez": "no charge needed",
 };

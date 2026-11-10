@@ -84,8 +84,8 @@ function renderList() {
     meta.append(
       text('span', 'tag ' + (n ? 'best' : ''), (n ? `Planda #${n}` : 'Aday') + (brandOk(r.station) ? '' : ' · ' + tr('tercih dışı'))),
       text('span', '', r.station.foreign
-        ? `${r.station.opName} · ${r.station.slow ? 'AC/yavaş ' : ''}${r.station.kw} kW${r.station.uncertain ? '*' : ''} · ${Math.max(0, r.station.km - here).toFixed(0)} km ileride · varış %${r.arrive.toFixed(0)} → %${Math.round(r.to)}`
-        : `${r.station.opName} · ${r.station.slow ? 'AC/yavaş ' : ''}${r.station.kw} kW${r.station.uncertain ? '*' : ''} · ${r.station.price.toFixed(2)} TL/kWh · ${Math.max(0, r.station.km - here).toFixed(0)} km ileride · varış %${r.arrive.toFixed(0)} → %${Math.round(r.to)}`),
+        ? `${r.station.opName} · ${r.station.slow ? 'AC/yavaş ' : ''}${r.station.kw} kW${r.station.uncertain ? '*' : ''} · ${Math.max(0, r.station.km - here).toFixed(0)} km ileride · varış %${r.arrive.toFixed(0)}${r.noCharge ? ' · ' + tr('şarj gerekmez') : ` → %${Math.round(r.to)}`}`
+        : `${r.station.opName} · ${r.station.slow ? 'AC/yavaş ' : ''}${r.station.kw} kW${r.station.uncertain ? '*' : ''} · ${r.station.price.toFixed(2)} TL/kWh · ${Math.max(0, r.station.km - here).toFixed(0)} km ileride · varış %${r.arrive.toFixed(0)}${r.noCharge ? ' · ' + tr('şarj gerekmez') : ` → %${Math.round(r.to)}`}`),
     );
     const slotNode = slotEl(r.station);
     if (slotNode) meta.lastElementChild.append(slotNode);
@@ -104,9 +104,9 @@ function renderList() {
     left.append(fix);
     const nums = document.createElement('div');
     nums.className = 'nums';
-    const b = text('b', '', `${Math.round(r.minutes)} dk`);
+    const b = text('b', '', r.noCharge ? '—' : `${Math.round(r.minutes)} dk`);
     nums.append(b);
-    if (!r.station.foreign) nums.append(document.createElement('br'), text('span', '', `${r.cost.toFixed(0)} TL`));
+    if (!r.station.foreign && !r.noCharge) nums.append(document.createElement('br'), text('span', '', `${r.cost.toFixed(0)} TL`));
     div.append(left, nums);
     list.append(div);
   });

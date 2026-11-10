@@ -353,4 +353,5 @@ export default {
   "Daralt": "Comprimi",
   "+ ek ücret": "+ costo aggiuntivo",
   "Planla": "Pianifica",
+  "şarj gerekmez": "ricarica non necessaria",
 };

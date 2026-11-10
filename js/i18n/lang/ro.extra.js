@@ -353,4 +353,5 @@ export default {
   "Daralt": "Restrânge",
   "+ ek ücret": "+ taxă suplimentară",
   "Planla": "Planifică",
+  "şarj gerekmez": "încărcare inutilă",
 };

@@ -353,4 +353,5 @@ export default {
   "Daralt": "Свий",
   "+ ek ücret": "+ допълнителна такса",
   "Planla": "Планирай",
+  "şarj gerekmez": "не е нужно зареждане",
 };

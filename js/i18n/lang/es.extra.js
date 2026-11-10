@@ -353,4 +353,5 @@ export default {
   "Daralt": "Contraer",
   "+ ek ücret": "+ cargo adicional",
   "Planla": "Planificar",
+  "şarj gerekmez": "no necesita carga",
 };

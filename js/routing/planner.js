@@ -169,16 +169,20 @@ function explainBreak({ profile, cands, states, nodeKm, startKm, endKm, startSoc
  * İstasyon sıralaması (tek istasyon bakışıyla): başlangıçtan ek şarj olmadan varış SoC'si ve %80'e şarj süresi/maliyeti.
  * Erişilemeyenler (varış < chargerMinArrival) elenir.
  */
+const NO_CHARGE_SCORE = 1e9; // şarj gerekmeyen adaylar listenin sonunda (yakın olan önce)
 export function rankStations({ profile, stations, startKm = 0, startSoc, k = 1, mode = 'opt', target = 80 }) {
   const rows = [];
   for (const s of stations) {
     if (s.km <= startKm + 0.5 || !usable(s)) continue;
     const arrive = startSoc - ((profile.energyBetween(startKm, s.km, k) + detourKwh(s) * k) / BAT) * 100;
     if (arrive < P.chargerMinArrival) continue;
-    const to = Math.max(target, Math.min(P.maxChargeTo, arrive + 10));
-    const minutes = chargeMinutes(s.kw, arrive, to) + P.stopOverheadMin + detourMin(s);
-    const cost = (((to - arrive) / 100) * BAT / P.billedEff) * s.price;
-    rows.push({ station: s, arrive, to, minutes, cost, score: metric(mode, minutes, cost) + offPref(s) }); // tercih edilen markalar listede önce
+    const goal = Math.min(P.maxChargeTo, Math.max(target, arrive + 10));
+    // Varış pili zaten hedefte ya da üstündeyse şarj gerekmez: süre/maliyet 0, sıralamada sona (eksi maliyet "en ucuz" görünmesin)
+    const noCharge = arrive >= goal - 1;
+    const to = noCharge ? arrive : goal;
+    const minutes = noCharge ? 0 : chargeMinutes(s.kw, arrive, to) + P.stopOverheadMin + detourMin(s);
+    const cost = noCharge ? 0 : (((to - arrive) / 100) * BAT / P.billedEff) * s.price;
+    rows.push({ station: s, arrive, to, minutes, cost, noCharge, score: noCharge ? NO_CHARGE_SCORE + s.km : metric(mode, minutes, cost) + offPref(s) }); // tercih edilen markalar listede önce
   }
   return rows.sort((a, b) => a.score - b.score);
 }
