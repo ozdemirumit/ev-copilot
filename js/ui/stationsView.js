@@ -10,6 +10,7 @@ import { PLANNER } from '../config.js';
 import { brandOk } from '../routing/planner.js';
 import { loosenPower, paintPowerNote, initPowerFilter } from '../routing/powerFilter.js';
 import { paintMore } from './moreToggle.js';
+import { openSwap, removeFromRoute } from './stopSwap.js';
 
 const $ = (id) => document.getElementById(id);
 const ROUTE_LIMIT = 3; // Rotadakiler: kapalıyken en çok 3 satır, "+" ile tümü
@@ -102,6 +103,18 @@ function renderList() {
       repriceAndReplan();
     });
     left.append(fix);
+    const stop = n ? stops.find((s) => s.station.id === r.station.id) : null;
+    if (stop) { // plandaki durak: başka istasyonla değiştir ya da rotadan kaldır (gerekirse alternatif seçilir)
+      const acts = text('div', 'stop-actions');
+      const sw = text('button', 'btn ghost sm', '🔁 Değiştir');
+      sw.type = 'button';
+      sw.addEventListener('click', () => openSwap(stop, here));
+      const rm = text('button', 'btn ghost sm', '🗑️ Kaldır');
+      rm.type = 'button';
+      rm.addEventListener('click', () => removeFromRoute(stop));
+      acts.append(sw, rm);
+      left.append(acts);
+    }
     const nums = document.createElement('div');
     nums.className = 'nums';
     const b = text('b', '', r.noCharge ? '—' : `${Math.round(r.minutes)} dk`);

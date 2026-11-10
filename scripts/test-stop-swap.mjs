@@ -169,6 +169,9 @@ ok('removeStop: durak dışlanır, önce öbürleri aynı (onlyIds), olmazsa alt
 ok('Rota sayfasında durak satırında Kaldır (Değiştir yanında)', /textContent: '🗑️ Kaldır'/.test(rpSrc) && /removeFromRoute\(s\)/.test(rpSrc) && /acts\.append\(show, swap, rm\)/.test(rpSrc));
 ok('İstasyon kartında rotadaki durak için Kaldır', /btn\('🗑️ Kaldır'/.test(card) && /removeFromRoute\(stop\)/.test(card));
 ok('Kaldır bildirimi: alternatif varsa yazılır', /Durak çıkarıldı: \{0\}\. Alternatif: \{1\}/.test(ui) && /Durak rotadan çıkarıldı: \{0\}/.test(ui));
+const sv = read('js/ui/stationsView.js');
+ok('İstasyonlar sekmesi: planlı satırda Değiştir ve Kaldır (aday satırda yok)', /const stop = n \? stops\.find\(\(s\) => s\.station\.id === r\.station\.id\) : null;/.test(sv) && /'🔁 Değiştir'/.test(sv) && /'🗑️ Kaldır'/.test(sv) && /openSwap\(stop, here\)/.test(sv) && /removeFromRoute\(stop\)/.test(sv) && /import \{ openSwap, removeFromRoute \} from '\.\/stopSwap\.js'/.test(sv));
+ok('Operatör düzeltme açılır menüsü duruyor (op-fix)', /fix\.className = 'op-fix'/.test(sv) && /setStationOperator\(r\.station\.id/.test(sv));
 ok('çevrimdışı kabukta yeni dosya', read('sw.js').includes("'./js/ui/stopSwap.js'"));
 
 console.log(`\n${pass} geçti, ${fail} kaldı`);
