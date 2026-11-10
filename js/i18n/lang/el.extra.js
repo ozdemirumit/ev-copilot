@@ -393,4 +393,7 @@ export default {
   "{0} durağının rotada ±{1} km çevresindeki istasyonlar (filtresiz)": "Σταθμοί σε ±{1} km κατά μήκος της διαδρομής από {0} (χωρίς φίλτρα)",
   "Rotada ±{0} km içinde başka istasyon yok.": "Κανένας άλλος σταθμός σε ±{0} km στη διαδρομή.",
   "filtre dışı": "εκτός φίλτρων",
+  "⚡ Şarj et": "⚡ Φόρτιση εδώ",
+  "Şarj durağı eklendi: {0}": "Προστέθηκε στάση φόρτισης: {0}",
+  "Şarj durağı eklendi: {0}. Gerekmeyen durak çıkarıldı: {1}": "Προστέθηκε στάση φόρτισης: {0}. Δεν χρειάζεται πια, αφαιρέθηκε: {1}",
 };

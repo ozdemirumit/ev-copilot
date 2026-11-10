@@ -393,4 +393,7 @@ export default {
   "{0} durağının rotada ±{1} km çevresindeki istasyonlar (filtresiz)": "Stations binnen ±{1} km langs de route van {0} (zonder filters)",
   "Rotada ±{0} km içinde başka istasyon yok.": "Geen ander station binnen ±{0} km op de route.",
   "filtre dışı": "buiten filters",
+  "⚡ Şarj et": "⚡ Hier laden",
+  "Şarj durağı eklendi: {0}": "Laadstop toegevoegd: {0}",
+  "Şarj durağı eklendi: {0}. Gerekmeyen durak çıkarıldı: {1}": "Laadstop toegevoegd: {0}. Niet meer nodig, verwijderd: {1}",
 };

@@ -5,6 +5,7 @@ import { measuredSoc } from '../physics/socEstimate.js';
 import { effective, getState } from '../state.js';
 import { progressKm } from '../routing/progress.js';
 import { openSwap } from './stopSwap.js';
+import { addStop } from '../routing/controller.js';
 import { mapApi } from './mapView.js';
 import { toast } from './toast.js';
 import { tr, t } from '../i18n/index.js';
@@ -194,6 +195,15 @@ function open(s) {
   // Bu istasyon rotadaki bir şarj durağıysa: 5 km çevresindeki uygun istasyonlardan biriyle değiştirilebilir (Fiyat bildir'in sağında)
   const stop = getState('plan').stops?.find((x) => x.station.id === s.id && x.km > progressKm() - 0.3);
   if (stop) acts.append(btn('🔁 Değiştir', () => { close(); openSwap(stop, progressKm()); }));
+  else if (getState('plan').status === 'ready' && getState('plan').stations?.some((x) => x.id === s.id && x.km > progressKm() + 0.5)) {
+    // Rotadaki ama planda olmayan istasyon: burada şarj et → plana girer, gerekmeyen otomatik durak çıkar
+    acts.append(btn('⚡ Şarj et', () => {
+      const r = addStop(s.id);
+      close();
+      if (!r.ok) return toast(t('Bu istasyonla plan kurulamadı: {0}', tr(r.reason || 'Plan kurulamadı')), 8000);
+      toast(r.dropped.length ? t('Şarj durağı eklendi: {0}. Gerekmeyen durak çıkarıldı: {1}', s.name, r.dropped.join(', ')) : t('Şarj durağı eklendi: {0}', s.name), 7000);
+    }, 'btn primary sm'));
+  }
   const info = el('div', 'stack sc-info');
   card.replaceChildren(head, meta, price, live, acts, info);
   card.classList.remove('hidden');

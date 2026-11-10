@@ -105,6 +105,22 @@ ok('düşük güçte şarj süresi uzar (≥ 180 kW\'lık eşdeğerinden)', lowS
 const noMust = planRoute({ ...base, stations: [...stations, low] });
 ok('zorunlu değilse 60 kW istasyon yine seçilmez (filtre planlayıcıda duruyor)', !noMust.stops.some((s) => s.station.id === 'h61'));
 
+// Şarj et (istasyonu ekle): istasyon zorunlu, öbür duraklar serbest; gerekmeyen otomatik durak çıkar
+const eng = (id, km) => ({ id, name: id, km, lat: 40, lon: 30 + km * 0.01, kw: 180, price: 14, opId: 'astor', opName: 'Astor', slow: false, uncertain: false, offKm: 0.2 });
+const aStations = [eng('s140', 140), eng('s250', 250), eng('s300', 300), eng('s330', 330), eng('s420', 420)];
+const aBase = { profile, stations: aStations, startKm: 0, startSoc: 80, minArrival: 15, mode: 'opt', k: 1 };
+const a0 = planRoute(aBase);
+ok('ekleme öncesi plan: s140 ve s300', a0.feasible && a0.stops.map((x) => x.station.id).join() === 's140,s300', a0.stops.map((x) => x.station.id).join());
+const a1 = planRoute({ ...aBase, mustIds: ['s250'] });
+const a1ids = a1.stops.map((x) => x.station.id);
+ok('eklenen istasyon plana girer', a1.feasible && a1ids.includes('s250'), a1ids.join());
+ok('gerekmeyen otomatik durak (s140) çıkar', !a1ids.includes('s140'), a1ids.join());
+ok('plan yine de eşik pilini korur (varışta ≥ eşik − tolerans)', a1.totals.arriveSoc >= 15 - PLANNER.tolerance - 0.01, String(a1.totals.arriveSoc));
+const a2 = planRoute({ ...aBase, mustIds: ['s250', 's420'] });
+ok('iki eklenen istasyon da sırayla planda', a2.feasible && a2.stops.map((x) => x.station.id).filter((i) => i === 's250' || i === 's420').join() === 's250,s420', a2.stops.map((x) => x.station.id).join());
+const a3 = planRoute({ ...aBase, mustIds: ['s140'] });
+ok('zaten planda olanı eklemek planı bozmaz', a3.feasible && a3.stops.map((x) => x.station.id).join() === a0.stops.map((x) => x.station.id).join());
+
 // Arayüz ve denetleyici bağlantıları
 const ctrl = read('js/routing/controller.js');
 ok('swapStop: yeni zorunlu, eski dışlanır; kurulamazsa plan korunur', /export function swapStop\(oldId, newId\)/.test(ctrl) && /pinIds: \[\.\.\.prev\.pinIds\.filter/.test(ctrl) && /banIds: \[\.\.\.new Set/.test(ctrl) && /if \(!out\?\.result\.feasible\) return \{ ok: false/.test(ctrl));
@@ -123,6 +139,9 @@ const card = read('js/ui/stationCard.js');
 ok('istasyon kartında Değiştir, Fiyat bildir ile aynı satırda ve sonrasında', card.indexOf("btn('💳 Fiyat bildir'") > 0 && card.indexOf("btn('🔁 Değiştir'") > card.indexOf("btn('💳 Fiyat bildir'") && /acts\.append\(btn\('🔁 Değiştir'/.test(card));
 ok('Değiştir yalnızca rotadaki (araçtan ileri) durak için', /plan'\)\.stops\?\.find\(\(x\) => x\.station\.id === s\.id && x\.km > progressKm\(\) - 0\.3\)/.test(card) && /if \(stop\) acts/.test(card));
 ok('kart kapanır, aynı değiştirme penceresi açılır', /close\(\); openSwap\(stop, progressKm\(\)\)/.test(card));
+ok('addStop: zorunlu eklenir, eski plan kurulamazsa korunur, gerekmeyen çıkarılanlar bildirilir', /export function addStop\(newId\)/.test(ctrl) && /pinIds: \[\.\.\.new Set\(\[\.\.\.\(plan\.pinIds \|\| \[\]\), newId\]\)\]/.test(ctrl) && /if \(!out\?\.result\.feasible\) return \{ ok: false, reason: out\?\.result\.reason \|\| 'Plan kurulamadı', dropped: \[\] \}/.test(ctrl) && /const dropped = /.test(ctrl));
+ok('istasyon kartında Şarj et: rotadaki ama planda olmayan istasyon için', /btn\('⚡ Şarj et'/.test(card) && /else if \(getState\('plan'\)\.status === 'ready'/.test(card) && /addStop\(s\.id\)/.test(card));
+ok('Şarj et bildirimi: eklenen ve çıkarılan duraklar', /Şarj durağı eklendi: \{0\}\. Gerekmeyen durak çıkarıldı: \{1\}/.test(card));
 ok('çevrimdışı kabukta yeni dosya', read('sw.js').includes("'./js/ui/stopSwap.js'"));
 
 console.log(`\n${pass} geçti, ${fail} kaldı`);

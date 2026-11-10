@@ -393,4 +393,7 @@ export default {
   "{0} durağının rotada ±{1} km çevresindeki istasyonlar (filtresiz)": "Stații pe ±{1} km de-a lungul traseului lui {0} (fără filtre)",
   "Rotada ±{0} km içinde başka istasyon yok.": "Nicio altă stație pe ±{0} km pe traseu.",
   "filtre dışı": "în afara filtrelor",
+  "⚡ Şarj et": "⚡ Încarcă aici",
+  "Şarj durağı eklendi: {0}": "Oprire de încărcare adăugată: {0}",
+  "Şarj durağı eklendi: {0}. Gerekmeyen durak çıkarıldı: {1}": "Oprire de încărcare adăugată: {0}. Nu mai e necesară, eliminată: {1}",
 };

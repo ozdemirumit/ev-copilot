@@ -332,6 +332,26 @@ export function swapStop(oldId, newId) {
   return { ok: true, reflowed };
 }
 
+/**
+ * Rotadaki bir istasyonda şarj et: istasyon zorunlu durak olur (kullanıcının seçimi), plan yeniden hesaplanır; otomatik seçilen duraklardan
+ * gerekmeyenler planlayıcı tarafından çıkarılır. Kurulamazsa eski plan korunur. Dönüş: { ok, reason, dropped: [ad] }.
+ */
+export function addStop(newId) {
+  const plan = getState('plan');
+  if (!plan.profile) return { ok: false, reason: 'Rota yok' };
+  const fromKm = plan.fromKm ?? 0;
+  const next = {
+    pinIds: [...new Set([...(plan.pinIds || []), newId])],
+    banIds: (plan.banIds || []).filter((id) => id !== newId),
+  };
+  const out = computePlan({ fromKm, soc: plan.fromSoc ?? startSoc, pins: next });
+  if (!out?.result.feasible) return { ok: false, reason: out?.result.reason || 'Plan kurulamadı', dropped: [] };
+  const now = new Set(out.result.stops.map((s) => s.station.id));
+  const dropped = (plan.stops || []).filter((s) => s.km > fromKm + 0.5 && !now.has(s.station.id)).map((s) => s.station.name);
+  applyPlan(out, next);
+  return { ok: true, dropped };
+}
+
 /** İstasyon fiyat/kW tablosu değişti: ağ çağrısı olmadan yeniden fiyatla ve planla. */
 export function repriceAndReplan() {
   const plan = getState('plan');

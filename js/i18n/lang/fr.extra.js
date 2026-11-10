@@ -393,4 +393,7 @@ export default {
   "{0} durağının rotada ±{1} km çevresindeki istasyonlar (filtresiz)": "Bornes à ±{1} km sur le trajet de {0} (sans filtre)",
   "Rotada ±{0} km içinde başka istasyon yok.": "Aucune autre borne à ±{0} km sur le trajet.",
   "filtre dışı": "hors filtres",
+  "⚡ Şarj et": "⚡ Recharger ici",
+  "Şarj durağı eklendi: {0}": "Arrêt de recharge ajouté : {0}",
+  "Şarj durağı eklendi: {0}. Gerekmeyen durak çıkarıldı: {1}": "Arrêt de recharge ajouté : {0}. Devenu inutile, retiré : {1}",
 };
