@@ -8,7 +8,7 @@ import { save } from '../utils/storage.js';
 import { stationGaps } from '../routing/planner.js';
 import { slotEl, livePrice } from '../routing/slots.js';
 import { mapApi } from './mapView.js';
-import { openSwap } from './stopSwap.js';
+import { openSwap, removeFromRoute } from './stopSwap.js';
 import { proxyHas } from '../net/proxy.js';
 import { PLANNER } from '../config.js';
 
@@ -168,7 +168,10 @@ export function initRoutePanel() {
         swap.title = 'Bu durağı yakınındaki başka bir istasyonla değiştir';
         swap.addEventListener('click', () => openSwap(s, here));
         const acts = Object.assign(document.createElement('div'), { className: 'stop-actions' });
-        acts.append(show, swap);
+        const rm = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost sm remove', textContent: '🗑️ Kaldır' });
+        rm.title = 'Bu durağı rotadan kaldır; gerekirse yerine alternatif seçilir';
+        rm.addEventListener('click', () => removeFromRoute(s));
+        acts.append(show, swap, rm);
         row.append(num, title, right, meta, ...[price, extra].filter(Boolean), acts);
         list.append(row);
       });

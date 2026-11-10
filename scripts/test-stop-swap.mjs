@@ -121,6 +121,28 @@ ok('iki eklenen istasyon da sırayla planda', a2.feasible && a2.stops.map((x) =>
 const a3 = planRoute({ ...aBase, mustIds: ['s140'] });
 ok('zaten planda olanı eklemek planı bozmaz', a3.feasible && a3.stops.map((x) => x.station.id).join() === a0.stops.map((x) => x.station.id).join());
 
+// Kaldır: gereksizse tamamen çıkar, gerekiyorsa rota üzerinden alternatif
+{
+  // Kısa rota (200 km): şarjsız gidilir; zorunlu tutulan durak kaldırılınca durak kalmaz
+  const short = { totalKm: 200, energyBetween: (a, b, k = 1) => Math.max(0, b - a) * 0.25 * k, timeBetween: (a, b) => Math.max(0, b - a) / 100 };
+  const sStations = [eng('r100', 100)];
+  const withStop = planRoute({ profile: short, stations: sStations, startKm: 0, startSoc: 80, minArrival: 15, mode: 'opt', k: 1, mustIds: ['r100'] });
+  ok('kısa rota: zorunlu durakla plan 1 duraklı', withStop.feasible && withStop.stops.length === 1);
+  const noStop = planRoute({ profile: short, stations: [], startKm: 0, startSoc: 80, minArrival: 15, mode: 'opt', k: 1 });
+  ok('durak gereksizse kaldırınca tamamen çıkar (boş zincir, plan kurulur)', noStop.feasible && noStop.stops.length === 0 && noStop.totals.arriveSoc >= 15 - PLANNER.tolerance);
+  // Uzun rota: s140 kaldırılınca öbür duraklar aynı kalsa plan kurulamaz → alternatif aranır
+  const chainOnly = planRoute({ ...aBase, stations: aStations.filter((x) => x.id === 's300'), mustIds: ['s300'], excludeIds: ['s140'] });
+  ok('uzun rota: öbür duraklar aynı kalıp bu durak çıkarsa plan kurulamaz', chainOnly.feasible === false);
+  const alt = planRoute({ ...aBase, excludeIds: ['s140'] });
+  const altIds = alt.stops.map((x) => x.station.id);
+  ok('serbest planlamada alternatif seçilir (s140 yok, plan kurulur)', alt.feasible && !altIds.includes('s140') && altIds.length >= 1, altIds.join());
+  ok('alternatif varışta eşiği korur', alt.totals.arriveSoc >= 15 - PLANNER.tolerance - 0.01);
+  const altPinned = planRoute({ ...aBase, excludeIds: ['s140'], mustIds: ['s330'] });
+  ok('seçilmiş (pinli) öbür durak kaldır sırasında korunur', altPinned.feasible && altPinned.stops.some((x) => x.station.id === 's330') && !altPinned.stops.some((x) => x.station.id === 's140'), altPinned.stops.map((x) => x.station.id).join());
+  const noAlt = planRoute({ ...aBase, startSoc: 40, stations: [eng('only', 140)], excludeIds: ['only'] });
+  ok('hiç alternatif yoksa plan kurulamaz (eski plan korunur)', noAlt.feasible === false);
+}
+
 // Arayüz ve denetleyici bağlantıları
 const ctrl = read('js/routing/controller.js');
 ok('swapStop: yeni zorunlu, eski dışlanır; kurulamazsa plan korunur', /export function swapStop\(oldId, newId\)/.test(ctrl) && /pinIds: \[\.\.\.prev\.pinIds\.filter/.test(ctrl) && /banIds: \[\.\.\.new Set/.test(ctrl) && /if \(!out\?\.result\.feasible\) return \{ ok: false/.test(ctrl));
@@ -142,6 +164,11 @@ ok('kart kapanır, aynı değiştirme penceresi açılır', /close\(\); openSwap
 ok('addStop: zorunlu eklenir, eski plan kurulamazsa korunur, gerekmeyen çıkarılanlar bildirilir', /export function addStop\(newId\)/.test(ctrl) && /pinIds: \[\.\.\.new Set\(\[\.\.\.\(plan\.pinIds \|\| \[\]\), newId\]\)\]/.test(ctrl) && /if \(!out\?\.result\.feasible\) return \{ ok: false, reason: out\?\.result\.reason \|\| 'Plan kurulamadı', dropped: \[\] \}/.test(ctrl) && /const dropped = /.test(ctrl));
 ok('istasyon kartında Şarj et: rotadaki ama planda olmayan istasyon için', /btn\('⚡ Şarj et'/.test(card) && /else if \(getState\('plan'\)\.status === 'ready'/.test(card) && /addStop\(s\.id\)/.test(card));
 ok('Şarj et bildirimi: eklenen ve çıkarılan duraklar', /Şarj durağı eklendi: \{0\}\. Gerekmeyen durak çıkarıldı: \{1\}/.test(card));
+const rpSrc = read('js/ui/routePanel.js');
+ok('removeStop: durak dışlanır, önce öbürleri aynı (onlyIds), olmazsa alternatif; kurulamazsa eski plan', /export function removeStop\(oldId\)/.test(ctrl) && /banIds: \[\.\.\.new Set\(\[\.\.\.\(plan\.banIds \|\| \[\]\), oldId\]\)\]/.test(ctrl) && /onlyIds: chain \}\)/.test(ctrl) && /if \(!out\?\.result\.feasible\) return \{ ok: false, reason: out\?\.result\.reason \|\| 'Plan kurulamadı', added: \[\] \}/.test(ctrl));
+ok('Rota sayfasında durak satırında Kaldır (Değiştir yanında)', /textContent: '🗑️ Kaldır'/.test(rpSrc) && /removeFromRoute\(s\)/.test(rpSrc) && /acts\.append\(show, swap, rm\)/.test(rpSrc));
+ok('İstasyon kartında rotadaki durak için Kaldır', /btn\('🗑️ Kaldır'/.test(card) && /removeFromRoute\(stop\)/.test(card));
+ok('Kaldır bildirimi: alternatif varsa yazılır', /Durak çıkarıldı: \{0\}\. Alternatif: \{1\}/.test(ui) && /Durak rotadan çıkarıldı: \{0\}/.test(ui));
 ok('çevrimdışı kabukta yeni dosya', read('sw.js').includes("'./js/ui/stopSwap.js'"));
 
 console.log(`\n${pass} geçti, ${fail} kaldı`);

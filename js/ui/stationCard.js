@@ -4,7 +4,7 @@
 import { measuredSoc } from '../physics/socEstimate.js';
 import { effective, getState } from '../state.js';
 import { progressKm } from '../routing/progress.js';
-import { openSwap } from './stopSwap.js';
+import { openSwap, removeFromRoute } from './stopSwap.js';
 import { addStop } from '../routing/controller.js';
 import { mapApi } from './mapView.js';
 import { toast } from './toast.js';
@@ -194,7 +194,7 @@ function open(s) {
   }
   // Bu istasyon rotadaki bir şarj durağıysa: 5 km çevresindeki uygun istasyonlardan biriyle değiştirilebilir (Fiyat bildir'in sağında)
   const stop = getState('plan').stops?.find((x) => x.station.id === s.id && x.km > progressKm() - 0.3);
-  if (stop) acts.append(btn('🔁 Değiştir', () => { close(); openSwap(stop, progressKm()); }));
+  if (stop) acts.append(btn('🔁 Değiştir', () => { close(); openSwap(stop, progressKm()); }), btn('🗑️ Kaldır', () => { close(); removeFromRoute(stop); }));
   else if (getState('plan').status === 'ready' && getState('plan').stations?.some((x) => x.id === s.id && x.km > progressKm() + 0.5)) {
     // Rotadaki ama planda olmayan istasyon: burada şarj et → plana girer, gerekmeyen otomatik durak çıkar
     acts.append(btn('⚡ Şarj et', () => {

@@ -1,7 +1,7 @@
 // Plandaki bir şarj durağını değiştir: durağın RADIUS_KM çevresindeki, filtrelere uygun (güç filtresi, marka tercihi) istasyonları listeler;
 // seçilen istasyon zorunlu durak olur, eski durak dışlanır ve plan yeniden hesaplanır (routing/controller.js: swapStop).
 import { getState } from '../state.js';
-import { swapStop } from '../routing/controller.js';
+import { swapStop, removeStop } from '../routing/controller.js';
 import { swapCandidates } from '../routing/planner.js';
 import { t, tr } from '../i18n/index.js';
 import { toast } from './toast.js';
@@ -54,6 +54,13 @@ export function openSwap(stop, here = 0) {
     list.append(b);
   });
   dlg.showModal();
+}
+
+/** Durağı rotadan kaldır; gerekirse yerine alternatif seçilir. Sonucu bildirir. */
+export function removeFromRoute(stop) {
+  const r = removeStop(stop.station.id);
+  if (!r.ok) return toast(t('Bu durak olmadan plan kurulamadı: {0}', tr(r.reason || 'Plan kurulamadı')), 8000);
+  toast(r.added.length ? t('Durak çıkarıldı: {0}. Alternatif: {1}', stop.station.name, r.added.join(', ')) : t('Durak rotadan çıkarıldı: {0}', stop.station.name), 7000);
 }
 
 export function initStopSwap() {

@@ -333,6 +333,32 @@ export function swapStop(oldId, newId) {
 }
 
 /**
+ * Plandaki bir şarj durağını rotadan kaldır: istasyon dışlanır (seçimi varsa kalkar), plan yeniden hesaplanır.
+ * Önce öbür duraklar aynı kalacak şekilde denenir (durak gereksizse tamamen çıkar); olmazsa planlayıcı rota üzerinden alternatif seçer.
+ * Kurulamazsa eski plan korunur. Dönüş: { ok, reason, added: [ad] } (added: yerine seçilen yeni duraklar).
+ */
+export function removeStop(oldId) {
+  const plan = getState('plan');
+  if (!plan.profile) return { ok: false, reason: 'Rota yok' };
+  const fromKm = plan.fromKm ?? 0;
+  const soc = plan.fromSoc ?? startSoc;
+  const next = {
+    pinIds: (plan.pinIds || []).filter((id) => id !== oldId),
+    banIds: [...new Set([...(plan.banIds || []), oldId])],
+  };
+  const ahead = (plan.stops || []).filter((s) => s.km > fromKm + 0.5);
+  const chain = ahead.filter((s) => s.station.id !== oldId).map((s) => s.station.id);
+  // 1) Öbür duraklar aynı, bu durak hiç yok (boş zincir: şarjsız gidilebiliyorsa durak kalmaz)
+  let out = computePlan({ fromKm, soc, pins: { pinIds: [...new Set([...next.pinIds, ...chain])], banIds: next.banIds }, onlyIds: chain });
+  if (!out?.result.feasible) out = computePlan({ fromKm, soc, pins: next }); // 2) yerine rota üzerinden alternatif (öbür duraklar da yeniden düzenlenebilir)
+  if (!out?.result.feasible) return { ok: false, reason: out?.result.reason || 'Plan kurulamadı', added: [] };
+  const before = new Set(ahead.map((s) => s.station.id));
+  const added = out.result.stops.filter((s) => !before.has(s.station.id)).map((s) => s.station.name);
+  applyPlan(out, next);
+  return { ok: true, added };
+}
+
+/**
  * Rotadaki bir istasyonda şarj et: istasyon zorunlu durak olur (kullanıcının seçimi), plan yeniden hesaplanır; otomatik seçilen duraklardan
  * gerekmeyenler planlayıcı tarafından çıkarılır. Kurulamazsa eski plan korunur. Dönüş: { ok, reason, dropped: [ad] }.
  */

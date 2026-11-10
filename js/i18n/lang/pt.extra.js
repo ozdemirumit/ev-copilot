@@ -396,4 +396,9 @@ export default {
   "⚡ Şarj et": "⚡ Carregar aqui",
   "Şarj durağı eklendi: {0}": "Paragem de carregamento adicionada: {0}",
   "Şarj durağı eklendi: {0}. Gerekmeyen durak çıkarıldı: {1}": "Paragem de carregamento adicionada: {0}. Já não é necessária, removida: {1}",
+  "🗑️ Kaldır": "🗑️ Remover",
+  "Bu durağı rotadan kaldır; gerekirse yerine alternatif seçilir": "Remover esta paragem da rota; se necessário é escolhida uma alternativa",
+  "Durak rotadan çıkarıldı: {0}": "Paragem removida da rota: {0}",
+  "Durak çıkarıldı: {0}. Alternatif: {1}": "Paragem removida: {0}. Alternativa: {1}",
+  "Bu durak olmadan plan kurulamadı: {0}": "Não é possível planear sem esta paragem: {0}",
 };

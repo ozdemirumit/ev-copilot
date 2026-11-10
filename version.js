@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.14';
+self.APP_VERSION = '0.99.15';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.15', date: '2026-11-11',
+    notes: [
+      'Planli sarj duragina Kaldir dugmesi (Rota sayfasi ve istasyon karti): durak rotadan cikar; gerekirse rota uzerinden alternatif secilir, gerekmiyorsa tamamen kalkar; kurulamazsa eski plan korunur',
+    ],
+  },
   {
     v: '0.99.14', date: '2026-11-11',
     notes: [

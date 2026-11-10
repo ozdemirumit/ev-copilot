@@ -396,4 +396,9 @@ export default {
   "⚡ Şarj et": "⚡ Încarcă aici",
   "Şarj durağı eklendi: {0}": "Oprire de încărcare adăugată: {0}",
   "Şarj durağı eklendi: {0}. Gerekmeyen durak çıkarıldı: {1}": "Oprire de încărcare adăugată: {0}. Nu mai e necesară, eliminată: {1}",
+  "🗑️ Kaldır": "🗑️ Elimină",
+  "Bu durağı rotadan kaldır; gerekirse yerine alternatif seçilir": "Elimină această oprire din traseu; dacă e nevoie, se alege o alternativă",
+  "Durak rotadan çıkarıldı: {0}": "Oprire eliminată din traseu: {0}",
+  "Durak çıkarıldı: {0}. Alternatif: {1}": "Oprire eliminată: {0}. Alternativă: {1}",
+  "Bu durak olmadan plan kurulamadı: {0}": "Nu se poate face un plan fără această oprire: {0}",
 };

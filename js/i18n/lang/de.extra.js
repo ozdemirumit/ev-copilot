@@ -396,4 +396,9 @@ export default {
   "⚡ Şarj et": "⚡ Hier laden",
   "Şarj durağı eklendi: {0}": "Ladestopp hinzugefügt: {0}",
   "Şarj durağı eklendi: {0}. Gerekmeyen durak çıkarıldı: {1}": "Ladestopp hinzugefügt: {0}. Nicht mehr nötig, entfernt: {1}",
+  "🗑️ Kaldır": "🗑️ Entfernen",
+  "Bu durağı rotadan kaldır; gerekirse yerine alternatif seçilir": "Diesen Halt aus der Route entfernen; bei Bedarf wird eine Alternative gewählt",
+  "Durak rotadan çıkarıldı: {0}": "Halt aus der Route entfernt: {0}",
+  "Durak çıkarıldı: {0}. Alternatif: {1}": "Halt entfernt: {0}. Alternative: {1}",
+  "Bu durak olmadan plan kurulamadı: {0}": "Ohne diesen Halt ist kein Plan möglich: {0}",
 };

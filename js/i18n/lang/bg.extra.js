@@ -396,4 +396,9 @@ export default {
   "⚡ Şarj et": "⚡ Зареди тук",
   "Şarj durağı eklendi: {0}": "Добавена е спирка за зареждане: {0}",
   "Şarj durağı eklendi: {0}. Gerekmeyen durak çıkarıldı: {1}": "Добавена е спирка за зареждане: {0}. Вече не е нужна, премахната: {1}",
+  "🗑️ Kaldır": "🗑️ Премахни",
+  "Bu durağı rotadan kaldır; gerekirse yerine alternatif seçilir": "Премахни тази спирка от маршрута; при нужда се избира алтернатива",
+  "Durak rotadan çıkarıldı: {0}": "Спирката е премахната от маршрута: {0}",
+  "Durak çıkarıldı: {0}. Alternatif: {1}": "Спирката е премахната: {0}. Алтернатива: {1}",
+  "Bu durak olmadan plan kurulamadı: {0}": "Без тази спирка не може да се състави план: {0}",
 };

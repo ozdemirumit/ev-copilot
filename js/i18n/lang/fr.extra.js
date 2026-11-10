@@ -396,4 +396,9 @@ export default {
   "⚡ Şarj et": "⚡ Recharger ici",
   "Şarj durağı eklendi: {0}": "Arrêt de recharge ajouté : {0}",
   "Şarj durağı eklendi: {0}. Gerekmeyen durak çıkarıldı: {1}": "Arrêt de recharge ajouté : {0}. Devenu inutile, retiré : {1}",
+  "🗑️ Kaldır": "🗑️ Retirer",
+  "Bu durağı rotadan kaldır; gerekirse yerine alternatif seçilir": "Retirer cet arrêt du trajet ; une alternative est choisie si nécessaire",
+  "Durak rotadan çıkarıldı: {0}": "Arrêt retiré du trajet : {0}",
+  "Durak çıkarıldı: {0}. Alternatif: {1}": "Arrêt retiré : {0}. Alternative : {1}",
+  "Bu durak olmadan plan kurulamadı: {0}": "Aucun plan possible sans cet arrêt : {0}",
 };

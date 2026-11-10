@@ -396,4 +396,9 @@ export default {
   "⚡ Şarj et": "⚡ Ricarica qui",
   "Şarj durağı eklendi: {0}": "Sosta di ricarica aggiunta: {0}",
   "Şarj durağı eklendi: {0}. Gerekmeyen durak çıkarıldı: {1}": "Sosta di ricarica aggiunta: {0}. Non più necessaria, rimossa: {1}",
+  "🗑️ Kaldır": "🗑️ Rimuovi",
+  "Bu durağı rotadan kaldır; gerekirse yerine alternatif seçilir": "Rimuovi questa sosta dal percorso; se serve viene scelta un'alternativa",
+  "Durak rotadan çıkarıldı: {0}": "Sosta rimossa dal percorso: {0}",
+  "Durak çıkarıldı: {0}. Alternatif: {1}": "Sosta rimossa: {0}. Alternativa: {1}",
+  "Bu durak olmadan plan kurulamadı: {0}": "Impossibile pianificare senza questa sosta: {0}",
 };

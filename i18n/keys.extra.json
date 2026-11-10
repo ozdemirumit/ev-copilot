@@ -395,5 +395,10 @@
  "filtre dışı",
  "⚡ Şarj et",
  "Şarj durağı eklendi: {0}",
- "Şarj durağı eklendi: {0}. Gerekmeyen durak çıkarıldı: {1}"
+ "Şarj durağı eklendi: {0}. Gerekmeyen durak çıkarıldı: {1}",
+ "🗑️ Kaldır",
+ "Bu durağı rotadan kaldır; gerekirse yerine alternatif seçilir",
+ "Durak rotadan çıkarıldı: {0}",
+ "Durak çıkarıldı: {0}. Alternatif: {1}",
+ "Bu durak olmadan plan kurulamadı: {0}"
 ]

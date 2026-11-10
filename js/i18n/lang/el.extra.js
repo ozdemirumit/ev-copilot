@@ -396,4 +396,9 @@ export default {
   "⚡ Şarj et": "⚡ Φόρτιση εδώ",
   "Şarj durağı eklendi: {0}": "Προστέθηκε στάση φόρτισης: {0}",
   "Şarj durağı eklendi: {0}. Gerekmeyen durak çıkarıldı: {1}": "Προστέθηκε στάση φόρτισης: {0}. Δεν χρειάζεται πια, αφαιρέθηκε: {1}",
+  "🗑️ Kaldır": "🗑️ Αφαίρεση",
+  "Bu durağı rotadan kaldır; gerekirse yerine alternatif seçilir": "Αφαίρεση αυτής της στάσης από τη διαδρομή· αν χρειάζεται, επιλέγεται εναλλακτική",
+  "Durak rotadan çıkarıldı: {0}": "Η στάση αφαιρέθηκε από τη διαδρομή: {0}",
+  "Durak çıkarıldı: {0}. Alternatif: {1}": "Η στάση αφαιρέθηκε: {0}. Εναλλακτική: {1}",
+  "Bu durak olmadan plan kurulamadı: {0}": "Δεν είναι δυνατός προγραμματισμός χωρίς αυτή τη στάση: {0}",
 };
