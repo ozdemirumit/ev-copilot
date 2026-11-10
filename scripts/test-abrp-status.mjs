@@ -64,9 +64,9 @@ ok('kapatılınca pasif', top.textContent === 'ABRP: pasif' && top.className.tri
 const html = read('index.html');
 const row = html.slice(html.indexOf('id="statusrow"'), html.indexOf('id="banners"'));
 ok('rozet üst durum şeridinde, tek', row.includes('id="bd-abrp"') && html.split('id="bd-abrp"').length === 2);
-const stack = html.slice(html.indexOf('id="fabs-more"'), html.indexOf('id="fab-stopnav"'));
-const btn = stack.match(/<button[^>]*data-tab="abrp"[^>]*>/)?.[0] || '';
-ok('sağ yığın düğmesi var olan ABRP sayfasını açar, Premium kısıtlı', btn.includes('data-premium-only') && btn.includes('aria-label="ABRP"') && html.includes('id="tab-abrp"'), btn);
+const menu = html.slice(html.indexOf('id="tab-more"'), html.indexOf('</main>'));
+const btn = menu.match(/<button[^>]*data-tab="abrp"[^>]*>/)?.[0] || '';
+ok('Daha fazla menüsündeki öğe var olan ABRP sayfasını açar, Premium kısıtlı', btn.includes('data-premium-only') && btn.includes('menu-item') && html.includes('id="tab-abrp"'), btn);
 ok('alan kimlikleri ve depolama anahtarı değişmedi', ['abrp-enabled', 'abrp-token', 'abrp-apikey', 'abrp-webhook'].every((id) => html.split(`id="${id}"`).length === 2) && /load\('abrp'/.test(read('js/ui/abrpPanel.js')) && /save\('abrp'/.test(read('js/ui/abrpPanel.js')));
 ok('yanlış ad yok', !/abpr|anpr/i.test(html + read('js/ui/abrpPanel.js') + read('js/ui/statusBadges.js')));
 

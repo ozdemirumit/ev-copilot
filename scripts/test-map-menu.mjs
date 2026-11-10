@@ -25,12 +25,16 @@ ok('sütun konum düğmelerinin üstünde', /id="fabs-more"[\s\S]*<\/div>\s*<but
 ok('görünür boy 40, dokunma alanı 44 piksel', /\.fabs \.fabs-more button \{[^}]*width: 40px; height: 40px/.test(css) && /\.fabs \.fabs-more button::after \{[^}]*inset: -3px/.test(css) && /\.fabs-more \{[^}]*gap: 4px/.test(css));
 ok('sütun dialog/menü rolü taşımaz', !/role="(dialog|menu)"/.test(html.slice(html.indexOf('id="fabs-more"') - 40, html.indexOf('id="fabs-more"') + 80)));
 
-const targets = { favs: 'Favoriler', range: 'Araç ve menzil', test: 'Test Modu', camera: 'Kamera', abrp: 'ABRP' };
+const targets = { camera: 'Kamera' };
 for (const [t, label] of Object.entries(targets)) {
   const b = stack.match(new RegExp(`<button[^>]*data-tab="${t}"[^>]*>`))?.[0] || '';
   ok(`yığında ${label}`, b.includes(`aria-label="${label}"`) && b.includes(`title="${label}"`), b);
 }
-for (const t of ['test', 'camera', 'abrp']) ok(`${t} Premium kısıtını korur`, new RegExp(`data-tab="${t}"[^>]*data-premium-only`).test(stack));
+for (const t of ['camera']) ok(`${t} Premium kısıtını korur`, new RegExp(`data-tab="${t}"[^>]*data-premium-only`).test(stack));
+// Favoriler, Araç ve menzil, Test Modu, ABRP sağ sütundan kalktı; Daha fazla menüsünden erişilir (Premium kısıtı korunur)
+const moreMenu = html.slice(html.indexOf('id="tab-more"'), html.indexOf('</main>'));
+for (const t of ['favs', 'range', 'test', 'abrp']) ok(`${t} sağ sütunda yok, Daha fazla menüsünde var`, !stack.includes(`data-tab="${t}"`) && new RegExp(`class="menu-item"[^>]*data-tab="${t}"`).test(moreMenu));
+for (const t of ['test', 'abrp']) ok(`${t} menü öğesi Premium kısıtını korur`, new RegExp(`data-tab="${t}"[^>]*data-premium-only`).test(moreMenu));
 const stop = tag(fabs, 'fab-stopnav');
 ok('Navigasyonu durdur yalnızca navigasyonda, sağ sütunda', stop.includes('nav-only') && stop.includes('aria-label="Navigasyonu durdur"') && !stack.includes('fab-stopnav'), stop);
 ok('durdur önce onay ister', /\$\('fab-stopnav'\)\.addEventListener\('click', \(\) => stopDlg\.showModal\(\)\)/.test(shell));

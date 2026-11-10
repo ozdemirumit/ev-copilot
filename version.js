@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.2';
+self.APP_VERSION = '0.99.3';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.3', date: '2026-11-10',
+    notes: [
+      'Harita ve navigasyon ekraninda sag dugme sirasindan Favoriler, Arac ve menzil, Test Modu ve ABRP dugmeleri kaldirildi; Daha fazla menusunden erisilir',
+    ],
+  },
   {
     v: '0.99.2', date: '2026-11-10',
     notes: [
