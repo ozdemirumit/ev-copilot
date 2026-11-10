@@ -3,13 +3,11 @@
 import { getState } from '../state.js';
 import { swapStop } from '../routing/controller.js';
 import { swapCandidates } from '../routing/planner.js';
-import { haversineKm } from '../utils/geo.js';
 import { t, tr } from '../i18n/index.js';
 import { toast } from './toast.js';
 
 const $ = (id) => document.getElementById(id);
-const RADIUS_KM = 5;
-const dist = (a, b) => haversineKm({ lat: a.lat, lon: a.lon }, { lat: b.lat, lon: b.lon });
+const RANGE_KM = 5; // rotada durağın önünde/arkasında
 
 const el = (tag, cls, text) => {
   const n = document.createElement(tag);
@@ -24,24 +22,24 @@ export function openSwap(stop, here = 0) {
   const p = getState('plan');
   const list = $('swap-list');
   list.replaceChildren();
-  $('swap-sub').textContent = t('{0} çevresinde {1} km içindeki uygun istasyonlar', stop.station.name, RADIUS_KM);
+  $('swap-sub').textContent = t('{0} durağının rotada ±{1} km çevresindeki istasyonlar (filtresiz)', stop.station.name, RANGE_KM);
 
   const rows = swapCandidates({
-    stop, stations: p.stations || [], dist, radiusKm: RADIUS_KM, fromKm: here, plannedIds: (p.stops || []).map((s) => s.station.id),
+    stop, stations: p.stations || [], rangeKm: RANGE_KM, fromKm: here, plannedIds: (p.stops || []).map((s) => s.station.id),
   });
   if (!rows.length) {
-    list.append(el('p', 'small muted', tr('5 km içinde filtrelere uygun başka istasyon yok. Şarj gücü filtresini ya da marka tercihini gevşetmeyi dene.')));
+    list.append(el('p', 'small muted', t('Rotada ±{0} km içinde başka istasyon yok.', RANGE_KM)));
   }
-  rows.forEach(({ station: s, distKm }) => {
+  rows.forEach(({ station: s, dKm, offFilter }) => {
     const b = el('button', 'swap-row');
     b.type = 'button';
-    const dKm = s.km - stop.km;
     const along = Math.abs(dKm) < 0.3 ? tr('aynı noktada') : dKm < 0 ? t('{0} km önce', Math.abs(dKm).toFixed(1)) : t('{0} km sonra', dKm.toFixed(1));
     const parts = [
       s.opName, `${s.slow ? 'AC/yavaş ' : ''}${s.kw} kW${s.uncertain ? '*' : ''}`,
       s.foreign ? null : `${s.price.toFixed(2)} TL/kWh`,
-      t('{0} km uzakta', distKm.toFixed(1)), along,
+      along,
       s.offKm > 0.3 ? t('sapma {0} km', s.offKm.toFixed(1)) : null,
+      offFilter ? tr('filtre dışı') : null,
     ].filter(Boolean);
     b.append(el('b', 'n', s.name), el('span', 'm', parts.join(' · ')));
     b.addEventListener('click', () => {

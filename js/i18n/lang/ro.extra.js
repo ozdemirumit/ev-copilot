@@ -390,4 +390,7 @@ export default {
   "Plan kurulamadı": "Planul nu a putut fi creat",
   "Durak değiştirildi: {0}. Zincir bozulduğu için diğer duraklar da yeniden düzenlendi.": "Oprire schimbată: {0}. Celelalte opriri au fost reorganizate, deoarece lanțul nu mai funcționa.",
   "🔁 Değiştir": "🔁 Schimbă",
+  "{0} durağının rotada ±{1} km çevresindeki istasyonlar (filtresiz)": "Stații pe ±{1} km de-a lungul traseului lui {0} (fără filtre)",
+  "Rotada ±{0} km içinde başka istasyon yok.": "Nicio altă stație pe ±{0} km pe traseu.",
+  "filtre dışı": "în afara filtrelor",
 };

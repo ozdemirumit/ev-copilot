@@ -390,4 +390,7 @@ export default {
   "Plan kurulamadı": "Δεν ήταν δυνατή η δημιουργία πλάνου",
   "Durak değiştirildi: {0}. Zincir bozulduğu için diğer duraklar da yeniden düzenlendi.": "Η στάση άλλαξε: {0}. Οι άλλες στάσεις αναδιατάχθηκαν επίσης, γιατί η αλυσίδα δεν λειτουργούσε πια.",
   "🔁 Değiştir": "🔁 Αλλαγή",
+  "{0} durağının rotada ±{1} km çevresindeki istasyonlar (filtresiz)": "Σταθμοί σε ±{1} km κατά μήκος της διαδρομής από {0} (χωρίς φίλτρα)",
+  "Rotada ±{0} km içinde başka istasyon yok.": "Κανένας άλλος σταθμός σε ±{0} km στη διαδρομή.",
+  "filtre dışı": "εκτός φίλτρων",
 };

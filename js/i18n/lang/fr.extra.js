@@ -390,4 +390,7 @@ export default {
   "Plan kurulamadı": "Impossible de créer le plan",
   "Durak değiştirildi: {0}. Zincir bozulduğu için diğer duraklar da yeniden düzenlendi.": "Arrêt changé : {0}. Les autres arrêts ont aussi été réorganisés car la chaîne ne fonctionnait plus.",
   "🔁 Değiştir": "🔁 Changer",
+  "{0} durağının rotada ±{1} km çevresindeki istasyonlar (filtresiz)": "Bornes à ±{1} km sur le trajet de {0} (sans filtre)",
+  "Rotada ±{0} km içinde başka istasyon yok.": "Aucune autre borne à ±{0} km sur le trajet.",
+  "filtre dışı": "hors filtres",
 };

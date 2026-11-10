@@ -390,4 +390,7 @@ export default {
   "Plan kurulamadı": "Plan kon niet worden gemaakt",
   "Durak değiştirildi: {0}. Zincir bozulduğu için diğer duraklar da yeniden düzenlendi.": "Stop gewijzigd: {0}. Andere stops zijn ook herschikt omdat de keten niet meer werkte.",
   "🔁 Değiştir": "🔁 Wijzigen",
+  "{0} durağının rotada ±{1} km çevresindeki istasyonlar (filtresiz)": "Stations binnen ±{1} km langs de route van {0} (zonder filters)",
+  "Rotada ±{0} km içinde başka istasyon yok.": "Geen ander station binnen ±{0} km op de route.",
+  "filtre dışı": "buiten filters",
 };

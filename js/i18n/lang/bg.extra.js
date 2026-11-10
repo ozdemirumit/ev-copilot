@@ -390,4 +390,7 @@ export default {
   "Plan kurulamadı": "Планът не можа да бъде съставен",
   "Durak değiştirildi: {0}. Zincir bozulduğu için diğer duraklar da yeniden düzenlendi.": "Спирката е сменена: {0}. Другите спирки също бяха пренаредени, защото веригата вече не работеше.",
   "🔁 Değiştir": "🔁 Смени",
+  "{0} durağının rotada ±{1} km çevresindeki istasyonlar (filtresiz)": "Станции в радиус ±{1} км по маршрута от {0} (без филтри)",
+  "Rotada ±{0} km içinde başka istasyon yok.": "Няма друга станция в радиус ±{0} км по маршрута.",
+  "filtre dışı": "извън филтрите",
 };

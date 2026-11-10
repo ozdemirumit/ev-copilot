@@ -72,25 +72,38 @@ const rs = chained.stops.find((s) => s.station.id === repl);
 ok('yeni durak için varış/ayrılış pili ve maliyet yeniden hesaplanır', rs && rs.leaveSoc > rs.arriveSoc && rs.cost > 0 && Math.abs(rs.cost - (((rs.leaveSoc - rs.arriveSoc) / 100) * BAT / 0.95) * rs.station.price) < 0.01);
 ok('toplamlar güncel (maliyet = durak maliyetleri toplamı)', Math.abs(chained.totals.cost - chained.stops.reduce((a, s) => a + s.cost, 0)) < 0.01);
 
-// Aday listesi
-const dist = (a, b) => haversineKm({ lat: a.lat, lon: a.lon }, { lat: b.lat, lon: b.lon });
+// Aday listesi: rotada durağın ±5 km çevresi, FİLTRESİZ
 const stop = plan0.stops.find((s) => s.station.id === oldId);
-const c = swapCandidates({ stop, stations, dist, radiusKm: 5, fromKm: 0, plannedIds: ids0 });
-ok('adaylar durağın 5 km çevresinde', c.length >= 1 && c.every((r) => r.distKm <= 5), JSON.stringify(c.map((r) => [r.station.id, r.distKm.toFixed(2)])));
+const c = swapCandidates({ stop, stations, rangeKm: 5, fromKm: 0, plannedIds: ids0 });
+ok('adaylar rotada durağın ±5 km çevresinde', c.length >= 1 && c.every((r) => Math.abs(r.station.km - stop.km) <= 5), JSON.stringify(c.map((r) => [r.station.id, r.dKm])));
+ok('dKm: rotada önce (−) / sonra (+)', c.every((r) => Math.abs(r.dKm - (r.station.km - stop.km)) < 1e-9));
 ok('durağın kendisi aday değil', c.every((r) => r.station.id !== oldId));
-ok('en yakın önce', c.every((r, i) => i === 0 || c[i - 1].distKm <= r.distKm));
-ok('uzak istasyonlar (5 km dışı) yok', c.every((r) => !['d300', 'e302', 'f420', 'g60'].includes(r.station.id) || r.distKm <= 5));
-ok('güç filtresi: 60 kW istasyon aday değil (minKw ' + PLANNER.minKw + ')', swapCandidates({ stop: { station: stations[6] }, stations: [...stations, st('h61', 61, { kw: 60 })], dist, radiusKm: 5, fromKm: 0 }).every((r) => r.station.kw >= PLANNER.minKw));
+ok('rotada en yakın önce', c.every((r, i) => i === 0 || Math.abs(c[i - 1].dKm) <= Math.abs(r.dKm)));
+ok('5 km dışındaki istasyonlar yok', c.every((r) => !['d300', 'e302', 'f420'].includes(r.station.id)));
+const low = st('h61', 151, { kw: 60 });
+const withLow = swapCandidates({ stop, stations: [...stations, low], rangeKm: 5, fromKm: 0, plannedIds: [] });
+ok('güç filtresi uygulanmaz: 60 kW istasyon listede (minKw ' + PLANNER.minKw + ')', withLow.some((r) => r.station.id === 'h61'));
+ok('filtreye uymayan işaretlenir (offFilter)', withLow.find((r) => r.station.id === 'h61').offFilter === true && withLow.find((r) => r.station.id === 'b152' || r.station.id === 'a150' || r.station.id === 'c154').offFilter === false);
 const brandsBefore = PLANNER.brands;
 PLANNER.brands = ['astor'];
-const cb = swapCandidates({ stop, stations, dist, radiusKm: 5, fromKm: 0, plannedIds: [] });
-ok('marka tercihi: yalnızca tercih edilen marka', cb.every((r) => r.station.opId === 'astor') && !cb.some((r) => r.station.id === 'c154'), JSON.stringify(cb.map((r) => r.station.id)));
+const cb = swapCandidates({ stop, stations, rangeKm: 5, fromKm: 0, plannedIds: [] });
+ok('marka tercihi uygulanmaz: tercih dışı marka da listede, işaretli', cb.some((r) => r.station.id === 'c154' && r.offFilter === true), JSON.stringify(cb.map((r) => [r.station.id, r.offFilter])));
 PLANNER.brands = brandsBefore;
-const behind = swapCandidates({ stop, stations, dist, radiusKm: 5, fromKm: 151, plannedIds: [] });
+const behind = swapCandidates({ stop, stations, rangeKm: 5, fromKm: 151, plannedIds: [] });
 ok('araçtan geride kalan istasyon aday değil', behind.every((r) => r.station.km > 151.5));
-const other = swapCandidates({ stop, stations, dist, radiusKm: 5, fromKm: 0, plannedIds: [...ids0, 'c154'] });
+const other = swapCandidates({ stop, stations, rangeKm: 5, fromKm: 0, plannedIds: [...ids0, 'c154'] });
 ok('plandaki öbür duraklar aday değil', !other.some((r) => r.station.id === 'c154' || (ids0.includes(r.station.id) && r.station.id !== oldId)));
-ok('yarıçap parametresi', swapCandidates({ stop, stations, dist, radiusKm: 0.5, fromKm: 0 }).length <= c.length);
+ok('menzil parametresi', swapCandidates({ stop, stations, rangeKm: 1, fromKm: 0 }).length <= c.length && swapCandidates({ stop, stations, rangeKm: 1, fromKm: 0 }).every((r) => Math.abs(r.dKm) <= 1));
+
+// Filtreye uymayan (60 kW) istasyon seçilince de plana girer: zorunlu durak filtreden bağımsızdır
+const lowPlan = planRoute({ ...base, stations: [...stations, low], mustIds: ['h61'], excludeIds: [oldId] });
+ok('60 kW istasyon zorunlu seçilince plana girer', lowPlan.feasible && lowPlan.stops.some((s) => s.station.id === 'h61'), JSON.stringify(lowPlan.stops.map((s) => s.station.id)) + ' ' + (lowPlan.reason || ''));
+const lowChain = planRoute({ ...base, stations: [...stations, low].filter((s) => s.id === 'h61' || ids0.filter((i) => i !== oldId).includes(s.id)), mustIds: ['h61', ...ids0.filter((i) => i !== oldId)], excludeIds: [oldId] });
+ok('zincir modunda da (yalnızca 60 kW seçilen + öbür duraklar)', lowChain.feasible || /Uygun|zincir/.test(lowChain.reason || ''), lowChain.reason);
+const lowStop = lowPlan.stops.find((s) => s.station.id === 'h61');
+ok('düşük güçte şarj süresi uzar (≥ 180 kW\'lık eşdeğerinden)', lowStop && lowStop.minutes > 0);
+const noMust = planRoute({ ...base, stations: [...stations, low] });
+ok('zorunlu değilse 60 kW istasyon yine seçilmez (filtre planlayıcıda duruyor)', !noMust.stops.some((s) => s.station.id === 'h61'));
 
 // Arayüz ve denetleyici bağlantıları
 const ctrl = read('js/routing/controller.js');
@@ -105,7 +118,7 @@ const rp = read('js/ui/routePanel.js');
 ok('durak satırında Değiştir düğmesi', /textContent: 'Değiştir'/.test(rp) && /openSwap\(/.test(rp));
 const ui = read('js/ui/stopSwap.js');
 ok('seçilince swapStop çağrılır, başarısızsa bildirim', /swapStop\(/.test(ui) && /toast\(/.test(ui));
-ok('5 km yarıçap', /radiusKm: 5/.test(ui) || /RADIUS_KM = 5/.test(ui));
+ok('rotada ±5 km, filtresiz', /RANGE_KM = 5/.test(ui) && /rangeKm: RANGE_KM/.test(ui) && !/radiusKm/.test(ui));
 const card = read('js/ui/stationCard.js');
 ok('istasyon kartında Değiştir, Fiyat bildir ile aynı satırda ve sonrasında', card.indexOf("btn('💳 Fiyat bildir'") > 0 && card.indexOf("btn('🔁 Değiştir'") > card.indexOf("btn('💳 Fiyat bildir'") && /acts\.append\(btn\('🔁 Değiştir'/.test(card));
 ok('Değiştir yalnızca rotadaki (araçtan ileri) durak için', /plan'\)\.stops\?\.find\(\(x\) => x\.station\.id === s\.id && x\.km > progressKm\(\) - 0\.3\)/.test(card) && /if \(stop\) acts/.test(card));

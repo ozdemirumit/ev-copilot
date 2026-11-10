@@ -389,5 +389,8 @@
  "Bu istasyonla plan kurulamadı: {0}",
  "Plan kurulamadı",
  "Durak değiştirildi: {0}. Zincir bozulduğu için diğer duraklar da yeniden düzenlendi.",
- "🔁 Değiştir"
+ "🔁 Değiştir",
+ "{0} durağının rotada ±{1} km çevresindeki istasyonlar (filtresiz)",
+ "Rotada ±{0} km içinde başka istasyon yok.",
+ "filtre dışı"
 ]

@@ -68,7 +68,8 @@ function solve({ profile, stations, startKm = 0, startSoc, minArrival, mode = 'o
   const must = new Set(mustIds || []);
   const ban = new Set(excludeIds || []);
   const fullNear = (s) => skipFull && s.id !== forceFirstId && !must.has(s.id) && isFresh(s) && slotKind(s) === 'full' && s.km - startKm <= WAIT_NEAR_KM; // yakın ve taze bilgiye göre dolu
-  const cands = stations.filter((s) => s.km > startKm + 0.5 && s.km < endKm - 0.5 && usable(s) && !fullNear(s) && !ban.has(s.id)).sort((a, b) => a.km - b.km);
+  // Zorunlu durak (kullanıcının seçtiği) güç filtresine/marka tercihine takılmaz: elle seçilen istasyon her zaman aday olur
+  const cands = stations.filter((s) => s.km > startKm + 0.5 && s.km < endKm - 0.5 && (usable(s) || must.has(s.id)) && !fullNear(s) && !ban.has(s.id)).sort((a, b) => a.km - b.km);
   // Zorunlu duraklar: düğüm n = cands[n-1]. mustPre[i] = cands[0..i-1] içindeki zorunlu sayısı; bir kenar zorunlu durağı atlayamaz.
   const mustPre = [0];
   cands.forEach((s) => mustPre.push(mustPre[mustPre.length - 1] + (must.has(s.id) ? 1 : 0)));
@@ -175,18 +176,18 @@ function explainBreak({ profile, cands, states, nodeKm, startKm, endKm, startSoc
 }
 
 /**
- * Bir şarj durağının yerine konabilecek istasyonlar: durağa radiusKm içinde, güç filtresine ve marka tercihine uygun (usable + brandOk),
- * durağın kendisi ve plandaki öbür duraklar hariç, araçtan (fromKm) ileride. Durağa en yakın olan önce.
- * stop: { station }; stations: plan.stations (lat, lon, km); haversine dışarıdan verilir (saf test için).
+ * Bir şarj durağının yerine konabilecek istasyonlar: rotada durağın ±rangeKm (km) çevresindekiler, FİLTRESİZ (güç filtresi ve marka tercihi uygulanmaz;
+ * filtreye uymayanlar offFilter ile işaretlenir). Durağın kendisi, plandaki öbür duraklar ve araçtan (fromKm) geride kalanlar hariç.
+ * Rotada durağa en yakın olan önce. stop: { station, km }; stations: plan.stations (km = rotadaki konum).
  */
-export function swapCandidates({ stop, stations, dist, radiusKm = 5, fromKm = 0, plannedIds = [] }) {
+export function swapCandidates({ stop, stations, rangeKm = 5, fromKm = 0, plannedIds = [] }) {
   const taken = new Set(plannedIds);
   taken.delete(stop.station.id);
+  const at = stop.km ?? stop.station.km;
   return stations
-    .filter((s) => s.id !== stop.station.id && !taken.has(s.id) && s.km > fromKm + 0.5 && usable(s) && brandOk(s))
-    .map((s) => ({ station: s, distKm: dist(s, stop.station) }))
-    .filter((r) => r.distKm <= radiusKm)
-    .sort((a, b) => a.distKm - b.distKm);
+    .filter((s) => s.id !== stop.station.id && !taken.has(s.id) && s.km > fromKm + 0.5 && Math.abs(s.km - at) <= rangeKm)
+    .map((s) => ({ station: s, dKm: s.km - at, offFilter: !(usable(s) && brandOk(s)) }))
+    .sort((x, y) => Math.abs(x.dKm) - Math.abs(y.dKm));
 }
 
 /**
