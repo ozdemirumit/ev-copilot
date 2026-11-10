@@ -35,6 +35,96 @@ let anchor = null;
 const notify = () => patch('hist', { n: recs.length, at: Date.now() });
 
 /**
+ * İki pil kenarı (ya da elle girilen iki pil değeri) arasındaki pencereden ölçüm kaydı üretir; geçersizse null.
+ * a/b: { odo, sec, soc, modelKwh, tSum, hwSum, gSum }. kLo/kHi: kabul edilen ölçülen/model oranı aralığı (consScale'siz).
+ */
+export function buildRecord(a, b, kLo, kHi, battery = BAT, consScale = PHYSICS.consScale) {
+  const dist = b.odo - a.odo;
+  const drop = a.soc - b.soc;
+  if (!(dist > 0) || !(drop > 0)) return null;
+  const measuredKwh = (drop / 100) * battery;
+  const modelDelta = b.modelKwh - a.modelKwh; // model, kullanıcının tüketim düzeltmesini (consScale) içerir
+  const hours = (b.sec - a.sec) / 3600;
+  const v = hours > 0 ? dist / hours : 0;
+  const kBase = modelDelta > 0.05 ? (measuredKwh * consScale) / modelDelta : null; // consScale'den bağımsız ölçülen/model oranı
+  if (kBase == null || v < 20 || v > 200 || kBase < kLo || kBase > kHi) return null;
+  const t = Date.now();
+  const pos = effective();
+  const trip = recs.length ? recs.at(-1).trip + (t - recs.at(-1).t > TRIP_GAP_MS ? 1 : 0) : 1;
+  return {
+    t, trip, dist: +dist.toFixed(2), v: Math.round(v), drop,
+    kwh100: +((measuredKwh / dist) * 100).toFixed(2),
+    model: +((modelDelta / consScale / dist) * 100).toFixed(2), // consScale'siz model kWh/100km
+    kBase: +kBase.toFixed(3),
+    temp: Math.round((b.tSum - a.tSum) / dist),
+    hw: Math.round((b.hwSum - a.hwSum) / dist),
+    grade: +(((b.gSum - a.gSum) / dist) * 100).toFixed(1),
+    lat: pos.lat != null ? +pos.lat.toFixed(4) : null, lon: pos.lon != null ? +pos.lon.toFixed(4) : null, // yolculuğun nerede olduğu (geçmiş ve hesap geçmişi için)
+    dest: String(getState('route').end?.label || '').slice(0, 40) || null,
+  };
+}
+
+function pushRecord(rec) {
+  recs.push(rec);
+  if (recs.length > MAX_RECORDS) recs = recs.slice(-MAX_RECORDS);
+  relCache = new Map();
+  save(KEY, recs);
+  notify();
+}
+
+// ---- Kamerasız öğrenme: elle girilen pil de ölçüm sayılır -------------------------------------------------------------
+// Kullanıcı yol aldıktan sonra pili elle girerse (kamera yokken tek gerçek bilgi bu), iki giriş arasındaki düşüş ve yol
+// bir ölçüm penceresi olur. Pil yüzdesi tam sayı ve el okuması ±1 puan oynak olduğundan pencere en az MIN_MAN_DROP puan ve
+// MIN_MAN_KM yol ister; kayıt kameralı ölçümle aynı biçimde tutulur (planlama ve hız düzeltmesi onu da kullanır).
+export const MIN_MAN_KM = 10;
+export const MIN_MAN_DROP = 5;
+export const MAX_MAN_KM = 500; // daha uzun aralıkta araya şarj girmiş olabilir
+const MAN_SETTLE_MS = 3000; // sürgü sürüklenirken ara değerler ölçüm sayılmasın: son değer bu kadar beklenince kesinleşir
+const MAN_K_LO = 0.5;
+const MAN_K_HI = 2;
+
+/** Bir önceki elle referans (a) ile yeni giriş (b) arasında ne yapılır: 'reset' (referansı b yap), 'keep' (a'yı koru) ya da 'record' + kayıt. */
+export function manualStep(a, b, battery = BAT, consScale = PHYSICS.consScale) {
+  if (!a) return { action: 'reset' };
+  if (b.soc >= a.soc) return { action: 'reset' }; // yükseldi: şarj ya da düzeltme, pencere geçersiz
+  const dist = b.odo - a.odo;
+  const drop = a.soc - b.soc;
+  if (dist > MAX_MAN_KM) return { action: 'reset' };
+  if (dist < MIN_MAN_KM) return drop >= MIN_MAN_DROP ? { action: 'reset' } : { action: 'keep' }; // yol almadan büyük atlama: elle düzeltme
+  if (drop < MIN_MAN_DROP) return { action: 'keep' };
+  const rec = buildRecord(a, b, MAN_K_LO, MAN_K_HI, battery, consScale);
+  return rec ? { action: 'record', rec } : { action: 'reset' };
+}
+
+let manual = null; // elle girilen pilin son geçerli referansı
+let manualTimer = null;
+
+function commitManual(soc) {
+  if (getState('sim').enabled) { manual = null; return; } // Test Modu ölçüm değildir
+  const snap = { odo, sec, soc, modelKwh, tSum, hwSum, gSum };
+  const r = manualStep(manual, snap);
+  if (r.action === 'reset') { manual = snap; return; }
+  if (r.action === 'keep') return;
+  pushRecord(r.rec);
+  manual = snap;
+  // Canlı k: kameralı ölçümdeki gibi yumuşak karışım (sınır 0,6–1,8); consScale'siz oran consScale'e bölünerek canlı k'ya çevrilir
+  const kLive = Math.min(1.8, Math.max(0.6, r.rec.kBase / PHYSICS.consScale));
+  const k = getState('engine').k * 0.6 + kLive * 0.4;
+  patch('engine', { k });
+  save('kCal', k);
+  if (typeof document !== 'undefined') document.dispatchEvent(new CustomEvent('consumption-learned', { detail: { kwh100: r.rec.kwh100, k, dist: r.rec.dist } }));
+}
+
+/** Kullanıcı pili elle girdi (sürgü, +/−). Değer sürüklemeden sonra kesinleşince ölçüm penceresi değerlendirilir. */
+export function noteManualSoc(soc) {
+  clearTimeout(manualTimer);
+  manualTimer = setTimeout(() => commitManual(soc), MAN_SETTLE_MS);
+}
+
+/** Test için: bekleme olmadan değerlendir. */
+export const __test = { commit: commitManual, reset: () => { manual = null; clearTimeout(manualTimer); }, anchor: () => manual };
+
+/**
  * Her saniye çağrılır (Test Modu hariç). dKm/dt: bu adımdaki yol (km) ve süre (sn); modelKwh: o adımın model enerjisi;
  * soc: tam sayı pil %; temp/headwind/grade: o anki rota koşulları.
  */
@@ -60,31 +150,8 @@ export function feed({ dKm, dt, moving, modelStepKwh, soc, temp, headwind, grade
   const ready = (drop >= MIN_DROP && dist >= MIN_DIST_KM) || (dist >= FALLBACK_DIST_KM && drop >= 1);
   if (!ready) return;
 
-  const measuredKwh = (drop / 100) * BAT;
-  const modelDelta = snap.modelKwh - anchor.modelKwh; // model, kullanıcının tüketim düzeltmesini (consScale) içerir
-  const hours = (snap.sec - anchor.sec) / 3600;
-  const v = hours > 0 ? dist / hours : 0;
-  const kBase = modelDelta > 0.05 ? (measuredKwh * PHYSICS.consScale) / modelDelta : null; // consScale'den bağımsız ölçülen/model oranı
-  if (kBase != null && v >= 20 && v <= 200 && kBase >= 0.4 && kBase <= 3) {
-    const t = Date.now();
-    const pos = effective();
-    const trip = recs.length ? recs.at(-1).trip + (t - recs.at(-1).t > TRIP_GAP_MS ? 1 : 0) : 1;
-    recs.push({
-      t, trip, dist: +dist.toFixed(2), v: Math.round(v), drop,
-      kwh100: +((measuredKwh / dist) * 100).toFixed(2),
-      model: +((modelDelta / PHYSICS.consScale / dist) * 100).toFixed(2), // consScale'siz model kWh/100km
-      kBase: +kBase.toFixed(3),
-      temp: Math.round((snap.tSum - anchor.tSum) / dist),
-      hw: Math.round((snap.hwSum - anchor.hwSum) / dist),
-      grade: +(((snap.gSum - anchor.gSum) / dist) * 100).toFixed(1),
-      lat: pos.lat != null ? +pos.lat.toFixed(4) : null, lon: pos.lon != null ? +pos.lon.toFixed(4) : null, // yolculuğun nerede olduğu (geçmiş ve hesap geçmişi için)
-      dest: String(getState('route').end?.label || '').slice(0, 40) || null,
-    });
-    if (recs.length > MAX_RECORDS) recs = recs.slice(-MAX_RECORDS);
-    relCache = new Map();
-    save(KEY, recs);
-    notify();
-  }
+  const rec = buildRecord(anchor, snap, 0.4, 3);
+  if (rec) pushRecord(rec);
   anchor = snap;
 }
 

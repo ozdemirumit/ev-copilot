@@ -354,4 +354,6 @@ export default {
   "+ ek ücret": "+ taxă suplimentară",
   "Planla": "Planifică",
   "şarj gerekmez": "încărcare inutilă",
+  "Tüketim öğrenildi: {0} kWh/100 km ({1} km), düzeltme k {2}": "Consum învățat: {0} kWh/100 km ({1} km), corecție k {2}",
+  "Kamera yoksa: yol aldıktan sonra pili elle girersen (en az 10 km yol ve 5 puan düşüş) tüketim buradan da öğrenilir.": "Fără cameră? Dacă introduci bateria manual după condus (cel puțin 10 km și o scădere de 5 puncte), consumul se învață și așa.",
 };

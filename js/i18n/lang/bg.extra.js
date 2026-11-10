@@ -354,4 +354,6 @@ export default {
   "+ ek ücret": "+ допълнителна такса",
   "Planla": "Планирай",
   "şarj gerekmez": "не е нужно зареждане",
+  "Tüketim öğrenildi: {0} kWh/100 km ({1} km), düzeltme k {2}": "Консумацията е усвоена: {0} kWh/100 km ({1} km), корекция k {2}",
+  "Kamera yoksa: yol aldıktan sonra pili elle girersen (en az 10 km yol ve 5 puan düşüş) tüketim buradan da öğrenilir.": "Без камера? Ако въведеш батерията ръчно след шофиране (поне 10 км и спад от 5 пункта), консумацията се усвоява и така.",
 };

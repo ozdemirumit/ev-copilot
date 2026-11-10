@@ -7,6 +7,7 @@ import { getState, patch, subscribe } from '../state.js';
 import { VEHICLE } from '../config.js';
 import { load, save } from '../utils/storage.js';
 import { releaseSoc } from '../sensors/ocr.js';
+import { noteManualSoc } from './history.js';
 
 const FALLBACK_MS = 180_000; // kamera çalışıyor ama bu kadar süredir okuyamıyorsa tahmine geç (kısa kesintilerde son değer korunur)
 const IDLE_FALLBACK_MS = 60_000; // kamera/OCR kapalıysa son okumadan bu kadar sonra tahmine geç
@@ -84,8 +85,11 @@ export function restoreSoc() {
   patch('live', { soc: r1(est) });
 }
 
-/** Elle pil gir (0-100). OCR filtresi serbest bırakılır: kamera okuyunca bu değeri geçersiz kılar. */
-export function setManual(v) {
+/**
+ * Elle pil gir (0-100). OCR filtresi serbest bırakılır: kamera okuyunca bu değeri geçersiz kılar.
+ * guess: uygulamanın varsaydığı değer (ör. pil bilinmiyorken %80); gerçek ölçüm sayılmaz, tüketim öğrenmeye girmez.
+ */
+export function setManual(v, { guess = false } = {}) {
   est = clamp(v, 0, 100);
   origin = 'user';
   reported = true;
@@ -95,6 +99,7 @@ export function setManual(v) {
   patch('live', { soc: r1(est) });
   patch('ocr', { accepted: Math.round(est), status: 'manual', lastOkAt: beat });
   persist(true);
+  if (!guess) noteManualSoc(est); // kamerasız öğrenme: iki elle giriş arasındaki düşüş ve yol ölçüm sayılır (physics/history.js)
 }
 
 /** Yol alındıkça harcanan enerji (kWh, geri kazanım eksi): tahmini pili düşür. */

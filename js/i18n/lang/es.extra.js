@@ -354,4 +354,6 @@ export default {
   "+ ek ücret": "+ cargo adicional",
   "Planla": "Planificar",
   "şarj gerekmez": "no necesita carga",
+  "Tüketim öğrenildi: {0} kWh/100 km ({1} km), düzeltme k {2}": "Consumo aprendido: {0} kWh/100 km ({1} km), corrección k {2}",
+  "Kamera yoksa: yol aldıktan sonra pili elle girersen (en az 10 km yol ve 5 puan düşüş) tüketim buradan da öğrenilir.": "¿Sin cámara? Si introduces la batería a mano tras conducir (al menos 10 km y una bajada de 5 puntos), el consumo también se aprende aquí.",
 };

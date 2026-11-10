@@ -354,4 +354,6 @@ export default {
   "+ ek ücret": "+ επιπλέον χρέωση",
   "Planla": "Σχεδίασε",
   "şarj gerekmez": "δεν χρειάζεται φόρτιση",
+  "Tüketim öğrenildi: {0} kWh/100 km ({1} km), düzeltme k {2}": "Η κατανάλωση καταγράφηκε: {0} kWh/100 km ({1} km), διόρθωση k {2}",
+  "Kamera yoksa: yol aldıktan sonra pili elle girersen (en az 10 km yol ve 5 puan düşüş) tüketim buradan da öğrenilir.": "Χωρίς κάμερα; Αν εισαγάγεις τη μπαταρία χειροκίνητα μετά την οδήγηση (τουλάχιστον 10 km και πτώση 5 μονάδων), η κατανάλωση μαθαίνεται και έτσι.",
 };

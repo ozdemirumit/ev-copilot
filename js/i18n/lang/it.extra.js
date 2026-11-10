@@ -354,4 +354,6 @@ export default {
   "+ ek ücret": "+ costo aggiuntivo",
   "Planla": "Pianifica",
   "şarj gerekmez": "ricarica non necessaria",
+  "Tüketim öğrenildi: {0} kWh/100 km ({1} km), düzeltme k {2}": "Consumo appreso: {0} kWh/100 km ({1} km), correzione k {2}",
+  "Kamera yoksa: yol aldıktan sonra pili elle girersen (en az 10 km yol ve 5 puan düşüş) tüketim buradan da öğrenilir.": "Niente fotocamera? Se inserisci la batteria a mano dopo aver guidato (almeno 10 km e un calo di 5 punti), il consumo viene appreso anche così.",
 };

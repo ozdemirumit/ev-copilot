@@ -354,4 +354,6 @@ export default {
   "+ ek ücret": "+ extra kosten",
   "Planla": "Plannen",
   "şarj gerekmez": "laden niet nodig",
+  "Tüketim öğrenildi: {0} kWh/100 km ({1} km), düzeltme k {2}": "Verbruik geleerd: {0} kWh/100 km ({1} km), correctie k {2}",
+  "Kamera yoksa: yol aldıktan sonra pili elle girersen (en az 10 km yol ve 5 puan düşüş) tüketim buradan da öğrenilir.": "Geen camera? Voer je de accu na het rijden met de hand in (minstens 10 km en 5 punten daling), dan wordt het verbruik ook zo geleerd.",
 };

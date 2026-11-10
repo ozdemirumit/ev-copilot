@@ -166,6 +166,10 @@ export function initHistoryPanel() {
     btn.textContent = 'Silmek için tekrar dokun';
     setTimeout(() => { delete btn.dataset.armed; btn.textContent = '🗑️ Geçmişi sil'; }, 4000);
   });
+  document.addEventListener('consumption-learned', (ev) => { // elle girilen pilden tüketim öğrenildi
+    const d = ev.detail;
+    toast(t('Tüketim öğrenildi: {0} kWh/100 km ({1} km), düzeltme k {2}', d.kwh100.toFixed(1), d.dist.toFixed(0), d.k.toFixed(2)), 7000);
+  });
   subscribe(['hist', 'plan'], paint);
   document.addEventListener('charges-changed', paint);
   paint();

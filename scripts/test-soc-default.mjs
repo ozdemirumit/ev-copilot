@@ -34,8 +34,9 @@ const stateUrl = pathToFileURL(join(repo, 'js/state.js')).href;
 const configUrl = pathToFileURL(join(repo, 'js/config.js')).href;
 const storageUrl = pathToFileURL(join(repo, 'js/utils/storage.js')).href;
 const ocrUrl = pathToFileURL(join(repo, 'js/sensors/ocr.js')).href;
+const historyUrl = pathToFileURL(join(repo, 'js/physics/history.js')).href;
 const srcText = readFileSync(join(repo, 'js/physics/socEstimate.js'), 'utf8')
-  .replace("'../state.js'", `'${stateUrl}'`).replace("'../config.js'", `'${configUrl}'`).replace("'../utils/storage.js'", `'${storageUrl}'`).replace("'../sensors/ocr.js'", `'${ocrUrl}'`);
+  .replace("'../state.js'", `'${stateUrl}'`).replace("'../config.js'", `'${configUrl}'`).replace("'../utils/storage.js'", `'${storageUrl}'`).replace("'../sensors/ocr.js'", `'${ocrUrl}'`).replace("'./history.js'", `'${historyUrl}'`);
 const dir = mkdtempSync(join(tmpdir(), 'evrf-soc-'));
 let n = 0;
 async function fresh({ keep = false } = {}) {

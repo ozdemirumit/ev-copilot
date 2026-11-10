@@ -141,7 +141,7 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
   const e = effective();
   startSoc = e.soc ?? 80;
   if (e.soc == null) { // ne kamera okudu ne de elle girildi: "Mevcut pil" sürgüsünün gösterdiği %80 elle girilmiş sayılır; plan, HUD ve navigasyon aynı değeri kullanır
-    setManual(80);
+    setManual(80, { guess: true });
     toast('Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin');
   }
   const prev = { ...getState('plan') }; // internet yoksa/rota alınamazsa mevcut (kayıtlı) plan bozulmasın
