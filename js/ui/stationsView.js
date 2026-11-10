@@ -4,7 +4,6 @@ import { getState, patch, subscribe } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { getOperators, persistOperators, resetOperators, removeDiscovered, onOperatorsChange } from '../routing/operators.js';
 import { repriceAndReplan, refetchStations } from '../routing/controller.js';
-import { setStationOperator } from '../routing/chargerSource.js';
 import { slotEl } from '../routing/slots.js';
 import { PLANNER } from '../config.js';
 import { brandOk } from '../routing/planner.js';
@@ -92,17 +91,6 @@ function renderList() {
     if (slotNode) meta.lastElementChild.append(slotNode);
     left.append(meta);
 
-    // Operatör yanlışsa (kayıttaki ad yanıltıcı olabilir) düzelt: fiyat ve kW tablodan buna göre alınır, kalıcıdır.
-    const fix = document.createElement('select');
-    fix.className = 'op-fix';
-    fix.setAttribute('aria-label', 'Operatörü düzelt');
-    getOperators().forEach((o) => fix.append(new Option(o.name + (o.id === r.station.opRaw && r.station.corrected ? ` (kayıt)` : ''), o.id)));
-    fix.value = r.station.opId;
-    fix.addEventListener('change', () => {
-      setStationOperator(r.station.id, fix.value === r.station.opRaw ? null : fix.value);
-      repriceAndReplan();
-    });
-    left.append(fix);
     const stop = n ? stops.find((s) => s.station.id === r.station.id) : null;
     if (stop) { // plandaki durak: başka istasyonla değiştir ya da rotadan kaldır (gerekirse alternatif seçilir)
       const acts = text('div', 'stop-actions');

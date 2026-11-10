@@ -171,7 +171,7 @@ ok('İstasyon kartında rotadaki durak için Kaldır', /btn\('🗑️ Kaldır'/.
 ok('Kaldır bildirimi: alternatif varsa yazılır', /Durak çıkarıldı: \{0\}\. Alternatif: \{1\}/.test(ui) && /Durak rotadan çıkarıldı: \{0\}/.test(ui));
 const sv = read('js/ui/stationsView.js');
 ok('İstasyonlar sekmesi: planlı satırda Değiştir ve Kaldır (aday satırda yok)', /const stop = n \? stops\.find\(\(s\) => s\.station\.id === r\.station\.id\) : null;/.test(sv) && /'🔁 Değiştir'/.test(sv) && /'🗑️ Kaldır'/.test(sv) && /openSwap\(stop, here\)/.test(sv) && /removeFromRoute\(stop\)/.test(sv) && /import \{ openSwap, removeFromRoute \} from '\.\/stopSwap\.js'/.test(sv));
-ok('Operatör düzeltme açılır menüsü duruyor (op-fix)', /fix\.className = 'op-fix'/.test(sv) && /setStationOperator\(r\.station\.id/.test(sv));
+ok('Operatörü düzelt açılır menüsü kaldırıldı', !/op-fix/.test(sv) && !/setStationOperator/.test(sv) && !/Operatörü düzelt/.test(sv) && !/\.op-fix/.test(read('css/styles.css')));
 ok('çevrimdışı kabukta yeni dosya', read('sw.js').includes("'./js/ui/stopSwap.js'"));
 
 console.log(`\n${pass} geçti, ${fail} kaldı`);
