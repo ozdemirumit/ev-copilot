@@ -364,5 +364,16 @@
  "Rota: menzilin dayandığı rota ortalaması",
  "Düz: menzilin dayandığı düz zemin tüketimi",
  "%{0} eşik piline kadar menzil: {1} km",
- "%{0} eşik piline kadar {1} km"
+ "%{0} eşik piline kadar {1} km",
+ "Şarj durağına vardın",
+ "Şarj durağına varış kalibrasyonları (en yeni üstte)",
+ "Araçtaki pil yüzdesi",
+ "Kaydet",
+ "Şimdi değil",
+ "{0} istasyonundasın. Uygulama pili %{1} tahmin ediyor. Araçta gördüğün yüzdeyi gir: tüketim hesabı buna göre kalibre olur.",
+ "Planda bu durağa varış %{0} idi.",
+ "Kaydedildi: tahmin %{0}, gerçek %{1}",
+ "tahmin %{0} → gerçek %{1} ({2} puan)",
+ "plan %{0} ({1} puan)",
+ "Henüz varış kalibrasyonu yok (şarj durağına varınca uygulama pil yüzdesini sorar)."
 ]

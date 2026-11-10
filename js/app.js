@@ -31,6 +31,7 @@ import { watchCaps } from './net/proxy.js';
 import { initSocInput } from './ui/socInput.js';
 import { initRouteForm } from './ui/routeForm.js';
 import { initSocBar } from './ui/socBar.js';
+import { initArrivalCalib } from './ui/arrivalCalib.js';
 import { initDefaultStart } from './ui/defaultStart.js';
 import { initSocEstimate, restoreSoc } from './physics/socEstimate.js';
 import { initMap } from './ui/mapView.js';
@@ -115,6 +116,7 @@ watchCaps(); // sunucu özellikleri ve hesap planı (Premium) açılışta ve uy
 initSocInput();
 initRouteForm();
 initSocBar();
+initArrivalCalib(); // şarj durağına varınca pil yüzdesini sorar (kamera okumuyorsa)
 initDefaultStart();
 initSocEstimate();
 

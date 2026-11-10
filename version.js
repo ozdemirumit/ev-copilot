@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.8';
+self.APP_VERSION = '0.99.9';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.9', date: '2026-11-11',
+    notes: [
+      'Sarj duragina varinca (kamera pili okumuyorsa) arac yuzdesi sorulur: girilen deger elle pil olarak tuketim ogrenmeye katilir; tahmin, plan ve gercek fark Menzil gecmisinde Varis kalibrasyonlari listesinde tutulur',
+    ],
+  },
   {
     v: '0.99.8', date: '2026-11-11',
     notes: [

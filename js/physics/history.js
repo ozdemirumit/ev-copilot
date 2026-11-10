@@ -157,6 +157,9 @@ export function feed({ dKm, dt, moving, modelStepKwh, soc, temp, headwind, grade
 
 export const records = () => recs;
 
+/** Bu oturumda gidilen toplam yol (km; Test Modu hariç). */
+export const odometerKm = () => odo;
+
 export function clearHistory() {
   recs = [];
   relCache = new Map();

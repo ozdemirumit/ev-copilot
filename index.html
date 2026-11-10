@@ -331,6 +331,8 @@
       <div id="h-trips" class="trip-list"></div>
       <h3 style="margin:6px 0 0">Şarj oturumları (en yeni üstte)</h3>
       <div id="h-charges" class="trip-list"></div>
+      <h3 style="margin:6px 0 0">Şarj durağına varış kalibrasyonları (en yeni üstte)</h3>
+      <div id="h-arrivals" class="trip-list"></div>
       <div id="h-chart" class="hchart" role="img" aria-label="Tüketim ve hız grafiği"></div>
       <p class="small muted" style="margin:0" id="h-legend"></p>
       <table class="optable">
@@ -851,6 +853,19 @@
     <button type="button" data-tab="more"><span><svg class="ic" aria-hidden="true"><use href="#i-dots"/></svg></span>Daha fazla</button>
   </nav>
 </div>
+
+<dialog id="arrival-dialog" class="sheet-dlg" aria-labelledby="arrival-title">
+  <div class="dlg-head"><h2 id="arrival-title">Şarj durağına vardın</h2><button class="sheet-x" id="arrival-x" type="button" aria-label="Kapat"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+  <p id="arrival-text"></p>
+  <p class="small muted hidden" id="arrival-plan"></p>
+  <div class="soc-input-row">
+    <button class="soc-step" id="arrival-minus" type="button" aria-label="Pili 1 azalt">−</button>
+    <span class="pct-group rp-soc-num"><span class="pct-sign" aria-hidden="true">%</span><input type="number" id="arrival-soc" inputmode="numeric" min="0" max="100" step="1" aria-label="Araçtaki pil yüzdesi"></span>
+    <button class="soc-step" id="arrival-plus" type="button" aria-label="Pili 1 artır">+</button>
+  </div>
+  <button class="btn primary" id="arrival-save" type="button">Kaydet</button>
+  <button class="btn ghost" id="arrival-skip" type="button">Şimdi değil</button>
+</dialog>
 
 <dialog id="soc-sheet" class="sheet-dlg" aria-labelledby="soc-sheet-title">
   <div class="dlg-head"><h2 id="soc-sheet-title">Pil durumu</h2><button class="sheet-x" id="soc-sheet-x" type="button" aria-label="Kapat"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button></div>

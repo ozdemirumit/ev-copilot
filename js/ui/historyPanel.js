@@ -3,6 +3,7 @@ import { locale } from '../i18n/index.js';
 import { getState, subscribe } from '../state.js';
 import { records, byBand, summary, clearHistory, relFactor } from '../physics/history.js';
 import { chargeLog, updateCharge } from '../physics/charging.js';
+import { arrivalLog } from '../physics/arrivals.js';
 import { getSession, proxyFetch } from '../net/proxy.js';
 import { toast } from './toast.js';
 import { tr, t } from '../i18n/index.js';
@@ -87,6 +88,31 @@ function paintTrips(rs) {
   });
 }
 
+/** Şarj durağına varışta girilen pil kalibrasyonları: uygulamanın tahmini, planın varış tahmini ve gerçek. */
+function paintArrivals() {
+  const box = $('h-arrivals');
+  if (!box) return;
+  box.replaceChildren();
+  const list = arrivalLog().slice().sort((a, b) => b.t - a.t).slice(0, 15);
+  if (!list.length) {
+    box.append(Object.assign(document.createElement('div'), { className: 'empty small muted', textContent: 'Henüz varış kalibrasyonu yok (şarj durağına varınca uygulama pil yüzdesini sorar).' }));
+    return;
+  }
+  const sign = (n) => (n > 0 ? '+' : '') + n;
+  list.forEach((a) => {
+    const row = document.createElement('div');
+    row.className = 'trip';
+    const when = new Date(a.t).toLocaleString(locale(), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    row.append(
+      Object.assign(document.createElement('b'), { textContent: `${when} · ${a.station || `${a.lat}, ${a.lon}`}` }),
+      Object.assign(document.createElement('span'), {
+        textContent: t('tahmin %{0} → gerçek %{1} ({2} puan)', a.est, a.actual, sign(a.err)) + (a.plan != null ? ' · ' + t('plan %{0} ({1} puan)', a.plan, sign(a.planErr)) : ''),
+      }),
+    );
+    box.append(row);
+  });
+}
+
 function paintCharges() {
   const box = $('h-charges');
   if (!box) return;
@@ -146,6 +172,7 @@ function paint() {
   }
   paintTrips(rs);
   paintCharges();
+  paintArrivals();
   drawChart(rs.slice(-CHART_N));
 
   const body = $('h-bands');
@@ -172,5 +199,6 @@ export function initHistoryPanel() {
   });
   subscribe(['hist', 'plan'], paint);
   document.addEventListener('charges-changed', paint);
+  document.addEventListener('arrivals-changed', paintArrivals);
   paint();
 }
