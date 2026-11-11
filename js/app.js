@@ -32,7 +32,6 @@ import { initSocInput } from './ui/socInput.js';
 import { initRouteForm } from './ui/routeForm.js';
 import { initSocBar } from './ui/socBar.js';
 import { initArrivalCalib } from './ui/arrivalCalib.js';
-import { initShotScan } from './ui/shotScan.js';
 import { initStopSwap } from './ui/stopSwap.js';
 import { initKeyboard } from './ui/keyboard.js';
 import { initDefaultStart } from './ui/defaultStart.js';
@@ -120,7 +119,6 @@ initSocInput();
 initRouteForm();
 initSocBar();
 initArrivalCalib(); // şarj durağına varınca pil yüzdesini sorar (kamera okumuyorsa)
-initShotScan(); // pil yüzdesini araç uygulamasının widget/ekran görüntüsünden okur (cihazda OCR)
 initStopSwap(); // Rota sayfasında durağı değiştirme penceresi
 initKeyboard(); // ekran klavyesi: sayfa klavyenin üstüne sığar, rota formu yazarken kompaktlaşır
 initDefaultStart();
