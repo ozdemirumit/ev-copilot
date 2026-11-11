@@ -14,7 +14,7 @@ const SHELL = [
   './js/routing/planner.js', './js/routing/powerFilter.js', './js/routing/controller.js', './js/routing/aheadUpdate.js', './js/routing/livePlan.js', './js/routing/slots.js',
   './js/advisor/voice.js', './js/advisor/ecoSpeed.js', './js/advisor/fallback.js',
   './js/abrp/telemetry.js', './js/sim/simulator.js',
-  './js/sensors/camera.js', './js/sensors/wakeLock.js', './js/sensors/gps.js', './js/sensors/ocr.js',
+  './js/sensors/camera.js', './js/sensors/wakeLock.js', './js/sensors/gps.js', './js/sensors/driveGuard.js', './js/sensors/ocr.js',
   './js/sensors/preprocess.js', './js/sensors/binarize.js', './js/sensors/tokenOcr.js', './js/sensors/outlierFilter.js', './js/sensors/ocrConsensus.js', './js/sensors/ocrLoop.js', './js/sensors/frameQuality.js', './js/sensors/digitRecognizer.js', './js/sensors/digitModel.js', './js/ui/camPreview.js',
 ];
 

@@ -155,6 +155,16 @@ export function feed({ dKm, dt, moving, modelStepKwh, soc, temp, headwind, grade
   anchor = snap;
 }
 
+/**
+ * Ölçüm boşluğu (sayfa arka planda ya da GPS sustu): aradaki yol bilinmediği için açık pencereler (kameralı ve elle girilen pil)
+ * geçersizdir; bir sonraki pil değeri yeni başlangıç olur. Böylece boşlukta düşen pil, kısa sayılan mesafeye bölünüp aşırı tüketim kaydı üretmez.
+ */
+export function breakWindow() {
+  anchor = null;
+  lastSoc = null;
+  manual = null; // elle girişin eski referansı silinir; bekleyen giriş (sürgü zamanlayıcısı) iptal edilmez, kesinleşince yeni referans olur
+}
+
 export const records = () => recs;
 
 /** Bu oturumda gidilen toplam yol (km; Test Modu hariç). */

@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.28';
+self.APP_VERSION = '0.99.29';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.29', date: '2026-11-11',
+    notes: [
+      'iPhone Chrome arka plan/on plan: sayfa arka plandayken ya da zamanlayici durmusken menzil motoru son hizla yol ve enerji toplamaz; donuste eski (onbellek) konum hiz/yon/mesafe hesabina girmez, taze konum gelene dek toplama bekler.',
+      'Bosluk olunca tuketim olcum pencereleri kirilir: arka planda dusen pil kisa sayilan yola bolunup asiri tuketim kaydi uretmez. Bosluk sonrasi kus ucusu mesafe yalnizca tahmini pili dusurur (alt sinir), ogrenmeye girmez.',
+      'GPS 8 sn den uzun susarsa son hiz gosterilmez; donuste 3 sn icinde taze konum gelmezse konum izleme yeniden baslatilir. visibilitychange, pageshow ve focus olaylarinin ucu de dinlenir (kamera/OCR yeniden denetimi zaten bu olaylarla calisiyor).',
+    ],
+  },
   {
     v: '0.99.28', date: '2026-11-11',
     notes: [

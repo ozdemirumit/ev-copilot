@@ -52,6 +52,7 @@ import { initCollapse } from './ui/collapse.js';
 import { initOcmKey } from './ui/ocmKey.js';
 import { initNavigator } from './nav/navigator.js';
 import { initFreeDrive } from './nav/freeDrive.js';
+import { initDriveGuard } from './sensors/driveGuard.js';
 import { initNearby } from './nav/nearby.js';
 import { initAhead } from './nav/ahead.js';
 import { initSpeedLimit } from './nav/speedLimit.js';
@@ -78,6 +79,7 @@ initDataUsage();
 initStatusBadges();
 initCards();
 initHistoryPanel();
+initDriveGuard(); // sayfa yaşam döngüsü (arka plan/dönüş): GPS ve menzil motorundan önce
 initGpsControl();
 initPremiumGate(); // Premium dışında Kamera ve Test menüleri gizlenir (class önce konur, paneller sonra)
 initTestPanel();

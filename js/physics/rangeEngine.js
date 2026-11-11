@@ -7,13 +7,15 @@ import { rangeForEnergy, usesRouteProfile } from './rangeCalc.js';
 import { createTracker } from './consumption.js';
 import { trafficBreakdown, stopGoOverhead } from './traffic.js';
 import { fetchWeather } from '../providers/index.js';
-import { feed as feedHistory } from './history.js';
+import { feed as feedHistory, breakWindow } from './history.js';
 import { isEstimating, consume } from './socEstimate.js';
+import { guard, onCatchup } from '../sensors/driveGuard.js';
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const tracker = createTracker();
 
 let lastT = performance.now();
+let gapNote = null; // son ölçüm boşluğu: { at, km (kuş uçuşu, null: bilinmiyor), gapMs } — arayüz/teşhis için
 let odo = 0;
 let altRef = null;
 let lastStatsAt = null;
@@ -62,7 +64,7 @@ async function maybeRefreshWeather(e) {
 
 function tick() {
   const now = performance.now();
-  const dtReal = Math.min(5, (now - lastT) / 1000);
+  let dtReal = Math.min(5, (now - lastT) / 1000);
   lastT = now;
 
   const sim = getState('sim');
@@ -70,6 +72,14 @@ function tick() {
   const route = getState('route');
   const e = effective();
   const scale = sim.enabled && sim.play ? sim.timeScale : 1;
+  // Gerçek GPS: sayfa arka plandaysa, zamanlayıcı durmuşsa (iOS) ya da GPS sustuysa bu adımda yol/enerji toplanmaz (son hız sonsuza
+  // dek sürmüş sayılmaz). Duvar saati kullanılır: iOS askıdayken performance.now ilerlemeyebilir. Test Modu bu korumaya girmez.
+  const speed = e.speed ?? 0;
+  if (e.source === 'live') {
+    const g = guard.step(Date.now(), { still: speed < 1 });
+    if (g.gap) { tracker.gap(); breakWindow(); gapNote = { at: Date.now(), km: null, gapMs: null }; }
+    dtReal = g.integrate ? Math.min(5, g.dt) : 0; // dt = 0: bu adımda yol, enerji, süre ve pil düşüşü yok (göstergeler hesaplanmaya devam eder)
+  }
   const dt = dtReal * scale;
 
   let routeKm = null;
@@ -80,7 +90,6 @@ function tick() {
     offKm = p.offKm;
   }
 
-  const speed = e.speed ?? 0;
   const dKm = (speed * dt) / 3600;
   odo += dKm;
   updateLiveGrade(e);
@@ -160,6 +169,7 @@ function tick() {
     measuredKm: st?.distKm ?? null,
     kwh100Est: est, kwh100Flat: estFlat,
     powerKw: speed > 0 ? modelKw * k : null, // anlık güç tahmini (model × k)
+    gap: gapNote,
     rangeKm, totalRangeKm, rangeSrc, rangeKwh100, rangeKp,
     netWind, aeroPct, traffic,
   });
@@ -167,6 +177,19 @@ function tick() {
   maybeRefreshWeather(e);
 }
 
+/**
+ * Boşluk kapandı (taze konum): boşluğun iki ucu arasındaki kuş uçuşu mesafe gerçek yolun alt sınırıdır. Yalnızca elle/tahmini pil bu
+ * kadarlık düz zemin tüketimiyle düşürülür (eksik düşmektense alt sınır); kilometre sayacına ve tüketim öğrenmesine girmez.
+ */
+export function applyCatchup({ km, gapMs }) {
+  gapNote = { at: Date.now(), km, gapMs };
+  const eng = getState('engine');
+  const kwh100 = eng.kwh100Flat ?? eng.kwh100Est;
+  if (km > 0 && kwh100 > 0 && isEstimating()) consume((km * kwh100) / 100);
+  patch('engine', { gap: gapNote });
+}
+
 export function initRangeEngine() {
+  onCatchup(applyCatchup);
   setInterval(tick, 1000);
 }

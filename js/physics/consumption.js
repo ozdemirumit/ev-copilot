@@ -20,6 +20,12 @@ export function createTracker({ windowKm = 15, minDrop = 3, battery = VEHICLE.ba
       modelKwh += modelStepKwh;
     },
 
+    /** Ölçüm boşluğu (arka plan, GPS kesintisi): aradaki yol bilinmez, pencere kırılır; sonraki pil değeri yeni başlangıçtır. */
+    gap() {
+      samples = [];
+      lastSoc = null;
+    },
+
     addSoc(soc) {
       if (soc == null) return;
       if (lastSoc != null && soc > lastSoc) samples = []; // şarj/manuel düzeltme: geçmiş geçersiz
