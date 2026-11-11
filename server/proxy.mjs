@@ -20,6 +20,7 @@ import { lookupAll } from './occupancy.mjs';
 import { hereBrowse, compact } from './here.mjs';
 import { tomtomAllowed, tomtomUsage, tomtomRoute, validPts } from './tomtom.mjs';
 import { createPriceBook } from './prices.mjs';
+import { createVeriApi } from './veriapi.mjs';
 import { createCommunity } from './community.mjs';
 import { createStationInfo, MAX_PHOTO_BYTES } from './stationinfo.mjs';
 import { createTesla } from './tesla.mjs';
@@ -229,7 +230,7 @@ async function readJson(req, max) {
 }
 
 // ---------- yardımcılar ----------
-const scrub = (s) => { let t = s; for (const secret of [MAPBOX, OCM, GOOGLE_PLACES, HERE, TOMTOM, env.TOMTOM_MAP_KEY, env.MAPBOX_MAP_TOKEN, env.GOOGLE_MAPS_BROWSER_KEY, env.ADMIN_TOTP_SECRET]) if (secret) t = t.split(secret).join('***'); return t; };
+const scrub = (s) => { let t = s; for (const secret of [MAPBOX, OCM, GOOGLE_PLACES, HERE, TOMTOM, env.VERIAPI_KEY, env.TOMTOM_MAP_KEY,env.MAPBOX_MAP_TOKEN, env.GOOGLE_MAPS_BROWSER_KEY, env.ADMIN_TOTP_SECRET]) if (secret) t = t.split(secret).join('***'); return t; };
 function send(res, status, body, headers = {}) {
   const buf = Buffer.isBuffer(body) ? body : Buffer.from(typeof body === 'string' ? body : JSON.stringify(body));
   res.writeHead(status, { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...headers, 'Content-Length': buf.length });
@@ -455,7 +456,7 @@ async function occupancyRoute(req, res, id) {
   const here = HERE ? { key: HERE, allow: hereAllowed, onCall: () => { hereCount(); costs.add(id, 'here'); } } : null; // HERE doluluk sorgusu da 'here' türüne
   const soc = Number.isFinite(Number(b.soc)) ? Number(b.soc) : null; // pil %: Google (ücretli) yalnızca düşük pilde sorulur
   const tomtom = TOMTOM ? { key: TOMTOM, allow: tomtomAllowed } : null; // günlük tavan tomtom.mjs'te sayılır (her HTTP isteği 1)
-  json(res, 200, { results: await lookupAll(stations, { google, here, tomtom, soc, book: priceBook, community }) });
+  json(res, 200, { results: await lookupAll(stations, { google, here, tomtom, soc, book: priceBook, community, veri }) });
 }
 
 // ---------- TomTom rota (Routing API v1, canlı trafik) ----------
@@ -582,6 +583,7 @@ process.on('unhandledRejection', (err) => console.error('yakalanmamış söz red
 const store = openStore(env.DATA_DIR || join(here, 'data'));
 const maps = createMaps(store, env);
 const priceBook = createPriceBook(store);
+const veri = createVeriApi({ key: env.VERIAPI_KEY || '', store }); // işletmeci kWh tarifeleri (anahtar yoksa pasif)
 const community = createCommunity(store);
 const stationInfo = createStationInfo(store, join(env.DATA_DIR || join(here, 'data'), 'photos'));
 const tesla = createTesla(env.DATA_DIR || join(here, 'data'));
@@ -725,5 +727,5 @@ server.requestTimeout = 120000;
 server.headersTimeout = 15000;
 tesla.get().catch(() => {}); // ilk kullanıcı beklemesin: açılışta Tesla listesi (diskte yoksa) önceden alınır
 server.listen(PORT, HOST, () => {
-  console.log(`EV Route Finder ara sunucusu ${HOST}:${PORT} · Mapbox ${MAPBOX ? 'var' : 'yok'} · OpenChargeMap ${OCM ? 'var' : 'yok'} · HERE ${HERE ? 'var' : 'yok'} · Google girişi ${accounts.googleOn ? 'açık' : 'kapalı'} · doluluk: NDW${HERE ? ' + HERE' : ''}${TOMTOM ? ' + TomTom (günlük ' + tomtomUsage().cap + ')' : ''}${GOOGLE_PLACES ? ' + Google' : ''} · ${CODES.length} yönetici kodu${adminAuth ? ' · yönetim 2. adım: TOTP açık' : ''}`);
+  console.log(`EV Route Finder ara sunucusu ${HOST}:${PORT} · Mapbox ${MAPBOX ? 'var' : 'yok'} · OpenChargeMap ${OCM ? 'var' : 'yok'} · HERE ${HERE ? 'var' : 'yok'} · VeriApi.Pro tarifeleri ${veri.enabled ? 'açık' : 'kapalı'} · Google girişi ${accounts.googleOn ? 'açık' : 'kapalı'} · doluluk: NDW${HERE ? ' + HERE' : ''}${TOMTOM ? ' + TomTom (günlük ' + tomtomUsage().cap + ')' : ''}${GOOGLE_PLACES ? ' + Google' : ''} · ${CODES.length} yönetici kodu${adminAuth ? ' · yönetim 2. adım: TOTP açık' : ''}`);
 });

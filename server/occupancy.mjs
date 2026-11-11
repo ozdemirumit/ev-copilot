@@ -213,6 +213,11 @@ export async function lookupAll(stations, opts = {}) {
       const price = { currency: b.currency, kwh: b.kwh, flat: null, hour: null, parkingHour: null, src: 'user', n: b.n, at: b.at };
       v = v ? { ...v, price } : { src: 'book', total: null, available: null, out: null, at: null, price };
     }
+    // İşletmecinin yayımladığı genel tarife (VeriApi.Pro): canlı ve kullanıcı bildirimi yoksa son çare
+    if (!(v?.price)) {
+      const price = opts.veri?.priceFor(st);
+      if (price) v = v ? { ...v, price } : { src: 'veriapi', total: null, available: null, out: null, at: null, price };
+    }
     if (v?.src !== 'google') cache.set(key, { exp: Date.now() + (v ? HIT_MS : MISS_MS), v });
     if (cache.size > 2000) cache.delete(cache.keys().next().value);
     out[st.id] = v;

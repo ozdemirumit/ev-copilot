@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.21';
+self.APP_VERSION = '0.99.22';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.22', date: '2026-11-11',
+    notes: [
+      'Sunucu: VeriApi.Pro ile Turkiye isletmecilerinin genel kWh tarifeleri (gunde bir cekim, anahtar yoksa kapali); canli ve kullanici fiyati yoksa son care olarak gosterilir, atifli (tarife - VeriApi.Pro). Doluluk vermez',
+    ],
+  },
   {
     v: '0.99.21', date: '2026-11-11',
     notes: [

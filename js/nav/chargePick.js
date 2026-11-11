@@ -34,7 +34,8 @@ export function priceInfo(s) {
     const extra = !!(p.flat || p.hour || p.parkingHour);
     const reported = p.src === 'user';
     const at = reported ? (p.at ?? null) : (p.at ?? s.slots.at ?? s.slots.checked ?? null);
-    return { value: p.kwh, currency: c, comparable: !extra, source: reported ? 'reported' : 'live', at, extra };
+    const source = reported ? 'reported' : p.src === 'veriapi' ? 'documented' : 'live'; // VeriApi.Pro: işletmecinin yayımladığı tarife, canlı fiyat değil
+    return { value: p.kwh, currency: c, comparable: !extra, source, at, extra };
   }
   if (s?.tariff === 'list' && !s.foreign && goodKwh(s.price)) {
     const src = s.tariffSrc === 'documented' || s.tariffSrc === 'user' ? s.tariffSrc : 'list';

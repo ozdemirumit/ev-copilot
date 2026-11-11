@@ -81,7 +81,7 @@ export function livePrice(s) {
   const p = s.slots?.price;
   if (!p || p.kwh == null) return null;
   const sym = p.currency === 'EUR' ? '€' : p.currency === 'TRY' ? '₺' : `${p.currency} `;
-  const how = p.src === 'user' ? 'bildirilen' : 'canlı'; // NDW/OCPI canlı; kullanıcı bildirimi (fiyat defteri) son bilinen
+  const how = p.src === 'user' ? 'bildirilen' : p.src === 'veriapi' ? 'tarife · VeriApi.Pro' : 'canlı'; // NDW/OCPI canlı; kullanıcı bildirimi (fiyat defteri) son bilinen; VeriApi.Pro: işletmecinin yayımladığı genel tarife (atıf ücretsiz planda şart)
   return { text: `${sym}${p.kwh.toFixed(2)}/kWh (${how})`, extra: !!(p.flat || p.hour || p.parkingHour) };
 }
 
