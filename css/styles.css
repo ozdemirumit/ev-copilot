@@ -886,14 +886,30 @@ body.typing .suggest { max-height: calc(var(--app-h, 100dvh) - var(--hud-h, 72px
 .soc-range small#soc-sheet-thr { margin-top: 2px; }
 body.navmode .mapsoc, body.sheet-open .mapsoc { display: none; }
 @media (min-height: 521px) {
-  .mapsoc { width: min(300px, calc(100vw - 20px)); margin: 8px 0 0 10px; padding: 4px 12px 2px; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--float); }
-  .mapsoc .socbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 8px; width: 100%; max-width: none; min-height: 44px; margin: 0; padding: 2px 0; background: none; border: 0; border-radius: 0; box-shadow: none; text-align: left; }
+  /* Rotasız sürüşte üst panel, navigasyon üst barıyla (#banners > .toppanel) aynı kenar boşluğu, genişlik ve köşe yarıçapında durur */
+  .mapsoc { width: auto; margin: 0 10px 6px; padding: 6px 14px 4px; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--float); }
+  .mapsoc .socbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 10px; row-gap: 2px; width: 100%; max-width: none; min-height: 44px; margin: 0; padding: 2px 0; background: none; border: 0; border-radius: 0; box-shadow: none; text-align: left; }
+  /* Okunabilirlik: sürerken bir bakışta okunacak büyüklük (pil yüzdesi en büyük, etiketler koyu gri) */
+  /* Tek satır: sığmayan öğe (önce eşik menzili) yarım rakam göstermek yerine görünmeyen ikinci satıra iner */
+  .mapsoc .socbar-main { display: flex; flex-wrap: wrap; min-width: 0; height: 30px; overflow: hidden; font-size: 18px; column-gap: 6px; row-gap: 12px; }
+  .mapsoc #socbar-val { font-size: clamp(22px, 7.2vw, 26px); line-height: 1.1; }
+  .mapsoc .pct-sign { font-size: clamp(15px, 5vw, 18px); }
+  .mapsoc .socbar-range b, .mapsoc .socbar-thr b { font-size: clamp(16px, 5.3vw, 19px); }
+  .mapsoc .socbar-range small, .mapsoc .socbar-thr small { font-size: 13px; }
+  .mapsoc .socbar-thr { font-size: 15px; }
+  .mapsoc .socbar-cons { font-size: 15px; }
+  .mapsoc .socbar-cons small, .mapsoc .socbar-srcline small { font-size: 13px; }
+  .mapsoc .socbar-batt { width: 30px; height: 16px; }
+  /* Harita alanı korunur: ikinci satır tek satırda kalır, kaynak yazısı sığmazsa üç noktayla kısalır */
+  .mapsoc .socbar-line2 { flex-wrap: nowrap; }
+  .mapsoc .socbar-srcline { flex: 1 1 0; }
   .socbar-batt { grid-area: 1 / 1; }
   .socbar-main { grid-area: 1 / 2; }
   .socbar-chev { grid-area: 1 / 3 / span 2; }
   .socbar-line2 { grid-area: 2 / 1 / auto / span 2; }
   .mapsoc-slider input { display: block; height: 28px; margin: 0; }
 }
+@media (min-width: 900px) and (min-height: 521px) { .mapsoc { max-width: 420px; } } /* #banners 440px = 420px kart + 2 × 10px kenar */
 @media (max-height: 520px) {
   .mapsoc { display: contents; }
   .mapsoc-slider { display: none; }

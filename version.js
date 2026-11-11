@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.26';
+self.APP_VERSION = '0.99.27';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.27', date: '2026-11-11',
+    notes: [
+      'Rotasiz surus ust paneli (pil/menzil/tuketim karti) navigasyon ust bariyla ayni kenar boslugu, genislik ve kose yaricapinda; genis ekranda da ayni 420 px.',
+      'Okunabilirlik: pil yuzdesi ve menzil rakamlari buyudu; dar ekranda yazi boyu ekrana gore kucuk olcekte kalir.',
+      'Harita alani korunur: kaynak satiri tek satirda kalir (sigmazsa kisalir), sigmayan esik menzili yarim rakam yerine gizlenir; kart 360 px ekranda ~115 px yerine ~97 px.',
+    ],
+  },
   {
     v: '0.99.26', date: '2026-11-11',
     notes: [
