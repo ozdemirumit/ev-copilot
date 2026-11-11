@@ -233,14 +233,17 @@ export function initCameraPanel() {
     readingsDrawn = list;
     $('diag-readings').replaceChildren(...list.map((e) => {
       const li = document.createElement('li');
-      const parts = [timeOf(e.at), ENGINE_TEXT[e.engine] || e.engine, `"${e.text}"`];
+      // Saat ayrı ve kalın: satırlar bir bakışta zamana göre taranır
+      const time = document.createElement('b');
+      time.textContent = timeOf(e.at);
+      const parts = [ENGINE_TEXT[e.engine] || e.engine, `"${e.text}"`];
       if (e.value != null) parts.push(`→ ${e.value}`);
       if (e.confidence) parts.push(`%${e.confidence}`);
       if (e.digits != null) parts.push(`${e.digits} hane`);
       if (e.alt) parts.push(`OCR 2: "${e.alt.text}" %${e.alt.confidence}`);
       if (e.reason) parts.push(REASON_TEXT[e.reason] || e.reason);
       if (e.clipped) parts.push('Rakam kutu kenarında');
-      li.textContent = parts.join(' · ');
+      li.append(time, ' ' + parts.join(' · '));
       return li;
     }));
   }

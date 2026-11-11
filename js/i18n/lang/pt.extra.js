@@ -401,4 +401,5 @@ export default {
   "Durak rotadan çıkarıldı: {0}": "Paragem removida da rota: {0}",
   "Durak çıkarıldı: {0}. Alternatif: {1}": "Paragem removida: {0}. Alternativa: {1}",
   "Bu durak olmadan plan kurulamadı: {0}": "Não é possível planear sem esta paragem: {0}",
+  "Son güncelleme": "Atualizado",
 };

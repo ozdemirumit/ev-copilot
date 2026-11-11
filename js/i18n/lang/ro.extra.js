@@ -401,4 +401,5 @@ export default {
   "Durak rotadan çıkarıldı: {0}": "Oprire eliminată din traseu: {0}",
   "Durak çıkarıldı: {0}. Alternatif: {1}": "Oprire eliminată: {0}. Alternativă: {1}",
   "Bu durak olmadan plan kurulamadı: {0}": "Nu se poate face un plan fără această oprire: {0}",
+  "Son güncelleme": "Actualizat",
 };

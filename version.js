@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.24';
+self.APP_VERSION = '0.99.25';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.25', date: '2026-11-11',
+    notes: [
+      'Kamera/OCR ekrani daha okunakli: Okuma kartinda Son guncelleme etiketi ve kalin saat, Ham/Gecerli/Durum kutularinda etiket ustte ve deger iri, Eski isareti renkli rozet; Tanilama tablosunda etiket/deger ayrimi, satir cizgileri ve daha buyuk yazi; son 5 ham okumada saat kalin. Kamera, OCR ve 5 saniyelik okuma degismedi',
+    ],
+  },
   {
     v: '0.99.24', date: '2026-11-11',
     notes: [

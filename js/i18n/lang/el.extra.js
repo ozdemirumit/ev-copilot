@@ -401,4 +401,5 @@ export default {
   "Durak rotadan çıkarıldı: {0}": "Η στάση αφαιρέθηκε από τη διαδρομή: {0}",
   "Durak çıkarıldı: {0}. Alternatif: {1}": "Η στάση αφαιρέθηκε: {0}. Εναλλακτική: {1}",
   "Bu durak olmadan plan kurulamadı: {0}": "Δεν είναι δυνατός προγραμματισμός χωρίς αυτή τη στάση: {0}",
+  "Son güncelleme": "Ενημέρωση",
 };

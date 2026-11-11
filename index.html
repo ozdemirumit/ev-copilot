@@ -413,7 +413,7 @@
     <div class="card stack">
       <div class="row between ocr-head">
         <h2>Okuma</h2>
-        <span class="small muted" id="ocr-last" aria-live="off">--</span>
+        <span class="ocr-upd"><span>Son güncelleme</span> <b id="ocr-last" aria-live="off">--</b></span>
       </div>
       <div class="ocr-engine" role="group" aria-label="OCR motoru">
         <button class="btn" type="button" data-ocr-engine="tess">OCR 1 · Tesseract</button>
@@ -428,14 +428,14 @@
         <label for="ocr-speed-on">Ekrandaki hızı da oku (GPS yoksa yedek)</label>
         <label class="switch"><input type="checkbox" id="ocr-speed-on"><i></i></label>
       </div>
-      <dl class="kv"><dt>Ekran hızı</dt><dd id="ocr-speed-read">kapalı</dd></dl>
+      <dl class="kv ocr-kv"><dt>Ekran hızı</dt><dd id="ocr-speed-read">kapalı</dd></dl>
       <p class="small hidden" id="ocr-err" style="margin:0;color:var(--bad)"></p>
       <p class="small muted" style="margin:0">Outlier filtresi: 5 sn içinde ±%2'den büyük pil değişimi reddedilir, son geçerli değer korunur. Hız açıksa mavi kutuyu ekrandaki hız rakamlarına oturt.</p>
     </div>
 
     <div class="card stack" id="ocr-diag">
       <h2>Tanılama</h2>
-      <dl class="kv">
+      <dl class="kv ocr-kv">
         <dt>Son pil</dt><dd id="diag-soc">--</dd>
         <dt>Son hız</dt><dd id="diag-speed">--</dd>
         <dt>Son başarılı okuma</dt><dd id="diag-read-at">--</dd>

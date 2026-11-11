@@ -400,5 +400,6 @@
  "Bu durağı rotadan kaldır; gerekirse yerine alternatif seçilir",
  "Durak rotadan çıkarıldı: {0}",
  "Durak çıkarıldı: {0}. Alternatif: {1}",
- "Bu durak olmadan plan kurulamadı: {0}"
+ "Bu durak olmadan plan kurulamadı: {0}",
+ "Son güncelleme"
 ]

@@ -401,4 +401,5 @@ export default {
   "Durak rotadan çıkarıldı: {0}": "Спирката е премахната от маршрута: {0}",
   "Durak çıkarıldı: {0}. Alternatif: {1}": "Спирката е премахната: {0}. Алтернатива: {1}",
   "Bu durak olmadan plan kurulamadı: {0}": "Без тази спирка не може да се състави план: {0}",
+  "Son güncelleme": "Обновено",
 };

@@ -401,4 +401,5 @@ export default {
   "Durak rotadan çıkarıldı: {0}": "Arrêt retiré du trajet : {0}",
   "Durak çıkarıldı: {0}. Alternatif: {1}": "Arrêt retiré : {0}. Alternative : {1}",
   "Bu durak olmadan plan kurulamadı: {0}": "Aucun plan possible sans cet arrêt : {0}",
+  "Son güncelleme": "Mis à jour",
 };

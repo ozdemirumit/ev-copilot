@@ -401,4 +401,5 @@ export default {
   "Durak rotadan çıkarıldı: {0}": "Stop van de route verwijderd: {0}",
   "Durak çıkarıldı: {0}. Alternatif: {1}": "Stop verwijderd: {0}. Alternatief: {1}",
   "Bu durak olmadan plan kurulamadı: {0}": "Zonder deze stop is geen plan mogelijk: {0}",
+  "Son güncelleme": "Bijgewerkt",
 };
