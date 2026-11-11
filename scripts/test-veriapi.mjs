@@ -10,13 +10,16 @@ const KEY = 'va_TEST-NOT-REAL';
 const body = { veri: { operatorler: [
   { kod: 'zes', ad: 'ZES', ac: 10.99, dc: [{ min_kw: 0, max_kw: 100, tl_kwh: 14.5 }, { min_kw: 101, max_kw: 400, tl_kwh: 16.49 }] },
   { kod: 'esarj', ad: 'Eşarj', ac_tl_kwh: 9.9, dc_tl_kwh: 11.5 },
+  // GERÇEK şema (2026-11-11'de gerçek anahtarla doğrulandı): kademe { ust_kw, tl_kwh (en düşük), en_cok (üst sınır) }
+  { kod: 'trugo', ad: 'Trugo', ac: [{ ust_kw: null, tl_kwh: 9.95, en_cok: null }], dc: [{ ust_kw: null, tl_kwh: 12, en_cok: 14.98 }], en_dusuk_ac: 9.95, en_dusuk_dc: 12, kdv_dahil: true },
+  { kod: 'zes-kademeli', ad: 'ZesK', ac: [], dc: [{ ust_kw: 100, tl_kwh: 13, en_cok: null }, { ust_kw: null, tl_kwh: 15, en_cok: 17 }] },
   { kod: 'x', ad: 'Bozuk', ac: 0, dc: -3 },
   { kod: 'y', ad: 'Fahiş', ac: 999 },
 ] }, kaynak: [], bayat: false };
 
 // --- çözücü
 const rows = extractTariffs(body);
-ok('çözücü: geçerli iki işletmeci, sıfır/negatif/fahiş değerli olanlar atılır', rows.length === 2 && rows.map((r) => r.code).join() === 'zes,esarj');
+ok('çözücü: geçerli işletmeciler çözülür, sıfır/negatif/fahiş değerli olanlar atılır', rows.map((r) => r.code).join() === 'zes,esarj,trugo,zes-kademeli');
 ok('çözücü: düz dizi de kabul edilir', extractTariffs([{ kod: 'zes', ad: 'ZES', dc: 15 }]).length === 1);
 ok('çözücü: anlaşılmayan gövde → []', extractTariffs({ veri: { x: 1 } }).length === 0 && extractTariffs(null).length === 0 && extractTariffs('?').length === 0);
 // --- fiyat
@@ -25,9 +28,14 @@ ok('AC/DC ayrımı: DC istasyonda DC, AC istasyonda AC', priceFromTariffs(rows, 
 ok('güç bilinmiyorsa en pahalı kademe (maliyet düşük gösterilmez); güç biliniyorsa kademesi', priceFromTariffs(rows, { ...st, kw: 60 }).kwh === 14.5 && priceFromTariffs(rows, { ...st, kw: 180 }).kwh === 16.49);
 ok('Türkçe harf: "Eşarj" ↔ "esarj"', priceFromTariffs(rows, { ...st, op: 'ESARJ' }).kwh === 11.5);
 ok('işletmeci adı yoksa istasyon adındaki marka kullanılır', priceFromTariffs(rows, { ...st, op: 'Diğer', n: 'ZES Bolu' }).kwh === 16.49);
-ok('farklı marka ya da markasız istasyon → fiyat yok (yanlış işletmeci fiyatı gösterilmez)', priceFromTariffs(rows, { ...st, op: 'Trugo' }) === null && priceFromTariffs(rows, { ...st, op: '', n: '' }) === null);
+ok('farklı marka ya da markasız istasyon → fiyat yok (yanlış işletmeci fiyatı gösterilmez)', priceFromTariffs(rows, { ...st, op: 'Voltrun' }) === null && priceFromTariffs(rows, { ...st, op: '', n: '' }) === null);
 const p = priceFromTariffs(rows, st, 123);
 ok('fiyat şekli: TRY, kaynak veriapi, zaman damgası', p.currency === 'TRY' && p.src === 'veriapi' && p.at === 123 && p.flat === null);
+
+// gerçek şema: en_cok varsa o (maliyet düşük gösterilmez), yoksa tl_kwh; ust_kw kademe sınırı
+ok('gerçek şema: DC fiyatı en_cok (14.98), AC tl_kwh (9.95)', priceFromTariffs(rows, { ...st, op: 'Trugo' }).kwh === 14.98 && priceFromTariffs(rows, { ...st, op: 'Trugo', dc: false }).kwh === 9.95);
+ok('gerçek şema: ust_kw kademesi — 60 kW → ilk kademe, 150 kW → ikinci (en_cok 17), güç bilinmiyorsa en pahalı', priceFromTariffs(rows, { ...st, op: 'ZesK', kw: 60 }).kwh === 13 && priceFromTariffs(rows, { ...st, op: 'ZesK', kw: 150 }).kwh === 17 && priceFromTariffs(rows, { ...st, op: 'ZesK' }).kwh === 17);
+ok('gerçek şema: AC kademesi boşsa AC istasyonda fiyat yok (DC fiyatı AC için kullanılmaz)', priceFromTariffs(rows, { ...st, op: 'ZesK', dc: false }) === null);
 
 // --- ağ katmanı
 const mk = (res) => { const calls = []; return { calls, fetchImpl: async (u, o) => { calls.push({ u: String(u), key: o.headers['X-API-Key'] }); return res(); } }; };

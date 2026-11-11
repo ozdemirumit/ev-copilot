@@ -20,7 +20,15 @@ function num(x) {
 }
 /** Güç kademeleri listesi → verilen güç için fiyat (yoksa en düşük). kademe: { min_kw|kw_min, max_kw|kw_max, tl_kwh … }. */
 function tier(list, kw) {
-  const rows = list.map((t) => ({ lo: Number(t?.min_kw ?? t?.kw_min ?? t?.guc_min ?? 0), hi: Number(t?.max_kw ?? t?.kw_max ?? t?.guc_max ?? Infinity), p: num(t) })).filter((t) => t.p != null);
+  // Gerçek şema (doğrulandı): kademe { ust_kw (üst güç sınırı, null = sınırsız), tl_kwh (en düşük), en_cok (lokasyona göre üst sınır, çoğu zaman null) }.
+  // Lokasyona göre değişen fiyatta üst sınır alınır: planlanan maliyet olduğundan düşük gösterilmesin.
+  let prev = 0;
+  const rows = list.map((t) => {
+    const hi = Number(t?.ust_kw ?? t?.max_kw ?? t?.kw_max ?? t?.guc_max ?? Infinity);
+    const lo = Number(t?.min_kw ?? t?.kw_min ?? t?.guc_min ?? prev);
+    prev = Number.isFinite(hi) ? hi : prev;
+    return { lo, hi, p: num(t?.en_cok) ?? num(t) };
+  }).filter((t) => t.p != null);
   if (!rows.length) return null;
   const hit = kw != null ? rows.find((t) => kw >= t.lo && kw <= t.hi) : null;
   return (hit || rows.reduce((a, b) => (b.p > a.p ? b : a))).p; // güç bilinmiyorsa en pahalı kademe (maliyet olduğundan düşük gösterilmesin)

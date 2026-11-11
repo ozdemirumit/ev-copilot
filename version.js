@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.22';
+self.APP_VERSION = '0.99.23';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.23', date: '2026-11-11',
+    notes: [
+      'VeriApi.Pro: gercek yanit semasina gore cozucu duzeltildi (kademe ust_kw, lokasyona gore degisen fiyatta ust sinir en_cok kullanilir, maliyet dusuk gosterilmez); 12 isletmeci cozuluyor',
+    ],
+  },
   {
     v: '0.99.22', date: '2026-11-11',
     notes: [
