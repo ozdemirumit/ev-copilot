@@ -1,0 +1,11 @@
+{
+  "_note": "SAHTE OCPI 2.2.1 Location ornegi (test). Gercek CPO verisi degildir.",
+  "id": "LOC1",
+  "last_updated": "2026-11-11T09:00:00Z",
+  "evses": [
+    { "uid": "E1", "status": "AVAILABLE", "last_updated": "2026-11-11T10:00:00Z", "connectors": [{ "id": "1", "max_electric_power": 150000 }] },
+    { "uid": "E2", "status": "CHARGING", "last_updated": "2026-11-11T10:02:00Z", "connectors": [{ "id": "1", "max_electric_power": 150000 }] },
+    { "uid": "E3", "status": "AVAILABLE", "connectors": [{ "id": "1", "max_electric_power": 22000 }] },
+    { "uid": "E4", "status": "REMOVED", "last_updated": "2026-11-11T10:03:00Z", "connectors": [{ "id": "1", "max_electric_power": 150000 }] }
+  ]
+}

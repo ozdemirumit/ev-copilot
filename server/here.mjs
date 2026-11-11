@@ -1,6 +1,7 @@
 // HERE Search (Browse) "show=ev": istasyon listesi (konum, güç, soket türü) ve bağlantı bazlı canlı durum. Yalnızca sunucuda çalışır (HERE_API_KEY).
 // Not: EV Charge Points API v3 (tarifeler) bu anahtara kapalı (403): fiyat yok. Durum bilgisi her istasyonda canlı değildir ("OTHER" = bilinmiyor).
 const base = () => process.env.HERE_BASE || 'https://browse.search.hereapi.com'; // ortam değişkenleri çağrı anında okunur
+import { fromHereItem } from './availability.mjs';
 const CATEGORY = '700-7600-0322'; // elektrikli araç şarj noktası (otomobil)
 const DC_TYPE = /combo|chademo|ccs/i; // DC soket adları (HERE: "IEC 62196-3 type 2 combo", "JEVS G 105 (CHAdeMO)")
 const DC_MIN_KW = 40;
@@ -67,5 +68,5 @@ export async function hereLookup(st, key, { fetchImpl = fetch, now = Date.now() 
     if (d < bd) { bd = d; best = it; }
   }
   const s = best && hereSlots(best, st.dc, now);
-  return s ? { src: 'here', ...s, price: null } : null;
+  return s ? { src: 'here', ...s, price: null, availability: fromHereItem(best, { dcOnly: st.dc, now }) } : null;
 }

@@ -8,6 +8,7 @@
 import { gunzipSync } from 'node:zlib';
 import { hereLookup } from './here.mjs';
 import { tomtomLookup } from './tomtom.mjs';
+import { fromNdwAvailabilities, fromGoogleAggregation } from './availability.mjs';
 
 const NDW_BBOX = process.env.NDW_BBOX_URL || 'https://dotnl.ndw.nu/api/rest/geojson/dynamic-road-status/charge-point-data/v1/features';
 const NDW_TARIFFS = process.env.NDW_TARIFFS_URL || 'https://opendata.ndw.nu/charging_point_tariffs_ocpi.json.gz';
@@ -131,7 +132,7 @@ export async function ndwLookup(st, { fetchImpl = fetch, at = new Date() } = {})
     }
   }
   if (price) price.src = 'ndw';
-  return { src: 'ndw', total, available, out: null, at: Date.now(), price }; // last_updated son DEĞİŞİMİ gösterir; veri AFIR gereği 1 dk içinde tazedir → okuma anı
+  return { src: 'ndw', total, available, out: null, at: Date.now(), price, availability: fromNdwAvailabilities(conns) }; // last_updated son DEĞİŞİMİ gösterir; veri AFIR gereği 1 dk içinde tazedir → okuma anı
 }
 
 // ---------- Adaptör: Google Places (Yeni) ----------
@@ -158,7 +159,7 @@ export async function googleLookup(st, key, { fetchImpl = fetch } = {}) {
   if (!use.some((a) => a.availableCount != null)) return null; // canlı sayı yok
   const sum = (f) => use.reduce((t, a) => t + (f(a) || 0), 0);
   const times = use.map((a) => Date.parse(a.availabilityLastUpdateTime)).filter(Number.isFinite);
-  return { src: 'google', total: sum((a) => a.count), available: sum((a) => a.availableCount), out: sum((a) => a.outOfServiceCount), at: times.length ? Math.max(...times) : null, price: null };
+  return { src: 'google', total: sum((a) => a.count), available: sum((a) => a.availableCount), out: sum((a) => a.outOfServiceCount), at: times.length ? Math.max(...times) : null, price: null, availability: fromGoogleAggregation(use) };
 }
 
 // ---------- Birleştirici ----------

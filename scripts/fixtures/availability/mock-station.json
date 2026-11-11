@@ -1,0 +1,14 @@
+{
+  "_note": "SAHTE test verisi. Gercek bir istasyon degildir; yalnizca scripts/test-availability.mjs kullanir.",
+  "stationId": "mock-1",
+  "evses": [
+    { "uid": "M-1", "status": "AVAILABLE", "powerKw": 180, "at": "2026-11-11T10:00:00Z" },
+    { "uid": "M-2", "status": "CHARGING", "powerKw": 180, "at": "2026-11-11T10:05:00Z" },
+    { "uid": "M-3", "status": "RESERVED", "powerKw": 60, "at": "2026-11-11T09:50:00Z" },
+    { "uid": "M-4", "status": "BLOCKED", "powerKw": 60, "at": "2026-11-11T09:40:00Z" },
+    { "uid": "M-5", "status": "OUTOFORDER", "powerKw": 22, "at": "2026-11-11T08:00:00Z" },
+    { "uid": "M-6", "status": "INOPERATIVE", "powerKw": 22, "at": "2026-11-11T08:00:00Z" },
+    { "uid": "M-7", "status": "something-new", "powerKw": 22, "at": "2026-11-11T08:00:00Z" },
+    { "uid": "M-8", "status": "PLANNED", "powerKw": 22, "at": "2026-11-11T08:00:00Z" }
+  ]
+}

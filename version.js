@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.20';
+self.APP_VERSION = '0.99.21';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.21', date: '2026-11-11',
+    notes: [
+      'Sunucu: canli doluluk icin normalize EVSE durum katmani (AVAILABLE, CHARGING, RESERVED, BLOCKED, OUTOFORDER, INOPERATIVE, UNKNOWN), zaman damgasi, kaynak ve tazelik bilgisi; NDW, HERE, TomTom ve Google sonuclarina ek alan olarak eklendi, arayuz degismedi',
+    ],
+  },
   {
     v: '0.99.20', date: '2026-11-11',
     notes: [
