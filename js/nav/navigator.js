@@ -106,7 +106,7 @@ function tick() {
     planId = plan.planId; said = new Set(); offSince = 0; trackKm = null;
     track = plan.route?.coords ? buildTrack(plan.route.coords) : null;
     zoomNow = null; // yeni rota (yeniden rota dahil): harita zorla araca ortalanır ve zoom yeniden ayarlanır
-    mapApi.recenter?.();
+    if (!mapApi.dragged?.()) mapApi.recenter?.(); // kullanıcı haritayı kaydırdıysa görünüm korunur; takip Ortala ile döner
   }
   if (!track || e.lat == null) return paint('📍', '', 'Konum bekleniyor…', 'GPS kapalıysa haritadaki konum düğmesine dokun', true);
 
@@ -292,7 +292,7 @@ function followMap(e, distM, st, routeHeading) {
   if (gliding()) return; // kamerayı kare döngüsü (frame) sürer; burada yalnızca zoom hedefi (zoomNow) güncellenir
   // Dönüş yönü rotanın gidiş yönünden alınır (GPS yönü olmasa da çalışır); rota dışındaysa GPS yönü
   const heading = routeHeading ?? ((e.speed ?? 0) > 5 ? e.heading : null);
-  mapApi.follow(e.lat, e.lon, change ? want : null, change, getState('nav').headingUp ? heading : null);
+  mapApi.follow(e.lat, e.lon, change ? want : null, change && !mapApi.dragged(), getState('nav').headingUp ? heading : null); // kaydırılmışken zoom değişimi haritayı geri çekmez
 }
 
 let starting = false;

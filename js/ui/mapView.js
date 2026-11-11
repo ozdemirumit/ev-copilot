@@ -10,7 +10,7 @@ import { createTomTomMap } from './maps/tomtom.js';
 import { setActiveMap } from '../net/activeMap.js';
 import { resolveProvider, forceOsm } from '../net/mapConfig.js';
 import { showTab } from './tabs.js';
-import { navCamera } from './navCamera.js';
+import { navCamera, followAnchorPx, groundAheadPx } from './navCamera.js';
 import { icon } from './icons.js';
 
 /** Harita çizim API'si; initMap() çağrılınca dolar (routing/controller.js, nav/* kullanır). Harita henüz yüklenmediyse çizimler sıraya alınır. */
@@ -124,7 +124,7 @@ export function initMap() {
         adapter = await openAdapter();
         setActiveMap(adapter.name || 'osm'); // TomTom rotası yalnızca TomTom haritasıyla (js/net/activeMap.js)
         adapter.onClick(onMapClick);
-        adapter.onDragStart(() => { lastDrag = Date.now(); lastFollow = null; });
+        adapter.onDragStart(() => { lastDrag = Date.now(); lastFollow = null; if (navOn) navPan = true; });
         queue.splice(0).forEach((fn) => fn());
         readyHooks.forEach((fn) => fn());
       } catch (err) {
@@ -150,6 +150,7 @@ export function initMap() {
   let pickMode = null; // 'start' | 'end' | null
   let me = null; // canlı konum işareti
   let lastDrag = 0;
+  let navPan = false; // navigasyonda elle kaydırıldı: takip süreyle değil yalnızca Ortala (recenter) ile geri döner
 
   mapApi.setPoint = (...a) => setPoint(...a);
 
@@ -258,7 +259,8 @@ export function initMap() {
     });
   };
 
-  // Navigasyonda harita aracı izler; kullanıcı haritayı elle kaydırırsa 15 sn izleme durur.
+  // Navigasyonda harita aracı izler; kullanıcı haritayı elle kaydırırsa izleme Ortala düğmesine kadar durur (navigasyon dışında 15 sn).
+  const held = () => navPan || Date.now() - lastDrag < 15000;
   let lastHeading = 0;
   let navOn = false;
   let driveOn = false; // rotasız sürüş takibi (nav/freeDrive.js): araç oku, gidiş yönü yukarı
@@ -276,9 +278,41 @@ export function initMap() {
   let zoomCur = null;
   let bearCur = null;
   let pendingFollow = null; // harita henüz açılmadan gelen "konuma git" isteği: harita hazır olunca uygulanır (açılışta ilk konum haritadan önce gelebilir)
+  /*
+   * Navigasyon takip kamerası (v0.99.33): araç noktası görünür harita alanının alt kenarından ~%10 yukarıda (üstten %90). Görünür alan:
+   * üst panelin (hudtop) altı ile aracın sütununu örten harita düğmeleri/istasyon kartının üstü arası; harita alt çubukta (dock, güvenli
+   * alan dahil) bittiği için onlar zaten dışarıda. Ölçüm en çok saniyede bir yapılır (kare kamera her karede çağırır). Yalnızca kamera
+   * merkezi kayar: aracın gerçek/rotaya yapışık konumu değişmez.
+   */
+  let tiltNow = 0;
+  let insetAt = 0;
+  let insets = { top: 0, bottom: 0, h: 0 };
+  const navInsets = () => {
+    const now = performance.now();
+    if (insetAt && now - insetAt < 1000) return insets;
+    insetAt = now;
+    const r = mapEl.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const over = (b) => b.width > 0 && b.height > 0 && b.right > cx - 40 && b.left < cx + 40; // aracın sütunu (ok 24 px + pay)
+    let top = 0;
+    let bottom = 0;
+    const hud = document.getElementById('hudtop')?.getBoundingClientRect();
+    if (hud && over(hud)) top = Math.max(0, hud.bottom - r.top);
+    document.querySelectorAll('#mapui button, #station-card').forEach((n) => {
+      const b = n.getBoundingClientRect();
+      if (over(b) && b.top > r.top + r.height / 2) bottom = Math.max(bottom, r.bottom - b.top);
+    });
+    return (insets = { top, bottom, h: r.height });
+  };
+  /** Kamera merkezinin araçtan ileri uzaklığı (metre); mpp: o zoomdaki metre/piksel. */
+  const navAhead = (mpp) => {
+    const { top, bottom, h } = navInsets();
+    const mapH = h || mapEl.clientHeight;
+    return groundAheadPx(followAnchorPx({ mapH, top, bottom }), mapH, tiltNow) * mpp;
+  };
   mapApi.follow = (lat, lon, zoom = null, force = false, heading = null) => {
     if (!adapter) { if (force) pendingFollow = { lat, lon, zoom, heading }; return; }
-    if (paused || (!force && Date.now() - lastDrag < 15000)) return;
+    if (paused || (!force && held())) return;
     bearCur = null;
     zoomCur = null; // kare kamera bir sonraki karede haritanın gerçek değerinden devam eder
     if (zoom != null) zoomNow = zoom;
@@ -291,7 +325,7 @@ export function initMap() {
     let center = { lat, lon };
     if ((navOn || driveOn) && headingUp) {
       const mpp = (156543.03 * Math.cos((lat * Math.PI) / 180)) / 2 ** zoomNow; // metre/piksel
-      const d = mapEl.clientHeight * 0.22 * mpp; // harita yüksekliğinin ~%22'si kadar ileri
+      const d = navOn ? navAhead(mpp) : mapEl.clientHeight * 0.22 * mpp; // navigasyon: araç görünür alanın altından ~%10 yukarıda; rotasız: ~%22 ileri
       const h = (lastHeading * Math.PI) / 180;
       center = { lat: lat + (d * Math.cos(h)) / 111320, lon: lon + (d * Math.sin(h)) / (111320 * Math.cos((lat * Math.PI) / 180)) };
     }
@@ -317,7 +351,9 @@ export function initMap() {
   mapApi.navView = (on, up = true, d3 = threeD) => {
     navOn = on;
     headingUp = up;
+    if (!on) navPan = false;
     const cam = navCamera(on, up, d3);
+    tiltNow = cam.tilt;
     if (cam.resetHeading) lastHeading = 0;
     whenMap(() => {
       adapter.moveTo(cam.resetHeading ? { tilt: cam.tilt, heading: 0 } : { tilt: cam.tilt });
@@ -345,10 +381,10 @@ export function initMap() {
   };
   mapApi.driving = () => driveOn && !navOn;
   /** Kullanıcı haritayı kaydırdı mı (takip duraklatıldı)? */
-  mapApi.dragged = () => Date.now() - lastDrag < 15000;
+  mapApi.dragged = () => held();
   /** Takibe hemen dön (navigasyon görünümüne geri). */
   mapApi.recenter = () => {
-    lastDrag = 0; lastFollow = null; bearCur = null; zoomCur = null;
+    lastDrag = 0; navPan = false; lastFollow = null; bearCur = null; zoomCur = null; insetAt = 0;
     if (driveOn && !navOn) return updateMe(); // rotasız takipte yön korunur; sonraki konum (ya da çağıranın follow'u) araca ortalar
     mapApi.navView(navOn, headingUp);
   };
@@ -367,7 +403,7 @@ export function initMap() {
     meArrow.style.transform = `translateY(50%) rotate(${headingUp ? 0 : heading ?? 0}deg)`;
     if (!me) me = marker({ lat, lon }, meArrow, 'Konumum');
     else { me.setPosition({ lat, lon }); me.setContent(meArrow); }
-    if (Date.now() - lastDrag < 15000) return;
+    if (held()) return;
     if (zoom != null) zoomCur = zoomCur == null || Math.abs(zoom - zoomCur) > 3 ? zoom : zoomCur + (zoom - zoomCur) * 0.07;
     if (heading != null && headingUp) {
       const cur = bearCur ?? (adapter.bearing() + 360) % 360;
@@ -378,7 +414,7 @@ export function initMap() {
     let center = { lat, lon };
     if (navOn && headingUp && bearCur != null) {
       const mpp = (156543.03 * Math.cos((lat * Math.PI) / 180)) / 2 ** z; // metre/piksel
-      const d = mapEl.clientHeight * 0.22 * mpp;
+      const d = navAhead(mpp);
       const h = (bearCur * Math.PI) / 180;
       center = { lat: lat + (d * Math.cos(h)) / 111320, lon: lon + (d * Math.sin(h)) / (111320 * Math.cos((lat * Math.PI) / 180)) };
     }

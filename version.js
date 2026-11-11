@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.32';
+self.APP_VERSION = '0.99.33';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.33', date: '2026-11-12',
+    notes: [
+      'Navigasyon takip kamerasi: yon yukari takipte arac ucgeni gorunur harita alaninin alt kenarindan yaklasik yuzde 10 yukarida (ustten yuzde 90), onundeki rota daha uzun gorunur; ust panel, harita dugmeleri ve istasyon karti olculur, ucgen ortulmez; 3B egimde de dogru yerde. Yalnizca kamera kayar, konum ve rota hesabi degismez. Haritayi elle kaydirinca takip artik 15 sn sonra kendiliginden donmez (zoom degisimi ve yeniden rota da geri cekmez); Ortala dugmesiyle takip yeniden baslar.',
+    ],
+  },
   {
     v: '0.99.32', date: '2026-11-12',
     notes: [
