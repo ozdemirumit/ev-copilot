@@ -38,7 +38,7 @@ export function priceInfo(s) {
     return { value: p.kwh, currency: c, comparable: !extra, source, at, extra };
   }
   if (s?.tariff === 'list' && !s.foreign && goodKwh(s.price)) {
-    const src = s.tariffSrc === 'documented' || s.tariffSrc === 'user' ? s.tariffSrc : 'list';
+    const src = s.tariffSrc === 'published' ? 'documented' : s.tariffSrc === 'documented' || s.tariffSrc === 'user' ? s.tariffSrc : 'list';
     return { value: s.price, currency: 'TRY', comparable: true, source: src, at: null, extra: false };
   }
   return null;

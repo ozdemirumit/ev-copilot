@@ -665,6 +665,7 @@ const server = http.createServer(async (req, res) => {
     if (p === '/v1/occupancy' && req.method === 'POST') return await occupancyRoute(req, res, id);
     if (p === '/v1/speedlimits' && req.method === 'POST') return await speedLimitsRoute(req, res, id);
     if (p === '/v1/price' && req.method === 'POST') return await priceRoute(req, res, id);
+    if (p === '/v1/tariffs' && req.method === 'GET') return json(res, 200, veri.tariffs()); // işletmecilerin yayımladığı genel kWh tarifeleri (VeriApi.Pro); giriş yeter, Premium gerekmez
     if (p === '/v1/presence' && req.method === 'POST') return await communityRoute(req, res, id, 'presence');
     if (p === '/v1/status' && req.method === 'POST') return await communityRoute(req, res, id, 'status');
     if (p.startsWith('/v1/station/')) return await stationInfoRoute(req, res, id, url);

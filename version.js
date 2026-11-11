@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.23';
+self.APP_VERSION = '0.99.24';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.24', date: '2026-11-11',
+    notes: [
+      'Istasyon fiyati: isletmecilerin yayimladigi guncel kWh tarifesi (VeriApi.Pro, sunucudan gunde bir) sabit listedeki tahmini fiyatin yerine gecer; kartta isletmeci tarifesi yazar. Kullanici DC fiyatini degistirdiyse onun fiyati gecerli. Tabloda olmayan isletmeciler (Esarj, Voltrun, Tesla) liste fiyatinda kalir',
+    ],
+  },
   {
     v: '0.99.23', date: '2026-11-11',
     notes: [

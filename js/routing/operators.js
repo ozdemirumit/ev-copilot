@@ -23,6 +23,37 @@ export function cleanBrand(raw) {
   return s;
 }
 
+// İşletmecilerin yayımladığı genel kWh tarifeleri (sunucu → VeriApi.Pro, js/routing/tariffs.js): sabit listedeki tahmini fiyatın yerine geçer.
+// Kullanıcı DC fiyatını kendisi değiştirmediyse uygulanır (AC fiyatı zaten düzenlenemez). 14 günden eskiyse yok sayılır.
+const PUB_KEY = 'tariffsPub';
+const PUB_MAX_AGE_MS = 14 * 86400e3;
+const fold = (x) => String(x || '').toLocaleLowerCase('tr').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ı/g, 'i').replace(/[^a-z0-9]+/g, '');
+let pub = load(PUB_KEY, null); // { at, rows: [{ code, name, ac, dc }] }
+const okPrice = (v) => (typeof v === 'number' && v > 0 && v < 100 ? v : null);
+/** Operatörlere { price, acPrice } ekle (adı birebir eşleşen; "Ovolt (Sharz.net)" gibi parantezli adlarda parantez dışı). Tablo yoksa ya da eskiyse kaldırır. */
+function attachPub(ops) {
+  const fresh = pub?.rows?.length && Date.now() - pub.at < PUB_MAX_AGE_MS;
+  for (const o of ops) {
+    delete o.pub;
+    if (!fresh || o.found || o.id === 'other') continue;
+    const keys = new Set(o.match.map(fold));
+    const row = pub.rows.find((r) => keys.has(fold(String(r.name).split('(')[0])) || keys.has(fold(r.code)));
+    const price = okPrice(row?.dc);
+    const acPrice = okPrice(row?.ac);
+    if (price != null || acPrice != null) o.pub = { price, acPrice, at: pub.at };
+  }
+  return ops;
+}
+/** Sunucudan gelen tarife tablosunu kaydet ve uygula. */
+export function setPublishedTariffs(rows, at = Date.now()) {
+  if (!Array.isArray(rows) || !rows.length) return;
+  pub = { at, rows: rows.filter((r) => r && typeof r.name === 'string').map((r) => ({ code: String(r.code || ''), name: r.name, ac: okPrice(r.ac), dc: okPrice(r.dc) })) };
+  save(PUB_KEY, pub);
+  attachPub(operators);
+  changed();
+}
+export const publishedTariffsAt = () => (pub?.at && Date.now() - pub.at < PUB_MAX_AGE_MS ? pub.at : null);
+
 const foundOp = (name, other) => ({ id: 'f-' + slug(name), name, price: other.price, acPrice: other.acPrice, kw: other.kw, match: [name.toLowerCase()], found: true });
 
 let found = []; // [{ name }]
@@ -48,7 +79,7 @@ function build(saved) {
 
 const savedFound = load(FOUND_KEY, null);
 found = Array.isArray(savedFound) ? savedFound.filter((f) => f && cleanBrand(f.name) === f.name).slice(0, MAX_FOUND) : [];
-let operators = build(load('operators', null));
+let operators = attachPub(build(load('operators', null)));
 
 export const getOperators = () => operators;
 export const operatorById = (id) => operators.find((o) => o.id === id) || operators.at(-1);
@@ -58,7 +89,7 @@ export function persistOperators() {
 }
 
 export function resetOperators() {
-  operators = build(null);
+  operators = attachPub(build(null));
   remove('operators');
 }
 

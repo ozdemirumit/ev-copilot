@@ -65,6 +65,7 @@ import { initRouteController } from './routing/controller.js';
 import { initAdvisor } from './advisor/fallback.js';
 import { initTelemetry } from './abrp/telemetry.js';
 import { initSimulator } from './sim/simulator.js';
+import { initTariffs } from './routing/tariffs.js';
 
 // Sıra önemli: paneller state'i okuyup boyar; motorlar en sonda başlar; sekme en son açılır.
 await initI18n(); // önce dil: sayfa metinleri çevrilir, sonra paneller kendi metinlerini yazar (gözlemci onları da çevirir)
@@ -123,6 +124,7 @@ initStopSwap(); // Rota sayfasında durağı değiştirme penceresi
 initKeyboard(); // ekran klavyesi: sayfa klavyenin üstüne sığar, rota formu yazarken kompaktlaşır
 initDefaultStart();
 initSocEstimate();
+initTariffs(); // işletmeci tarifeleri (sunucu → VeriApi.Pro), günde bir
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => { /* file:// vb. */ });

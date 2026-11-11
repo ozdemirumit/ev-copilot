@@ -171,7 +171,7 @@ function open(s) {
   head.append(btn('✕', close, 'sheet-x'));
   const meta = el('div', 'small muted');
   meta.append(el('span', '', s.opName || ''), ' · ', el('span', '', `${s.slow ? tr('AC/yavaş') + ' ' : ''}${s.kw} kW${s.uncertain ? '*' : ''}`));
-  const price = el('div', 'sc-price', s.foreign ? 'Fiyat bilgisi yok (liste fiyatı yalnızca Türkiye için)' : s.price != null ? `${s.price.toFixed(2)} TL/kWh (tahmini)` : '');
+  const price = el('div', 'sc-price', s.foreign ? 'Fiyat bilgisi yok (liste fiyatı yalnızca Türkiye için)' : s.price != null ? `${s.price.toFixed(2)} TL/kWh (${s.tariffSrc === 'published' ? 'işletmeci tarifesi · VeriApi.Pro' : 'tahmini'})` : '');
   const live = el('div', 'stack sc-live');
   const acts = el('div', 'row wrap');
   acts.append(btn('🧭 Git', () => { close(); goToStation(s); }, 'btn primary sm'));

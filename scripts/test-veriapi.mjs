@@ -83,6 +83,17 @@ const okRes = () => ({ ok: true, status: 200, json: async () => body });
   ok('yeniden başlatma: kalıcı tablo okunur, yeniden çekilmez', store.saved && b.priceFor(st)?.kwh === 16.49 && m.calls.length === 1);
 }
 
+// --- istemciye tarife listesi (GET /v1/tariffs)
+{
+  const m = mk(okRes);
+  const v = createVeriApi({ key: KEY, fetchImpl: m.fetchImpl });
+  await v.refresh();
+  const t = v.tariffs();
+  const tr = t.operators.find((o) => o.code === 'trugo');
+  ok('tariffs(): işletmeci listesi, DC üst sınır (14.98), AC (9.95), zaman damgası', tr?.dc === 14.98 && tr?.ac === 9.95 && t.at > 0 && t.operators.length === 4);
+  ok('tariffs(): anahtar yoksa boş', createVeriApi({ key: '' }).tariffs().operators.length === 0);
+}
+
 // --- doluluk birleştiricisi
 {
   _clearCache();

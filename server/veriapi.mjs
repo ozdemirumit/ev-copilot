@@ -104,6 +104,12 @@ export function createVeriApi({ key, store, fetchImpl = fetch, now = () => Date.
       return d().rows.length ? priceFromTariffs(d().rows, st, d().at) : null;
     },
     refresh,
+    /** İstemci için işletmeci tarifeleri: [{ code, name, ac, dc }] (kademe/lokasyon varsa üst sınır; yok → null). Eskiyse arka planda tazeler. */
+    tariffs() {
+      if (!key) return { at: null, operators: [] };
+      if (stale() && (!failedAt || now() - failedAt > RETRY_MS)) refresh();
+      return { at: d().at || null, operators: d().rows.map((r) => ({ code: r.code, name: r.name, ac: side(r.ac, null), dc: side(r.dc, null) })) };
+    },
     status: () => ({ enabled: !!key, at: d().at || null, operators: d().rows.length, calls }),
   };
 }
