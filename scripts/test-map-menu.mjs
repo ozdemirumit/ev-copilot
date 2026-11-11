@@ -16,7 +16,7 @@ const tag = (src, id) => src.match(new RegExp(`<button[^>]*id="${id}"[^>]*>`))?.
 
 // Sağ kenardaki harita kontrolleri: üç nokta yok, düğmeler doğrudan dikey sütunda (açılır pencere değil)
 const stack = between('id="fabs-more"', '</div>');
-const fabs = between('id="fabs"', 'id="navhud"');
+const fabs = between('id="fabs"', 'id="searchrow"');
 const rule = css.match(/\n\.fabs-more \{[^}]*\}/)?.[0] || '';
 ok('üç nokta düğmesi kalktı', !html.includes('fab-tools') && !shell.includes('fab-tools') && !css.includes('fab-tools') && !shell.includes('setMore'));
 ok('sütun her zaman görünür (gizli başlamaz)', !/class="[^"]*hidden[^"]*" id="fabs-more"/.test(html));

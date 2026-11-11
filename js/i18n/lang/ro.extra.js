@@ -404,4 +404,6 @@ export default {
   "Son güncelleme": "Actualizat",
   "Kamera açık ama pil {0} dakikadır doğrulanamadı: son doğrulanan değerden tahmin ediliyor.": "Camera este pornită, dar bateria nu a fost confirmată de {0} min: estimare de la ultima valoare confirmată.",
   "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.": "Citirea camerei este veche (confirmată acum {0} s): se afișează ultima valoare confirmată.",
+  "Ortalama hız": "Viteză medie",
+  "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş": "Viteză medie: {0} km parcurși, {1} min în mers, {2} min oprit",
 };

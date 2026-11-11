@@ -928,3 +928,57 @@ body.navmode .mapsoc, body.sheet-open .mapsoc { display: none; }
   body:has(#near-alert:not(.hidden)) .mapsoc-slider { display: none; }
   body:has(#near-alert-toggle[aria-expanded="true"]) .mapsoc { display: none; }
 }
+
+/* Ortalama hız (yol / sürüş süresi): rotasız panelde tüketimin yanında (veri olunca), navigasyon alt şeridinde hızın yanında */
+.socbar-avg { flex: none; display: inline-flex; align-items: baseline; gap: 2px; padding-left: 7px; border-left: 1px solid var(--line); font-size: 13px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.socbar-avg small { color: var(--muted); font-size: 11px; font-weight: 500; }
+.socbar-avg.hidden { display: none; }
+@media (min-height: 521px) {
+  .mapsoc .socbar-avg { font-size: 15px; }
+  .mapsoc .socbar-avg small { font-size: 13px; }
+}
+@media (max-height: 520px) { .socbar-avg { display: none; } } /* yatayda başlıktaki dar hapta yer yok */
+.navhud .nh-avg { flex: 0 0 auto; } /* içerik kadar: süre/varış hücrelerinin payı azalmasın */
+.nh-avg small { font-weight: 700; }
+/* Dar dikey ekran: ortalama görünürken birimler kısalır (değerler aynı, tam açıklama dokunma/üzerine gelme başlığında) */
+@media (max-width: 389px) { .socbar-avg small:last-child { display: none; } }
+@media (max-width: 399px) { .navhud .nh-speed small { display: none; } .navhud .nh-speed { flex: 0 0 auto; min-width: 44px; } } /* hız birimi sabit; hız ve Ø içerik kadar, süre/kalan/varış hücrelerine yer kalır */
+@media (max-width: 340px) { html .navhud .nh-word { display: none; } } /* bayrak simgesi varışı zaten anlatır */
+@media (max-width: 340px) { .socbar-line2:has(.socbar-avg:not(.hidden)) .socbar-cons > small:last-child { display: none; } }
+
+/* Navigasyon üst paneli: iki sütun (sol: sonraki manevra + mesafe, sağ: hız, pil, varışta pil, şarj durağı + dönüşümlü trafik/yağış uyarısı), altta ince hız çubuğu */
+.navbar { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 6px 10px; padding: 8px 10px 6px; align-items: stretch; }
+.nb-left { display: flex; flex-direction: column; justify-content: space-between; gap: 4px; min-width: 0; }
+.nb-man { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.nb-man .nav-arrow { flex: none; font-size: 38px; width: 46px; padding-right: 8px; }
+.nb-man .nav-dist { font-size: 26px; }
+.nb-left .nav-then { grid-column: auto; margin-top: 0; padding-top: 4px; font-size: 12px; }
+.nb-trip { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; }
+.nb-trip b { font-size: 13px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+.nb-right { display: flex; flex-direction: column; gap: 5px; min-width: 0; padding-left: 10px; border-left: 1px solid var(--line); }
+.nb-stats { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 8px; }
+.nb-cell { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; padding: 0; background: none; border: 0; color: inherit; font: inherit; text-align: left; }
+.nb-cell small { max-width: 100%; overflow: hidden; color: var(--muted); font-size: 11px; white-space: nowrap; text-overflow: ellipsis; }
+.nb-cell .ne-v { align-items: flex-start; }
+.nb-cell .ne-v b { font-size: 16px; }
+.nb-speed .ne-v b { font-size: 22px; line-height: 1; }
+.nb-alert { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; padding: 4px 6px; border-radius: 8px; background: rgba(255, 145, 0, .16); font-size: 12px; font-weight: 600; line-height: 1.25; }
+.nb-alert.hidden { display: none; }
+.nav-speedbar { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; min-height: 22px; padding-top: 5px; border-top: 1px solid var(--line); }
+.sb-track { position: relative; flex: 1; height: 6px; border-radius: 3px; background: var(--line); }
+.sb-fill { position: absolute; inset: 0 auto 0 0; width: var(--spd, 0%); border-radius: 3px; background: var(--info, #1a73e8); transition: width .6s linear; }
+.sb-mark { position: absolute; top: -3px; bottom: -3px; left: var(--lim, 0%); width: 2px; margin-left: -1px; border-radius: 1px; background: var(--text); }
+.nav-speedbar.nolimit .sb-mark { display: none; }
+.nav-speedbar.over .sb-fill { background: #e53935; }
+.nav-speedbar .limit-sign { flex: none; width: 22px; height: 22px; margin: 0; border-width: 2px; font-size: 11px; }
+.nav-speedbar .nh-avg { flex: none; display: inline-flex; align-items: baseline; gap: 2px; font-size: 13px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.nav-speedbar .nh-avg small { color: var(--muted); font-size: 11px; font-weight: 700; }
+/* Rotasız sürüş paneli ile navigasyon paneli aynı en düşük yükseklikte 150 px (genişlik, kenar boşluğu ve köşe zaten ortak) */
+@media (min-height: 521px) {
+  .navbar, .mapsoc { box-sizing: border-box; min-height: 150px; }
+  .mapsoc { display: flex; flex-direction: column; justify-content: center; }
+}
+@media (max-height: 520px) {
+  .nb-man .nav-arrow { font-size: 30px; width: 38px; }
+  .nb-man .nav-dist { font-size: 22px; }
+}

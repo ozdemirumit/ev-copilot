@@ -47,13 +47,33 @@
 <div class="advisor hidden" id="advisor-banner" role="status" aria-live="polite"></div>
 <div class="toppanel hidden" id="top-panel">
 <div class="navbar hidden" id="nav-banner" role="status" aria-live="off">
-  <div class="nav-arrow" id="nav-arrow" aria-hidden="true" data-glyph="🧭"><svg class="ic" aria-hidden="true"><use href="#i-compass"/></svg></div>
-  <div class="nav-main">
-    <div class="nav-dist" id="nav-dist"></div>
-    <div class="nav-text" id="nav-text"></div>
-    <div class="nav-road" id="nav-road"></div>
+  <div class="nb-left">
+    <div class="nb-man">
+      <div class="nav-arrow" id="nav-arrow" aria-hidden="true" data-glyph="🧭"><svg class="ic" aria-hidden="true"><use href="#i-compass"/></svg></div>
+      <div class="nav-main">
+        <div class="nav-dist" id="nav-dist"></div>
+        <div class="nav-text" id="nav-text"></div>
+        <div class="nav-road" id="nav-road"></div>
+      </div>
+    </div>
+    <div class="nav-then" id="nav-then"></div>
+    <div class="nb-trip"><b id="nh-dur">--</b><span aria-hidden="true">·</span><b id="nh-rem">—</b><span aria-hidden="true">·</span><svg class="ic nh-flag" aria-hidden="true"><use href="#i-flag"/></svg><b id="nh-eta">--:--</b><small class="nh-word" data-i18n-skip>varış</small></div>
   </div>
-  <div class="nav-then" id="nav-then"></div>
+  <div class="nb-right">
+    <div class="nb-stats">
+      <div class="nb-cell nb-speed"><small>km/s</small><span class="ne-v"><b id="nh-speed">0</b></span></div>
+      <button type="button" class="nb-cell" id="ne-soc-btn" aria-haspopup="dialog" aria-controls="soc-sheet"><small>Pil</small><span class="ne-v"><b id="ne-soc">--</b><span class="ne-sub"><span aria-hidden="true">≈</span><span id="ne-range">--</span> km</span></span></button>
+      <div class="nb-cell"><small>Varışta</small><span class="ne-v"><b id="ne-arrive">--</b></span></div>
+      <div class="nb-cell" id="ne-next-box"><small>Sonraki şarj</small><span class="ne-v"><b id="ne-next">--</b><span class="ne-sub" id="ne-next-t"></span></span></div>
+    </div>
+    <div class="nb-alert hidden" id="nb-alert" role="status" aria-live="off"></div>
+  </div>
+  <div class="nav-speedbar" id="nav-speedbar" role="group" aria-label="Hız ve hız limiti">
+    <span class="sb-track" aria-hidden="true"><i class="sb-fill"></i><i class="sb-mark"></i></span>
+    <div class="limit-sign hidden" id="nh-limit" title="Yol hız limiti"></div>
+    <span class="nh-avg" id="nh-avg" title="Ortalama hız"><small data-i18n-skip>Ø</small><b id="nh-avg-v">--</b></span>
+    <span class="hidden"><b id="nh-soc">--</b><i class="ind" id="nh-soc-dot"></i></span>
+  </div>
 </div>
 <div class="tp-charge hidden" id="near-alert">
   <div class="tp-head">
@@ -70,7 +90,7 @@
 <button class="socbar" id="socbar" type="button" aria-haspopup="dialog" aria-controls="soc-sheet" aria-label="Pil ve menzil">
   <span class="socbar-batt" aria-hidden="true"><i id="socbar-level"></i></span>
   <span class="socbar-main"><span class="pct-group"><span class="pct-sign">%</span><b id="socbar-val">--</b></span><span class="socbar-sep" aria-hidden="true">·</span><span class="socbar-range" id="socbar-rangebox" title="Tahmini menzil"><span aria-hidden="true">≈</span><b id="socbar-range">--</b><small>km</small></span><span class="socbar-thr" id="socbar-thr" title="Eşik piline kadar menzil"><small id="socbar-thr-lbl"></small><b id="socbar-thr-km">--</b></span></span>
-  <span class="socbar-line2"><span class="socbar-cons" id="socbar-consbox" title="Tahmini tüketim (model)"><b id="socbar-cons">--</b><small id="socbar-cons-lbl"></small><span class="socbar-sep" aria-hidden="true">·</span><b id="socbar-cons2">--</b><small id="socbar-cons2-lbl"></small><small>kWh/100 km</small></span><span class="socbar-srcline"><i class="ind" id="socbar-dot"></i><small id="socbar-src">—</small></span></span>
+  <span class="socbar-line2"><span class="socbar-cons" id="socbar-consbox" title="Tahmini tüketim (model)"><b id="socbar-cons">--</b><small id="socbar-cons-lbl"></small><span class="socbar-sep" aria-hidden="true">·</span><b id="socbar-cons2">--</b><small id="socbar-cons2-lbl"></small><small>kWh/100 km</small></span><span class="socbar-avg hidden" id="socbar-avg" title="Ortalama hız"><small data-i18n-skip>Ø</small><b id="socbar-avg-v">--</b><small>km/s</small></span><span class="socbar-srcline"><i class="ind" id="socbar-dot"></i><small id="socbar-src">—</small></span></span>
   <svg class="ic socbar-chev" aria-hidden="true"><use href="#i-chev-down"/></svg>
 </button>
 <div class="mapsoc-slider"><input type="range" id="map-soc" min="0" max="100" step="1" value="80" aria-label="Mevcut pil yüzdesi"></div>
@@ -823,19 +843,6 @@
       <button type="button" id="fab-stopnav" class="nav-only" aria-haspopup="dialog" aria-controls="stop-nav-dialog" aria-label="Navigasyonu durdur" title="Navigasyonu durdur"><svg class="ic" aria-hidden="true"><use href="#i-stop"/></svg></button>
       <button type="button" id="nh-recenter" class="hidden" aria-label="Aracı ortala" title="Aracı ortala"><svg class="ic" aria-hidden="true"><use href="#i-nav"/></svg></button>
       <button type="button" id="fab-me" aria-label="Haritayı bana ortala" title="Haritayı bana ortala"><svg class="ic" aria-hidden="true"><use href="#i-locate"/></svg></button>
-    </div>
-    <div class="nav-ev hidden" id="nav-ev" role="group" aria-label="Pil ve şarj">
-      <button type="button" class="ne-cell" id="ne-soc-btn" aria-haspopup="dialog" aria-controls="soc-sheet"><small>Pil</small><span class="ne-v"><b id="ne-soc">--</b><span class="ne-sub"><span aria-hidden="true">≈</span><span id="ne-range">--</span> km</span></span></button>
-      <div class="ne-cell"><small>Varışta</small><span class="ne-v"><b id="ne-arrive">--</b></span></div>
-      <div class="ne-cell" id="ne-next-box"><small>Sonraki şarj</small><span class="ne-v"><b id="ne-next">--</b><span class="ne-sub" id="ne-next-t"></span></span></div>
-    </div>
-    <div class="navhud hidden" id="navhud">
-      <div class="nh-cell nh-speed"><b id="nh-speed">0</b><small>km/s</small></div>
-      <div class="limit-sign hidden" id="nh-limit" title="Yol hız limiti"></div>
-      <div class="nh-cell nh-time"><b id="nh-dur">--</b></div>
-      <div class="nh-cell"><b id="nh-rem">—</b></div>
-      <div class="nh-cell" title="Varış"><b id="nh-eta">--:--</b><svg class="ic nh-flag" aria-hidden="true"><use href="#i-flag"/></svg><small class="nh-word" data-i18n-skip>varış</small></div>
-      <div class="hidden"><b id="nh-soc">--</b><i class="ind" id="nh-soc-dot"></i></div>
     </div>
     <div class="searchrow" id="searchrow">
       <button type="button" class="searchbar" id="fab-search" aria-label="Varış ara" title="Varış ara"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><span>Nereye gitmek istersin?</span></button>

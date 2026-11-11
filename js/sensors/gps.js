@@ -2,6 +2,7 @@ import { getState, patch } from '../state.js';
 import { haversineKm, bearing } from '../utils/geo.js';
 import { createCourseFilter } from '../nav/course.js';
 import { guard, emitCatchup, STALE_FIX_MS } from './driveGuard.js';
+import { tripFix } from '../nav/avgSpeed.js';
 
 const STILL_MS = 0.5; // m/s altında hızı 0 say (GPS titreşimi)
 const BEARING_MIN_M = 8; // yön için en az bu kadar yer değiştirmiş olmalı
@@ -27,6 +28,8 @@ function onPosition(pos) {
   if (g.catchup) emitCatchup(g.catchup);
 
   let speedMs = Number.isFinite(c.speed) && c.speed >= 0 ? c.speed : null;
+  // Ortalama hız (yol / sürüş süresi): GPS zaman damgasıyla; boşluk kapatan konum öncesiyle birleştirilmez
+  tripFix({ lat: here.lat, lon: here.lon, ts: pos.timestamp, acc: c.accuracy, speedKmh: speedMs == null ? null : speedMs * 3.6 }, Date.now(), { gap: g.closed });
   if (speedMs == null && prev) {
     const dt = (here.t - prev.t) / 1000;
     if (dt > 0.5 && dt < 10) speedMs = (haversineKm(prev, here) * 1000) / dt;

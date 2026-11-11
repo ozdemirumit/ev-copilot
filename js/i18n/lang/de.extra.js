@@ -404,4 +404,6 @@ export default {
   "Son güncelleme": "Aktualisiert",
   "Kamera açık ama pil {0} dakikadır doğrulanamadı: son doğrulanan değerden tahmin ediliyor.": "Kamera ist an, aber der Akku wurde seit {0} Min. nicht bestätigt: Schätzung ab dem zuletzt bestätigten Wert.",
   "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.": "Kamerawert ist alt (vor {0} s bestätigt): letzter bestätigter Wert wird angezeigt.",
+  "Ortalama hız": "Durchschnittsgeschwindigkeit",
+  "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş": "Durchschnittsgeschwindigkeit: {0} km gefahren, {1} Min. Fahrt, {2} Min. Stillstand",
 };

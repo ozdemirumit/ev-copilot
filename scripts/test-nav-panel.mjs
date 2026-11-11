@@ -80,7 +80,7 @@ const IDS = ['bd-gps', 'bd-ocr', 'bd-abrp', 'bd-sim', 'btn-install', 'btn-update
   'nav-banner', 'nav-arrow', 'nav-dist', 'nav-text', 'nav-road', 'nav-then', 'near-alert', 'near-alert-title', 'near-alert-toggle', 'near-alert-close', 'near-alert-body', 'road-alert', 'advisor-banner',
   'socbar', 'socbar-val', 'socbar-range', 'socbar-rangebox', 'socbar-src', 'socbar-dot', 'socbar-track', 'socbar-fill', 'socbar-thumb',
   'fab-sat', 'fab-3d', 'fab-me', 'fab-route', 'fab-nav', 'fab-plan', 'fab-search', 'pickbar', 'pick-text', 'pick-cancel',
-  'navhud', 'nh-speed', 'nh-limit', 'nh-eta', 'nh-rem', 'nh-soc', 'nh-soc-dot', 'nh-limitbtn', 'nh-voice', 'nh-overview', 'nh-recenter', 'badge-stations', 'cur-soc', 'station-card'];
+  'nh-speed', 'nh-limit', 'nh-eta', 'nh-rem', 'nh-soc', 'nh-soc-dot', 'nh-limitbtn', 'nh-voice', 'nh-overview', 'nh-recenter', 'badge-stations', 'cur-soc', 'station-card'];
 const noId = IDS.filter((id) => !html.includes(`id="${id}"`));
 ok('var olan kimlikler duruyor', noId.length === 0, noId.join());
 const topbar = html.slice(html.indexOf('<header class="topbar">'), html.indexOf('</header>'));

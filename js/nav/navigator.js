@@ -5,12 +5,14 @@ import { getState, patch, subscribe, effective } from '../state.js';
 import { save } from '../utils/storage.js';
 import { mapApi } from '../ui/mapView.js';
 import { toast } from '../ui/toast.js';
-import { rerouteFromHere } from '../routing/controller.js';
+import { rerouteFromHere, clearTrip } from '../routing/controller.js';
 import { speak, stopSpeech, testVoice } from '../advisor/voice.js';
 import { instruction, fmtDist, dueVoice, isMinor } from './steps.js';
 import { buildTrack, locate, headingAt, pointAtKm } from './track.js';
 import { bearing, haversineKm } from '../utils/geo.js';
 import { icon, setManeuverIcon } from '../ui/icons.js';
+import { currentLimit } from './speedLimit.js';
+import { speedBar, pickAlert, ALERT_MS } from './panelLogic.js';
 
 const $ = (id) => document.getElementById(id);
 const THEN_MAX_M = 500; // sonraki manevra panelde yalnızca bu kadar yakınsa gösterilir
@@ -92,6 +94,7 @@ function tick() {
   const plan = getState('plan');
   const e = effective();
   paintSocRange(e);
+  paintSpeed(e);
 
   if (plan.status === 'loading') {
     paint('🧭', '', 'Rota hesaplanıyor…');
@@ -148,8 +151,7 @@ function tick() {
 
   if (st.type === 'arrive' && distM < 40) {
     speak('Varış noktasına ulaştınız.', { key: 'arrived', cooldownMs: 0, interrupt: true });
-    patch('nav', { active: false });
-    mapApi.navView(false);
+    endNav(true);
     toast('Varış noktasına ulaştınız');
     return tick();
   }
@@ -165,11 +167,11 @@ function tick() {
       : plan.profile.timeBetween(km, plan.profile.totalKm);
   const chargeMin = plan.stops.filter((s) => s.km > km).reduce((a, s) => a + s.minutes + s.overheadMin, 0);
   const eta = hhmm(Date.now() + driveH * 3600e3 + chargeMin * 60e3);
-  // Tek ikincil satır: yakın sonraki manevra; yoksa planlı şarj durağı (kalan yol ve varış alt çubukta: nh-eta, nh-rem)
+  // İkincil satır: yalnızca yakın sonraki manevra (şarj durağı ve pil sağ sütunda, kalan süre/yol/varış sol sütunun altında: tekrar yok)
   const then = steps.slice(idx + 1).find((x) => !isMinor(x));
   const gapM = then ? (then.km - st.km) * 1000 : Infinity;
   const secondary = then && then.type !== 'arrive' && gapM <= THEN_MAX_M ? t('Sonra ({0} sonra): {1}', fmtDist(gapM), instruction(then).text)
-    : nextStop ? `⚡ ${nextStop.station.name} · ${(nextStop.km - km).toFixed(0)} km` : '';
+    : '';
   paint(ins.arrow, fmtDist(distM), ins.text, ins.road, false, secondary);
   paintHud(e, remain, eta, driveH, chargeMin);
   paintCharge(plan, km, nextStop);
@@ -226,10 +228,32 @@ function paintCharge(plan, km, nextStop) {
   $('ne-next-box').title = nextStop ? nextStop.station.name : '';
 }
 
-/** Harita üstü alt bilgi: hız, varış saati + kalan, pil; ortala düğmesi (harita kaydırıldıysa). */
+/** Üst panel: anlık hız ve ince hız çubuğu (hız limiti işareti ölçekte; limit aşılınca çubuk kırmızı). Rotada olmasan da çalışır. */
+function paintSpeed(e) {
+  $('nh-speed').textContent = e.speed == null ? '--' : Math.round(e.speed);
+  const b = speedBar(e.speed, currentLimit());
+  const bar = $('nav-speedbar');
+  bar.style.setProperty('--spd', b.pct + '%');
+  bar.style.setProperty('--lim', (b.limitPct ?? 0) + '%');
+  bar.classList.toggle('over', b.over);
+  bar.classList.toggle('nolimit', b.limitPct == null);
+}
+
+let alertTick = 0;
+/** Sağ sütun: yalnızca gerçek trafik ve yağış uyarıları (nav.ahead), 3 sn aralıkla dönüşümlü; ikisi de yoksa alan gizli. step=true sırayı ilerletir. */
+function paintAlert(step) {
+  const a = getState('nav').ahead;
+  const items = getState('nav').active ? [a.traffic, a.rain] : [];
+  if (step) alertTick++;
+  const text = pickAlert(items, alertTick) || '';
+  const el = $('nb-alert');
+  el.classList.toggle('hidden', !text);
+  if (el.textContent !== text) el.textContent = text;
+}
+
+/** Sol sütun alt satırı: kalan süre, kalan yol, varış saati; ortala düğmesi (harita kaydırıldıysa). */
 function paintHud(e, remainKm, eta, driveH, chargeMin) {
   const totalMin = Math.round(driveH * 60 + chargeMin);
-  $('nh-speed').textContent = e.speed == null ? '--' : Math.round(e.speed);
   $('nh-eta').textContent = eta;
   $('nh-rem').textContent = `${remainKm.toFixed(0)} km`;
   $('nh-dur').textContent = totalMin >= 60 ? `${Math.floor(totalMin / 60)} sa ${totalMin % 60} dk` : `${totalMin} dk`;
@@ -245,7 +269,7 @@ let speedAvg = 0;
 function followMap(e, distM, st, routeHeading) {
   speedAvg = speedAvg * 0.8 + (e.speed ?? 0) * 0.2;
   const junction = !isMinor(st) && st.type !== 'arrive' && distM <= 250;
-  const want = junction ? 18 : speedAvg < 40 ? 17 : speedAvg < 80 ? 16 : 15;
+  const want = junction ? 19 : speedAvg < 40 ? 18 : speedAvg < 80 ? 17 : 16; // yakın zoom: yavaşken 18, kavşakta 19
   const now = Date.now();
   // Kavşak zoom'u hemen; hız kaynaklı değişim en fazla 8 sn'de bir (titreşmesin)
   const change = want !== zoomNow && (junction || now - zoomAt > 8000);
@@ -290,18 +314,26 @@ export async function startNav() {
   offSince = 0;
   patch('nav', { active: true });
   document.querySelector('.bottomnav [data-tab="map"]')?.click();
-  zoomNow = 16; zoomAt = Date.now(); speedAvg = e.speed ?? 0;
+  zoomNow = 18; zoomAt = Date.now(); speedAvg = e.speed ?? 0;
   const up = getState('nav').headingUp;
   mapApi.navView(true, up, mapApi.is3d());
-  if (e.lat != null) mapApi.follow(e.lat, e.lon, 16, true, up ? (track ? headingAt(track, trackKm ?? 0) : (e.speed ?? 0) > 5 ? e.heading : null) : null);
+  if (e.lat != null) mapApi.follow(e.lat, e.lon, 18, true, up ? (track ? headingAt(track, trackKm ?? 0) : (e.speed ?? 0) > 5 ? e.heading : null) : null);
   speak('Navigasyon başladı.', { key: 'navstart', cooldownMs: 0, interrupt: true });
   tick();
 }
 
-export function stopNav() {
+/** Navigasyon bitti (durdurma ya da varış): düz kuzey-yukarı harita, rota/plan/işaretler temizlenir, harita bulunulan konuma yakınlaşır. */
+function endNav(keepVoice = false) {
   patch('nav', { active: false });
   mapApi.navView(false);
-  stopSpeech();
+  if (!keepVoice) stopSpeech();
+  clearTrip();
+  const e = effective();
+  if (e.lat != null) mapApi.follow(e.lat, e.lon, 17, true, null);
+}
+
+export function stopNav() {
+  endNav();
   tick();
 }
 
@@ -372,10 +404,10 @@ export function initNavigator() {
   $('nh-recenter').addEventListener('click', () => { mapApi.recenter(); tick(); });
   subscribe('nav', () => {
     $('nh-voice').innerHTML = icon(getState('nav').voice ? 'volume' : 'volume-off');
-    $('navhud').classList.toggle('hidden', !getState('nav').active);
-    $('nav-ev').classList.toggle('hidden', !getState('nav').active);
+    paintAlert(false);
   });
   paintBtn();
   setInterval(tick, 1000);
+  setInterval(() => paintAlert(true), ALERT_MS);
   requestAnimationFrame(frame);
 }

@@ -15,7 +15,7 @@ import { icon } from './icons.js';
 
 /** Harita çizim API'si; initMap() çağrılınca dolar (routing/controller.js, nav/* kullanır). Harita henüz yüklenmediyse çizimler sıraya alınır. */
 export const mapApi = {
-  drawRoute() {}, drawStations() {}, drawNearby() {}, setPoint() {}, follow() {}, navView() {}, is3d: () => true, set3d() {},
+  drawRoute() {}, clearRoute() {}, setTraffic() {}, drawStations() {}, drawNearby() {}, setPoint() {}, follow() {}, navView() {}, is3d: () => true, set3d() {},
   setSatellite() {}, isSatellite: () => false, hasRoute: () => false, cancelPick() {}, pickBar() {}, pickPlace() {}, // initMap doldurur (pickBar'ı ui/shell.js)
   snap: () => null, // navigator.js: konumu rotaya yapıştırır
   drawPlaces() {}, // ui/places.js kayıtlı yerleri çizer
@@ -241,6 +241,13 @@ export function initMap() {
   let nearMarks = [];
   const routeBounds = () => routeCoords.filter((_, i) => i % 20 === 0 || i === routeCoords.length - 1).map((c) => ({ lat: c[1], lon: c[0] }));
   mapApi.hasRoute = () => !!routeCoords;
+  /** Navigasyon bitti: rota çizgisi, trafik renkleri ve istasyon işaretleri kalkar (başlangıç/ara/varış noktalarını controller.clearTrip siler). */
+  mapApi.clearRoute = () => {
+    routeCoords = null;
+    whenMap(() => { unmark(routeLine); routeLine = null; adapter.traffic([], null); stationMarks.forEach(unmark); stationMarks = []; });
+  };
+  /** Rota yeniden hesaplanmadan trafik renkleri: coords = trafikli rotanın koordinatları, spans = [{ from, to, lvl }] (km; boş dizi hepsini kaldırır). */
+  mapApi.setTraffic = (coords, spans) => whenMap(() => adapter.traffic(coords, spans));
   mapApi.drawRoute = (coords, { fit: doFit = true, traffic = null } = {}) => {
     routeCoords = coords;
     whenMap(() => {

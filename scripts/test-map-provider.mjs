@@ -797,7 +797,7 @@ function fakeGm(cfg = { autoIdle: true }) {
     a.traffic(C1, [{ from: 0, to: 3, lvl: 'moderate' }, { from: 5, to: 9, lvl: 'heavy' }, { from: 12, to: 20, lvl: 'severe' }]);
     let tl = gm.polylines.filter((l) => l.map === m);
     ok('(c) traffic(coords, 3 aralık) → 3 ayrı çizgi haritada', tl.length === 3 && tl.every((l) => l.o.path.length >= 2));
-    ok('(c) trafik renkleri motorla aynı (yavaş/yoğun/çok yoğun)', tl.map((l) => l.o.strokeColor).join() === '#ffb547,#ff5d6c,#c4001d');
+    ok('(c) trafik renkleri motorla aynı (yavaş/yoğun/çok yoğun)', tl.map((l) => l.o.strokeColor).join() === '#ff9100,#e53935,#b71c1c');
     ok('(c) yol koordinatları {lat, lng} ([lon, lat] girdiden)', tl[0].o.path[0].lat === 41.0 && tl[0].o.path[0].lng === 29.0);
     a.traffic(C1, [{ from: 0, to: 3, lvl: 'heavy' }]);
     ok('(c) yeni trafik eskisini değiştirir (önceki 3 çizgi kaldırılır, 1 yeni)', gm.polylines.filter((l) => l.map === m).length === 1 && tl.every((l) => l.map === null));
@@ -913,7 +913,7 @@ function fakeGm(cfg = { autoIdle: true }) {
     let ids = ext(m), d = m.layerDefs[ids[0]];
     const osmId = ids[0];
     ok('(a) setBuildings3d(true) → tek fill-extrusion katmanı', ids.length === 1);
-    ok("(a) katman 'route-line'ın önüne (altına) eklenir: rota ve trafik görünür kalır", d?.before === 'route-line' && m.layers.indexOf(ids[0]) < m.layers.indexOf('route-line') && m.layers.indexOf(ids[0]) < m.layers.indexOf('traffic-line'));
+    ok("(a) katman 'route-casing'ın önüne (altına) eklenir: rota ve trafik görünür kalır", d?.before === 'route-casing' && m.layers.indexOf(ids[0]) < m.layers.indexOf('route-casing') && m.layers.indexOf(ids[0]) < m.layers.indexOf('traffic-line'));
     ok("(a) kaynak 'openmaptiles', kaynak katmanı 'building'", d?.source === 'openmaptiles' && d['source-layer'] === 'building');
     ok('(a) yükseklik render_height, taban render_min_height', js(d?.paint?.['fill-extrusion-height']).includes('render_height') && js(d?.paint?.['fill-extrusion-base']).includes('render_min_height') && !js(d?.paint?.['fill-extrusion-height']).includes('render_min_height'));
     ok('(a) süzgeç hide_3d == true olanları dışarıda bırakır', js(d?.filter).includes('hide_3d') && /"!=",\["get","hide_3d"\],true/.test(js(d?.filter)));
@@ -926,7 +926,7 @@ function fakeGm(cfg = { autoIdle: true }) {
     let threw = false; try { osm.setBuildings3d(false); } catch { threw = true; }
     ok('(a) kapalıyken tekrar false çökmez', !threw && ext(m).length === 0);
     osm.setSatellite(true); osm.setBuildings3d(true);
-    ok('(a) Esri uydu açıkken de bina katmanı rota çizgisinin altında', ext(m).length === 1 && m.layers.indexOf(ext(m)[0]) < m.layers.indexOf('route-line'));
+    ok('(a) Esri uydu açıkken de bina katmanı rota çizgisinin altında', ext(m).length === 1 && m.layers.indexOf(ext(m)[0]) < m.layers.indexOf('route-casing'));
     osm.setBuildings3d(false); osm.setSatellite(false);
     // Ters sıra: önce 3B, sonra uydu İLK kez açılır → Esri katmanları binaların altına girmeli (binaları örtmemeli)
     lib = fakeLib({ base: ['openmaptiles'], baseLayers: ['building'] });
@@ -935,10 +935,10 @@ function fakeGm(cfg = { autoIdle: true }) {
     const m2 = lib.maps.at(-1);
     osm2.setBuildings3d(true); osm2.setSatellite(true);
     const bi = m2.layers.indexOf(ext(m2)[0]);
-    ok('(a) önce 3B sonra uydu: Esri katmanları 3B binaların altında, binalar rota çizgisinin altında', bi > m2.layers.indexOf('sat') && bi > m2.layers.indexOf('sat-roads') && bi > m2.layers.indexOf('sat-places') && m2.layers.indexOf('sat') >= 0 && bi < m2.layers.indexOf('route-line'));
+    ok('(a) önce 3B sonra uydu: Esri katmanları 3B binaların altında, binalar rota çizgisinin altında', bi > m2.layers.indexOf('sat') && bi > m2.layers.indexOf('sat-roads') && bi > m2.layers.indexOf('sat-places') && m2.layers.indexOf('sat') >= 0 && bi < m2.layers.indexOf('route-casing'));
     osm2.setBuildings3d(false); osm2.setBuildings3d(true);
     const bi2 = m2.layers.indexOf(ext(m2)[0]);
-    ok('(a) uydu açıkken 3B kapat/aç: binalar yine Esri üstünde, rota altında', bi2 > m2.layers.indexOf('sat-places') && bi2 < m2.layers.indexOf('route-line'));
+    ok('(a) uydu açıkken 3B kapat/aç: binalar yine Esri üstünde, rota altında', bi2 > m2.layers.indexOf('sat-places') && bi2 < m2.layers.indexOf('route-casing'));
     // Stilde kaynak yoksa (beklenmedik stil) katman eklenmez, çökmez
     lib = fakeLib(); window.maplibregl = lib;
     const bare = await ML.createMapLibreMap(container());
@@ -954,14 +954,14 @@ function fakeGm(cfg = { autoIdle: true }) {
     ids = ext(m); d = m.layerDefs[ids[0]];
     ok("(b) Mapbox: tek fill-extrusion, kaynak 'composite', kaynak katmanı 'building'", ids.length === 1 && d.source === 'composite' && d['source-layer'] === 'building');
     ok("(b) süzgeç extrude == 'true', yükseklik height, taban min_height", /"==",\["get","extrude"\],"true"/.test(js(d.filter)) && js(d.paint['fill-extrusion-height']).includes('"height"') && js(d.paint['fill-extrusion-base']).includes('"min_height"'));
-    ok("(b) katman 'route-line'ın altında", d.before === 'route-line' && m.layers.indexOf(ids[0]) < m.layers.indexOf('route-line'));
+    ok("(b) katman 'route-casing'ın altında", d.before === 'route-casing' && m.layers.indexOf(ids[0]) < m.layers.indexOf('route-casing'));
     ok('(b) OpenFreeMap ile aynı katman kimliği (motor ortak)', !!osmId && ids[0] === osmId);
     mb.setSatellite(true);
     ok('(b) uydu stili yüklenirken katman geçici olarak yok (stil silindi)', ext(m).length === 0);
     threw = false; try { mb.setBuildings3d(true); } catch { threw = true; }
     ok('(b) stil yüklenirken setBuildings3d(true) çökmez', !threw);
     await tick(30);
-    ok('(b) style.load sonrası (uydu) 3B binalar yeniden eklenir, tek katman, rota altında', m.styles.at(-1) === 'mapbox://styles/mapbox/satellite-streets-v12' && ext(m).length === 1 && m.layers.indexOf(ext(m)[0]) < m.layers.indexOf('route-line'));
+    ok('(b) style.load sonrası (uydu) 3B binalar yeniden eklenir, tek katman, rota altında', m.styles.at(-1) === 'mapbox://styles/mapbox/satellite-streets-v12' && ext(m).length === 1 && m.layers.indexOf(ext(m)[0]) < m.layers.indexOf('route-casing'));
     ok("(b) yeni stilde düz 'building' yine gizlenir", m.layout.building?.visibility === 'none');
     mb.setSatellite(false); await tick(30);
     ok('(b) uydu kapanınca (dark-v11) 3B binalar yine yerinde', m.styles.at(-1) === 'mapbox://styles/mapbox/dark-v11' && ext(m).length === 1);

@@ -420,3 +420,13 @@ export function initRouteController() {
     timer = setTimeout(refresh, 400);
   });
 }
+
+/** Navigasyon bitti ya da durduruldu: plan, rota çizgisi ve başlangıç/ara/varış işaretleri temizlenir (yeni rota için sıfırdan başlanır). */
+export function clearTrip() {
+  clearTimeout(timer);
+  raw = null;
+  sig = '';
+  patch('plan', { status: 'none', text: '', route: null, profile: null, wxInfo: null, stations: [], stationInfo: null, stops: [], steps: [], pinIds: [], banIds: [], totals: null, planId: null, fromKm: 0, fromSoc: null });
+  mapApi.clearRoute();
+  for (const k of ['start', 'via', 'end']) mapApi.setPoint(k, null, { fit: false });
+}

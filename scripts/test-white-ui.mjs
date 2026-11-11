@@ -108,7 +108,7 @@ ok('kimlikler bir kez', ['cur-soc', 'min-arrival', 'min-kw', 'nav-voice', 'plan-
 }
 
 // Navigasyon
-const fabs = between('id="fabs"', 'id="nav-ev"');
+const fabs = between('id="fabs"', 'id="searchrow"');
 const stack = between('id="fabs-more"', '</div>');
 ok('durdur yığının dışında, her zaman görünür', fabs.includes('id="fab-stopnav"') && !stack.includes('id="fab-stopnav"'));
 ok('durdur onay penceresi açar', /\$\('fab-stopnav'\)\.addEventListener\('click', \(\) => stopDlg\.showModal\(\)\)/.test(shell));

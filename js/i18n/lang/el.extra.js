@@ -404,4 +404,6 @@ export default {
   "Son güncelleme": "Ενημέρωση",
   "Kamera açık ama pil {0} dakikadır doğrulanamadı: son doğrulanan değerden tahmin ediliyor.": "Η κάμερα είναι ενεργή αλλά η μπαταρία δεν έχει επιβεβαιωθεί εδώ και {0} λεπτά: εκτίμηση από την τελευταία επιβεβαιωμένη τιμή.",
   "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.": "Η ένδειξη της κάμερας είναι παλιά (επιβεβαιώθηκε πριν {0} δ): εμφανίζεται η τελευταία επιβεβαιωμένη τιμή.",
+  "Ortalama hız": "Μέση ταχύτητα",
+  "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş": "Μέση ταχύτητα: {0} km διαδρομή, {1} λεπ. κίνηση, {2} λεπ. στάση",
 };

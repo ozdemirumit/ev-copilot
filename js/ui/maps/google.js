@@ -6,7 +6,7 @@
 
 const MAP_TIMEOUT_MS = 25000; // harita 25 sn içinde 'idle' olmazsa açılış başarısız (çağıran OpenFreeMap'e düşer)
 const CALLBACK = '__evcpGmReady'; // betiğin yüklenince çağırdığı genel işlev
-const COLORS = { moderate: '#ffb547', heavy: '#ff5d6c', severe: '#c4001d' }; // trafik: mapEngine.js ile aynı renkler
+const COLORS = { moderate: '#ff9100', heavy: '#e53935', severe: '#b71c1c' }; // trafik: mapEngine.js ile aynı renkler
 
 let loading = null;
 /** Google Maps JS'i bir kez yükler (window.google.maps). Betik yüklenemezse reddeder ve sonraki çağrı yeniden dener.
@@ -110,6 +110,7 @@ export async function createGoogleMap(container, key, mapId = 'DEMO_MAP_ID', { o
 
   const path = (coords) => coords.map(([lon, lat]) => ({ lat, lng: lon }));
   let routeLine = null;
+  let routeCasing = null; // sarı dış çerçeve
   let trafficLines = [];
   let fitCap = null; // fit() sonrası zoom sınırı dinleyicisi (en çok bir tane)
 
@@ -144,14 +145,16 @@ export async function createGoogleMap(container, key, mapId = 'DEMO_MAP_ID', { o
       for (const s of spans) {
         const seg = coords.slice(at(s.from), Math.min(coords.length - 1, at(s.to) + 1) + 1);
         if (seg.length < 2) continue;
-        trafficLines.push(new gm.Polyline({ map, path: path(seg), strokeColor: COLORS[s.lvl] || COLORS.moderate, strokeWeight: 6, strokeOpacity: 0.95, zIndex: 2 }));
+        trafficLines.push(new gm.Polyline({ map, path: path(seg), strokeColor: COLORS[s.lvl] || COLORS.moderate, strokeWeight: 8, strokeOpacity: 1, zIndex: 2 }));
       }
     },
     line(coords) {
       routeLine?.setMap(null);
-      routeLine = new gm.Polyline({ map, path: path(coords), strokeColor: '#1a73e8', strokeWeight: 6, strokeOpacity: 0.92, zIndex: 1 });
+      routeCasing?.setMap(null);
+      routeCasing = new gm.Polyline({ map, path: path(coords), strokeColor: '#ffd600', strokeWeight: 12, strokeOpacity: 1, zIndex: 0 });
+      routeLine = new gm.Polyline({ map, path: path(coords), strokeColor: '#1a73e8', strokeWeight: 8, strokeOpacity: 1, zIndex: 1 });
       // motorla aynı: tek rota çizgisi vardır, remove() onu (hangi tutamaçtan çağrılırsa) kaldırır
-      return { remove: () => { routeLine?.setMap(null); routeLine = null; } };
+      return { remove: () => { routeLine?.setMap(null); routeLine = null; routeCasing?.setMap(null); routeCasing = null; } };
     },
     fit(points, pad) {
       const b = new gm.LatLngBounds();

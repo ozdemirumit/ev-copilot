@@ -9,6 +9,8 @@ import { speak } from '../advisor/voice.js';
 import { currentLimit } from './speedLimit.js';
 import { updateAhead } from '../routing/controller.js';
 import { wxQueryKms } from '../routing/aheadUpdate.js';
+import { mapApi } from '../ui/mapView.js';
+import { buildTrack, locate } from './track.js';
 
 const $ = (id) => document.getElementById(id);
 const CHECK_MS = 5000;
@@ -33,7 +35,7 @@ const setAhead = (part) => patch('nav', { ahead: { ...getState('nav').ahead, ...
 
 function render() {
   const a = getState('nav').ahead;
-  const lines = [a.speed, a.cam, a.grade, a.rain, a.traffic].filter(Boolean); // kamera ve dik eğim: nav/roadWarnings.js
+  const lines = [a.speed, a.cam, a.grade].filter(Boolean); // kamera ve dik eğim: nav/roadWarnings.js; yağış ve trafik navigasyon üst panelinde dönüşümlü gösterilir
   const bar = $('road-alert');
   bar.replaceChildren(...lines.map((t) => Object.assign(document.createElement('div'), { textContent: t })));
   bar.classList.toggle('hidden', !lines.length);
@@ -89,6 +91,15 @@ async function refreshProfileWx(km) {
   }
 }
 
+/** Trafikli rota, haritadaki planlı rotayla aynı yoldan mı gidiyor? (örneklenen noktaların tümü 150 m içinde); değilse renkler başka yola çizilmez. */
+function sameRoad(rtCoords, planCoords) {
+  if (!rtCoords?.length || !planCoords?.length) return false;
+  const track = buildTrack(planCoords);
+  const step = Math.max(1, Math.floor(rtCoords.length / 25));
+  for (let i = 0; i < rtCoords.length; i += step) if (locate(track, rtCoords[i][1], rtCoords[i][0], null).offKm > 0.15) return false;
+  return true;
+}
+
 async function refreshTraffic(km) {
   busyTr = true;
   try {
@@ -97,6 +108,7 @@ async function refreshTraffic(km) {
     const t = await fetchTrafficAhead(e, getState('route').end);
     if (!t) return setAhead({ traffic: null });
     if (t.rt && (getState('engine').offRouteKm ?? 0) < 1) updateAhead({ km, rt: t.rt, planId: id }); // rotadayken: yeni trafik hızları enerji ve süreye işlenir
+    if (t.rt?.coords && (getState('engine').offRouteKm ?? 0) < 1 && sameRoad(t.rt.coords, getState('plan').route?.coords)) mapApi.setTraffic(t.rt.coords, t.rt.trafficSpans || []); // rota yeniden hesaplanmadan trafik renkleri
     const { jam, delayMin } = t;
     patch('nav', { liveRemain: { h: t.remainH, at: Date.now() } });
     if (!jam) return setAhead({ traffic: delayMin >= 10 ? `🚦 Rotada trafik kaynaklı ≈ ${delayMin} dk gecikme var` : null });

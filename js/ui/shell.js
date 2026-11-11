@@ -117,10 +117,7 @@ export function initShell() {
   const fitMore = () => {
     const anchor = [...fabsBox.children].find((el) => el !== more && el.offsetParent);
     if (!anchor) return; // sayfa açıkken harita arayüzü gizli
-    // Yatay ekranda pil şeridi sütunun bölgesine giriyorsa düğmeler şeridin üstünden başlar
-    const ev = $('nav-ev');
-    const lift = ev.offsetParent && getComputedStyle(ev).position === 'absolute' && ev.getBoundingClientRect().right > fabsBox.getBoundingClientRect().left - RAIL_REACH;
-    fabsBox.style.setProperty('--ev-lift', lift ? ev.offsetHeight + 6 + 'px' : '0px');
+    fabsBox.style.setProperty('--ev-lift', '0px'); // pil şeridi artık üst panelde: düğme sütunu alt şeride göre kaldırılmaz
     const box = fabsBox.getBoundingClientRect();
     // Yatay ekranda uyarı panelleri solda durur: yalnızca sütunun ulaşabileceği bölgedekiler sınırdır
     const limits = [...hud.children, ...$('banners').children, pickBox].filter((el) => el.id !== 'banners' && el.offsetParent && el.getBoundingClientRect().right > box.left - RAIL_REACH);

@@ -31,6 +31,7 @@ import { watchCaps } from './net/proxy.js';
 import { initSocInput } from './ui/socInput.js';
 import { initRouteForm } from './ui/routeForm.js';
 import { initSocBar } from './ui/socBar.js';
+import { initAvgSpeedView } from './ui/avgSpeedView.js';
 import { initArrivalCalib } from './ui/arrivalCalib.js';
 import { initStopSwap } from './ui/stopSwap.js';
 import { initKeyboard } from './ui/keyboard.js';
@@ -123,6 +124,7 @@ watchCaps(); // sunucu özellikleri ve hesap planı (Premium) açılışta ve uy
 initSocInput();
 initRouteForm();
 initSocBar();
+initAvgSpeedView(); // ortalama hız: rotasız pil kartı ve navigasyon alt şeridi
 initArrivalCalib(); // şarj durağına varınca pil yüzdesini sorar (kamera okumuyorsa)
 initStopSwap(); // Rota sayfasında durağı değiştirme penceresi
 initKeyboard(); // ekran klavyesi: sayfa klavyenin üstüne sığar, rota formu yazarken kompaktlaşır

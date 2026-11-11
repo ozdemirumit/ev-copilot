@@ -403,5 +403,7 @@
  "Bu durak olmadan plan kurulamadı: {0}",
  "Son güncelleme",
  "Kamera açık ama pil {0} dakikadır doğrulanamadı: son doğrulanan değerden tahmin ediliyor.",
- "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor."
+ "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.",
+ "Ortalama hız",
+ "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş"
 ]

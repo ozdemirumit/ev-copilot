@@ -2,8 +2,23 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.29';
+self.APP_VERSION = '0.99.31';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.31', date: '2026-11-11',
+    notes: [
+      'Navigasyon ust paneli iki sutun: sol sonraki manevra ve mesafe, sag hiz, pil, varista pil, sarj duragi ve 3 sn aralikla donusumlu gercek trafik/yagis uyarisi (veri yoksa gosterilmez); ince hiz ve limit cubugu; alttaki hiz/pil seridi ve tekrarlanan varis bilgileri kaldirildi; rota sari cerceveli kalin mavi, trafik turuncu/kirmizi ve rota yeniden hesaplanmadan guncellenir; yakin zoom (18/17/16, kavsakta 19); navigasyon durdurulunca ya da varista rota temizlenir ve harita konuma yakinlasir; rotasiz surus paneli ile ayni yukseklik; ortalama hiz kirmizi isik beklemesini (3 dk a kadar duruslar) sayar, GPS kesintisini ve uzun duruslari (sarj, park) saymaz. OCR 5 sn ve tek sabit genis aci kamera korunur',
+    ],
+  },
+  {
+    v: '0.99.30', date: '2026-11-11',
+    notes: [
+      'Ortalama hiz (km/s): rotasiz surus panelinde tuketimin yaninda (Ø), navigasyon alt seridinde hizin yaninda. Hiz orneklerinin ortalamasi degil, gecerli GPS parcalarinda gidilen yol bolu surus suresi.',
+      'Surus oturumu uygulama acilinca baslar; 20 dk kesintisiz durus ya da 20 dk konumsuzluk yeni surus sayilir. Navigasyon ortalamasi her baslatista sifirlanir (yeniden rota sifirlamaz), durdurulunca donar.',
+      'Durus suresi (kirmizi isik, sarj molasi) ortalamaya girmez, ayrica sayilir. Arka plan, 10 sn den uzun GPS boslugu, eski/onbellek konum, zaman damgasi tutarsizligi, 50 m den kotu dogruluk ve 250 km/s ustu sicramalar ne yola ne sureye yazilir.',
+      'Ilk 1 dk ve 0,3 km den once ortalama gosterilmez (rotasiz panelde gizli, navigasyonda --). Test Modunda gosterilmez.',
+    ],
+  },
   {
     v: '0.99.29', date: '2026-11-11',
     notes: [

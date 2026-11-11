@@ -404,4 +404,6 @@ export default {
   "Son güncelleme": "Обновено",
   "Kamera açık ama pil {0} dakikadır doğrulanamadı: son doğrulanan değerden tahmin ediliyor.": "Камерата е включена, но батерията не е потвърдена от {0} мин: оценка от последната потвърдена стойност.",
   "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.": "Показанието от камерата е старо (потвърдено преди {0} с): показва се последната потвърдена стойност.",
+  "Ortalama hız": "Средна скорост",
+  "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş": "Средна скорост: {0} км изминати, {1} мин движение, {2} мин престой",
 };

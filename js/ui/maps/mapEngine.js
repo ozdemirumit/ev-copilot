@@ -65,7 +65,7 @@ export async function createVectorMap(lib, container, { mapOptions = {}, name, s
   function applyBuildings() {
     if (!buildings || !map.getSource('route')) return;
     const on = want3d && !!map.getSource(buildings.layer.source);
-    if (on && !map.getLayer(BUILDINGS_3D)) map.addLayer({ ...buildings.layer, id: BUILDINGS_3D }, 'route-line');
+    if (on && !map.getLayer(BUILDINGS_3D)) map.addLayer({ ...buildings.layer, id: BUILDINGS_3D }, 'route-casing');
     else if (!on && map.getLayer(BUILDINGS_3D)) map.removeLayer(BUILDINGS_3D);
     for (const id of buildings.hide || []) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'none' : 'visible');
   }
@@ -76,10 +76,11 @@ export async function createVectorMap(lib, container, { mapOptions = {}, name, s
     if (map.getSource('route')) return;
     map.addSource('route', { type: 'geojson', data: routeData });
     map.addSource('traffic', { type: 'geojson', data: trafficData });
-    map.addLayer({ id: 'route-line', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#1a73e8', 'line-width': 6, 'line-opacity': 0.92 } });
+    map.addLayer({ id: 'route-casing', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#ffd600', 'line-width': 12, 'line-opacity': 1 } }); // sarı dış çerçeve
+    map.addLayer({ id: 'route-line', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#1a73e8', 'line-width': 8, 'line-opacity': 1 } }); // kalın mavi rota
     map.addLayer({
       id: 'traffic-line', type: 'line', source: 'traffic', layout: { 'line-join': 'round', 'line-cap': 'butt' },
-      paint: { 'line-color': ['match', ['get', 'lvl'], 'moderate', '#ffb547', 'heavy', '#ff5d6c', 'severe', '#c4001d', '#ffb547'], 'line-width': 6, 'line-opacity': 0.95 },
+      paint: { 'line-color': ['match', ['get', 'lvl'], 'moderate', '#ff9100', 'heavy', '#e53935', 'severe', '#b71c1c', '#ff9100'], 'line-width': 8, 'line-opacity': 1 },
     });
     satellite?.install?.(map);
     if (want3d) applyBuildings(); // yeni stilde 3B binalar (kapalıysa yeni stil zaten düz)

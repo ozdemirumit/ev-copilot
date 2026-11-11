@@ -404,4 +404,6 @@ export default {
   "Son güncelleme": "Bijgewerkt",
   "Kamera açık ama pil {0} dakikadır doğrulanamadı: son doğrulanan değerden tahmin ediliyor.": "Camera staat aan maar de accu is al {0} min niet bevestigd: schatting vanaf de laatst bevestigde waarde.",
   "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.": "Camerawaarde is oud ({0} s geleden bevestigd): laatst bevestigde waarde wordt getoond.",
+  "Ortalama hız": "Gemiddelde snelheid",
+  "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş": "Gemiddelde snelheid: {0} km gereden, {1} min rijden, {2} min stilstand",
 };
