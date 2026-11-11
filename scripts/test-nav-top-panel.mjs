@@ -1,6 +1,6 @@
 // Navigasyon üst paneli (iki sütun), rota stili, durdurma, OCR/kamera sabitleri. Kullanım: node scripts/test-nav-top-panel.mjs
 import { readFileSync } from 'node:fs';
-import { pickAlert, speedBar, ALERT_MS } from '../js/nav/panelLogic.js';
+import { pickAlert, pickSlot, speedOver, ALERT_MS } from '../js/nav/panelLogic.js';
 import { OCR } from '../js/config.js';
 
 let pass = 0, fail = 0;
@@ -23,15 +23,18 @@ ok('iki uyarı sırayla döner (trafik, yağış, trafik…)', ['A', 'B', 'A', '
 ok('boş olanlar atlanır, sıra korunur', pickAlert(['A', null, 'C'], 1) === 'C' && pickAlert([null, 'B'], 0) === 'B');
 ok('bozuk sayaç güvenli', pickAlert(['A', 'B'], NaN) === 'A' && pickAlert(['A', 'B'], -3) === 'B');
 
-// --- hız çubuğu
-const b0 = speedBar(null, null);
-ok('hız yok: boş çubuk, limit işareti yok', b0.pct === 0 && b0.limitPct === null && b0.over === false);
-const b1 = speedBar(70, null);
-ok('limitsiz ölçek 140 km/s: 70 → %50', b1.pct === 50 && b1.limitPct === null && !b1.over);
-const b2 = speedBar(90, 90);
-ok('limitte: aşıldı değil, işaret çubuk içinde', !b2.over && b2.limitPct > 0 && b2.limitPct < 100 && b2.pct === b2.limitPct);
-ok('limit + 5 km/s tolerans: 95 değil, 96 aşıldı', !speedBar(95, 90).over && speedBar(96, 90).over);
-ok('ölçeği aşan hız çubuğu taşırmaz', speedBar(300, 90).pct === 100);
+// --- hız aşımı (tek hız kaynağı) ve dönüşümlü hücre
+ok('hız yoksa aşım yok (sahte uyarı yok)', speedOver(null, 90, 0) === null && speedOver(undefined, 90, 0) === null);
+ok('limit ve eşik yoksa aşım yok', speedOver(150, null, 0) === null);
+ok('yol limiti + 5 tolerans: 95 değil, 96 aşım', speedOver(95, 90, 0) === null && speedOver(96, 90, 0)?.road === true);
+ok('aşım metni güncel hızı taşır (72 ise 72)', speedOver(72.4, 60, 0).kph === 72 && speedOver(72.4, 60, 0).limit === 60);
+ok('yol limiti yoksa kullanıcı eşiği (+3)', speedOver(83, null, 80) === null && speedOver(84, null, 80)?.road === false);
+ok('yol limiti eşikten önceliklidir', speedOver(84, 90, 80) === null);
+ok('aşım yoksa öğeler sırayla döner', ['soc', 'arrive', 'next', 'soc'].every((x, t) => pickSlot(['soc', 'arrive', 'next'], t, false) === x));
+ok('boş öğeler atlanır, hiç yoksa null', pickSlot([false, 'next'], 0, false) === 'next' && pickSlot([false, null], 3, false) === null);
+const seq = [0, 1, 2, 3, 4, 5].map((t) => pickSlot(['soc', 'alert:0'], t, true));
+ok('aşım öncelikli ama diğerlerini engellemez', seq.join() === 'over,soc,over,alert:0,over,soc', seq.join());
+ok('aşım ve başka öğe yoksa aşım sabit', [0, 1, 2].every((t) => pickSlot([], t, true) === 'over'));
 
 // --- HTML: iki sütun, alttaki tekrarlanan paneller kalktı
 const banner = html.slice(html.indexOf('id="nav-banner"'), html.indexOf('id="near-alert"'));
@@ -39,15 +42,21 @@ ok('üst panel iki sütun: sol manevra, sağ bilgi', banner.includes('class="nb-
 ok('sol: sonraki manevra ve mesafe', ['nav-arrow', 'nav-dist', 'nav-text'].every((id) => banner.slice(0, banner.indexOf('nb-right')).includes(`id="${id}"`)));
 ok('sağ: hız, pil, varış pili, şarj durağı', ['nh-speed', 'ne-soc', 'ne-arrive', 'ne-next'].every((id) => banner.slice(banner.indexOf('nb-right')).includes(`id="${id}"`)));
 ok('sağ: dönüşümlü uyarı alanı, başlangıçta gizli', /id="nb-alert"/.test(banner) && /class="nb-alert hidden"/.test(banner));
-ok('üstte ince hız çubuğu ve limit işareti', banner.includes('id="nav-speedbar"') && banner.includes('id="nh-limit"'));
+ok('ince hız çubuğu kalktı', !html.includes('nav-speedbar') && !/sb-track|sb-fill/.test(css));
+ok('sağda hız sınırı levhası ve hız yan yana, sürekli görünür', /class="nb-speedrow"[^>]*>\s*<div class="limit-sign hidden" id="nh-limit"[^>]*><\/div>\s*<div class="nb-cell nb-speed" id="nb-speed">/.test(banner));
+ok('levha belirgin büyük (≥ 46 px)', /\.nb-speedrow \.limit-sign \{ width: 58px; height: 58px;/.test(css));
+ok('aşımda hız kırmızı', /\.nb-speed\.over \.ne-v b \{ color: #e53935; \}/.test(css) && /classList\.toggle\('over', !!overNow\(e\)\)/.test(nav));
+ok('pil, varış, durak ve uyarı tek dönüşümlü hücrede', ['ne-soc-btn', 'ne-arrive-box', 'ne-next-box'].every((id) => new RegExp(`id="${id}"[^>]*data-slot=`).test(banner)) && banner.indexOf('id="nb-rot"') < banner.indexOf('id="ne-soc-btn"'));
+ok('ayrı advisor bandı gösterilmez', !/subscribe\('advisor'/.test(read('js/ui/statusBadges.js')) && /class="advisor hidden" id="advisor-banner"/.test(html));
 ok('alttaki hız/pil paneli (navhud, nav-ev) kalktı', !html.includes('id="navhud"') && !html.includes('id="nav-ev"'));
 ok('kalan süre/yol/varış saati yalnızca bir yerde', (html.match(/id="nh-eta"/g) || []).length === 1 && (html.match(/id="nh-rem"/g) || []).length === 1 && (html.match(/id="ne-arrive"/g) || []).length === 1);
 ok('ikincil satırda şarj durağı tekrarı yok', !/\$\{nextStop\.station\.name\} · /.test(nav));
 ok('kamera düğmesi korunur', /<button[^>]*data-tab="camera"[^>]*data-premium-only/.test(html));
 
 // --- uyarılar yalnızca panelde, gerçek veriden
-ok('trafik/yağış yol uyarısı çubuğunda tekrarlanmaz', /\[a\.speed, a\.cam, a\.grade\]/.test(ahead) && !/a\.rain, a\.traffic\]/.test(ahead));
-ok('panel uyarıları nav.ahead (gerçek veri) kaynağından', /\[a\.traffic, a\.rain\]/.test(nav) && /pickAlert\(items, alertTick\)/.test(nav));
+ok('hız aşımı/trafik/yağış sarı yol uyarısı şeridinde yok', /\[a\.cam, a\.grade\]/.test(ahead) && !/a\.speed, a\.cam/.test(ahead) && /setAhead\(\{ speed: true \}\)/.test(ahead));
+ok('panel uyarıları gerçek veriden (plan uyarısı, trafik, yağış)', /adv\.text : null, a\.traffic, a\.rain\]/.test(nav) && /pickSlot\(slots, alertTick, !!over\)/.test(nav));
+ok('aşım metni büyük hızla aynı kaynaktan (effective().speed)', /speedOver\(e\.speed, currentLimit\(\)/.test(nav) && /aştın: \$\{over\.kph\} km\/s/.test(nav));
 ok('uyarı 3 sn aralıkla döner', /setInterval\(\(\) => paintAlert\(true\), ALERT_MS\)/.test(nav));
 
 // --- rota stili ve trafik

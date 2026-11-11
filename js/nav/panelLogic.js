@@ -1,7 +1,6 @@
-// Navigasyon üst paneli mantığı (DOM'suz, node ile test edilir): dönüşümlü uyarı seçimi ve ince hız çubuğu ölçüleri.
+// Navigasyon üst paneli mantığı (DOM'suz, node ile test edilir): dönüşümlü bilgi/uyarı seçimi ve hız aşımı.
 
-export const ALERT_MS = 3000; // trafik ve yağış uyarıları bu aralıkla dönüşümlü gösterilir
-export const BAR_MAX_KMH = 140; // limit bilinmiyorsa çubuk ölçeği
+export const ALERT_MS = 3000; // pil/varış/durak bilgisi ve gerçek uyarılar bu aralıkla dönüşümlü gösterilir
 export const OVER_TOL_KMH = 5; // limitin bu kadar üstü "aşıldı" (GPS payı; ahead.js yol limiti toleransıyla aynı)
 
 /** Dönüşümlü uyarı: yalnızca gerçek (dolu metin) uyarılar sırayla döner; hiç yoksa null (uydurma uyarı gösterilmez). */
@@ -11,13 +10,23 @@ export function pickAlert(items, tick) {
 }
 
 /**
- * İnce hız çubuğu: pct = hızın ölçekteki yeri (%), limitPct = limit işaretinin yeri (limit yoksa null), over = limit aşıldı.
- * Ölçek: limit varsa limitin %130'u, yoksa 140 km/s; hız ölçeği aşarsa çubuk dolu kalır.
+ * Hız aşımı: aynı güncel hız kaynağıyla (effective().speed) hem hız rengi hem uyarı metni hesaplanır.
+ * Yol limiti biliniyorsa o (+5 km/s GPS payı), yoksa kullanıcının eşiği (+3); ikisi de yoksa ya da hız yoksa aşım yok.
  */
-export function speedBar(speed, limit) {
-  const v = Number.isFinite(speed) && speed > 0 ? speed : 0;
-  const lim = Number.isFinite(limit) && limit > 0 ? limit : null;
-  const scale = lim ? lim * 1.3 : BAR_MAX_KMH;
-  const clamp = (x) => Math.round(Math.min(100, Math.max(0, x)) * 10) / 10;
-  return { pct: clamp((v / scale) * 100), limitPct: lim ? clamp((lim / scale) * 100) : null, over: lim != null && v > lim + OVER_TOL_KMH };
+export function speedOver(speed, roadLimit, userLimit) {
+  const road = Number.isFinite(roadLimit) && roadLimit > 0 ? roadLimit : null;
+  const limit = road ?? (Number.isFinite(userLimit) && userLimit > 0 ? userLimit : null);
+  if (limit == null || !Number.isFinite(speed)) return null;
+  return speed > limit + (road ? OVER_TOL_KMH : 3) ? { kph: Math.round(speed), limit, road: road != null } : null;
+}
+
+/**
+ * Sağ bölümdeki dönüşümlü hücre: slots = gösterilebilir öğeler (boşlar atlanır), over = hız aşımı var mı.
+ * Aşımda her ikinci adım aşım uyarısıdır ('over'), arada diğer öğeler sırayla döner (önemli uyarılar tamamen engellenmez).
+ */
+export function pickSlot(slots, tick, over) {
+  const list = (slots || []).filter(Boolean);
+  const n = Math.abs(Math.trunc(tick) || 0);
+  if (over) return n % 2 === 0 || !list.length ? 'over' : list[Math.floor(n / 2) % list.length];
+  return list.length ? list[n % list.length] : null;
 }

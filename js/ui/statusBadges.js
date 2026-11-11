@@ -89,12 +89,8 @@ export function initStatusBadges() {
     set(ocr, OCR[status] || OCR.idle);
   };
 
-  // Dinamik uyarı bandı (fallback / eco-hız / hedef bilgisi)
-  const banner = document.getElementById('advisor-banner');
-  subscribe('advisor', ({ level, text }) => {
-    banner.textContent = text;
-    banner.className = 'advisor ' + (level === 'ok' ? '' : level) + (text ? '' : ' hidden');
-  });
+  // Ayrı uyarı bandı (advisor-banner) gösterilmez: bilgi satırı (hedef: X km, tahmini varış %Y) üst paneldeki Varışta hücresini tekrarlıyordu;
+  // uyarı düzeyindeki mesajlar (fallback / eco-hız) navigasyon üst panelinin sağ bölümünde döner (nav/navigator.js paintAlert).
 
   const traffic = document.getElementById('bd-traffic');
   const paintTraffic = () => {

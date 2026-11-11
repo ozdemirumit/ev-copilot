@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.31';
+self.APP_VERSION = '0.99.32';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.32', date: '2026-11-12',
+    notes: [
+      'Navigasyon ust paneli sadelesti: ustteki ayri ince bilgi bandi (hedef: X km, tahmini varis %Y) ve alttaki yatay hiz cubugu kaldirildi; sagda buyuk hiz siniri levhasi ve yaninda mevcut hiz surekli gorunur, limit asilinca hiz kirmizi; pil, varista pil, sonraki sarj ve yalnizca gercek uyarilar (plan/pil uyarisi, rota trafigi, yagis) yaklasik 3 sn aralikla donusumlu; hiz asimi ayri sari serit yerine bu alanda oncelikli (her ikinci adim) gorunur ve buyuk hiz rakamiyla ayni guncel hiz kaynagini kullanir.',
+    ],
+  },
   {
     v: '0.99.31', date: '2026-11-11',
     notes: [

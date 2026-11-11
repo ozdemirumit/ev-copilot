@@ -35,7 +35,7 @@ const setAhead = (part) => patch('nav', { ahead: { ...getState('nav').ahead, ...
 
 function render() {
   const a = getState('nav').ahead;
-  const lines = [a.speed, a.cam, a.grade].filter(Boolean); // kamera ve dik eğim: nav/roadWarnings.js; yağış ve trafik navigasyon üst panelinde dönüşümlü gösterilir
+  const lines = [a.cam, a.grade].filter(Boolean); // kamera ve dik eğim: nav/roadWarnings.js; hız aşımı, yağış ve trafik navigasyon üst panelinde dönüşümlü gösterilir
   const bar = $('road-alert');
   bar.replaceChildren(...lines.map((t) => Object.assign(document.createElement('div'), { textContent: t })));
   bar.classList.toggle('hidden', !lines.length);
@@ -138,7 +138,7 @@ function check() {
   if (over) {
     overSince ||= Date.now();
     if (Date.now() - overSince >= SPEED_HOLD_MS) {
-      if (nav.ahead.speed == null) setAhead({ speed: `⚠️ ${road ? 'Yol hız limitini' : 'Hız eşiğini'} aştın: ${Math.round(e.speed)} km/s (${road ? 'limit' : 'eşik'} ${limit})` });
+      if (nav.ahead.speed == null) setAhead({ speed: true }); // yalnızca bayrak: metin üst panelde güncel hızla yazılır (navigator.js paintAlert)
       speak(`${road ? 'Hız limitini' : 'Hız eşiğini'} aştınız. ${Math.round(e.speed)} kilometre, limit ${limit}.`, { key: 'speed', cooldownMs: 45000 });
     }
   } else {

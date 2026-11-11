@@ -44,7 +44,7 @@
   <button class="ver" id="st-version" type="button" aria-haspopup="dialog" aria-controls="about-dialog" title="Sürüm notları">v…</button>
 </div>
 <div id="banners">
-<div class="advisor hidden" id="advisor-banner" role="status" aria-live="polite"></div>
+<div class="advisor hidden" id="advisor-banner" role="status" aria-live="polite"></div><!-- v0.99.32: ayrı band gösterilmez; uyarı düzeyindeki mesajlar üst panelin sağ bölümünde döner -->
 <div class="toppanel hidden" id="top-panel">
 <div class="navbar hidden" id="nav-banner" role="status" aria-live="off">
   <div class="nb-left">
@@ -60,19 +60,17 @@
     <div class="nb-trip"><b id="nh-dur">--</b><span aria-hidden="true">·</span><b id="nh-rem">—</b><span aria-hidden="true">·</span><svg class="ic nh-flag" aria-hidden="true"><use href="#i-flag"/></svg><b id="nh-eta">--:--</b><small class="nh-word" data-i18n-skip>varış</small></div>
   </div>
   <div class="nb-right">
-    <div class="nb-stats">
-      <div class="nb-cell nb-speed"><small>km/s</small><span class="ne-v"><b id="nh-speed">0</b></span></div>
-      <button type="button" class="nb-cell" id="ne-soc-btn" aria-haspopup="dialog" aria-controls="soc-sheet"><small>Pil</small><span class="ne-v"><b id="ne-soc">--</b><span class="ne-sub"><span aria-hidden="true">≈</span><span id="ne-range">--</span> km</span></span></button>
-      <div class="nb-cell"><small>Varışta</small><span class="ne-v"><b id="ne-arrive">--</b></span></div>
-      <div class="nb-cell" id="ne-next-box"><small>Sonraki şarj</small><span class="ne-v"><b id="ne-next">--</b><span class="ne-sub" id="ne-next-t"></span></span></div>
+    <div class="nb-speedrow" id="nb-speedrow">
+      <div class="limit-sign hidden" id="nh-limit" title="Yol hız limiti"></div>
+      <div class="nb-cell nb-speed" id="nb-speed"><span class="ne-v"><b id="nh-speed">0</b></span><small>km/s</small><span class="nh-avg" id="nh-avg" title="Ortalama hız"><small data-i18n-skip>Ø</small><b id="nh-avg-v">--</b></span></div>
     </div>
-    <div class="nb-alert hidden" id="nb-alert" role="status" aria-live="off"></div>
-  </div>
-  <div class="nav-speedbar" id="nav-speedbar" role="group" aria-label="Hız ve hız limiti">
-    <span class="sb-track" aria-hidden="true"><i class="sb-fill"></i><i class="sb-mark"></i></span>
-    <div class="limit-sign hidden" id="nh-limit" title="Yol hız limiti"></div>
-    <span class="nh-avg" id="nh-avg" title="Ortalama hız"><small data-i18n-skip>Ø</small><b id="nh-avg-v">--</b></span>
-    <span class="hidden"><b id="nh-soc">--</b><i class="ind" id="nh-soc-dot"></i></span>
+    <div class="nb-rot" id="nb-rot" aria-live="off">
+      <button type="button" class="nb-cell" id="ne-soc-btn" data-slot="soc" aria-haspopup="dialog" aria-controls="soc-sheet"><small>Pil</small><span class="ne-v"><b id="ne-soc">--</b><span class="ne-sub"><span aria-hidden="true">≈</span><span id="ne-range">--</span> km</span></span></button>
+      <div class="nb-cell hidden" id="ne-arrive-box" data-slot="arrive"><small>Varışta</small><span class="ne-v"><b id="ne-arrive">--</b></span></div>
+      <div class="nb-cell hidden" id="ne-next-box" data-slot="next"><small>Sonraki şarj</small><span class="ne-v"><b id="ne-next">--</b><span class="ne-sub" id="ne-next-t"></span></span></div>
+      <div class="nb-alert hidden" id="nb-alert" role="status" aria-live="off"></div>
+      <span class="hidden"><b id="nh-soc">--</b><i class="ind" id="nh-soc-dot"></i></span>
+    </div>
   </div>
 </div>
 <div class="tp-charge hidden" id="near-alert">
