@@ -402,4 +402,6 @@ export default {
   "Durak çıkarıldı: {0}. Alternatif: {1}": "Usunięto przystanek: {0}. Alternatywa: {1}",
   "Bu durak olmadan plan kurulamadı: {0}": "Bez tego przystanku nie można zaplanować trasy: {0}",
   "Son güncelleme": "Zaktualizowano",
+  "Kamera açık ama pil {0} dakikadır doğrulanamadı: son doğrulanan değerden tahmin ediliyor.": "Kamera jest włączona, ale bateria nie została potwierdzona od {0} min: szacowanie od ostatniej potwierdzonej wartości.",
+  "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.": "Odczyt z kamery jest stary (potwierdzony {0} s temu): pokazywana jest ostatnia potwierdzona wartość.",
 };

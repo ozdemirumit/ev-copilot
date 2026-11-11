@@ -214,10 +214,17 @@ async function recover(my) {
   }
 }
 
+/**
+ * Ön plana dönüş (visibilitychange, pageshow — bfcache —, focus): duraklatılmış video sürdürülür ve arka planda kaçırılmış iz
+ * olayları (iOS'ta ended/unmute bazen gelmez) iz durumundan yeniden senkronlanır; aksi halde health 'muted' kalır ve OCR kare almaz.
+ */
 function onVisibility() {
   if (isHidden() || !stream) return;
   if (videoEl?.paused) videoEl.play?.().catch(() => {});
-  if (waitVisible) { waitVisible = false; scheduleRecover(0); }
+  if (waitVisible) { waitVisible = false; scheduleRecover(0); return; }
+  if (recovering || recoverTimer) return;
+  if (track?.readyState === 'ended' && health !== 'ended') onEnded(); // ended olayı kaçırıldı
+  else if (health === 'muted' && track && !track.muted) onUnmuted(); // unmute olayı kaçırıldı
   else if (health === 'muted') armMuteRecover();
 }
 
@@ -248,6 +255,10 @@ async function doStart(video) {
   if (!visibilityBound && typeof document !== 'undefined' && document.addEventListener) {
     visibilityBound = true;
     document.addEventListener('visibilitychange', onVisibility);
+    if (typeof window !== 'undefined' && window.addEventListener) {
+      window.addEventListener('pageshow', onVisibility);
+      window.addEventListener('focus', onVisibility);
+    }
   }
   await attach(got, video);
 }

@@ -1,7 +1,7 @@
 // Harita üstündeki pil + menzil hapı: dokununca elle ayar penceresi açılır (yatay sürgü, ±1, klavye).
 // Değer yolda kendiliğinden düşer (physics/socEstimate.js); kamera okuyunca o değer geçerli olur. Sürgü bırakılınca açık plan yeniden hesaplanır.
 import { getState, patch, subscribe, effective } from '../state.js';
-import { setManual, manualLocked, socSource, DEFAULT_SOC } from '../physics/socEstimate.js';
+import { setManual, manualLocked, socSource, ocrAgeMs, DEFAULT_SOC } from '../physics/socEstimate.js';
 import { setStartSoc } from '../routing/controller.js';
 import { t, tr } from '../i18n/index.js';
 import { toast } from './toast.js';
@@ -16,7 +16,11 @@ function noteFor(src, locked) {
   if (locked) return LOCK_TEXT;
   if (src === 'default') return t('Pil bilgisi yok: %{0} varsayılıyor. Sürgüyle ayarla ya da kamerayla okut.', DEFAULT_SOC);
   if (src === 'manual') return 'Elle girildi: yol alındıkça tüketim modeliyle düşer, kamera okuyunca düzelir.';
+  const age = ocrAgeMs();
+  // Kamera açık ama pil doğrulanamıyor: güvenli yedek (son doğrulanan değerden tüketimle düşen tahmin) ve ne kadar eski olduğu açıkça yazılır
+  if (src === 'estimate' && getState('system').ocr && age != null) return t('Kamera açık ama pil {0} dakikadır doğrulanamadı: son doğrulanan değerden tahmin ediliyor.', Math.max(1, Math.round(age / 60000)));
   if (src === 'estimate') return 'Son bilinen değerden tahmin ediliyor. Sürgüyle düzeltebilirsin.';
+  if (src === 'stale' && age != null) return t('Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.', Math.round(age / 5000) * 5);
   if (src === 'stale') return 'Kamera okuması eski: son okunan değer gösteriliyor. Sürgüyle düzeltebilirsin.';
   return 'Son okunan değer.';
 }

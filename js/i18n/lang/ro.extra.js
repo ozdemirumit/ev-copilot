@@ -402,4 +402,6 @@ export default {
   "Durak çıkarıldı: {0}. Alternatif: {1}": "Oprire eliminată: {0}. Alternativă: {1}",
   "Bu durak olmadan plan kurulamadı: {0}": "Nu se poate face un plan fără această oprire: {0}",
   "Son güncelleme": "Actualizat",
+  "Kamera açık ama pil {0} dakikadır doğrulanamadı: son doğrulanan değerden tahmin ediliyor.": "Camera este pornită, dar bateria nu a fost confirmată de {0} min: estimare de la ultima valoare confirmată.",
+  "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.": "Citirea camerei este veche (confirmată acum {0} s): se afișează ultima valoare confirmată.",
 };

@@ -402,4 +402,6 @@ export default {
   "Durak çıkarıldı: {0}. Alternatif: {1}": "Η στάση αφαιρέθηκε: {0}. Εναλλακτική: {1}",
   "Bu durak olmadan plan kurulamadı: {0}": "Δεν είναι δυνατός προγραμματισμός χωρίς αυτή τη στάση: {0}",
   "Son güncelleme": "Ενημέρωση",
+  "Kamera açık ama pil {0} dakikadır doğrulanamadı: son doğrulanan değerden tahmin ediliyor.": "Η κάμερα είναι ενεργή αλλά η μπαταρία δεν έχει επιβεβαιωθεί εδώ και {0} λεπτά: εκτίμηση από την τελευταία επιβεβαιωμένη τιμή.",
+  "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.": "Η ένδειξη της κάμερας είναι παλιά (επιβεβαιώθηκε πριν {0} δ): εμφανίζεται η τελευταία επιβεβαιωμένη τιμή.",
 };

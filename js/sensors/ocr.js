@@ -3,7 +3,7 @@ import { OCR, VEHICLE } from '../config.js';
 import { preprocess, measureRoi, VARIANTS, PAD } from './preprocess.js';
 import { readCanvasDigits, digitMismatch } from './digitRecognizer.js';
 import { createSocFilter, createSpeedFilter } from './outlierFilter.js';
-import { consensus } from './ocrConsensus.js';
+import { consensus, windowConsensus } from './ocrConsensus.js';
 import { createOcrLoop, collectSamples } from './ocrLoop.js';
 import { variantOrder, exposureSignal } from './frameQuality.js';
 import { isCameraLive, nudgeExposure } from './camera.js';
@@ -38,6 +38,12 @@ let target = null; // { video, stage }
 let lastFrameToken = null; // video.currentTime: aynı kareyi iki kez okuma (donmuş görüntü başarılı okuma sayılmasın)
 let previewTimer = null;
 const preferredVariant = {}; // ROI başına son başarılı okuma yöntemi
+let socCycles = []; // son pil çevrimleri { t, raw, samples }: çevrimler arası ortak karar (windowConsensus)
+const SOC_WINDOW_CYCLES = 4; // ~20 sn: gerçek değişimden sonra eski değerin kareleri kanıtı uzun süre seyreltmesin
+const SOC_WINDOW_MS = 30000;
+let hiddenAt = 0; // sayfa arka plana geçtiğinde OCR duraklatılır; dönüşte yeniden başlatılır
+let lifecycleBound = false;
+const TRACE_MAX = 12;
 
 export function loadTesseract() {
   if (window.Tesseract) return Promise.resolve();
@@ -162,22 +168,60 @@ function socHint() {
 /** Red kaydı: son 5 ham okumanın yanında neden reddedildiği görünür. */
 const rejection = (reason, value, count, need, now) => ({ reason, rejected: { reason, value, count: count ?? null, need: need ?? null, at: now } });
 
+/**
+ * Tanılama izi: her pil kararı (kareler → çevrim → pencere → filtre → geçerli değer) state'e (ocr.trace, son 12) yazılır.
+ * Konsola da yazmak için localStorage anahtarı '…debugOcr' = '1' (ör. 'evcp.debugOcr'); tarayıcıdan window.__ocrTrace().
+ */
+function trace(entry) {
+  const e = { at: Date.now(), ...entry };
+  patch('ocr', { trace: [e, ...(getState('ocr').trace || [])].slice(0, TRACE_MAX) });
+  try {
+    const ls = globalThis.localStorage;
+    if (ls && Object.keys(ls).some((k) => k.endsWith('debugOcr') && ls.getItem(k) === '1')) console.info('[OCR→SOC]', JSON.stringify(e));
+  } catch { /* depolama yok */ }
+}
+if (typeof window !== 'undefined') window.__ocrTrace = () => getState('ocr').trace || [];
+
+const framesOf = (samples) => samples.map((s) => s.value ?? (s.raw != null ? `(${s.raw})` : '-'));
+
+/**
+ * Pil kararı. Ham OCR asla doğrudan SOC olmaz: önce çevrim içi kareler (consensus), uyuşmazsa son çevrimler birlikte
+ * (windowConsensus, en az 2 çevrim), sonra fiziksel filtre (farklı değer en az 2 çevrimde teyit). Yalnızca kabul edilen değer
+ * live.soc'a ve readAt'e (tazelik zaman damgası) yazılır; diğer her durumda son geçerli değer korunur ve eski işaretlenir.
+ */
 function applySoc(samples) {
   const c = consensus(samples, { tol: SOC_TOL });
-  const reliability = percent(c.score);
   const now = Date.now();
-  if (c.value == null) {
+  const cycleRaw = rawOf(samples, c);
+  socCycles = [...socCycles, { t: now, raw: c.raw, samples }].filter((x) => now - x.t <= SOC_WINDOW_MS).slice(-SOC_WINDOW_CYCLES);
+  let candidate = c.value;
+  let score = c.score;
+  let via = 'cycle';
+  let win = null;
+  if (candidate == null) {
+    win = windowConsensus(socCycles, { tol: 0, now, maxAgeMs: SOC_WINDOW_MS });
+    if (win.value != null) { candidate = win.value; score = win.strength; via = 'window'; }
+  }
+  const base = {
+    kind: 'soc', frames: framesOf(samples), cycle: { value: c.value, raw: c.raw, score: percent(c.score) },
+    window: win && { value: win.value, raw: win.raw, share: percent(win.share), cycles: win.cycles, frames: win.frames },
+  };
+  if (candidate == null) {
     const reason = [...samples].reverse().find((s) => s.reason)?.reason || (c.raw != null ? 'no-consensus' : 'no-digits');
-    patch('ocr', { raw: rawOf(samples, c), status: 'unreadable', stale: true, reliability, ...rejection(reason, rawOf(samples, c), null, null, now) });
+    patch('ocr', { raw: cycleRaw, status: 'unreadable', stale: true, reliability: percent(win ? Math.max(c.score, win.score) : c.score), ...rejection(reason, cycleRaw, null, null, now) });
+    trace({ ...base, via: null, result: reason, accepted: getState('ocr').accepted });
     return;
   }
-  const res = socFilter.accept(c.value, now, { score: c.score, speedKmh: effective().speed, hint: socHint(), digits: c.digits });
+  const reliability = percent(via === 'window' ? win.score : c.score);
+  const res = socFilter.accept(candidate, now, { score, speedKmh: effective().speed, hint: socHint(), digits: c.digits });
   if (res.ok) {
-    patch('ocr', { raw: c.value, accepted: res.value, status: 'ok', lastOkAt: now, readAt: now, stale: false, reliability, reason: null }); // readAt: yalnızca gerçek kamera okuması (tahmin/elle girişte değişmez)
+    patch('ocr', { raw: candidate, accepted: res.value, status: 'ok', lastOkAt: now, readAt: now, stale: false, reliability, reason: null, via }); // readAt: yalnızca gerçek kamera okuması (tahmin/elle girişte değişmez)
     patch('live', { soc: res.value });
   } else {
-    patch('ocr', { raw: c.value, status: res.reason === 'verifying' || res.reason === 'recovering' ? 'verifying' : 'rejected', stale: true, reliability, ...rejection(res.reason, c.value, res.count, res.need, now) }); // son geçerli değer korunur
+    const verifying = res.reason === 'verifying' || res.reason === 'recovering' || res.reason === 'confirming';
+    patch('ocr', { raw: candidate, status: verifying ? 'verifying' : 'rejected', stale: true, reliability, ...rejection(res.reason, candidate, res.count, res.need, now) }); // son geçerli değer korunur
   }
+  trace({ ...base, via, candidate, result: res.reason, count: res.count ?? null, need: res.need ?? null, accepted: getState('ocr').accepted });
 }
 
 function applySpeed(samples) {
@@ -261,14 +305,58 @@ function dropWorker() {
 function ensureLoop() {
   loop ||= createOcrLoop({
     runCycle, intervalMs: OCR.intervalMs, cycleTimeoutMs: OCR.cycleTimeoutMs, onError: failCycle,
-    onTimeout: () => { dropWorker(); failCycle(new Error('OCR zaman aşımı')); },
+    // Arka planda donan çevrim dönüşte zaman aşımına düşebilir: işçi yine yenilenir ama eski oturum hata yazmaz
+    onTimeout: ({ current = true } = {}) => { dropWorker(); if (current) failCycle(new Error('OCR zaman aşımı')); },
   });
   return loop;
+}
+
+/** Arka plana geçiş (visibilitychange/pagehide/freeze): döngü durur, çevrimler arası kanıt silinir (önceki ve sonraki kareler karışmasın). */
+function onHide() {
+  if (!active || hiddenAt) return;
+  hiddenAt = Date.now();
+  loop?.stop();
+  socCycles = [];
+  socFilter.clearEvidence();
+  speedFilter.clearEvidence();
+  patch('ocr', { status: 'paused', stale: true, speedStale: true, note: 'Arka planda: OCR duraklatıldı' });
+  trace({ kind: 'lifecycle', result: 'paused', accepted: getState('ocr').accepted });
+}
+
+/** Ön plana dönüş (visibilitychange/pageshow/focus/resume): döngü hemen yeni çevrimle sürer; geçerli değer yeni okuma doğrulanana dek eski sayılır. */
+function onShow(event) {
+  if (!active || (typeof document !== 'undefined' && document.hidden)) return;
+  if (hiddenAt) {
+    const gap = Math.round((Date.now() - hiddenAt) / 1000);
+    hiddenAt = 0;
+    patch('ocr', { status: 'loading', stale: true, note: `Ön plana dönüldü (${gap} sn arka planda): pil yeniden doğrulanıyor` });
+    trace({ kind: 'lifecycle', result: 'resumed', event: event?.type || null, gapSec: gap, accepted: getState('ocr').accepted });
+    ensureLoop().start();
+  } else if (loop && !loop.running) {
+    trace({ kind: 'lifecycle', result: 'restarted', event: event?.type || null, accepted: getState('ocr').accepted });
+    loop.start(); // OCR açık görünürken döngü durmuşsa yeniden başlat
+  }
+}
+
+function bindLifecycle() {
+  if (lifecycleBound || typeof document === 'undefined' || !document.addEventListener) return;
+  lifecycleBound = true;
+  document.addEventListener('visibilitychange', (e) => (document.hidden ? onHide() : onShow(e)));
+  document.addEventListener('freeze', onHide);
+  document.addEventListener('resume', onShow);
+  if (typeof window !== 'undefined' && window.addEventListener) {
+    window.addEventListener('pagehide', onHide);
+    window.addEventListener('pageshow', onShow);
+    window.addEventListener('focus', onShow);
+  }
 }
 
 export async function startOcr(video, stage) {
   if (active) return;
   active = true;
+  hiddenAt = 0;
+  socCycles = [];
+  bindLifecycle();
   const token = ++startToken;
   target = { video, stage };
   patch('system', { ocr: true });
@@ -280,11 +368,16 @@ export async function startOcr(video, stage) {
     patch('ocr', { status: 'error', error: String(err?.message || err).slice(0, 160) });
     throw err;
   }
-  if (active && token === startToken) ensureLoop().start();
+  if (active && token === startToken) {
+    if (typeof document !== 'undefined' && document.hidden) { hiddenAt = Date.now(); return; } // arka planda açıldı: dönüşte başlar
+    ensureLoop().start();
+  }
 }
 
 export function stopOcr() {
   active = false;
+  hiddenAt = 0;
+  socCycles = [];
   startToken++;
   loop?.stop();
   patch('system', { ocr: false });
@@ -297,6 +390,7 @@ export async function setOcrEngine(engine) {
   patch('ocr', { engine, reason: null });
   socFilter.clearEvidence();
   speedFilter.clearEvidence();
+  socCycles = [];
   Object.keys(preferredVariant).forEach((k) => delete preferredVariant[k]);
   if (engine === 'digit') dropWorker(); // kullanılmayan Tesseract belleği bırakılır
   if (active) {

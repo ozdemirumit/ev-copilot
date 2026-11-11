@@ -8,6 +8,9 @@
  *  - Pil yönü bağlama bağlıdır: sürüşte yükseliş yalnızca rejenerasyon kadar, duruşta düşüş çok küçük, şarj hızı araca göre.
  *  - Sınırı aşan değer, ardışık ve yüksek skorlu çevrimlerle yeniden eşitlenebilir (yanlış referansta kilitlenmemek için); rakam
  *    karışıklığı gibi görünen sapmalar ve sürüşte fiziksel olmayan yükselişler daha uzun kanıt ister.
+ *  - confirmCycles > 1 ise (pil): tolerans içindeki değişim de TEK çevrimle kabul edilmez; aynı yeni değer ardışık çevrimlerde
+ *    tekrar görülmelidir. Uzun aradan (arka plan, kamera kesintisi) sonra tolerans büyüse de tek hatalı okuma (39→33) değeri değiştiremez.
+ *    Rakam karışıklığına benzeyen ve 1'den büyük değişimler (39→33) bir çevrim daha ister. Aynı değer gelirse referans tazelenir.
  */
 
 const CONFUSABLE = new Set(['17', '14', '38', '08', '56', '68', '89', '39', '59', '06', '09', '49', '35', '25', '27']);
@@ -44,13 +47,14 @@ export function createFilter({
   candidateTol = 1, pendingMaxAgeMs = 20000,
   minScore = 0.4, firstMinScore = 0.5, resyncMinScore = 0.6,
   fragmentGuard = false, recoverCycles = 2, recoverNoEvidenceCycles = 4, recoverMinScore = 0.5, recentMax = 8, recentMaxAgeMs = 60000,
+  confirmCycles = 1, confusableConfirmCycles = confirmCycles + 1,
 } = {}) {
   let last = null; // { value, t }
   let pending = null; // { value, count, t }
   let recent = []; // son çevrimler { value, digits, t }: hatalı tek haneden kurtulmak için ardışık olmayan kanıt da sayılır
 
-  const bump = (value, t) => {
-    const same = pending && Math.abs(value - pending.value) <= candidateTol && t - pending.t <= pendingMaxAgeMs;
+  const bump = (value, t, tol = candidateTol) => {
+    const same = pending && Math.abs(value - pending.value) <= tol && t - pending.t <= pendingMaxAgeMs;
     pending = { value, t, count: same ? pending.count + 1 : 1 };
     return pending.count;
   };
@@ -90,7 +94,14 @@ export function createFilter({
     const delta = value - last.value;
     const fragment = fragmentGuard && isFragment(value, last.value);
     // Hane kaybı şüphesi: sapma küçük olsa bile (12 → 1) görüntüde gerçekten tek rakam görülmedikçe doğrudan kabul edilmez
-    if (Math.abs(delta) <= allowance(delta, t - last.t, ctx) && (!fragment || digits === 1)) { commit(value, t); return { ok: true, reason: 'ok', value }; }
+    if (Math.abs(delta) <= allowance(delta, t - last.t, ctx) && (!fragment || digits === 1)) {
+      if (delta === 0 || confirmCycles <= 1) { commit(value, t); return { ok: true, reason: 'ok', value }; }
+      // Makul ama farklı değer: aynı değer (tam eşit) yeniden görülene kadar geçerli değer korunur
+      const count = bump(value, t, 0);
+      const need = confusable(value, last.value) && Math.abs(delta) > 1 ? confusableConfirmCycles : confirmCycles;
+      if (count >= need) { commit(value, t); return { ok: true, reason: 'confirmed', value }; }
+      return { ok: false, reason: 'confirming', value: last.value, count, need };
+    }
 
     const reason = fragment ? 'fragment' : 'jump';
     if (score < resyncMinScore) return { ok: false, reason, value: last.value };
@@ -134,6 +145,8 @@ export function createSocFilter({ chargePctPerMin = 3, maxJump = 2 } = {}) {
     },
     resyncFactor: (delta, { speedKmh = null } = {}) => (delta > 0 && isMoving(speedKmh) === true ? 2 : 1),
     fragmentGuard: true,
+    confirmCycles: 2, // tek farklı okuma geçerli pili değiştirmez
+
   });
 }
 

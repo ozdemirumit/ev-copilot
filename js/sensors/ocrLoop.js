@@ -24,7 +24,7 @@ export function createOcrLoop({
     const done = Promise.race([work, guard]).then(() => clearTimer(watchdog));
     inFlight = done;
     await done;
-    if (timedOut) { cycleId++; onTimeout(); }
+    if (timedOut) { cycleId++; onTimeout({ current: running && mySession === session }); }
     if (running && mySession === session) timer = setTimer(() => runOne(mySession), Math.max(minGapMs, intervalMs - (now() - t0)));
   }
 

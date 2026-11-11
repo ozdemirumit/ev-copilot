@@ -2,8 +2,17 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.25';
+self.APP_VERSION = '0.99.26';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.26', date: '2026-11-11',
+    notes: [
+      'Kamera pil okumasi duzeltmesi: kareler bir cevrimde karisinca (38/33/38) dogru deger hic dogrulanamiyor, gecerli deger eski kalip hesaplama Tahmin\'e dusuyordu. Artik son birkac cevrim birlikte degerlendirilir (en az 2 cevrim, son cevrimle uyumlu, kare cogunlugu); ham okuma dogrulanmadan pile gecmez.',
+      'Tek farkli okuma gecerli pili degistirmez: yeni deger ikinci cevrimde (rakam karisikligina benziyorsa ucuncude) teyit edilir; arka plandan donuste de ayni kural gecerlidir.',
+      'Arka plan/on plan: OCR arka planda durur, donuste (visibilitychange/pageshow/focus) hemen yeniden okur; iOS\'ta kacirilan kamera unmute/ended olaylari senkronlanir. 5 sn okuma duzeni degismedi.',
+      'Pil 45 sn dogrulanamazsa Eski (kac sn once dogrulandigi yazar), 60 sn sonra son dogrulanan degerden guvenli tahmin. Kamera Tanilama tablosunda Son karar satiri (kareler, cevrim/pencere adayi, filtre sonucu).',
+    ],
+  },
   {
     v: '0.99.25', date: '2026-11-11',
     notes: [

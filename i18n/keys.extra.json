@@ -401,5 +401,7 @@
  "Durak rotadan çıkarıldı: {0}",
  "Durak çıkarıldı: {0}. Alternatif: {1}",
  "Bu durak olmadan plan kurulamadı: {0}",
- "Son güncelleme"
+ "Son güncelleme",
+ "Kamera açık ama pil {0} dakikadır doğrulanamadı: son doğrulanan değerden tahmin ediliyor.",
+ "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor."
 ]

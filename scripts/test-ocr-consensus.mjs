@@ -64,6 +64,12 @@ const verified = (v, t = T) => {
   f.reset(v, t);
   return f;
 };
+// Pil: makul değişim de tek çevrimle kabul edilmez (tek farklı okuma geçerli değeri değiştirmez); aynı değer bir sonraki çevrimde teyit eder.
+const confirmed = (f, value, t, ctx) => {
+  const first = f.accept(value, t, ctx);
+  const second = f.accept(value, t + 5 * SEC, ctx);
+  return !first.ok && first.reason === 'confirming' && second.ok && f.last === value;
+};
 const okAtCycle = (f, value, speedKmh, limit = 60, score = 0.9) => {
   for (let i = 1; i <= limit; i++) if (f.accept(value, T + i * 5 * SEC, { score, speedKmh }).ok) return i;
   return -1;
@@ -72,7 +78,7 @@ const okAtCycle = (f, value, speedKmh, limit = 60, score = 0.9) => {
   const f = verified(73);
   const r = f.accept(13, T + 5 * SEC, { score: 0.9 });
   ok('73→13 reddedilir, son değer korunur', !r.ok && r.reason === 'jump' && r.value === 73 && f.last === 73);
-  ok('küçük değişim kabul', verified(73).accept(72, T + 5 * SEC, { score: 0.8, speedKmh: 90 }).ok);
+  ok('küçük değişim ikinci çevrimde kabul', confirmed(verified(73), 72, T + 5 * SEC, { score: 0.8, speedKmh: 90 }));
 }
 ok('karışabilir kalıcı 73→13: 12 çevrimden önce kabul edilmez', okAtCycle(verified(73), 13, 0) === 12);
 ok('karışabilir sapma sürüşte de 12 çevrim', okAtCycle(verified(73), 13, 90) === 12);
@@ -80,13 +86,13 @@ ok('sürüşte fiziksel olmayan yükseliş: yeniden eşitleme iki kat (12)', okA
 ok('duruşta uzak değer (karışmayan): 6 çevrimde yeniden eşitlenir', okAtCycle(verified(40), 62, 0) === 6);
 ok('tolerans süreyle sınırsız büyümez (6 saat, sürüş, 73→40)', !verified(73).accept(40, T + 6 * 3600 * SEC, { score: 0.9, speedKmh: 90 }).ok);
 ok('tolerans süreyle sınırsız büyümez (6 saat, duruş, 20→90)', !verified(20).accept(90, T + 6 * 3600 * SEC, { score: 0.9, speedKmh: 0 }).ok);
-ok('kamera kapalıyken makul şarj (duruş, 20 dk, +20) kabul', verified(40).accept(60, T + 20 * 60 * SEC, { score: 0.9, speedKmh: 0 }).ok);
-ok('duruşta 60 sn +4 (şarj) kabul', verified(50).accept(54, T + 60 * SEC, { score: 0.9, speedKmh: 0 }).ok);
+ok('kamera kapalıyken makul şarj (duruş, 20 dk, +20) teyitle kabul', confirmed(verified(40), 60, T + 20 * 60 * SEC, { score: 0.9, speedKmh: 0 }));
+ok('duruşta 60 sn +4 (şarj) teyitle kabul', confirmed(verified(50), 54, T + 60 * SEC, { score: 0.9, speedKmh: 0 }));
 ok('sürüşte 60 sn +4 reddedilir', !verified(50).accept(54, T + 60 * SEC, { score: 0.9, speedKmh: 90 }).ok);
-ok('sürüşte 60 sn −3 (deşarj) kabul', verified(50).accept(47, T + 60 * SEC, { score: 0.9, speedKmh: 90 }).ok);
+ok('sürüşte 60 sn −3 (deşarj) teyitle kabul', confirmed(verified(50), 47, T + 60 * SEC, { score: 0.9, speedKmh: 90 }));
 ok('duruşta 60 sn −5 reddedilir', !verified(50).accept(45, T + 60 * SEC, { score: 0.9, speedKmh: 0 }).ok);
-ok('hız bilinmiyorsa 60 sn +4 kabul (şarj olabilir)', verified(50).accept(54, T + 60 * SEC, { score: 0.9 }).ok);
-ok('sürüşte 5 sn +2 reddedilir, −2 kabul', !verified(50).accept(52, T + 5 * SEC, { score: 0.9, speedKmh: 90 }).ok && verified(50).accept(48, T + 5 * SEC, { score: 0.9, speedKmh: 90 }).ok);
+ok('hız bilinmiyorsa 60 sn +4 teyitle kabul (şarj olabilir)', confirmed(verified(50), 54, T + 60 * SEC, { score: 0.9 }));
+ok('sürüşte 5 sn +2 reddedilir, −2 teyitle kabul', verified(50).accept(52, T + 5 * SEC, { score: 0.9, speedKmh: 90 }).reason === 'jump' && confirmed(verified(50), 48, T + 5 * SEC, { score: 0.9, speedKmh: 90 }));
 {
   const f = verified(73);
   ok('düşük skorlu çevrimler yeniden eşitlemeye sayılmaz', okAtCycle(f, 13, 0, 30, 0.4) === -1 && f.last === 73);
@@ -171,7 +177,8 @@ ok('aralık dışı değer reddedilir', createSocFilter({}).accept(130, T, { sco
     const f = createSocFilter({ chargePctPerMin: 3, maxJump: 2 });
     f.reset(10, 0);
     const r = f.accept(9, 5000, { score: 0.8, speedKmh: null, digits: 1 });
-    ok('gerçek 10→9 geçişi serbest', r.ok && f.last === 9);
+    const r2 = f.accept(9, 10000, { score: 0.8, speedKmh: null, digits: 1 });
+    ok('gerçek 10→9 geçişi teyitle serbest', !r.ok && r2.ok && f.last === 9);
   }
   {
     const f = createSocFilter({ chargePctPerMin: 3, maxJump: 2 });

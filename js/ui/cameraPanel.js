@@ -11,7 +11,7 @@ import { t } from '../i18n/index.js';
 
 const STATUS_TEXT = {
   idle: '—', loading: 'Yükleniyor', ok: 'Geçerli', rejected: 'Reddedildi',
-  unreadable: 'Okunamadı', manual: 'Manuel', error: 'Hata', verifying: 'Doğrulanıyor',
+  unreadable: 'Okunamadı', manual: 'Manuel', error: 'Hata', verifying: 'Doğrulanıyor', paused: 'Duraklatıldı',
 };
 const HEALTH_TEXT = {
   off: 'Kapalı', live: 'Canlı', muted: 'Görüntü duraklatıldı', ended: 'Kapandı', recovering: 'Yeniden açılıyor', lost: 'Kayboldu',
@@ -21,8 +21,9 @@ const REASON_TEXT = {
   range: 'Aralık dışı', 'low-score': 'Güven skoru düşük', verifying: 'Doğrulanıyor', jump: 'Fiziksel olmayan sıçrama',
   fragment: 'Hane kaybı şüphesi', recovering: 'Eksik değerden dönüş doğrulanıyor', truncated: 'Hane eksik okundu',
   'extra-digit': 'Fazla hane okundu', flat: 'Görüntü düz veya siyah', glare: 'Parlama', 'low-confidence': 'Motor güveni düşük',
-  'no-consensus': 'Kareler uyuşmadı', 'no-digits': 'Rakam bulunamadı',
+  'no-consensus': 'Kareler uyuşmadı', 'no-digits': 'Rakam bulunamadı', confirming: 'Yeni değer teyit ediliyor',
 };
+const RESULT_TEXT = { ok: 'Geçerli', confirmed: 'Teyit edildi, geçerli', first: 'İlk değer geçerli', resync: 'Yeniden eşitlendi', recovered: 'Geri alındı', paused: 'Arka planda duraklatıldı', resumed: 'Ön plana dönüldü', restarted: 'Döngü yeniden başlatıldı' };
 const ENGINE_TEXT = { tess: 'OCR 1', digit: 'OCR 2' };
 
 /** Kamera sekmesi: önizleme, OCR başlat/durdur, eşik/kontrast ayarları, manuel +/- kalibrasyon. */
@@ -95,7 +96,7 @@ export function initCameraPanel() {
   ocrBtn.addEventListener('click', async () => {
     if (getState('system').ocr) return stopOcr();
     try {
-      patch('ocr', { readCount: 0, readings: [], rejected: null, reason: null }); // sayaç bu OCR oturumunu gösterir
+      patch('ocr', { readCount: 0, readings: [], trace: [], rejected: null, reason: null }); // sayaç bu OCR oturumunu gösterir
       await startOcr(video, stage);
     } catch (err) {
       toast(err.message);
@@ -208,7 +209,9 @@ export function initCameraPanel() {
     $('diag-speed').textContent = live.speedScr == null ? '--' : `${live.speedScr} km/h${s.speedOn && s.speedStale ? ' (eski)' : ''}`;
     $('diag-read-at').textContent = s.readAt ? `${new Date(s.readAt).toLocaleTimeString()} (${Math.max(0, Math.round((Date.now() - s.readAt) / 1000))} sn önce)` : '--';
     $('diag-reliability').textContent = s.readAt || s.reliability ? `%${s.reliability}` : '--';
-    $('diag-stale').textContent = !getState('system').ocr ? 'OCR kapalı' : s.status === 'manual' ? 'Elle girildi' : s.stale ? 'Eski (doğrulanmadı)' : 'Güncel';
+    const age = s.readAt ? Math.max(0, Math.round((Date.now() - s.readAt) / 1000)) : null;
+    $('diag-stale').textContent = !getState('system').ocr ? 'OCR kapalı' : s.status === 'manual' ? 'Elle girildi' : s.stale ? `Eski (doğrulanmadı${age != null ? ` · geçerli değer ${age} sn önce` : ''})` : 'Güncel';
+    $('diag-decision').textContent = decisionText(s.trace?.[0]);
     const parts = [diag.label || 'Arka kamera', HEALTH_TEXT[diag.health] || diag.health];
     if (METHOD_TEXT[diag.method]) parts.push(METHOD_TEXT[diag.method]);
     $('diag-camera').textContent = getState('system').camera ? parts.join(' · ') : HEALTH_TEXT.off;
@@ -218,6 +221,20 @@ export function initCameraPanel() {
     $('diag-reject').textContent = rej ? `${timeOf(rej.at)} · ${rej.value ?? '--'} · ${REASON_TEXT[rej.reason] || rej.reason}${rej.need ? ` (${rej.count}/${rej.need})` : ''}` : '--';
     $('diag-geom').textContent = video.videoWidth && stage.clientWidth ? geometryText(s) : '--';
     paintReadings(s.readings || []);
+  }
+
+  // Son pil kararı: kareler → çevrim/pencere adayı → filtre sonucu → geçerli değer (ham değer neden SOC olmadı, burada görünür)
+  function decisionText(e) {
+    if (!e) return '--';
+    if (e.kind === 'lifecycle') return `${timeOf(e.at)} · ${RESULT_TEXT[e.result] || e.result}${e.gapSec != null ? ` (${e.gapSec} sn)` : ''}`;
+    const parts = [timeOf(e.at), `kareler ${e.frames.join('/') || '-'}`];
+    if (e.via === 'window') parts.push(`çevrimler arası ${e.candidate} (%${e.window.share}, ${e.window.cycles} çevrim)`);
+    else if (e.via === 'cycle') parts.push(`çevrim ${e.candidate}`);
+    else if (e.window?.raw != null) parts.push(`pencere ${e.window.raw} yetersiz (%${e.window.share}, ${e.window.cycles} çevrim)`);
+    const res = RESULT_TEXT[e.result] || REASON_TEXT[e.result] || e.result;
+    parts.push(e.need ? `${res} (${e.count}/${e.need})` : res);
+    parts.push(`geçerli ${e.accepted ?? '--'}`);
+    return parts.join(' · ');
   }
 
   function geometryText(s) {

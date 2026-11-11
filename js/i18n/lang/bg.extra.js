@@ -402,4 +402,6 @@ export default {
   "Durak çıkarıldı: {0}. Alternatif: {1}": "Спирката е премахната: {0}. Алтернатива: {1}",
   "Bu durak olmadan plan kurulamadı: {0}": "Без тази спирка не може да се състави план: {0}",
   "Son güncelleme": "Обновено",
+  "Kamera açık ama pil {0} dakikadır doğrulanamadı: son doğrulanan değerden tahmin ediliyor.": "Камерата е включена, но батерията не е потвърдена от {0} мин: оценка от последната потвърдена стойност.",
+  "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.": "Показанието от камерата е старо (потвърдено преди {0} с): показва се последната потвърдена стойност.",
 };

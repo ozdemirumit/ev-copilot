@@ -9,7 +9,7 @@ import { load, save } from '../utils/storage.js';
 import { releaseSoc } from '../sensors/ocr.js';
 import { noteManualSoc } from './history.js';
 
-const FALLBACK_MS = 180_000; // kamera çalışıyor ama bu kadar süredir okuyamıyorsa tahmine geç (kısa kesintilerde son değer korunur)
+const FALLBACK_MS = 60_000; // kamera çalışıyor ama bu kadar süredir doğrulanmış okuma yoksa son değerden tahmine geç (güvenli: yol alındıkça düşer)
 const IDLE_FALLBACK_MS = 60_000; // kamera/OCR kapalıysa son okumadan bu kadar sonra tahmine geç
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const r1 = (v) => Math.round(v * 10) / 10;
@@ -51,6 +51,9 @@ export function socSource() {
   if (mode === 'manual') return origin === 'user' ? 'manual' : 'estimate';
   return mode;
 }
+
+/** Son doğrulanmış kamera okumasının yaşı (ms); bu oturumda hiç yoksa null. Hesaplama paneli "eski"yi süresiyle gösterir. */
+export const ocrAgeMs = () => (ocrAt ? Date.now() - ocrAt : null);
 
 /** Bu oturumda gerçek bir pil bilgisi (kamera ya da elle) var mı? */
 export const socReported = () => reported;
@@ -133,6 +136,7 @@ export function initSocEstimate() {
       origin = 'estimate';
       setMode('manual'); // kamera okumuyor: son değerden tahmin
       persist(true);
+      console.info('[SOC] kamera okuması eskidi, son doğrulanan değerden tahmine geçildi', JSON.stringify({ soc: est, ageSec: Math.round((Date.now() - ocrAt) / 1000), ocr: getState('ocr').status }));
     }
   }, 5000);
 }

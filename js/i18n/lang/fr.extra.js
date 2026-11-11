@@ -402,4 +402,6 @@ export default {
   "Durak çıkarıldı: {0}. Alternatif: {1}": "Arrêt retiré : {0}. Alternative : {1}",
   "Bu durak olmadan plan kurulamadı: {0}": "Aucun plan possible sans cet arrêt : {0}",
   "Son güncelleme": "Mis à jour",
+  "Kamera açık ama pil {0} dakikadır doğrulanamadı: son doğrulanan değerden tahmin ediliyor.": "La caméra est active mais la batterie n'est pas confirmée depuis {0} min : estimation depuis la dernière valeur confirmée.",
+  "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.": "Lecture caméra ancienne (confirmée il y a {0} s) : dernière valeur confirmée affichée.",
 };
