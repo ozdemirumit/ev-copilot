@@ -73,6 +73,11 @@ ok('durdurma: rota/plan temizlenir ve konuma yakınlaşılır', /function endNav
 ok('varışta da aynı temizlik (sesi kesmeden)', /endNav\(true\);\s*toast\('Varış noktasına ulaştınız'\)/.test(nav));
 ok('clearTrip: plan sıfırlanır, çizgi ve işaretler kalkar', /export function clearTrip\(\)/.test(ctl) && /mapApi\.clearRoute\(\)/.test(ctl) && /setPoint\(k, null/.test(ctl));
 
+// --- v0.99.34 okunabilirlik: sol ikincil satır yok, yol adı talimatla aynı boyda, sağ hücreler büyük
+ok('sol ikincil satır (sonra/kalan süre/varış) gizli', /class="nav-then hidden" id="nav-then"/.test(banner) && /class="nb-trip hidden"/.test(banner));
+ok('yol adı talimatla aynı boy/ağırlık, en çok 2 satır', /\.nb-man \.nav-text, \.nb-man \.nav-road \{ font-size: 18px; font-weight: 700;[^}]*-webkit-line-clamp: 2; \}/.test(css));
+ok('sağ dönüşümlü değerler büyük (≥ 20 px)', /\.nb-cell \.ne-v b \{ font-size: 24px;/.test(css) && /\.nb-alert \{ font-size: 15px;/.test(css));
+
 // --- normal sürüş paneli ile aynı ölçü
 ok('rotasız sürüş paneli ve navigasyon paneli aynı en düşük yükseklikte', /.navbar, .mapsoc { box-sizing: border-box; min-height: 150px; }/.test(css));
 

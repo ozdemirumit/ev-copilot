@@ -973,6 +973,31 @@ body.navmode .mapsoc, body.sheet-open .mapsoc { display: none; }
 .nb-alert { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; padding: 0 6px; border-block: 4px solid transparent; border-radius: 8px; background: rgba(255, 145, 0, .16); font-size: 12px; font-weight: 600; line-height: 1.25; }
 .nb-alert.over { background: rgba(229, 57, 53, .14); color: #c62828; }
 .nb-alert.hidden { display: none; }
+/* v0.99.34 okunabilirlik: sol bölümde yalnızca mesafe + talimat + yol adı (talimatla aynı boy/ağırlık, en çok 2 satır); ikincil satır yok. Sağda pil/menzil/varış/durak/uyarı büyük. Panel yüksekliği aynı (en düşük 150 px). */
+.nb-left { justify-content: center; }
+.nb-left .nav-then, .nb-left .nb-trip { display: none; }
+.nb-man { align-items: flex-start; }
+.nb-man .nav-arrow { align-self: center; }
+.nb-man .nav-dist { font-size: 30px; }
+.nb-man .nav-text, .nb-man .nav-road { font-size: 18px; font-weight: 700; line-height: 1.2; color: var(--text); white-space: normal; overflow: hidden; text-overflow: clip; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.nb-cell small { font-size: 13px; }
+.nb-cell .ne-v b { font-size: 24px; font-weight: 800; }
+.nb-cell .ne-sub { font-size: 16px; font-weight: 600; }
+.nb-alert { font-size: 15px; line-height: 1.2; }
+.nb-speed small { font-size: 12px; }
+@media (max-width: 380px) {
+  .nb-man .nav-dist { font-size: 26px; }
+  .nb-man .nav-text, .nb-man .nav-road { font-size: 16px; }
+  .nb-cell .ne-v b { font-size: 21px; }
+  .nb-cell .ne-sub, .nb-alert { font-size: 14px; }
+}
+@media (max-height: 520px) {
+  .nb-man .nav-text, .nb-man .nav-road { font-size: 15px; }
+  .nb-man .nav-road { -webkit-line-clamp: 1; }
+  .nb-cell small { font-size: 11px; }
+  .nb-cell .ne-v b { font-size: 19px; }
+  .nb-cell .ne-sub, .nb-alert { font-size: 13px; }
+}
 /* Rotasız sürüş paneli ile navigasyon paneli aynı en düşük yükseklikte 150 px (genişlik, kenar boşluğu ve köşe zaten ortak) */
 @media (min-height: 521px) {
   .navbar, .mapsoc { box-sizing: border-box; min-height: 150px; }
