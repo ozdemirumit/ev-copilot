@@ -1,5 +1,6 @@
 import { patch } from '../state.js';
 import { haversineKm, bearing } from '../utils/geo.js';
+import { createCourseFilter } from '../nav/course.js';
 
 const STILL_MS = 0.5; // m/s altında hızı 0 say (GPS titreşimi)
 const BEARING_MIN_M = 8; // yön için en az bu kadar yer değiştirmiş olmalı
@@ -7,28 +8,27 @@ const BEARING_MIN_M = 8; // yön için en az bu kadar yer değiştirmiş olmalı
 let watchId = null;
 let prev = null; // son fix (hız yedeği için)
 let anchor = null; // yön hesabı için son referans nokta
-let lastHeading = null;
+const course = createCourseFilter(); // son güvenilir, yumuşatılmış gidiş yönü (harita yön-yukarı bunu kullanır)
 
 function onPosition(pos) {
   const c = pos.coords;
   const here = { lat: c.latitude, lon: c.longitude, t: pos.timestamp };
 
-  let speedMs = Number.isFinite(c.speed) ? c.speed : null;
+  let speedMs = Number.isFinite(c.speed) && c.speed >= 0 ? c.speed : null;
   if (speedMs == null && prev) {
     const dt = (here.t - prev.t) / 1000;
     if (dt > 0.5 && dt < 10) speedMs = (haversineKm(prev, here) * 1000) / dt;
   }
 
-  let heading = Number.isFinite(c.heading) ? c.heading : null;
+  let heading = Number.isFinite(c.heading) && c.heading >= 0 ? c.heading : null;
   if (heading == null && anchor && haversineKm(anchor, here) * 1000 >= BEARING_MIN_M) {
     heading = bearing(anchor, here);
   }
   if (!anchor || haversineKm(anchor, here) * 1000 >= BEARING_MIN_M) anchor = here;
   prev = here;
 
-  // Duruyorken yön anlamsızdır: son bilinen yönü koru.
-  const moving = speedMs != null && speedMs >= 1;
-  if (heading != null && moving) lastHeading = heading;
+  // Duruyorken, yavaşken ya da doğruluk kötüyken yön anlamsızdır: son güvenilir yön korunur, güvenilir ölçümler yumuşatılır.
+  const lastHeading = course.push({ heading, speedKmh: speedMs == null ? null : speedMs * 3.6, acc: c.accuracy });
 
   patch('live', {
     lat: c.latitude,

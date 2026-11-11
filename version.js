@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.27';
+self.APP_VERSION = '0.99.28';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.28', date: '2026-11-11',
+    notes: [
+      'Gidis yonu yukari (course-up) rotasiz suruste de: arac 12 km/h ustunde hareket edince harita araci izler, arac ok olarak ekranin alt kisminda, gidis yonu ekranin ustunde; park edince (2 dk duran arac) harita serbest kalir.',
+      'Yon GPS gidis yonunden gelir (pusula kullanilmaz): 8 km/h altinda, dogruluk 50 m den kotuyken ya da yon yokken son guvenilir yon korunur; olcumler yumusatilir, yavasken tek seferlik GPS sicramasi yonu cevirmez.',
+      'Navigasyonda da ayni suzulmus GPS yonu kullanilir (rota disindayken); harita donusu yumusak. Harita yonu ayari (kuzey yukari) her iki modda gecerli.',
+    ],
+  },
   {
     v: '0.99.27', date: '2026-11-11',
     notes: [

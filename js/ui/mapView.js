@@ -254,6 +254,7 @@ export function initMap() {
   // Navigasyonda harita aracı izler; kullanıcı haritayı elle kaydırırsa 15 sn izleme durur.
   let lastHeading = 0;
   let navOn = false;
+  let driveOn = false; // rotasız sürüş takibi (nav/freeDrive.js): araç oku, gidiş yönü yukarı
   let headingUp = true;
   let zoomNow = 6;
 
@@ -281,7 +282,7 @@ export function initMap() {
       if (Math.abs(delta) > 2) { lastHeading = (lastHeading + delta * 0.6 + 360) % 360; turn = lastHeading; }
     }
     let center = { lat, lon };
-    if (navOn && headingUp) {
+    if ((navOn || driveOn) && headingUp) {
       const mpp = (156543.03 * Math.cos((lat * Math.PI) / 180)) / 2 ** zoomNow; // metre/piksel
       const d = mapEl.clientHeight * 0.22 * mpp; // harita yüksekliğinin ~%22'si kadar ileri
       const h = (lastHeading * Math.PI) / 180;
@@ -317,10 +318,33 @@ export function initMap() {
     });
     updateMe();
   };
+  /**
+   * Rotasız sürüş takibi (navigasyon kapalı): on ise araç ok olarak çizilir ve up=true iken harita gidiş yönüne döner (follow'a verilen
+   * yönle); kapanınca harita kuzey-yukarı döner. Navigasyon açıksa görünüm navView'dadır, burada değiştirilmez.
+   */
+  mapApi.driveView = (on, up = true) => {
+    on = !!on;
+    if (driveOn === on && (!on || headingUp === up)) return;
+    driveOn = on;
+    if (navOn || getState('nav').active) return; // navigasyon başlıyor/açık: görünüm navView'da
+    if (on) {
+      headingUp = up;
+      if (!up) { lastHeading = 0; whenMap(() => adapter.moveTo({ heading: 0 })); }
+    } else {
+      lastHeading = 0;
+      whenMap(() => adapter.moveTo({ tilt: 0, heading: 0 }));
+    }
+    updateMe();
+  };
+  mapApi.driving = () => driveOn && !navOn;
   /** Kullanıcı haritayı kaydırdı mı (takip duraklatıldı)? */
   mapApi.dragged = () => Date.now() - lastDrag < 15000;
   /** Takibe hemen dön (navigasyon görünümüne geri). */
-  mapApi.recenter = () => { lastDrag = 0; lastFollow = null; bearCur = null; zoomCur = null; mapApi.navView(navOn, headingUp); };
+  mapApi.recenter = () => {
+    lastDrag = 0; lastFollow = null; bearCur = null; zoomCur = null;
+    if (driveOn && !navOn) return updateMe(); // rotasız takipte yön korunur; sonraki konum (ya da çağıranın follow'u) araca ortalar
+    mapApi.navView(navOn, headingUp);
+  };
 
   /**
    * Akıcı navigasyon: her karede (navigator.js) araç rotadaki gösterilen konumda, kamera ona kilitli. Dönüş (yön-yukarı) ve zoom
@@ -430,7 +454,7 @@ export function initMap() {
     const pos = snap || e;
     meDot ??= dotEl(color, 16, '#fff');
     meArrow ??= el('div', 'me-arrow');
-    const content = navOn ? meArrow : meDot;
+    const content = navOn || driveOn ? meArrow : meDot;
     if (!me) me = marker(pos, content, 'Konumum');
     else { me.setPosition(pos); me.setContent(content); }
     meDot.style.background = color;

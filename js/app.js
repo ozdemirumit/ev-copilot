@@ -51,6 +51,7 @@ import { initHistoryPanel } from './ui/historyPanel.js';
 import { initCollapse } from './ui/collapse.js';
 import { initOcmKey } from './ui/ocmKey.js';
 import { initNavigator } from './nav/navigator.js';
+import { initFreeDrive } from './nav/freeDrive.js';
 import { initNearby } from './nav/nearby.js';
 import { initAhead } from './nav/ahead.js';
 import { initSpeedLimit } from './nav/speedLimit.js';
@@ -88,6 +89,7 @@ initRoutePanel();
 initVehiclePanel();
 initCustomStations();
 initNavigator();
+initFreeDrive(); // rotasız sürüşte harita aracı izler, gidiş yönü yukarı
 initNearby();
 initAhead();
 initSpeedLimit();
