@@ -86,8 +86,7 @@
         <label for="cur-soc">Pil</label>
         <div class="soc-input-row">
           <input type="range" id="cur-soc" min="0" max="100" step="1" value="80">
-          <span class="pct-group rp-soc-num"><span class="pct-sign" aria-hidden="true">%</span><input type="number" id="cur-soc-num" inputmode="numeric" min="0" max="100" step="1" aria-label="Mevcut pil yüzdesi"></span>
-        </div>
+          <span class="pct-group rp-soc-num"><span class="pct-sign" aria-hidden="true">%</span><input type="number" id="cur-soc-num" inputmode="numeric" min="0" max="100" step="1" aria-label="Mevcut pil yüzdesi"></span>        </div>
       </div>
       <p class="small muted hidden" id="cur-soc-note" style="margin:0"></p>
     </div>
@@ -873,6 +872,24 @@
   <button class="btn ghost" id="arrival-skip" type="button">Şimdi değil</button>
 </dialog>
 
+<input type="file" id="shot-file" accept="image/*" hidden>
+<dialog id="shot-dialog" class="sheet-dlg" aria-labelledby="shot-title">
+  <div class="dlg-head"><h2 id="shot-title">Ekran görüntüsünden pil</h2><button class="sheet-x" id="shot-x" type="button" aria-label="Kapat"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+  <p class="small muted" id="shot-status" role="status"></p>
+  <div class="stack hidden" id="shot-result">
+    <div class="soc-input-row">
+      <button class="soc-step" id="shot-minus" type="button" aria-label="Pili 1 azalt">−</button>
+      <span class="pct-group rp-soc-num"><span class="pct-sign" aria-hidden="true">%</span><input type="number" id="shot-soc" inputmode="numeric" min="0" max="100" step="1" aria-label="Okunan pil yüzdesi"></span>
+      <button class="soc-step" id="shot-plus" type="button" aria-label="Pili 1 artır">+</button>
+    </div>
+    <p class="small" id="shot-extra" style="margin:0"></p>
+    <p class="small" id="shot-warn" style="margin:0;color:var(--warn)"></p>
+    <button class="btn primary" id="shot-apply" type="button">Pili uygula</button>
+  </div>
+  <button class="btn ghost hidden" id="shot-other" type="button">Başka görüntü seç</button>
+  <button class="btn ghost" id="shot-close" type="button">Kapat</button>
+</dialog>
+
 <dialog id="soc-sheet" class="sheet-dlg" aria-labelledby="soc-sheet-title">
   <div class="dlg-head"><h2 id="soc-sheet-title">Pil durumu</h2><button class="sheet-x" id="soc-sheet-x" type="button" aria-label="Kapat"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button></div>
   <div class="soc-read">
@@ -886,6 +903,7 @@
     </div>
     <button class="soc-step" id="soc-sheet-plus" type="button" aria-label="Pili 1 artır">+</button>
   </div>
+  <button class="btn ghost sm" id="soc-sheet-shot" type="button">🖼️ Ekran görüntüsünden oku</button>
   <p class="small muted" id="soc-sheet-note" role="status"></p>
   <p class="small muted soc-range-note">Menzil seçili araca ve koşullara göre hesaplanan bir tahmindir.</p>
   <button class="btn primary" id="soc-sheet-done" type="button">Tamam</button>

@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.18';
+self.APP_VERSION = '0.99.19';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.19', date: '2026-11-11',
+    notes: [
+      'Pil yuzdesi artik arac uygulamasinin widget veya ekran goruntusunden okunabiliyor: Pil kartindaki ve pil penceresindeki dugme goruntu secer, OCR cihazda calisir, %, menzil ve zaman damgasi okunur, eski veri (1 saatten eski) uyarilir ve yuzde onaydan once duzenlenebilir',
+    ],
+  },
   {
     v: '0.99.18', date: '2026-11-11',
     notes: [
