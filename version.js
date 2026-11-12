@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.36';
+self.APP_VERSION = '0.99.37';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.37', date: '2026-11-12',
+    notes: [
+      'Test kararliligi: OCR/SOC senkron testi aralikli dusuyordu. Neden test duzenegiydi: cevrim basina kare sayisi 100 ms butceyle isletim sistemi zamanlayicisina bagliydi ve sahte kareler cevrimler arasinda kayiyordu (bazen 33/38 beraberligi, bazen tek cevrimden dogrulama). Testte cevrim sabit 3 kareye baglandi; uygulama davranisi, 5 sn guncelleme ve OCR1/OCR2 secenekleri degismedi.',
+    ],
+  },
   {
     v: '0.99.36', date: '2026-11-12',
     notes: [

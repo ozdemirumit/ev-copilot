@@ -88,7 +88,12 @@ const { startOcr, stopOcr } = await import('../js/sensors/ocr.js');
 const soc = await import('../js/physics/socEstimate.js');
 
 ok('5 sn güncelleme düzeni korunur', OCR.intervalMs === 5000);
-Object.assign(OCR, { intervalMs: 120, sampleGapMs: 1, cycleBudgetMs: 100, cycleTimeoutMs: 800 }); // çevrim başına 3-5 kare
+// Çevrim başına kare sayısı sabit (3) olmalı: eskiden 100 ms bütçe kare sayısını duvar saatine bağlıyordu (Windows'ta ~15,6 ms
+// zamanlayıcı → kare başına ~31 ms → 3/4/5 kare). Sahte kareler küresel sırayla döndüğünden 4 karede faz kayıp her 3. çevrim
+// [33,38,38,33] beraberliği (pencere merkezi 33 → stale), 5 karede [38,38,33,38,38] (çevrimden doğrulama) oluşuyor ve test
+// rastgele düşüyordu. 3 karede 38/33/38'in her dönüşümü 2/3 → senaryo çalıştırmadan bağımsız. Bütçe kare sayısını kesmesin diye
+// 3 karenin süresinin çok üstünde; okunamayan karelerde yöntem denemelerini yine sınırlar.
+Object.assign(OCR, { intervalMs: 120, sampleGapMs: 1, samples: 3, maxSamples: 3, cycleBudgetMs: 400, cycleTimeoutMs: 800 });
 
 let ct = 0;
 const video = { videoWidth: 1280, videoHeight: 720, dataset: {}, style: {}, srcObject: null, paused: false, play: async () => {}, get currentTime() { ct += 0.04; return ct; } };
@@ -119,6 +124,8 @@ ok('başlangıç: 39 doğrulanır ve canlı', await until(() => o().accepted ===
   const r0 = o().readAt;
   await wait(800);
   ok('aynı karışık okuma sürdükçe geçerli değer tazelenir (readAt ilerler, stale değil)', o().readAt > r0 && o().stale === false && o().status === 'ok', JSON.stringify(o().trace?.[0]));
+  const sizes = o().trace.filter((e) => e.kind === 'soc' && e.at > t0).map((e) => e.frames.length);
+  ok('karışık çevrimler sabit 3 kare (kare sayısı zamanlayıcıya bağlı değil)', sizes.length > 0 && sizes.every((n) => n === 3), JSON.stringify(sizes));
 }
 
 // 3) Tek farklı çevrim (tüm kareler 33): geçerli değer değişmez
