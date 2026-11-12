@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.38';
+self.APP_VERSION = '0.99.39';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.39', date: '2026-11-13',
+    notes: [
+      'Yakinimdaki istasyonlar listesine siralama: En yakin / En ucuz / En hizli (secim hatirlanir). En ucuzda yalnizca bilinen fiyatlar siralanir; tahmini ya da bilinmeyen fiyatlar etiketlenir ve bilinen fiyatlardan sonra gelir. En hizlida kayitta yazmayan guc etiketlenir ve sona alinir. Taze dolu/arizali istasyonlar her siralamada sona alinir; eski doluluk bilgisi bos sayilmaz, eski bilgi diye yazilir. Bilinmeyen fiyatta TL maliyet yazilmaz. Dusuk pil onerisi bu siralamadan etkilenmez.',
+    ],
+  },
   {
     v: '0.99.38', date: '2026-11-12',
     notes: [

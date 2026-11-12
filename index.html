@@ -519,12 +519,18 @@
     <!-- 2) Yakındakiler: 1 km, boşsa 10, 25, 50 km; en çok 3, + ile tümü -->
     <div class="card stack" id="near-card">
       <h2 style="margin:0">📍 Yakınımdaki istasyonlar</h2>
+      <div class="chips" id="near-sort" role="group" aria-label="Yakındakileri sırala">
+        <button class="btn sm sel" data-nearsort="near" type="button" aria-pressed="true">📍 En yakın</button>
+        <button class="btn sm" data-nearsort="cheap" type="button" aria-pressed="false">💰 En ucuz</button>
+        <button class="btn sm" data-nearsort="fast" type="button" aria-pressed="false">⚡ En hızlı</button>
+      </div>
       <p class="small muted" id="near-status" style="margin:0"></p>
+      <p class="small muted hidden" id="near-sort-note" role="status" style="margin:0"></p>
       <p class="small hidden" id="near-warn" style="margin:0;color:var(--warn,#f5b942)"></p>
       <p class="small hidden" id="near-power-note" role="status" style="margin:0;color:var(--warn,#f5b942)"></p>
       <div id="near-list"></div>
       <button class="more-btn hidden" id="near-more" type="button" aria-expanded="false"></button>
-      <p class="small muted" style="margin:0">Fiyat ve kW operatör tablosundan alınan tahmindir (gerçek tarife değil); * işaretli kW istasyon kaydında yazmıyor. Pil ve süre tahmini kuş uçuşu mesafenin ×1,35'i yol varsayımıyla hesaplanır.</p>
+      <p class="small muted" style="margin:0">Fiyatı bilinmeyen ya da tahmini olanlar etiketlidir ve En ucuz sıralamasında bilinen fiyatlardan sonra gelir; "tahmini" kW istasyon kaydında yazmıyor. Eski doluluk bilgisi boş sayılmaz. Pil ve süre tahmini kuş uçuşu mesafenin ×1,35'i yol varsayımıyla hesaplanır.</p>
     </div>
 
     <!-- 3) Filtre -->

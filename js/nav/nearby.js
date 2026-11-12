@@ -21,7 +21,8 @@ import { startNav, syncTopPanel } from './navigator.js';
 import { icon } from '../ui/icons.js';
 import { measuredSoc } from '../physics/socEstimate.js';
 import { paintMore } from '../ui/moreToggle.js';
-import { pickEmergency, priceText, isFast, PICK_TITLES, ROUTE_OFF_KM, ROUTE_NEAR_KM, ALERT_PAGE, alertList, alertPage } from './chargePick.js';
+import { pickEmergency, priceText, isFast, PICK_TITLES, ROUTE_OFF_KM, ROUTE_NEAR_KM, ALERT_PAGE, alertList, alertPage, priceStatus } from './chargePick.js';
+import { sortNearby, sortNote, availability, priceLabel, powerLabel, NEAR_SORTS } from './nearSort.js';
 
 const $ = (id) => document.getElementById(id);
 const BAT = VEHICLE.batteryNetKwh;
@@ -51,6 +52,7 @@ let radiusSetting = load('nearRadiusMode', 'auto');
 let radius = radiusSetting === 'auto' ? RADIUS_STEPS[0] : Number(radiusSetting); // son aranan (sonuç veren) yarıçap
 let nearOpen = false;
 let showAc = load('nearAc', false);
+let nearSort = NEAR_SORTS.includes(load('nearSort', 'near')) ? load('nearSort', 'near') : 'near'; // Yakındakiler sıralaması (yalnızca liste; düşük pil önerisini etkilemez)
 const bands = new Set(); // bu düşüş için konuşulmuş pil bantları
 
 const fmtKm = (v) => (v < 10 ? v.toFixed(1) : Math.round(v)).toString().replace('.', ',');
@@ -198,8 +200,12 @@ function cell(tag, cls, text) {
 function render() {
   const list = $('near-list');
   if (!list) return;
-  const items = visible();
+  const sorted = sortNearby(visible(), nearSort);
+  const items = sorted.list;
   const shown = items.slice(0, 30);
+  document.querySelectorAll('#near-sort [data-nearsort]').forEach((b) => { const on = b.dataset.nearsort === nearSort; b.classList.toggle('sel', on); b.setAttribute('aria-pressed', String(on)); });
+  const sn = $('near-sort-note');
+  if (sn) { const txt = items.length ? sortNote(nearSort, sorted) : ''; sn.textContent = txt; sn.classList.toggle('hidden', !txt); }
   mapApi.drawNearby(shown, focusId);
 
   const age = meta.at ? Math.round((Date.now() - meta.at) / 60000) : null;
@@ -222,14 +228,19 @@ function render() {
     left.append(cell('div', 'name', s.name));
     const meta1 = document.createElement('div');
     meta1.className = 'meta';
+    const known = priceStatus(s).known;
     meta1.append(
       cell('span', 'tag ' + (s.reachable ? 'best' : ''), s.reachable ? `${fmtKm(s.distKm)} km` : 'Yetmeyebilir'),
-      cell('span', '', `${s.opName} · ${s.slow ? 'AC/yavaş ' : ''}${s.kw} kW${s.uncertain ? '*' : ''}` + (s.foreign ? '' : ` · ${s.price.toFixed(2)} TL/kWh`)),
+      cell('span', '', `${s.opName} · ${s.slow ? 'AC/yavaş ' : ''}` + (powerLabel(s) ?? `${s.kw} kW`)
+        + (known && !(s.slots?.price?.kwh > 0) ? ` · ${s.price.toFixed(2)} TL/kWh` : '')), // canlı/bildirilen fiyat aşağıda livePrice ile yazılır
     );
+    const pl = priceLabel(s); // tahmini/bilinmeyen fiyat açıkça etiketlenir, doğrulanmış gibi gösterilmez
+    if (pl) meta1.append(cell('span', 'tag', pl));
     const meta2 = cell('div', 'meta', t('~{0} km yol', fmtKm(s.roadKm))
       + (s.arrive != null ? ' ' + t('· varışta %{0}', Math.max(0, s.arrive).toFixed(0)) : '')
-      + ' ' + (s.foreign ? t("· %{0}'e ≈ {1} dk", CHARGE_TO, Math.round(s.minutes)) : t("· %{0}'e ≈ {1} dk, {2} TL", CHARGE_TO, Math.round(s.minutes), s.cost.toFixed(0)))); // parçalar ayrı çevrilir (tek dizge olarak desen eşleşmez) // doluluk verisi yalnızca gelen istasyonda gösterilir (altta slotEl)
-    const slotNode = slotEl(s);
+      + ' ' + (s.foreign || !known ? t("· %{0}'e ≈ {1} dk", CHARGE_TO, Math.round(s.minutes)) : t("· %{0}'e ≈ {1} dk, {2} TL", CHARGE_TO, Math.round(s.minutes), s.cost.toFixed(0)))); // parçalar ayrı çevrilir (tek dizge olarak desen eşleşmez) // doluluk verisi yalnızca gelen istasyonda gösterilir (altta slotEl)
+    const av = availability(s);
+    const slotNode = av === 'stale' ? cell('span', '', ' · ⚪ doluluk bilgisi eski') : slotEl(s); // eski veri "boş"/"dolu" diye gösterilmez
     if (slotNode) meta2.append(slotNode);
     const lp = livePrice(s);
     if (lp) meta2.append(' · ', cell('span', '', lp.text));
@@ -476,6 +487,13 @@ export function initNearby() {
     refreshNearby({ force: true });
   });
   $('near-more').addEventListener('click', () => { nearOpen = !nearOpen; render(); });
+  $('near-sort')?.addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-nearsort]');
+    if (!b || !NEAR_SORTS.includes(b.dataset.nearsort)) return;
+    nearSort = b.dataset.nearsort;
+    save('nearSort', nearSort);
+    render();
+  });
   // İstasyonlar sekmesi açılınca liste yoksa/eskiyse (5 dk) ya da 1 km'den fazla yer değiştirdiysen kendiliğinden ara
   document.addEventListener('tabchange', (ev) => {
     if (ev.detail !== 'stations' || busy) return;
