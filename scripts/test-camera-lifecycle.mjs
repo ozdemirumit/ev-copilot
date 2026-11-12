@@ -1,6 +1,7 @@
 // Kamera yaşam döngüsü (camera.js): lens seçimi/sabitleme, önce kapat, geri dönüş, track ended/mute, yetenek ayarı.
 // Kullanım: node scripts/test-camera-lifecycle.mjs
-import { pickWideDevice, tuningPlan, exposureStep } from '../js/sensors/camera.js';
+import { readFileSync } from 'node:fs';
+import { pickWideDevice, tuningPlan, exposureStep, legacyZoomRoi } from '../js/sensors/camera.js';
 
 let pass = 0, fail = 0;
 const ok = (name, cond) => { cond ? pass++ : fail++; console.log(cond ? 'ok  ' : 'FAIL', name); };
@@ -34,10 +35,10 @@ class FakeTrack extends EventTarget {
   stop() { this.readyState = 'ended'; this.log.push(`stop:${this.deviceId}`); }
   getSettings() { return { deviceId: this.deviceId, ...(this.applied.at(-1)?.advanced?.[0] || {}) }; }
   getCapabilities() { return this.caps; }
-  async applyConstraints(c) { this.applied.push(c); }
+  async applyConstraints(c) { if (this.rejectZoom && c.advanced?.[0]?.zoom != null) throw Object.assign(new Error('zoom'), { name: 'OverconstrainedError' }); this.applied.push(c); }
   fire(type) { if (type === 'ended') this.readyState = 'ended'; if (type === 'mute') this.muted = true; if (type === 'unmute') this.muted = false; this.dispatchEvent(new Event(type)); }
 }
-function browser({ devices, caps = {}, failOn = () => false, defaultId = 'b' }) {
+function browser({ devices, caps = {}, failOn = () => false, defaultId = 'b', rejectZoom = false }) {
   const log = [];
   const tracks = [];
   let live = 0;
@@ -48,6 +49,7 @@ function browser({ devices, caps = {}, failOn = () => false, defaultId = 'b' }) 
       log.push(`open:${exact || 'facing'}`);
       if (failOn(exact || 'facing')) throw Object.assign(new Error('fail'), { name: 'NotReadableError' });
       const t = new FakeTrack(exact || defaultId, caps, log);
+      t.rejectZoom = rejectZoom;
       const origStop = t.stop.bind(t);
       t.stop = () => { if (t.readyState === 'live') live--; origStop(); };
       live++; maxLive = Math.max(maxLive, live);
@@ -140,10 +142,81 @@ const WIDE = [d('b', 'Back Camera'), d('u', 'Back Ultra Wide Camera')];
   const cam = await fresh('g2');
   const v = video();
   await cam.startCamera(v);
-  await cam.setZoom(v, 0.5);
+  await tick();
   const adv = b.tracks[0].applied.at(-1).advanced[0];
-  ok('zoom uygulanırken odak ayarı kaybolmaz', adv.zoom === 0.5 && adv.focusMode === 'continuous');
+  ok('donanım zoom’u açılışta en genişe (alt sınır) sabitlenir, odak korunur', adv.zoom === 0.5 && adv.focusMode === 'continuous');
+  ok('dijital yakınlaştırma yok: data-dz 1, transform yok', v.dataset.dz === '1' && v.style.transform === '');
+  ok('zoomInfo en geniş değeri bildirir', cam.zoomInfo().hardware && cam.zoomInfo().applied === 0.5);
+  ok('kullanıcı zoom API’si kaldırıldı', cam.setZoom === undefined && cam.zoomRange === undefined);
+  const n = b.tracks[0].applied.length;
+  await cam.nudgeExposure(-1, 100000);
+  ok('pozlama ayarı en geniş zoom’u bozmaz', b.tracks[0].applied.length === n); // pozlama yeteneği yok: değişmez
   cam.stopCamera(v);
+  await cam.startCamera(v);
+  await tick();
+  ok('yeniden açılışta (sabit kamera) yine en geniş zoom', b.tracks.at(-1).applied.at(-1)?.advanced?.[0]?.zoom === 0.5 && v.dataset.dz === '1');
+  cam.stopCamera(v);
+}
+{
+  const caps = { focusMode: ['continuous'], zoom: { min: 1, max: 10, step: 0.1 } };
+  const b = browser({ devices: [d('b', 'Back Camera')], caps, rejectZoom: true });
+  const cam = await fresh('g3');
+  const v = video();
+  await cam.startCamera(v);
+  await tick(); await tick();
+  const adv = b.tracks[0].applied.at(-1)?.advanced?.[0];
+  ok('zoom reddedilirse odak yine uygulanır, varsayılan 1× (zoom istenmez)', adv?.focusMode === 'continuous' && !('zoom' in adv));
+  ok('zoom reddi tanılamada', /zoom uygulanamadı/.test(cam.cameraDiag().note) && cam.zoomInfo().applied === 1);
+  ok('ret durumunda da dijital yakınlaştırma yok', v.dataset.dz === '1' && v.style.transform === '');
+  cam.stopCamera(v);
+}
+{
+  const b = browser({ devices: [d('b', 'Back Camera')], caps: { focusMode: ['continuous'] } });
+  const cam = await fresh('g4');
+  const v = video();
+  await cam.startCamera(v);
+  await tick();
+  ok('donanım zoom’u yoksa zoom istenmez (varsayılan arka 1×)', !('zoom' in (b.tracks[0].applied.at(-1)?.advanced?.[0] || {})) && !cam.zoomInfo().hardware);
+  ok('donanım zoom’u yoksa data-dz 1', v.dataset.dz === '1' && v.style.transform === '');
+  cam.stopCamera(v);
+}
+
+// --- Plan: zoom alt sınırı ---
+ok('plan: zoom alt sınırı seçilir', tuningPlan({ zoom: { min: 0.6, max: 10 } }).zoom === 0.6);
+ok('plan: sabit (min=max) zoom istenmez', !('zoom' in tuningPlan({ zoom: { min: 1, max: 1 } })));
+
+// --- Eski camZoom kaydı ---
+globalThis.document ??= { createElement: () => ({ getContext: () => null }) }; // preprocess.js modül düzeyinde tuval açar
+const { roiToVideoRect } = await import('../js/sensors/preprocess.js');
+{
+  const roi = { x: 0.3, y: 0.2, w: 0.4, h: 0.3 };
+  const roiSpeed = { x: 0.1, y: 0.6, w: 0.2, h: 0.2 };
+  ok('kayıt yoksa ROI değişmez', legacyZoomRoi(null, { roi }).changed === false);
+  ok('1× kayıt yok sayılır', legacyZoomRoi(1, { roi }).changed === false && !legacyZoomRoi(1, { roi }).recalibrate);
+  ok('geçersiz kayıt yok sayılır', legacyZoomRoi('abc', { roi }).changed === false);
+  const r = legacyZoomRoi(2, { roi, roiSpeed });
+  ok('dijital 2×: ROI merkeze göre eşlenir', r.changed && Math.abs(r.rois.roi.x - 0.4) < 1e-9 && Math.abs(r.rois.roi.w - 0.2) < 1e-9 && Math.abs(r.rois.roi.y - 0.35) < 1e-9 && Math.abs(r.rois.roi.h - 0.15) < 1e-9);
+  ok('hız ROI’si de eşlenir', Math.abs(r.rois.roiSpeed.x - 0.3) < 1e-9 && Math.abs(r.rois.roiSpeed.y - 0.55) < 1e-9);
+  // Kırpma tutarlılığı: eski (dz=2) ROI ile yeni (dz=1) ROI aynı video piksellerini kırpar
+  const stage = { clientWidth: 320, clientHeight: 200 };
+  const vOld = { videoWidth: 1280, videoHeight: 720, dataset: { dz: '2' } };
+  const vNew = { videoWidth: 1280, videoHeight: 720, dataset: { dz: '1' } };
+  for (const k of ['roi', 'roiSpeed']) {
+    const a = roiToVideoRect(vOld, stage, k === 'roi' ? roi : roiSpeed);
+    const c = roiToVideoRect(vNew, stage, r.rois[k]);
+    ok(`kırpma tutarlı (${k})`, ['sx', 'sy', 'sw', 'sh'].every((p) => Math.abs(a[p] - c[p]) < 1e-6));
+  }
+  const hw = legacyZoomRoi(3, { roi }, { hardware: true, hwMin: 0.5 });
+  ok('donanım zoom’u kaydı: ROI korunur, yeniden ayar istenir', !hw.changed && hw.recalibrate && hw.rois.roi === roi);
+  ok('donanım zoom’u zaten en genişse yeniden ayar istenmez', !legacyZoomRoi(0.5, { roi }, { hardware: true, hwMin: 0.5 }).recalibrate);
+}
+
+// --- Arayüz: yakınlaştırma denetimi yok ---
+{
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const panel = readFileSync(new URL('../js/ui/cameraPanel.js', import.meta.url), 'utf8');
+  ok('index.html’de yakınlaştırma kaydırıcısı yok', !/cam-zoom/.test(html));
+  ok('kamera paneli zoom ayarlamaz, camZoom kaydetmez', !/setZoom|zoomRange|cam-zoom|save\('camZoom'/.test(panel));
 }
 {
   const b = browser({ devices: [d('b', 'Back Camera')] });

@@ -57,6 +57,7 @@ function makeRoi(stage, box, handle, key) {
   });
 
   paint();
+  subscribe('ocr', paint); // kutu dışarıdan değişirse de (eski yakınlaştırma kaydının uyarlanması) güncel görünsün
 }
 
 export function initRoiBox() {

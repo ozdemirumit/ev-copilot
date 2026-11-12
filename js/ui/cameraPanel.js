@@ -1,7 +1,7 @@
 import { getState, patch, subscribe } from '../state.js';
-import { load, save } from '../utils/storage.js';
+import { load, save, remove } from '../utils/storage.js';
 import { persistCamera } from './roiBox.js';
-import { startCamera, stopCamera, zoomRange, setZoom, onCameraStatus, cameraDiag } from '../sensors/camera.js';
+import { startCamera, stopCamera, zoomInfo, legacyZoomRoi, onCameraStatus, cameraDiag } from '../sensors/camera.js';
 import { invalidateSkew, roiToVideoRect } from '../sensors/preprocess.js';
 import { startOcr, stopOcr, startPreview, stopPreview, setOcrEngine } from '../sensors/ocr.js';
 import { startCamPreview, stopCamPreview, mirrorActive } from './camPreview.js';
@@ -37,24 +37,19 @@ export function initCameraPanel() {
   const contrast = $('ocr-contrast');
   const threshold = $('ocr-threshold');
 
-  // Yakınlaştırma: donanım zoom'u varsa o, yoksa dijital. Seçim hatırlanır.
-  const zoom = $('cam-zoom');
-  const zoomOut = $('cam-zoom-out');
-  const paintZoom = () => { zoomOut.textContent = Number(zoom.value).toFixed(1) + '×'; };
-  async function applyZoom() {
-    paintZoom();
-    invalidateSkew(); // görüntü ölçeği değişti
-    try { await setZoom(video, Number(zoom.value)); } catch (err) { toast('Yakınlaştırma uygulanamadı: ' + (err.message || err.name)); }
+  // Yakınlaştırma ayarı yok: kamera en geniş görüşte sabittir (camera.js). Eski sürümlerin kayıtlı yakınlaştırması (camZoom) bir kez
+  // ROI'ye çevrilir (dijitalse kesin eşleme) ya da ROI korunup yeniden ayar istenir (donanım zoom'u güvenli eşlenemez); sonra silinir.
+  function migrateLegacyZoom() {
+    const saved = load('camZoom', null);
+    if (saved == null) return;
+    const z = zoomInfo();
+    const o = getState('ocr');
+    const res = legacyZoomRoi(saved, { roi: o.roi, roiSpeed: o.roiSpeed }, { hardware: z.hardware, hwMin: z.min });
+    if (res.changed) { patch('ocr', res.rois); persistCamera(); }
+    remove('camZoom');
+    if (res.recalibrate) toast('Kamera artık en geniş görüşte sabit. Okuma kutusunu (ROI) ekrandaki rakamlara göre yeniden ayarlayın.');
+    else if (res.changed) toast('Kamera artık en geniş görüşte sabit; okuma kutusu buna göre uyarlandı.');
   }
-  async function setupZoom() {
-    const r = zoomRange();
-    zoom.min = r.min; zoom.max = r.max; zoom.step = r.step;
-    const saved = load('camZoom', null); // kayıt yoksa: donanım zoom'u 1'in altına iniyorsa (geniş açı) en genişi, yoksa 1×
-    zoom.value = Math.min(r.max, Math.max(r.min, saved ?? (r.hardware ? r.min : 1)));
-    $('cam-zoom-kind').textContent = r.hardware ? 'kamera zoom\'u' : 'dijital (netlik azalır)';
-    await applyZoom();
-  }
-  zoom.addEventListener('input', () => { save('camZoom', Number(zoom.value)); applyZoom(); });
 
   camBtn.addEventListener('click', async () => {
     if (getState('system').camera) {
@@ -68,7 +63,7 @@ export function initCameraPanel() {
     try {
       await startCamera(video);
       invalidateSkew();
-      await setupZoom();
+      migrateLegacyZoom();
       patch('system', { camera: true });
       startPreview(video, stage, $('ocr-preview'));
       startCamPreview(video, stage, $('cam-mirror'));
@@ -81,7 +76,6 @@ export function initCameraPanel() {
   onCameraStatus((event) => {
     if (event === 'recovered') {
       invalidateSkew();
-      setupZoom().catch(() => {});
     } else if (event === 'lost') {
       stopOcr();
       stopPreview();
@@ -111,7 +105,6 @@ export function initCameraPanel() {
     camBtn.textContent = s.camera ? '⏹ Kamerayı Durdur' : '📷 Kamerayı Başlat';
     $('cam-empty').classList.toggle('hidden', s.camera);
     ocrBtn.disabled = !s.camera;
-    zoom.disabled = !s.camera;
     ocrBtn.textContent = s.ocr ? '⏹ OCR Durdur' : '🔍 OCR Başlat';
     ocrBtn.classList.toggle('sel', s.ocr);
   });

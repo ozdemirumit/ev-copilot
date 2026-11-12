@@ -2,8 +2,17 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.40';
+self.APP_VERSION = '0.99.41';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.41', date: '2026-11-13',
+    notes: [
+      'Kamera sekmesindeki Yakınlaştırma kaydırıcısı kaldırıldı: kamera artık her zaman en geniş görüşte sabit. Etiketinden tanınan ultra geniş arka kamera varsa o seçilip oturum boyunca sabit kalır (kamera değiştirme yok); cihaz donanım zoom’u veriyorsa en küçük değeri (en geniş) uygulanır, odak/pozlama ayarı korunur; zoom desteklenmez ya da reddedilirse varsayılan arka kamera 1× kullanılır.',
+      'Dijital (CSS) yakınlaştırma tamamen kaldırıldı: görüntü büyütülmez, OCR kırpması her zaman ölçeksiz kareyle eşlenir.',
+      'Eski sürümde kaydedilmiş yakınlaştırma (camZoom) artık kullanılmaz ve bir kez silinir. Dijital yakınlaştırmayla ayarlanmış okuma kutuları (SOC ve hız) aynı ekran bölgesini okuyacak şekilde kesin olarak uyarlanır. Donanım zoom’uyla kaydedilmiş bir değer güvenle eşlenemediği için kutu olduğu gibi bırakılır ve kutuyu yeniden ayarlamanız istenir.',
+      'OCR algoritması, 5 saniyelik okuma aralığı, OCR 1/OCR 2, SOC, navigasyon ve rota planlama değişmedi. Telefonda/tarayıcıda henüz doğrulanmadı.',
+    ],
+  },
   {
     v: '0.99.40', date: '2026-11-13',
     notes: [

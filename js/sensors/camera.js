@@ -1,8 +1,9 @@
-// Kamera yaşam döngüsü: en geniş açılı arka fiziksel kamerayı seçer ve oturum boyunca sabitler, odak/pozlamayı destekleniyorsa ayarlar,
+// Kamera yaşam döngüsü: en geniş açılı arka fiziksel kamerayı seçer ve oturum boyunca sabitler, donanım zoom'unu en genişte sabitler,
+// odak/pozlamayı destekleniyorsa ayarlar,
 // track ended/mute durumlarını izler. Web API lens seçimini yalnızca cihaz etiketiyle mümkün kılar; sınırlamalar cameraDiag() ile raporlanır.
 let stream = null;
 let track = null;
-let hw = null; // cihaz donanım zoom'u destekliyorsa { min, max, step }
+let hw = null; // cihaz donanım zoom'u destekliyorsa { min, max }; açılışta alt sınır (en geniş) uygulanır
 let videoEl = null;
 
 let gen = 0; // stopCamera/startCamera ile artar: eski işlemler sonuç yazmaz
@@ -60,7 +61,33 @@ export function tuningPlan(caps) {
   if (caps?.focusMode?.includes('continuous')) plan.focusMode = 'continuous';
   else if (caps?.focusMode?.includes('single-shot')) plan.focusMode = 'single-shot';
   if (caps?.exposureMode?.includes('continuous')) plan.exposureMode = 'continuous';
+  const z = caps?.zoom;
+  if (z && Number.isFinite(z.min) && z.max > z.min) plan.zoom = z.min; // sabit en geniş görüş: donanım zoom'unun alt sınırı (kullanıcı ayarı yok)
   return plan;
+}
+
+/**
+ * Eski sürümlerdeki kayıtlı yakınlaştırmadan (camZoom) kalan ROI'leri sabit en geniş görüşe uyarlar. Saf işlev.
+ * - Dijital yakınlaştırma (donanım zoom'u yok) kesin eşlenir: görünen alan ortadan 1/z küçülüyordu → x' = 0,5 + (x − 0,5)/z, w' = w/z.
+ * - Donanım zoom'u ile kaydedilmiş değer optik görüşü değiştirdiğinden güvenli eşlenemez: ROI korunur, yeniden ayar gerekir.
+ * Dönüş: { rois, changed, recalibrate }.
+ */
+export function legacyZoomRoi(savedZoom, rois, { hardware = false, hwMin = 1 } = {}) {
+  const z = Number(savedZoom);
+  const same = { rois, changed: false, recalibrate: false };
+  if (savedZoom == null || !Number.isFinite(z)) return same;
+  if (hardware) return { ...same, recalibrate: z > hwMin + 1e-6 };
+  if (!(z > 1 + 1e-6)) return same;
+  const map = (r) => {
+    if (!r || ![r.x, r.y, r.w, r.h].every(Number.isFinite)) return r;
+    const w = r.w / z, h = r.h / z;
+    const x = Math.min(1 - w, Math.max(0, 0.5 + (r.x - 0.5) / z));
+    const y = Math.min(1 - h, Math.max(0, 0.5 + (r.y - 0.5) / z));
+    return { ...r, x, y, w, h };
+  };
+  const out = {};
+  for (const k of Object.keys(rois || {})) out[k] = map(rois[k]);
+  return { rois: out, changed: true, recalibrate: false };
 }
 
 /** Pozlama telafisinde bir adım; aralık yoksa null. */
@@ -153,7 +180,15 @@ function tune(t) {
   applied = [];
   unsupported = CONTROLS.filter((k) => caps[k] == null);
   if (!Object.keys(desired).length) return;
-  applyDesired(t).then(() => reportApplied(t)).catch((err) => console.warn('Kamera ayarı uygulanamadı:', err));
+  applyDesired(t).then(() => reportApplied(t)).catch((err) => {
+    if (!('zoom' in desired)) return console.warn('Kamera ayarı uygulanamadı:', err);
+    // Zoom reddedildiyse odak/pozlama kaybolmasın: zoom'suz (varsayılan 1×) yeniden dene
+    delete desired.zoom;
+    const msg = 'En geniş zoom uygulanamadı; varsayılan 1× görüş';
+    if (!info.note?.includes(msg)) info = { ...info, note: [info.note, msg].filter(Boolean).join(' · ') };
+    if (!Object.keys(desired).length) return;
+    applyDesired(t).then(() => reportApplied(t)).catch((e) => console.warn('Kamera ayarı uygulanamadı:', e));
+  });
 }
 
 function watch(t) {
@@ -237,7 +272,7 @@ async function attach(got, video) {
     info = { label: got.label || track?.label || '', method: got.method, note: got.note };
   }
   const z = track?.getCapabilities?.().zoom;
-  hw = z && z.max > z.min ? { min: z.min, max: z.max, step: z.step || 0.1 } : null;
+  hw = z && z.max > z.min ? { min: z.min, max: z.max } : null;
   if (track) { tune(track); watch(track); }
   resetView(video);
   video.srcObject = stream;
@@ -310,26 +345,13 @@ export async function nudgeExposure(signal, now = Date.now()) {
   }
 }
 
+/** Dijital (CSS) yakınlaştırma kullanılmaz: OCR kırpması her zaman ölçeksiz görüntüyle eşlenir (sensors/preprocess.js `data-dz`). */
 function resetView(video) {
   video.dataset.dz = '1';
   video.style.transform = '';
 }
 
-/**
- * Yakınlaştırma aralığı: cihaz donanım zoom'u veriyorsa o (netlik bozulmaz, OCR aynı kalır), yoksa 1-4× dijital
- * (görüntü kutuda büyütülür, OCR kırpması buna göre eşlenir: sensors/preprocess.js `data-dz`).
- */
-export function zoomRange() {
-  return hw ? { min: hw.min, max: Math.min(hw.max, 8), step: hw.step, hardware: true } : { min: 1, max: 4, step: 0.1, hardware: false };
-}
-
-export async function setZoom(video, z) {
-  if (hw && track) {
-    desired.zoom = z;
-    await applyDesired();
-    resetView(video);
-  } else {
-    video.dataset.dz = String(z);
-    video.style.transform = `scale(${z})`;
-  }
+/** Donanım zoom'u: { hardware, min, max, applied } — sabit en geniş değer; kullanıcı ayarı yoktur. */
+export function zoomInfo() {
+  return { hardware: !!hw, min: hw?.min ?? 1, max: hw?.max ?? 1, applied: desired.zoom ?? 1 };
 }
