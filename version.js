@@ -2,8 +2,17 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.39';
+self.APP_VERSION = '0.99.40';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.40', date: '2026-11-13',
+    notes: [
+      'Rota sayfasına katlanır “Rota seçeneklerini karşılaştır” bölümü: aynı güzergâh üzerinde Hızlı / Ekonomik / Optimum şarj planları süre, durak, maliyet ve pil payıyla yan yana. Rota sağlayıcısı tek güzergâh verdiği için alternatif güzergâh uydurulmaz; bu açıkça yazılır.',
+      '“En ucuz” rozeti yalnızca tüm farklı planların maliyeti bilinen tarifeyle hesaplanabiliyorsa verilir; tahmini (ortalama) ve bilinmeyen fiyat ayrı yazılır, bilinmeyen tutar toplama eklenmez.',
+      '“En düşük risk” ölçütleri gösterilir: önce yolculuktaki en düşük tahmini pil, sonra belirsiz durak sayısı (güç bilinmiyor, AC, taze bilgiye göre dolu/arızalı), sonra durak sayısı. Aynı planı veren modlar tek plan sayılır.',
+      'Seçenekler mevcut planla aynı başlangıç km/pil ve ilk durak sınırıyla kurulur; bölüm yalnızca açıkken hesaplanır. “Bunu kullan” İstasyon sekmesindeki mod çipleriyle aynı yoldan planlayıcı modunu değiştirir. Navigasyon ekranı, kamera, SOC ve yakın sıralama değişmedi.',
+    ],
+  },
   {
     v: '0.99.39', date: '2026-11-13',
     notes: [
