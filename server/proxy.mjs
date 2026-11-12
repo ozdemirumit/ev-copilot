@@ -18,6 +18,7 @@ import { createMailer } from './mailer.mjs';
 import { createAppFiles } from './appfiles.mjs';
 import { lookupAll } from './occupancy.mjs';
 import { hereBrowse, compact } from './here.mjs';
+import { googleStationsNear } from './googleStations.mjs';
 import { tomtomAllowed, tomtomUsage, tomtomRoute, validPts } from './tomtom.mjs';
 import { createPriceBook } from './prices.mjs';
 import { createVeriApi } from './veriapi.mjs';
@@ -136,7 +137,7 @@ const once = (k, fn) => {
 };
 
 // ---------- kullanıcı başına günlük kota (Mapbox faturasını ve ortak Overpass'i korur) ----------
-const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 40), here: Number(env.HERE_DAILY_PER_USER || 800), price: 20, presence: 60, status: 30, sinfo: 600, srate: 60, sfac: 120, sphoto: 15, sreport: 10, map: Number(env.MAP_DAILY_PER_USER || 100), slimit: Number(env.SPEEDLIMIT_DAILY_PER_USER || 40), tomtom: Number(env.TOMTOM_ROUTE_DAILY_PER_USER || 150) };
+const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 40), gsearch: Number(env.GOOGLE_STATIONS_DAILY_PER_USER || 60), here: Number(env.HERE_DAILY_PER_USER || 800), price: 20, presence: 60, status: 30, sinfo: 600, srate: 60, sfac: 120, sphoto: 15, sreport: 10, map: Number(env.MAP_DAILY_PER_USER || 100), slimit: Number(env.SPEEDLIMIT_DAILY_PER_USER || 40), tomtom: Number(env.TOMTOM_ROUTE_DAILY_PER_USER || 150) };
 const MAP_TOTAL = Number(env.MAP_DAILY_TOTAL || 3000); // tüm kullanıcılar için günlük harita anahtarı verme tavanı (Mapbox/Google faturasını korur)
 let mapToday = { d: '', n: 0 };
 /** Harita anahtarı döndürmeden önce: toplam ve kullanıcı başı günlük hak. Yalnızca anahtar dönen çağrılar sayılır (osm sayılmaz). */
@@ -156,6 +157,16 @@ function googleAllowed(id) {
   if (gToday.d !== d) gToday = { d, n: 0 };
   if (gToday.n >= GOOGLE_TOTAL || overQuota(id, 'google')) return false;
   gToday.n++;
+  return true;
+}
+// Google istasyon LİSTESİ (Places Nearby, ücretli): doluluk çağrılarından (GOOGLE_TOTAL) ayrı tavan; fatura kalemi aynı ('google' türü, aynı ücretsiz aylık kota).
+const GSTATIONS_TOTAL = Number(env.GOOGLE_STATIONS_DAILY_TOTAL || 400); // tüm kullanıcılar için günlük çağrı tavanı
+let gsToday = { d: '', n: 0 };
+function googleStationsAllowed(id) {
+  const d = new Date().toISOString().slice(0, 10);
+  if (gsToday.d !== d) gsToday = { d, n: 0 };
+  if (gsToday.n >= GSTATIONS_TOTAL || overQuota(id, 'gsearch')) return false;
+  gsToday.n++;
   return true;
 }
 const usage = new Map();
@@ -327,6 +338,30 @@ async function hereStations(req, res, url, id) {
     return { status: 200, type: 'application/json; charset=utf-8', body, pass: {} };
   }).catch((err) => ({ status: err.status === 429 ? 429 : 502, type: 'application/json', body: Buffer.from(JSON.stringify({ error: err.status ? 'HERE HTTP ' + err.status : 'HERE yanıt vermedi' })), pass: {} }));
   if (u.status === 200) cset(key, u, 6 * 3600e3);
+  reply(res, u, { 'X-Cache': 'miss' });
+}
+
+// ---------- Premium Google istasyon listesi (Places Nearby; en çok 20 kayıt/çağrı, ücretli) ----------
+// Yalnızca Premium. Günlük tavan: kullanıcı başı GOOGLE_STATIONS_DAILY_PER_USER (60), toplam GOOGLE_STATIONS_DAILY_TOTAL (400); yönetici kullanıcı başı tavandan muaf.
+// Yanıt 30 dk bellek önbelleğinde (önbellek isabeti hak ve faturadan düşmez); tavan dolunca 402 (google_cap), uygulama diğer kaynaklarla sürer.
+async function googleStationsRoute(req, res, url, id) {
+  if (!GOOGLE_PLACES) return json(res, 501, { error: 'Sunucuda Google anahtarı yok' });
+  if (url.pathname !== '/google/stations' || req.method !== 'GET') return json(res, 404, { error: 'yol yok' });
+  if (!premiumOk(id)) return json(res, 402, { error: 'premium_required' });
+  const lat = Number(url.searchParams.get('lat'));
+  const lon = Number(url.searchParams.get('lon'));
+  const r = Math.min(30, Math.max(1, Number(url.searchParams.get('r')) || 15));
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return json(res, 400, { error: 'geçersiz konum' });
+  const key = `gst:${lat.toFixed(3)},${lon.toFixed(3)}:${r}`;
+  const hit = cget(key);
+  if (hit) return reply(res, hit, { 'X-Cache': 'hit' });
+  if (!googleStationsAllowed(id)) return json(res, 402, { error: 'google_cap' });
+  const u = await once(key, async () => {
+    costs.add(id, 'google');
+    const out = await googleStationsNear(GOOGLE_PLACES, { lat, lon, r: r * 1000 });
+    return { status: 200, type: 'application/json; charset=utf-8', body: Buffer.from(JSON.stringify(out)), pass: {} };
+  }).catch((err) => ({ status: err.status === 429 ? 429 : 502, type: 'application/json', body: Buffer.from(JSON.stringify({ error: err.status ? 'Google HTTP ' + err.status : 'Google yanıt vermedi' })), pass: {} })); // gövde ve anahtar günlüğe/yanıta girmez
+  if (u.status === 200) cset(key, u, 30 * 60e3);
   reply(res, u, { 'X-Cache': 'miss' });
 }
 
@@ -590,7 +625,7 @@ const tesla = createTesla(env.DATA_DIR || join(here, 'data'));
 const costs = createCosts(store, env);
 const devices = createDevices(store);
 const mailer = createMailer(env); // SMTP_USER/SMTP_PASS yoksa null
-const accounts = createAccounts({ onDelete: (uid) => { priceBook.forget(uid); community.forget(uid); stationInfo.forget(uid); costs.forget(uid); devices.forget(uid); }, onLink: (deviceId, uid, ip) => devices.link(deviceId, uid, ip), devicesOf: (uid) => devices.forUser(uid), costs, mailer, env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, here: !!HERE, ocm: !!OCM, overpass: true, occupancy: true, tomtom: !!TOMTOM }) });
+const accounts = createAccounts({ onDelete: (uid) => { priceBook.forget(uid); community.forget(uid); stationInfo.forget(uid); costs.forget(uid); devices.forget(uid); }, onLink: (deviceId, uid, ip) => devices.link(deviceId, uid, ip), devicesOf: (uid) => devices.forUser(uid), costs, mailer, env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, here: !!HERE, ocm: !!OCM, overpass: true, occupancy: true, tomtom: !!TOMTOM, googleStations: !!GOOGLE_PLACES }) });
 
 const appFiles = createAppFiles({ dir: join(here, 'public'), send });
 
@@ -656,9 +691,10 @@ const server = http.createServer(async (req, res) => {
     if (adminAuth && id.kind === 'legacy' && pp.startsWith('/admin') && !adminTok && !isLocal(req)) return json(res, 401, { error: 'totp_required' }); // dışarıdan yalnızca erişim koduyla yönetim yok
     if (dev && id.kind === 'user') devices.link(dev, id.user.id, ip); // oturumlu istek: cihaz hesaba bağlanır (giriş öncesi anonim kayıt birleşir)
     const p = url.pathname;
-    if (p === '/health') return json(res, 200, { ok: true, mapbox: !!MAPBOX, here: !!HERE, ocm: !!OCM, tomtom: !!TOMTOM, overpass: true, occupancy: true, v: 3 });
+    if (p === '/health') return json(res, 200, { ok: true, mapbox: !!MAPBOX, here: !!HERE, ocm: !!OCM, tomtom: !!TOMTOM, googleStations: !!GOOGLE_PLACES, overpass: true, occupancy: true, v: 3 });
     if (p.startsWith('/mapbox/')) return await mapbox(req, res, url, id);
     if (p.startsWith('/here/')) return await hereStations(req, res, url, id);
+    if (p.startsWith('/google/')) return await googleStationsRoute(req, res, url, id);
     if (p.startsWith('/ocm/')) return await ocm(req, res, url, id);
     if (p === '/tomtom/route' && req.method === 'GET') return await tomtomRouteRoute(req, res, url, id);
     if (p === '/overpass') return await overpass(req, res, url, id);

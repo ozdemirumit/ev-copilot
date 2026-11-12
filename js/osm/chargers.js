@@ -1,5 +1,6 @@
-// Şarj istasyonları OpenStreetMap'ten (Overpass API, anahtarsız) ve kullanıcı bir OpenChargeMap anahtarı girdiyse
-// OpenChargeMap'ten (ikisi birleştirilir). Canlı yuva doluluğu YOKTUR (slots hep null). Fiyat burada da operatör tablosundan gelir.
+// Şarj istasyonları sırayla: HERE (sunucuda anahtar varsa) → Mapbox (anahtar varsa) → Overpass/OpenStreetMap (yedek ve boşluk doldurma);
+// ek olarak Google Places (Premium, sunucuda anahtar varsa), OpenChargeMap (anahtar varsa) ve Tesla Supercharger; hepsi birleştirilip yinelenenler ayıklanır.
+// Canlı yuva doluluğu BURADA YOKTUR (slots hep null; doluluk ayrı katman). Fiyat burada da operatör tablosundan gelir.
 // Ortak işlevler (yinelenenleri ele, koridora izdüşür, fiyatla, kendi istasyonlarım) routing/chargerSource.js içindedir.
 import { PLANNER } from '../config.js';
 import { classify } from '../routing/operators.js';
@@ -12,6 +13,7 @@ import { teslaAlong, teslaAround } from '../routing/tesla.js';
 import { mapboxKey } from '../mapbox/api.js';
 import { stationsAlong, stationsAround } from '../mapbox/chargers.js';
 import { hereOn, stationsAlong as hereAlong, stationsAround as hereAround } from '../here/chargers.js';
+import { googleOn, stationsAlong as googleAlong, stationsAround as googleAround } from '../google/chargers.js';
 
 // Herkese açık Overpass sunucuları; biri 429/406/hata verirse sıradakine geçilir (adil kullanım: paralel sorgu yok).
 const OVERPASS = [
@@ -293,6 +295,17 @@ export async function fetchChargers(pts, profile) {
   }
   if (failed) errors.push(`Overpass: ${failed} parça alınamadı${lastErr ? ' — ' + lastErr : ''}`);
 
+  // Google Places (ücretli, yalnızca Premium): ek kaynak; yinelenenleri dedupe eler (önce gelen kayıt kalır), hata olursa öteki kaynaklarla sürülür
+  if (googleOn()) {
+    let r;
+    try { r = await googleAlong(pts); } catch (err) { r = { out: new Map(), raw: 0, calls: 0, failed: 0, skipped: 0, fatal: err }; }
+    ctx.calls += r.calls;
+    take({ out: [...r.out.values()], raw: r.raw, drop: {} });
+    if (r.failed) errors.push(`Google: ${r.failed} arama başarısız${r.lastError ? ' — ' + r.lastError : ''}`);
+    if (r.skipped) errors.push(`Google: ${r.skipped} arama üst sınır nedeniyle yapılmadı`);
+    if (r.fatal) errors.push(r.fatal.message);
+  }
+
   const key = ocmKey();
   if (key) {
     const circles = [];
@@ -353,6 +366,12 @@ export async function fetchAround(lat, lon, radiusKm, force = false) {
       try {
         out.push(...parseOverpass(await overpass(overpassQuery(`${km * 1000},${lat.toFixed(5)},${lon.toFixed(5)}`))).out);
       } catch (err) { errors.push(err.message); }
+    }
+    if (googleOn()) {
+      const r = await googleAround(lat, lon, km).catch((err) => ({ out: new Map(), failed: 0, fatal: err }));
+      out.push(...r.out.values());
+      if (r.failed) errors.push(`Google: ${r.failed} arama başarısız${r.lastError ? ' — ' + r.lastError : ''}`);
+      if (r.fatal) errors.push(r.fatal.message);
     }
     const key = ocmKey();
     if (key) {

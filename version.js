@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.37';
+self.APP_VERSION = '0.99.38';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.38', date: '2026-11-12',
+    notes: [
+      'Yeni istasyon kaynagi: Google Places (Premium). HERE, Mapbox ve Overpass sonuclarina ek olarak rota boyunca ve yakin cevrede Google kayitlari da eklenir; ayni yerde ayni isletmeci varsa once gelen kayit kalir. Google yalnizca sunucuda GOOGLE_PLACES_KEY varsa ve hesap Premium ise calisir; ucretlidir (cagri basina yaklasik 0,04 USD, ayda ilk 1000 ucretsiz), bu yuzden kullanici basi gunluk 60 ve toplam gunluk 400 cagri tavani vardir (GOOGLE_STATIONS_DAILY_PER_USER, GOOGLE_STATIONS_DAILY_TOTAL). Tavan dolarsa ya da hata olursa diger kaynaklarla surulur. Sunucuda yeni uc nokta oldugu icin sunucunun yeniden baslatilmasi gerekir. Tek cagri en cok 20 kayit dondurdugu icin 20 dolan daire bir kez dorde bolunur.',
+    ],
+  },
   {
     v: '0.99.37', date: '2026-11-12',
     notes: [
