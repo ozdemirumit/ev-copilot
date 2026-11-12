@@ -101,3 +101,26 @@ export const PICK_TITLES = {
   nearestFast: 'Pil %{0} — en yakın hızlı şarj (150 kW üstü):',
   none: 'Pil %{0} — uygun 150 kW üstü yok, en yakın:',
 };
+
+/** "Liste" sayfa boyu: tüm uygun istasyonlar erişilebilir, DOM bir kerede bu kadar satır büyür ("Daha fazla" ile sonraki sayfa). */
+export const ALERT_PAGE = 10;
+
+/** Üst paneldeki tam liste: önerilen kart önce, sonra uygun hızlı istasyonlar (seçim sırası), sonra kalan uygun istasyonlar
+ * (rankNearby sırası). Aynı istasyon bir kez yer alır; sayı sınırı yoktur. */
+export function alertList(card, fast = [], ranked = []) {
+  const seen = new Set();
+  const out = [];
+  for (const s of [card, ...fast, ...ranked]) {
+    if (!s || seen.has(s.id)) continue;
+    seen.add(s.id);
+    out.push(s);
+  }
+  return out;
+}
+
+/** Görünen satırlar: kapalıyken yalnızca tek kart; açıkken ilk `shown` satır. rest: henüz gösterilmeyen istasyon sayısı. */
+export function alertPage(list, open, shown = ALERT_PAGE) {
+  const n = open ? Math.max(1, shown) : 1;
+  const items = list.slice(0, n);
+  return { items, rest: open ? list.length - items.length : 0 };
+}

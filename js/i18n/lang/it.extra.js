@@ -406,4 +406,5 @@ export default {
   "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.": "Lettura della fotocamera vecchia (confermata {0} s fa): viene mostrato l'ultimo valore confermato.",
   "Ortalama hız": "Velocità media",
   "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş": "Velocità media: {0} km percorsi, {1} min in movimento, {2} min da fermo",
+  "Daha fazla göster ({0} kaldı)": "Mostra altro ({0} rimanenti)",
 };

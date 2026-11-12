@@ -405,5 +405,6 @@
  "Kamera açık ama pil {0} dakikadır doğrulanamadı: son doğrulanan değerden tahmin ediliyor.",
  "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.",
  "Ortalama hız",
- "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş"
+ "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş",
+ "Daha fazla göster ({0} kaldı)"
 ]

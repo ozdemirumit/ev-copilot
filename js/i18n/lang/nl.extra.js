@@ -406,4 +406,5 @@ export default {
   "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.": "Camerawaarde is oud ({0} s geleden bevestigd): laatst bevestigde waarde wordt getoond.",
   "Ortalama hız": "Gemiddelde snelheid",
   "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş": "Gemiddelde snelheid: {0} km gereden, {1} min rijden, {2} min stilstand",
+  "Daha fazla göster ({0} kaldı)": "Meer tonen ({0} over)",
 };

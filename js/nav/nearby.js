@@ -21,7 +21,7 @@ import { startNav, syncTopPanel } from './navigator.js';
 import { icon } from '../ui/icons.js';
 import { measuredSoc } from '../physics/socEstimate.js';
 import { paintMore } from '../ui/moreToggle.js';
-import { pickEmergency, priceText, isFast, PICK_TITLES, ROUTE_OFF_KM, ROUTE_NEAR_KM } from './chargePick.js';
+import { pickEmergency, priceText, isFast, PICK_TITLES, ROUTE_OFF_KM, ROUTE_NEAR_KM, ALERT_PAGE, alertList, alertPage } from './chargePick.js';
 
 const $ = (id) => document.getElementById(id);
 const BAT = VEHICLE.batteryNetKwh;
@@ -46,7 +46,6 @@ let focusId = null;
 // Yarıçap: 'auto' (varsayılan) 1 km'den başlar, sonuç yoksa 10, 25, 50 km'ye genişler; sayı seçilirse yalnızca o yarıçap aranır.
 const RADIUS_STEPS = [1, 10, 25, 50];
 const EMERGENCY_KM = 25; // düşük pilde otomatik arama en az bu yarıçaptan başlar: 1 km'de durursa 150 kW üstü istasyonlar görülmez
-const ALERT_LIST = 6; // üst panelde "Liste" açıkken en çok bu kadar istasyon
 const NEAR_LIMIT = 3; // liste kapalıyken en çok 3 satır, "+" ile tümü
 let radiusSetting = load('nearRadiusMode', 'auto');
 let radius = radiusSetting === 'auto' ? RADIUS_STEPS[0] : Number(radiusSetting); // son aranan (sonuç veren) yarıçap
@@ -295,6 +294,7 @@ let alertData = null; // { title, stations, notes } üst panelde gösterilen şa
 let alertSig = ''; // aynı içerik her 5 sn'de yeniden çizilmesin (açık satır ve odak korunur)
 let listOpen = false; // varsayılan: yalnızca önerilen tek kart; "Liste" diğer uygun istasyonları aynı panelde açar
 let openRow = null; // ayrıntısı açık istasyon
+let alertShown = ALERT_PAGE; // Liste açıkken gösterilen satır sayısı ("Daha fazla" ile artar)
 
 /** Tek öneri: ad, mesafe, güç, fiyat ve Git hep görünür; ada dokununca varış pili ve doluluk açılır. Güç operatör varsayımıysa ≈ ile yazılır. */
 function alertEntry(s) {
@@ -334,7 +334,8 @@ function alertEntry(s) {
 function paintAlert() {
   const { title, stations, notes } = alertData;
   const open = listOpen;
-  const sig = JSON.stringify([title, notes, open, openRow, stations.map((s) => [s.id, fmtKm(s.distKm), s.kw, s.uncertain, priceText(s), s.arrive == null ? null : Math.round(s.arrive), s.reachable, slotEl(s)?.textContent])]);
+  const page = alertPage(stations, open, alertShown);
+  const sig = JSON.stringify([title, notes, open, openRow, alertShown, stations.map((s) => [s.id, fmtKm(s.distKm), s.kw, s.uncertain, priceText(s), s.arrive == null ? null : Math.round(s.arrive), s.reachable, slotEl(s)?.textContent])]);
   if (sig === alertSig) return;
   alertSig = sig;
   $('near-alert-title').textContent = title;
@@ -342,9 +343,17 @@ function paintAlert() {
   toggle.classList.toggle('hidden', !stations.length && !notes.length);
   toggle.setAttribute('aria-expanded', String(open));
   toggle.replaceChildren(cell('span', '', open ? 'Daralt' : 'Liste'));
+  if (!open && stations.length > 1) toggle.append(cell('span', 'tog-count', ` ${stations.length}`)); // kaç uygun istasyon olduğu
   toggle.insertAdjacentHTML('beforeend', icon(open ? 'chev-up' : 'chev-down'));
   const body = $('near-alert-body');
-  body.replaceChildren(...(open ? notes.map((n) => cell('div', 'small muted', n)) : []), ...(open ? stations : stations.slice(0, 1)).map(alertEntry));
+  body.replaceChildren(...(open ? notes.map((n) => cell('div', 'small muted', n)) : []), ...page.items.map(alertEntry));
+  if (page.rest > 0) { // sayı sınırı yok: kalanlar sayfa sayfa açılır (panel #banners içinde kayar)
+    const more = cell('button', 'near-more near-page', t('Daha fazla göster ({0} kaldı)', page.rest));
+    more.type = 'button';
+    more.insertAdjacentHTML('beforeend', icon('chev-down'));
+    more.addEventListener('click', () => { alertShown += ALERT_PAGE; paintAlert(); });
+    body.append(more);
+  }
   if (open && stations.length) {
     const all3 = cell('button', 'near-more', 'Diğer istasyonlar');
     all3.type = 'button';
@@ -359,7 +368,7 @@ function showAlert(title, stations = [], notes = []) {
   const bar = $('near-alert');
   if (!title) {
     bar.classList.add('hidden');
-    alertData = null; alertSig = ''; listOpen = false; openRow = null;
+    alertData = null; alertSig = ''; listOpen = false; openRow = null; alertShown = ALERT_PAGE;
     syncTopPanel();
     patch('nav', { alert: null });
     return;
@@ -424,7 +433,7 @@ function checkLow() {
   if (premium && !elimCount && ranked.length && ranked.every((x) => slotKind(x) === 'full')) notes.push('Hepsi dolu görünüyor; en yakınlar listelendi');
   const pick = pickEmergency(pickPool, { onRoute: routeFilter(), brandOk });
   const card = pick.station ?? best; // 150 kW üstü uygun istasyon yoksa en yakın uygun istasyon ("en ucuz" denmez)
-  const stations = [...new Set([card, ...pick.fast, ...ranked].map((s) => s.id))].slice(0, ALERT_LIST).map((id) => pickPool.find((s) => s.id === id) ?? ranked.find((s) => s.id === id));
+  const stations = alertList(card, pick.fast, ranked); // sınırsız: önerilen kart, uygun hızlı istasyonlar, kalan uygun istasyonlar
   showAlert(t(PICK_TITLES[pick.kind], soc) + (updated ? ' ' + t('(rota otomatik güncellendi)') : ''), stations, notes);
   // Plan sıradaki durağa/varışa ulaşılamıyor diyorsa: navigasyonda rotayı en uygun istasyon üzerinden kendiliğinden güncelle
   if (planBroken && nav.active && getState('route').end && !updated && card.reachable && (card.arrive ?? 99) >= 5
@@ -487,6 +496,7 @@ export function initNearby() {
   $('near-alert-toggle').addEventListener('click', () => {
     if (!alertData) return;
     listOpen = !listOpen;
+    alertShown = ALERT_PAGE; // her açılışta ilk sayfa
     paintAlert();
   });
   render();

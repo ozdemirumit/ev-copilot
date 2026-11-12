@@ -406,4 +406,5 @@ export default {
   "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.": "Показанието от камерата е старо (потвърдено преди {0} с): показва се последната потвърдена стойност.",
   "Ortalama hız": "Средна скорост",
   "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş": "Средна скорост: {0} км изминати, {1} мин движение, {2} мин престой",
+  "Daha fazla göster ({0} kaldı)": "Покажи още ({0} остават)",
 };

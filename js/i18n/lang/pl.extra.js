@@ -406,4 +406,5 @@ export default {
   "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.": "Odczyt z kamery jest stary (potwierdzony {0} s temu): pokazywana jest ostatnia potwierdzona wartość.",
   "Ortalama hız": "Średnia prędkość",
   "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş": "Średnia prędkość: {0} km przejechane, {1} min jazdy, {2} min postoju",
+  "Daha fazla göster ({0} kaldı)": "Pokaż więcej (pozostało {0})",
 };

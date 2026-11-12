@@ -406,4 +406,5 @@ export default {
   "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.": "Η ένδειξη της κάμερας είναι παλιά (επιβεβαιώθηκε πριν {0} δ): εμφανίζεται η τελευταία επιβεβαιωμένη τιμή.",
   "Ortalama hız": "Μέση ταχύτητα",
   "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş": "Μέση ταχύτητα: {0} km διαδρομή, {1} λεπ. κίνηση, {2} λεπ. στάση",
+  "Daha fazla göster ({0} kaldı)": "Εμφάνιση περισσότερων ({0} ακόμη)",
 };

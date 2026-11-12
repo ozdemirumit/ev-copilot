@@ -406,4 +406,5 @@ export default {
   "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.": "Citirea camerei este veche (confirmată acum {0} s): se afișează ultima valoare confirmată.",
   "Ortalama hız": "Viteză medie",
   "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş": "Viteză medie: {0} km parcurși, {1} min în mers, {2} min oprit",
+  "Daha fazla göster ({0} kaldı)": "Arată mai multe (încă {0})",
 };

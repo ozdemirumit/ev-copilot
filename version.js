@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.35';
+self.APP_VERSION = '0.99.36';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.36', date: '2026-11-12',
+    notes: [
+      'Acil sarj onerisi: ust panelde yine tek istasyon karti (harita kapanmaz); Liste dugmesi uygun istasyon sayisini gosterir ve artik 6 ile sinirli degil, mevcut secim ve siralama kurallarina uyan tum uygun istasyonlar 10ar 10ar Daha fazla goster ile acilir. Liste her acilista ilk sayfadan baslar.',
+    ],
+  },
   {
     v: '0.99.35', date: '2026-11-12',
     notes: [

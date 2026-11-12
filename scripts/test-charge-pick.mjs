@@ -7,7 +7,7 @@ const ok = (name, cond, extra = '') => { cond ? pass++ : fail++; console.log(con
 const read = (p) => readFileSync(new URL('../' + p, import.meta.url), 'utf8');
 
 globalThis.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
-const { pickEmergency, priceInfo, priceText, isFast, knownKw } = await import('../js/nav/chargePick.js');
+const { pickEmergency, priceInfo, priceText, isFast, knownKw, alertList, alertPage, ALERT_PAGE } = await import('../js/nav/chargePick.js');
 const { priced } = await import('../js/routing/chargerSource.js');
 
 const st = (id, o = {}) => ({ id, name: id, srcKw: 180, kw: 180, uncertain: false, slow: false, reachable: true, arrive: 12, roadKm: 5, distKm: 4, price: 13, tariff: 'list', foreign: false, slots: null, ...o });
@@ -85,12 +85,40 @@ ok('liste fiyatı etiketli', priceText(st('a', { price: 13.5 })) === '13.50 TL/k
   ok('Türkiye dışı: tarife yok', f.tariff === null && f.price === 0 && f.foreign);
 }
 
+// Tam liste ve sayfalama (sayı sınırı yok)
+{
+  const many = Array.from({ length: 23 }, (_, i) => st('s' + i, { price: 10 + i }));
+  const card = many[5];
+  const list = alertList(card, many.slice(0, 12), many);
+  ok('tam liste: tüm uygun istasyonlar (6 sınırı yok)', list.length === 23, list.length);
+  ok('tam liste: önerilen kart önce, sonra hızlılar, sonra kalanlar', list[0].id === 's5' && list[1].id === 's0' && list[12].id === 's12' && list.at(-1).id === 's22', ids(list));
+  ok('tam liste: tekrar yok', new Set(list.map((s) => s.id)).size === list.length);
+  ok('tam liste: boş kart ve boş listeler', alertList(null, [], []).length === 0 && alertList(card).length === 1);
+  const closed = alertPage(list, false, 99);
+  ok('kapalı: yalnızca tek kart, kalan yok', closed.items.length === 1 && closed.items[0].id === 's5' && closed.rest === 0);
+  const p1 = alertPage(list, true);
+  ok('açık: ilk sayfa ALERT_PAGE satır', ALERT_PAGE === 10 && p1.items.length === 10 && p1.rest === 13, JSON.stringify([p1.items.length, p1.rest]));
+  const p2 = alertPage(list, true, 20), p3 = alertPage(list, true, 30);
+  ok('açık: Daha fazla ile sonraki sayfa, sonda kalan 0', p2.items.length === 20 && p2.rest === 3 && p3.items.length === 23 && p3.rest === 0);
+  ok('açık: kısa liste tek sayfada', alertPage(list.slice(0, 4), true).rest === 0 && alertPage(list.slice(0, 4), true).items.length === 4);
+  // Gerçek seçimle uçtan uca: 20 uygun hızlı istasyonun hepsi listede (önce >150 kW seçim sırası)
+  const pool = Array.from({ length: 20 }, (_, i) => st('f' + i, { price: 20 - i * 0.5 }));
+  const pick = pickEmergency(pool);
+  const full = alertList(pick.station, pick.fast, pool);
+  ok('uçtan uca: 20 uygun istasyonun hepsi listede, en ucuz kartta', full.length === 20 && full[0].id === 'f19' && full[0] === pick.station);
+}
+
 // Yapı: tek üst panel, varsayılan tek kart, Liste aç/kapa
 const nb = read('js/nav/nearby.js');
 const html = read('index.html');
 const css = read('css/styles.css');
 ok('varsayılan kapalı (navigasyon yokken de)', /let listOpen = false;/.test(nb) && !/listOpen \?\?/.test(nb));
-ok('kapalıyken yalnızca ilk istasyon', /\(open \? stations : stations\.slice\(0, 1\)\)\.map\(alertEntry\)/.test(nb));
+ok('kapalıyken yalnızca ilk istasyon (sayfa)', /alertPage\(stations, open, alertShown\)/.test(nb) && /\.\.\.page\.items\.map\(alertEntry\)/.test(nb));
+ok('6 istasyon sınırı kalktı', !/ALERT_LIST/.test(nb) && /const stations = alertList\(card, pick\.fast, ranked\)/.test(nb));
+ok('Daha fazla düğmesi sonraki sayfayı açar', /alertShown \+= ALERT_PAGE/.test(nb) && nb.includes("'Daha fazla göster ({0} kaldı)'"));
+ok('Liste her açılışta ve kapanışta ilk sayfaya döner', /alertShown = ALERT_PAGE; \/\/ her açılışta/.test(nb) && /openRow = null; alertShown = ALERT_PAGE;/.test(nb));
+ok('Daha fazla metni 11 dilde', ['en', 'de', 'bg', 'el', 'es', 'fr', 'it', 'nl', 'pl', 'pt', 'ro'].every((l) => read(`js/i18n/lang/${l}.extra.js`).includes('"Daha fazla göster ({0} kaldı)"')));
+ok('Liste düğmesinde uygun istasyon sayısı', /stations\.length > 1\) toggle\.append\(cell\('span', 'tog-count'/.test(nb));
 ok('kapatılınca seçim sıfırlanır', /alertSig = ''; listOpen = false;/.test(nb));
 ok('Liste düğmesi metni', /open \? 'Daralt' : 'Liste'/.test(nb) && />Liste</.test(html));
 ok('Liste üst panelin içinde', html.indexOf('id="top-panel"') < html.indexOf('id="near-alert-toggle"') && html.indexOf('id="near-alert-toggle"') < html.indexOf('id="road-alert"'));

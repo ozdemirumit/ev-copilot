@@ -406,4 +406,5 @@ export default {
   "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.": "Camera reading is old (verified {0} s ago): showing the last verified value.",
   "Ortalama hız": "Average speed",
   "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş": "Average speed: {0} km driven, {1} min moving, {2} min stopped",
+  "Daha fazla göster ({0} kaldı)": "Show more ({0} left)",
 };
