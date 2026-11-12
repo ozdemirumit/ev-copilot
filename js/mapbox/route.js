@@ -6,6 +6,7 @@ import { mbfetch } from './api.js';
 import { premiumAccess } from '../net/proxy.js';
 import { kphFromMapbox, mergeSegments } from '../nav/limitSpans.js';
 import { haversineKm } from '../utils/geo.js';
+import { parseLanes } from '../nav/lanes.js';
 
 const DIR = {
   left: 'sola', right: 'sağa', 'slight left': 'hafifçe sola', 'slight right': 'hafifçe sağa',
@@ -36,7 +37,7 @@ export function trText(type, modifier, name, exit) {
 }
 
 /** Adım dizisi (leg başına) → uygulamanın adım biçimi; ara duraklarda 'stop' adımı, yalnızca son adım 'arrive'. */
-function mapSteps(legs) {
+export function mapSteps(legs) {
   const steps = legs.flatMap((l, i) => {
     const mapped = (l.steps || []).map((st) => {
       const m = st.maneuver || {};
@@ -47,6 +48,7 @@ function mapSteps(legs) {
         type, modifier, text: trText(type, modifier, st.name, m.exit), road: st.name || '',
         distM: st.distance || 0,
         staticSec: st.duration || 0, // canlı trafikli süre: hız profili yavaş kesimleri buradan görür
+        lanes: parseLanes(st.intersections?.[0]?.lanes), // sağlayıcı şerit verisi (yoksa null)
       };
     });
     if (i === legs.length - 1) return mapped;

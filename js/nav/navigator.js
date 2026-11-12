@@ -8,6 +8,7 @@ import { toast } from '../ui/toast.js';
 import { rerouteFromHere, clearTrip } from '../routing/controller.js';
 import { speak, stopSpeech, testVoice } from '../advisor/voice.js';
 import { instruction, fmtDist, dueVoice, isMinor } from './steps.js';
+import { lanesToShow } from './lanes.js';
 import { buildTrack, locate, headingAt, pointAtKm } from './track.js';
 import { bearing, haversineKm } from '../utils/geo.js';
 import { icon, setManeuverIcon } from '../ui/icons.js';
@@ -67,7 +68,23 @@ export function snapPoint(lat, lon) {
   return { lat: p.lat, lon: p.lon, heading: headingAt(track, loc.km) };
 }
 
-function paint(arrow, dist, text, road = '', warn = false, then = '') {
+/** Sağlayıcı şerit verisi: uygun şeritler vurgulu, diğerleri soluk. lanes null ise alan boş (gizli). */
+function paintLanes(lanes) {
+  const box = $('nav-lanes');
+  if (!box) return;
+  const key = lanes ? lanes.map((l) => l.arrow + (l.ok ? 1 : 0)).join('') : '';
+  if (box.dataset.k === key) return;
+  box.dataset.k = key;
+  box.replaceChildren(...(lanes || []).map((l) => {
+    const el = document.createElement('span');
+    el.className = l.ok ? 'ln ok' : 'ln';
+    el.textContent = l.arrow;
+    return el;
+  }));
+}
+
+function paint(arrow, dist, text, road = '', warn = false, then = '', lanes = null) {
+  paintLanes(lanes);
   setManeuverIcon($('nav-arrow'), arrow);
   $('nav-dist').textContent = dist;
   $('nav-text').textContent = text;
@@ -172,7 +189,7 @@ function tick() {
   const gapM = then ? (then.km - st.km) * 1000 : Infinity;
   const secondary = then && then.type !== 'arrive' && gapM <= THEN_MAX_M ? t('Sonra ({0} sonra): {1}', fmtDist(gapM), instruction(then).text)
     : '';
-  paint(ins.arrow, fmtDist(distM), ins.text, ins.road, false, secondary);
+  paint(ins.arrow, fmtDist(distM), ins.text, ins.road, false, secondary, lanesToShow(st, distM));
   paintHud(e, remain, eta, driveH, chargeMin);
   paintCharge(plan, km, nextStop);
 

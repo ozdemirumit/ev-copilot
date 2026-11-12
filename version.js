@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.34';
+self.APP_VERSION = '0.99.35';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.35', date: '2026-11-12',
+    notes: [
+      'Navigasyon ust panelinde serit bilgisi: rota saglayicisi serit verisi gonderiyorsa (simdilik Premium Mapbox rotasi) yaklasan manevraya 2 km kala uygun seritler vurgulu, digerleri soluk gosterilir. Tum seritler uygunsa ya da veri yoksa hicbir sey gosterilmez; kamerayla serit tespiti yapilmaz.',
+    ],
+  },
   {
     v: '0.99.34', date: '2026-11-12',
     notes: [
