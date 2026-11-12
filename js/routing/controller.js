@@ -66,7 +66,7 @@ export function planK() {
 }
 
 /** Mevcut profil/istasyonlarla planı (yeniden) hesapla. fromKm/soc verilirse o konumdan (dinamik yeniden planlama). */
-export function computePlan({ fromKm = 0, soc = startSoc, maxFirstStopKm = Infinity, pins = null, onlyIds = null } = {}) { // pins: { pinIds, banIds } denemesi (kaydetmeden); onlyIds: yalnızca bu istasyonlarla planla
+export function computePlan({ fromKm = 0, soc = startSoc, maxFirstStopKm = Infinity, pins = null, onlyIds = null, mode = null, rank = true } = {}) { // pins: { pinIds, banIds } denemesi (kaydetmeden); onlyIds: yalnızca bu istasyonlarla planla
   const plan = getState('plan');
   const r = getState('route');
   if (!plan.profile) return null;
@@ -78,12 +78,24 @@ export function computePlan({ fromKm = 0, soc = startSoc, maxFirstStopKm = Infin
   const forced = plan.forceFirstId && stations.some((s) => s.id === plan.forceFirstId && s.km > fromKm + 0.5) ? plan.forceFirstId : null;
   const result = planRoute({
     profile: plan.profile, stations, startKm: fromKm, startSoc: soc,
-    minArrival: r.minArrivalSoc, mode: plan.mode, k, maxFirstStopKm, forceFirstId: forced,
+    minArrival: r.minArrivalSoc, mode: mode || plan.mode, k, maxFirstStopKm, forceFirstId: forced,
     mustIds: (pins?.pinIds ?? plan.pinIds ?? []).filter((id) => stations.some((s) => s.id === id && s.km > fromKm + 0.5)), // kullanıcının seçtiği duraklar; geçilmiş olanlar yok sayılır
     excludeIds: pins?.banIds ?? plan.banIds ?? [],
   });
-  const ranking = rankStations({ profile: plan.profile, stations: all, startKm: fromKm, startSoc: soc, k, mode: plan.mode });
-  return { result, ranking, kInfo };
+  const ranking = rank ? rankStations({ profile: plan.profile, stations: all, startKm: fromKm, startSoc: soc, k, mode: plan.mode }) : [];
+  return { result, ranking, kInfo, maxFirstStopKm };
+}
+
+/**
+ * Rota seçenekleri karşılaştırması için her planlayıcı modunda (Hızlı / Ekonomik / Optimum) planı ağsız kurar; mevcut planı değiştirmez.
+ * Aynı başlangıç km/pil, ilk durak sınırı (dinamik fallback'in maxFirstStopKm'i), elle seçilen duraklar ve filtrelerle. Dönüş: { fast, cheap, opt } planRoute sonuçları ya da plan yoksa null.
+ */
+export function routeOptionPlans(modes = ['fast', 'cheap', 'opt']) {
+  const p = getState('plan');
+  if (!p.profile || p.status !== 'ready') return null;
+  const out = {};
+  for (const m of modes) out[m] = computePlan({ fromKm: p.fromKm ?? 0, soc: p.fromSoc ?? startSoc, maxFirstStopKm: p.maxFirstStopKm ?? Infinity, mode: m, rank: false })?.result ?? null;
+  return out;
 }
 
 function applyPlan(out, extra = {}) {
@@ -92,6 +104,7 @@ function applyPlan(out, extra = {}) {
   patch('plan', {
     ...extra,
     kInfo,
+    maxFirstStopKm: Number.isFinite(out.maxFirstStopKm) ? out.maxFirstStopKm : null, // mevcut planı kuran ilk durak sınırı (rota seçenekleri aynısını kullanır)
     status: result.feasible ? 'ready' : 'infeasible',
     text: result.feasible ? '' : result.reason + (PLANNER.minKw > PLANNER.baseKw ? ' ' + tpl('En az şarj gücü filtresi {0} kW: düşürmeyi (AC) dene.', PLANNER.minKw) : ''),
     stops: result.stops,
