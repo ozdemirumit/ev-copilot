@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.47';
+self.APP_VERSION = '0.99.48';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.48', date: '2026-11-13',
+    notes: [
+      'Altyapı (görünür değişiklik yok): yoldaki canlı trafik sonucuna, trafik verisini gerçekten veren sağlayıcı ayrı bir alan olarak kaydedilir (TomTom ya da Mapbox). TomTom alınamayıp Mapbox’a düşülünce kayıt mapbox olur; açık harita sağlayıcısı trafik kaynağı sayılmaz. Trafik kaynağı yoksa sonuç eskisi gibi boştur.',
+      'Trafik rotası seçilen rotanın kaynak kaydıyla etiketlenmez; trafik kaynağı seçilen rotanın sağlayıcısından farklı olabilir. Sağlayıcı sırası, trafik hızları, trafik renkleri, uyarılar, ses ve harita değişmedi; bu kaydı henüz hiçbir ekran okumuyor.',
+    ],
+  },
   {
     v: '0.99.47', date: '2026-11-13',
     notes: [

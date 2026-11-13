@@ -191,6 +191,44 @@ const tunnelBridgeUnsupported = (r) => r.routeMeta.attrs.tunnel.status === 'unsu
   ok('fetchTrafficAhead: kaynak yoksa null', (await P.fetchTrafficAhead(A, B)) === null);
 }
 
+// 11b) v0.99.48: fetchTrafficAhead sonucuna ayrı trafficSource (rotayı gerçekten veren sağlayıcı; açık harita değil). rt etiketlenmez.
+{
+  const keys = (t) => Object.keys(t).sort();
+  // TomTom başarılı
+  let fx = ttFx(); setup({ tomtomOn: true, map: 'tomtom', mbKey: 'proxy', tomtom: () => fx });
+  let t = await P.fetchTrafficAhead(A, B);
+  ok('trafik: TomTom başarılı → trafficSource tomtom', t.trafficSource === 'tomtom');
+  ok('trafik: TomTom başarılı → Mapbox çağrılmaz, rt aynen', eq(S.calls.map((c) => c[0]), ['tomtom']) && t.rt === fx && !('routeMeta' in t.rt) && !('trafficSource' in t.rt));
+  ok('trafik: aheadFromRoute alanları korunur + yalnızca trafficSource eklenir', eq(keys(t), ['ahead', 'rt', 'trafficSource']) && t.ahead === true);
+  ok('trafik: sağlayıcıya aynı from/to iletilir', S.calls[0][1][0] === A && S.calls[0][1][1] === B && S.calls[0][1].length === 2);
+  // TomTom hatası → Mapbox
+  fx = mbFx(true); setup({ tomtomOn: true, map: 'tomtom', mbKey: 'proxy', tomtom: boom('TomTom 503'), mapbox: () => fx });
+  t = await P.fetchTrafficAhead(A, B);
+  ok('trafik: TomTom hatası → Mapbox, trafficSource mapbox (harita tomtom olsa da)', t.trafficSource === 'mapbox' && eq(S.calls.map((c) => c[0]), ['tomtom', 'mapbox']));
+  ok('trafik: düşüşte rt Mapbox rotası aynen (routeMeta yok)', t.rt === fx && !('routeMeta' in t.rt) && !('trafficSource' in t.rt));
+  // TomTom null döner → Mapbox (eski davranış)
+  fx = mbFx(false); setup({ tomtomOn: true, map: 'tomtom', mbKey: 'proxy', tomtom: () => null, mapbox: () => fx });
+  t = await P.fetchTrafficAhead(A, B);
+  ok('trafik: TomTom boş → Mapbox, trafficSource mapbox', t.trafficSource === 'mapbox' && t.rt === fx);
+  // Yalnızca Mapbox (harita mapbox/osm farketmez)
+  for (const map of ['mapbox', 'osm', null]) {
+    fx = mbFx(true); setup({ tomtomOn: true, map, mbKey: 'proxy', mapbox: () => fx });
+    t = await P.fetchTrafficAhead(A, B);
+    ok(`trafik: harita ${map} → yalnızca Mapbox, trafficSource mapbox`, t.trafficSource === 'mapbox' && eq(S.calls.map((c) => c[0]), ['mapbox']) && t.rt === fx && !('routeMeta' in t.rt));
+  }
+  // Kaynak yok → null (eski davranış); TomTom hatası + Mapbox anahtarı yok → null
+  setup({}); ok('trafik: kaynak yok → null', (await P.fetchTrafficAhead(A, B)) === null && S.calls.length === 0);
+  setup({ tomtomOn: true, map: 'tomtom', tomtom: boom('x') }); ok('trafik: TomTom hatası + Mapbox yok → null (Valhalla çağrılmaz)', (await P.fetchTrafficAhead(A, B)) === null && eq(S.calls.map((c) => c[0]), ['tomtom']));
+  // Mapbox hatası eskisi gibi yukarı iletilir
+  setup({ mbKey: 'proxy', mapbox: boom('Mapbox 429') });
+  let err = null; try { await P.fetchTrafficAhead(A, B); } catch (e) { err = e; }
+  ok('trafik: Mapbox hatası yutulmaz (aynı hata)', err?.message === 'Mapbox 429');
+  // Statik: trafficSource yalnızca sabit adlar, activeMap'ten türetilmez; fetchTrafficAhead tagRoute kullanmaz
+  const tb = src.slice(src.indexOf('export async function fetchTrafficAhead'));
+  ok("statik: trafficSource yalnızca 'tomtom' | 'mapbox' sabitleri", [...tb.matchAll(/trafficSource = '(\w+)'/g)].map((m) => m[1]).sort().join() === 'mapbox,tomtom' && !/trafficSource[^;\n]*activeMap/.test(tb));
+  ok('statik: fetchTrafficAhead rt etiketlemez (tagRoute/routeMeta yok)', !/tagRoute|routeMeta/.test(tb.replace(/\/\/.*$/gm, '')));
+}
+
 // 12) Statik: sözleşmeler
 {
   const body = src.slice(src.indexOf('export async function fetchRoute'), src.indexOf('export async function fetchTrafficAhead'));

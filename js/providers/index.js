@@ -62,12 +62,18 @@ export async function fetchRoute(...a) {
 /**
  * Konumdan varışa canlı trafik: { jam, delayMin, remainH, rt } ya da kaynak yoksa null. Kaynak: TomTom rotası (TomTom kullanılabilirken, hata olursa Mapbox'a düşer),
  * yoksa Mapbox anahtarıyla Mapbox. rt: yeni trafikli rota (yolda hız profilini tazelemek için).
+ * trafficSource: trafik rotasını GERÇEKTEN veren sağlayıcı ('tomtom' | 'mapbox'; açık harita değil). Seçilen plan rotasının
+ * routeMeta.provider değerinden farklı olabilir; rt etiketlenmez (routeMeta yalnızca seçilen plan rotasındadır). Henüz okuyan yok.
  */
 export async function fetchTrafficAhead(from, to) {
-  let rt = null;
+  let rt = null, trafficSource = null;
   if (tomtomRouteOn()) {
     try { rt = await tomtomRoute(from, to); } catch { rt = null; }
+    if (rt) trafficSource = 'tomtom';
   }
-  if (!rt && mapboxKey()) rt = await mapboxRoute(from, to);
-  return rt ? aheadFromRoute(rt) : null;
+  if (!rt && mapboxKey()) {
+    rt = await mapboxRoute(from, to);
+    if (rt) trafficSource = 'mapbox';
+  }
+  return rt ? { ...aheadFromRoute(rt), trafficSource } : null;
 }
