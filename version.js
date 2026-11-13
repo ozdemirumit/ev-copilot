@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.41';
+self.APP_VERSION = '0.99.42';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.42', date: '2026-11-13',
+    notes: [
+      'OCR hane kanıtı düzeltmesi (Faz A): parlama ya da kırpma ikinci rakamın bir kısmını silince (ör. 63 → yalnızca 6 görünür) OCR 2 artık yanlışlıkla “tek hane” kanıtı vermez. Elenen kısa/silik bir rakam parçası, benzerliği düşük bir aday ya da okuma kutusu kenarına değen tek rakam varsa hane sayısı “belirsiz” sayılır; böylece 63 → 6 gibi hatalı düşüşler tek hane kanıtıyla hızlıca kabul edilmez.',
+      'Gerçek tek haneli pil değeri (ör. %6, %7) reddedilmez: temiz görüntüde tek hane kanıtı korunur; belirsizlikte değer yine okunur, yalnızca ek doğrulama ister.',
+      'Testler: modelde olmayan 6 yazı tipinde 63 sınama sahnesi ve 42/73/63 için parlama/kırpma senaryoları eklendi. 5 sn okuma aralığı, OCR 1/OCR 2 seçimi, kamera, navigasyon, fiyat ve harita değişmedi. Telefonda henüz doğrulanmadı.',
+    ],
+  },
   {
     v: '0.99.41', date: '2026-11-13',
     notes: [

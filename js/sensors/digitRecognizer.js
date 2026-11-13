@@ -12,6 +12,10 @@ const MIN_FILL = 0.05;
 const MAX_FLAT = 3; // en/boy üstü yatay çizgi: pil çubuğu vb.
 const WIDE = 1.1; // tek rakam için fazla geniş: yapışık rakam şüphesi
 const NON_DIGIT = 0.35; // bu benzerliğin altındaki leke rakam sayılmaz
+const RESIDUE_REL_HEIGHT = 0.18; // elenen ama bu boydan büyük parça: kısmen silinmiş/kırpılmış rakam olabilir
+const RESIDUE_FILL = 0.04; // kısa artık için en az bu kadar mürekkep (küçük leke sayılmaz)
+const RESIDUE_TALL = 0.35; // uzun ama ince artık (sağı silinmiş rakamın sol kenarı) daha az mürekkeple de sayılır
+const RESIDUE_TALL_FILL = 0.01;
 
 /** 8-komşulu bağlı bileşenler. Dönüş: { labels, boxes: [{ ids:[label], x0, y0, x1, y1, area }] } (yazı = 0). */
 export function components(bw, w, h) {
@@ -188,7 +192,12 @@ export function readDigits(bw, w, h, pad = 0) {
   const tallest = cands.reduce((m, b) => Math.max(m, boxH(b)), 0);
   const empty = { text: '', confidence: 0, n: null, merged: false, clipped: false, glyphs: [] };
   if (!tallest || tallest < MIN_TALLEST * (h - 2 * pad)) return empty;
+  const all = cands;
   cands = cands.filter((b) => boxH(b) >= MIN_REL_HEIGHT * tallest && b.area >= MIN_FILL * tallest * tallest && boxW(b) / boxH(b) <= MAX_FLAT);
+  // Parlama/kırpma bir rakamın bir kısmını sildiyse kalan parça kısa kalıp elenir; bu artık 'tek rakam var' kanıtı sayılamaz.
+  // Küçük leke ve yatay çubuk (pil göstergesi) artık sayılmaz; % işareti büyükse tek hane kanıtı belirsizleşir (değer reddedilmez).
+  const residue = all.some((b) => !cands.includes(b) && boxH(b) >= RESIDUE_REL_HEIGHT * tallest && boxW(b) / boxH(b) <= MAX_FLAT
+    && b.area >= (boxH(b) >= RESIDUE_TALL * tallest ? RESIDUE_TALL_FILL : RESIDUE_FILL) * tallest * tallest);
 
   let merged = false;
   const split = [];
@@ -213,7 +222,10 @@ export function readDigits(bw, w, h, pad = 0) {
   const text = digits.map((g) => g.digit).join('');
   // Ayrılamayan yapışık rakamlar tek rakam sanılırsa hane kaybı olurdu: bu okuma güvenilmez sayılır
   const confidence = digits.length && !merged ? Math.min(...digits.map((g) => g.confidence)) : 0;
-  const n = merged || !digits.length || digits.length > 3 ? null : digits.length;
+  // Tek rakam kanıtı yalnızca başka rakam izi yoksa verilir: elenen artık parça, benzerliği düşük (silik) aday ya da ROI kenarına
+  // değen aday varsa ikinci hane kaybolmuş olabilir → n=null (belirsiz). Çok haneli sayımda n alt sınır olarak kalır.
+  const uncertainSingle = digits.length === 1 && (residue || digits.length < glyphs.length || clipped);
+  const n = merged || !digits.length || digits.length > 3 || uncertainSingle ? null : digits.length;
   return { text, confidence, n, merged, clipped, glyphs };
 }
 
