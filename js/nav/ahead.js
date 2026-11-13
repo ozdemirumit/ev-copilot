@@ -11,6 +11,8 @@ import { updateAhead } from '../routing/controller.js';
 import { wxQueryKms } from '../routing/aheadUpdate.js';
 import { mapApi } from '../ui/mapView.js';
 import { buildTrack, locate } from './track.js';
+import { trafficUse } from './trafficGuard.js';
+import { activeMap } from '../net/activeMap.js';
 
 const $ = (id) => document.getElementById(id);
 const CHECK_MS = 5000;
@@ -106,7 +108,11 @@ async function refreshTraffic(km) {
     const e = effective();
     const id = getState('plan').planId;
     const t = await fetchTrafficAhead(e, getState('route').end);
+    const plan = getState('plan');
+    if (plan.planId !== id) return; // istek sürerken plan değişti: eski sonuç hiçbir şeye işlenmez (check() trafik metnini zaten sıfırladı)
     if (!t) return setAhead({ traffic: null });
+    // Sağlayıcı koruması (trafficGuard.js): trafik kaynağı seçilen rotanın sağlayıcısıyla aynı değilse hız/enerji/renk/süre/ses değişmez; yalnızca trafik metni silinir
+    if (!trafficUse({ routeProvider: plan.route?.routeMeta?.provider, trafficSource: t.trafficSource, map: activeMap() }).ok) return setAhead({ traffic: null });
     if (t.rt && (getState('engine').offRouteKm ?? 0) < 1) updateAhead({ km, rt: t.rt, planId: id }); // rotadayken: yeni trafik hızları enerji ve süreye işlenir
     if (t.rt?.coords && (getState('engine').offRouteKm ?? 0) < 1 && sameRoad(t.rt.coords, getState('plan').route?.coords)) mapApi.setTraffic(t.rt.coords, t.rt.trafficSpans || []); // rota yeniden hesaplanmadan trafik renkleri
     const { jam, delayMin } = t;

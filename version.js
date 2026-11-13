@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.48';
+self.APP_VERSION = '0.99.49';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.49', date: '2026-11-13',
+    notes: [
+      'Yolda canlı trafik koruması (js/nav/trafficGuard.js): canlı trafik sonucu yalnızca seçilen rotayı veren sağlayıcıyla aynı kaynaktan geliyorsa plana işlenir (TomTom rotasına TomTom haritasında TomTom trafiği, Mapbox rotasına Mapbox trafiği). Farklı, bilinmeyen ya da ücretsiz (osm) kaynakta hızlar, enerji, trafik renkleri, varış süresi, trafik uyarısı ve ses değişmez; yalnızca trafik metni silinir, yağmur/kamera/eğim uyarıları korunur.',
+      'İstek sürerken rota değişirse eski trafik sonucu hiçbir şeye işlenmez. Sağlayıcı sırası, istek sayısı, aynı sağlayıcıdaki davranış, harita ve arayüz değişmedi; HERE kapalı.',
+    ],
+  },
   {
     v: '0.99.48', date: '2026-11-13',
     notes: [
