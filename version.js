@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.46';
+self.APP_VERSION = '0.99.47';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.47', date: '2026-11-13',
+    notes: [
+      'Altyapı (görünür değişiklik yok): seçilen rotaya, rotayı gerçekten veren sağlayıcı kaydedilir (TomTom, Mapbox ya da ücretsiz Valhalla = osm). TomTom ya da Mapbox rotası alınamayıp ücretsiz rotaya düşülünce kayıt osm olur; açık harita sağlayıcısı rota sağlayıcısı sayılmaz.',
+      'Mapbox rotasında şerit bilgisinin durumu adımlardan okunur (var / rota boyunca yok); adım listesi yoksa durum uydurulmaz. Tünel/köprü kaynağı hâlâ yok.',
+      'Rota, sesli yönlendirme, harita, uyarılar, şerit paneli, sağlayıcı sırası ve ayarlar değişmedi; bu kaydı henüz hiçbir ekran okumuyor.',
+    ],
+  },
   {
     v: '0.99.46', date: '2026-11-13',
     notes: [

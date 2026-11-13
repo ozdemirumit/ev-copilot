@@ -11,6 +11,7 @@ import { mapboxKey } from '../mapbox/api.js';
 import { fetchRoute as tomtomRoute } from '../tomtom/route.js';
 import { proxyHas, premiumAccess } from '../net/proxy.js';
 import { activeMap } from '../net/activeMap.js';
+import { emptyMeta, withProvenance, lanesStatusFromSteps } from '../nav/routeMeta.js';
 
 export { fetchChargers, fetchAround } from '../osm/chargers.js';
 export { fetchAvailability } from '../routing/occupancyClient.js';
@@ -22,23 +23,40 @@ export { fetchSpeedLimit } from '../osm/speedLimit.js';
 /** TomTom rotası: sunucuda TomTom anahtarı var, hesap Premium ve açık harita TomTom ise (TomTom sonuçları yalnızca TomTom haritasında gösterilir). */
 const tomtomRouteOn = () => proxyHas('tomtom') && premiumAccess() && activeMap() === 'tomtom';
 
-/** Rota: Premium + TomTom haritasında canlı trafikli TomTom; olmazsa Mapbox anahtarı varsa Mapbox; o da olmazsa/alınamazsa Valhalla. `note` doluysa bir üst kaynak atlanmıştır. */
+/**
+ * Seçilen rotaya kaynak üst verisi (routeMeta) ekler: provider = rotayı GERÇEKTEN veren sağlayıcı (harita sağlayıcısı değil).
+ * Rota alanları aynen kalır (sağ kopyası + tek ek alan); sağlayıcı sonucu değiştirilmez. Şerit durumu yalnızca Mapbox'ta ve
+ * yalnızca adım listesi varsa adımlardan okunur; adım yoksa 'unrequested' kalır (veri uydurulmaz). Hata olursa rota üst verisiz döner.
+ */
+function tagRoute(r, provider) {
+  if (!r || typeof r !== 'object') return r;
+  try {
+    let meta = emptyMeta(provider);
+    if (provider === 'mapbox' && Array.isArray(r.steps)) meta = withProvenance(meta, 'lanes', { source: 'mapbox', status: lanesStatusFromSteps(r.steps) });
+    return { ...r, routeMeta: meta };
+  } catch {
+    return r;
+  }
+}
+
+/** Rota: Premium + TomTom haritasında canlı trafikli TomTom; olmazsa Mapbox anahtarı varsa Mapbox; o da olmazsa/alınamazsa Valhalla. `note` doluysa bir üst kaynak atlanmıştır. routeMeta.provider: tomtom | mapbox | osm (Valhalla). */
 export async function fetchRoute(...a) {
   let skipped = '';
   if (tomtomRouteOn()) {
     try {
-      return await tomtomRoute(...a);
+      return tagRoute(await tomtomRoute(...a), 'tomtom');
     } catch (err) {
       skipped = `TomTom rotası alınamadı (${err.message}); `;
     }
   }
-  if (!mapboxKey()) return skipped ? { ...(await osmRoute(...a)), note: skipped + 'ücretsiz rota kullanıldı, trafik yok' } : osmRoute(...a);
+  if (!mapboxKey()) return tagRoute(skipped ? { ...(await osmRoute(...a)), note: skipped + 'ücretsiz rota kullanıldı, trafik yok' } : await osmRoute(...a), 'osm');
+  let r;
   try {
-    const r = await mapboxRoute(...a);
-    return skipped ? { ...r, note: skipped + 'Mapbox rotası kullanıldı' } : r;
+    r = await mapboxRoute(...a);
   } catch (err) {
-    return { ...(await osmRoute(...a)), note: `${skipped}Mapbox rotası alınamadı (${err.message}); ücretsiz rota kullanıldı, trafik yok` };
+    return tagRoute({ ...(await osmRoute(...a)), note: `${skipped}Mapbox rotası alınamadı (${err.message}); ücretsiz rota kullanıldı, trafik yok` }, 'osm');
   }
+  return tagRoute(skipped ? { ...r, note: skipped + 'Mapbox rotası kullanıldı' } : r, 'mapbox');
 }
 
 /**

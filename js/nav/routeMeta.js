@@ -1,4 +1,5 @@
-// Sağlayıcıdan bağımsız rota üst verisi modeli (SAF, çevrimdışı). Henüz uygulamaya BAĞLI DEĞİL: hiçbir modül içe aktarmaz.
+// Sağlayıcıdan bağımsız rota üst verisi modeli (SAF, çevrimdışı). Modülün kendisi hiçbir şey içe aktarmaz. v0.99.47'den beri yalnızca
+// js/providers/index.js (rota sağlayıcı seçimi) seçilen rotaya routeMeta ekler; arayüz/ses/uyarılar bu alanı henüz okumaz.
 // Amaç: rota özniteliklerinin (şerit, tünel, köprü) hangi sağlayıcıdan geldiğini (kaynak/provenance) kayıt altına almak ve
 // "veri var / yok / istenmedi / sağlayıcı desteklemiyor" durumlarını birbirinden ayırmak.
 //

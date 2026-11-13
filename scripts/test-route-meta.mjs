@@ -1,6 +1,6 @@
 // Sağlayıcıdan bağımsız rota üst verisi modeli testleri (bağımlılıksız, düz node): node scripts/test-route-meta.mjs
-// Elle yazılmış çevrimdışı örnekler; ağ engellidir. Modülün çalışma zamanına bağlı olmadığı ve bugün tünel/köprü kaynağı
-// bulunmadığı statik olarak da doğrulanır.
+// Elle yazılmış çevrimdışı örnekler; ağ engellidir. Modülün yalnızca rota sağlayıcı seçiminden içe aktarıldığı ve bugün tünel/köprü
+// kaynağı bulunmadığı statik olarak da doğrulanır.
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -150,7 +150,7 @@ for (const bad of ['foo', 'Mapbox', '', null, undefined, 42, {}, 'gps']) {
   ok('üst veri şerit içeriğini kopyalamaz', !JSON.stringify(m).includes('arrow'));
 }
 
-// ---- Statik: saf modül, çalışma zamanına bağlı değil ----
+// ---- Statik: saf modül; tek içe aktaran rota sağlayıcı seçimi ----
 const modSrc = read('js/nav/routeMeta.js');
 const code = modSrc.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 ok('modül import içermez', !/^\s*import\b|\bimport\s*\(|\brequire\s*\(/m.test(code));
@@ -167,9 +167,10 @@ function walk(dir, out = []) {
 }
 const runtime = [...walk(join(root, 'js')), ...walk(join(root, 'server')), join(root, 'index.html'), join(root, 'sw.js')]
   .map((p) => relative(root, p).replace(/\\/g, '/')).filter((p) => p !== 'js/nav/routeMeta.js');
-const importers = runtime.filter((p) => /routeMeta/.test(read(p)));
-ok('hiçbir çalışma zamanı dosyası routeMeta’yı içe aktarmaz/anmaz', importers.length === 0, importers.join(', '));
-ok('sw.js SHELL routeMeta içermez (bağlı değil)', !read('sw.js').includes('routeMeta'));
+// v0.99.47: tek bağlantı noktası rota sağlayıcı seçimi (js/providers/index.js). Başka hiçbir çalışma zamanı dosyası içe aktarmaz.
+const importers = runtime.filter((p) => p !== 'sw.js' && /routeMeta\.js/.test(read(p)));
+ok('routeMeta yalnızca js/providers/index.js tarafından içe aktarılır', importers.join() === 'js/providers/index.js', importers.join(', '));
+ok('sw.js SHELL routeMeta içerir (çevrimdışı kabuk)', read('sw.js').includes("'./js/nav/routeMeta.js'"));
 
 // Bugün tünel/köprü veri kaynağı yok: yorumlar ve i18n metinleri dışındaki kodda tunnel/bridge/brunnel/underpass alanı okunmaz/istenmez.
 // ('overpass' aranmaz: Overpass API, istasyon/kamera sorgularının adıdır, üst geçit verisi değildir.)
