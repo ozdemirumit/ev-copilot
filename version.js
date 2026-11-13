@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.45';
+self.APP_VERSION = '0.99.46';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.46', date: '2026-11-13',
+    notes: [
+      'Altyapı (görünür değişiklik yok): sağlayıcıdan bağımsız rota üst verisi modeli eklendi (js/nav/routeMeta.js). Şerit, tünel ve köprü bilgisinin hangi sağlayıcıdan geldiği kaydedilir; veri var, yok, istenmedi ve desteklenmiyor durumları ayrılır; bilinmeyen ya da başka sağlayıcıdan gelen veri reddedilir.',
+      'Köprü, tünel, alt ya da üst geçit asla GPS kaybından çıkarılmaz. Bugün yalnızca Mapbox şerit verisi var; tünel/köprü kaynağı yok.',
+      'Model henüz uygulamaya bağlı değil: rota sağlayıcısı, harita, uyarılar, şerit paneli, kamera, sunucu ve ayarlar değişmedi.',
+    ],
+  },
   {
     v: '0.99.45', date: '2026-11-13',
     notes: [
