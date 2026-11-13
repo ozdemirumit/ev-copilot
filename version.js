@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.44';
+self.APP_VERSION = '0.99.45';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.45', date: '2026-11-13',
+    notes: [
+      'Düzeltme (sunucu): yalnızca boşluktan oluşan TOMTOM_MAP_KEY artık tanımlı sayılmaz; bu durumda TomTom haritası kapalı kalır ve Premium kullanıcılar OpenFreeMap haritasına düşer. Geçerli anahtar değiştirilmeden kullanılır; sunucu anahtarı TOMTOM_KEY tarayıcıya gitmez.',
+    ],
+  },
   {
     v: '0.99.44', date: '2026-11-13',
     notes: [

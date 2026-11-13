@@ -10,7 +10,8 @@ export function createMaps(store, env = {}) {
     if (p === 'google') return String(env.GOOGLE_MAPS_BROWSER_KEY || '');
     // Güvenlik: tarayıcıya YALNIZCA ayrı, adres kısıtlı TOMTOM_MAP_KEY gider. Sunucu anahtarı TOMTOM_KEY (doluluk/rota/arama) asla tarayıcıya
     // gönderilmez; TOMTOM_MAP_KEY yoksa TomTom haritası yapılandırılmamış sayılır ve Premium sessizce OpenFreeMap'e (osm) düşer.
-    if (p === 'tomtom') return String(env.TOMTOM_MAP_KEY || '');
+    // Yalnızca boşluktan oluşan değer (ör. "TOMTOM_MAP_KEY=   ") de yapılandırılmamış sayılır; geçerli anahtar kırpılmadan, aynen döner.
+    if (p === 'tomtom') { const k = String(env.TOMTOM_MAP_KEY || ''); return k.trim() ? k : ''; }
     return '';
   };
   const usable = (p) => p === 'osm' || !!keyOf(p);
