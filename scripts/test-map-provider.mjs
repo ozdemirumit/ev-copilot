@@ -44,8 +44,8 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
     ok('setUser(null) varsayılana döner', m.effective(u, true) === 'mapbox' && u.mapProvider == null);
   }
   {
-    // TomTom: tek anahtar (TOMTOM_KEY) hem sunucu hem harita için; ayrı TOMTOM_MAP_KEY varsa o. Yönetici seçmediyse Premium için varsayılan TomTom.
-    const T = { TOMTOM_KEY: 'tt-dummy' };
+    // TomTom haritası YALNIZCA ayrı TOMTOM_MAP_KEY ile (v0.99.44); sunucu anahtarı TOMTOM_KEY tarayıcıya gitmez. Yönetici seçmediyse Premium için varsayılan TomTom.
+    const T = { TOMTOM_MAP_KEY: 'tt-dummy' };
     const m = mk(T), u = {};
     ok('TomTom: anahtar varsa kullanılabilir, config anahtarı verir', m.available().tomtom === true && JSON.stringify(m.config({}, true)) === '{"provider":"tomtom","key":"tt-dummy"}');
     ok('TomTom: yönetici seçmediyse Premium için varsayılan TomTom', m.getDefault() === 'tomtom' && m.effective(u, true) === 'tomtom');
@@ -53,6 +53,7 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
     ok('TomTom: yönetici varsayılanı seçtiyse o geçerli (ör. osm)', (() => { const mm = mk(T); mm.setDefault('osm'); return mm.getDefault() === 'osm' && mm.effective({}, true) === 'osm'; })());
     ok('TomTom: kullanıcı seçimi varsayılanı ezer', (() => { const mm = mk({ ...T, ...ENV }); mm.setUser(u, 'mapbox'); return mm.effective(u, true) === 'mapbox'; })());
     ok('TomTom: ayrı harita anahtarı varsa o gider', JSON.stringify(mk({ TOMTOM_KEY: 'srv', TOMTOM_MAP_KEY: 'map' }).config({}, true)) === '{"provider":"tomtom","key":"map"}');
+    ok('TomTom: yalnızca sunucu anahtarı varsa harita kapalı, osm (anahtar verilmez)', (() => { const mm = mk({ TOMTOM_KEY: 'srv' }); return mm.available().tomtom === false && mm.getDefault() === 'osm' && JSON.stringify(mm.config({ mapProvider: 'tomtom' }, true)) === '{"provider":"osm"}'; })());
     ok('TomTom: anahtar yoksa varsayılan osm, seçilemez', mk({}).getDefault() === 'osm' && (() => { try { mk({}).setDefault('tomtom'); return false; } catch { return true; } })());
   }
   {

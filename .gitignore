@@ -11,3 +11,7 @@ server/public/
 
 # Tanıtım sitesi çıktısı (node site-src/build.mjs üretir; ayrı depoda yayınlanır)
 site/
+
+# Yerel ajan/araç çalışma klasörleri (izlenmez)
+.claude-flow/
+.swarm/

@@ -114,7 +114,7 @@ ok('tomtomSlots: boş/bozuk yanıt → null', tomtomSlots(null, true) === null &
 // --- kaynak sözleşmeleri: anahtar yalnızca sunucuda, günlüğe ve çıktıya sızmaz
 const proxy = readFileSync(new URL('../server/proxy.mjs', import.meta.url), 'utf8');
 const tt = readFileSync(new URL('../server/tomtom.mjs', import.meta.url), 'utf8');
-ok('anahtar günlük temizleyicisinde (scrub)', /GOOGLE_PLACES, HERE, TOMTOM, env\.VERIAPI_KEY, env\.TOMTOM_MAP_KEY,/.test(proxy));
+ok('anahtar günlük temizleyicisinde (scrub)', /const scrub = makeScrub\(env\)/.test(proxy) && /'TOMTOM_KEY', 'TOMTOM_MAP_KEY'/.test(readFileSync(new URL('../server/scrub.mjs', import.meta.url), 'utf8')));
 ok('rota uç noktası: Premium şart, kullanıcı başı kota, günlük tavan, anahtar sunucuda', /p === '\/tomtom\/route'/.test(proxy) && /premiumOk\(id\)\) return json\(res, 402, \{ error: 'premium_required' \}\)/.test(proxy) && /overQuota\(id, 'tomtom'\)/.test(proxy) && /tomtom_cap/.test(proxy));
 ok('TomTom anahtarı istemciye (js/) gitmez', !/TOMTOM_KEY|tomtom\.mjs/i.test(readFileSync(new URL('../js/routing/occupancyClient.js', import.meta.url), 'utf8')));
 ok('hata iletisi yanıt gövdesi/anahtar içermez', /new Error\('TomTom HTTP ' \+ res\.status\)/.test(tt) && !/res\.text\(\)/.test(tt));

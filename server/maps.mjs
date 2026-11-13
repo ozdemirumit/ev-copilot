@@ -8,7 +8,9 @@ export function createMaps(store, env = {}) {
   const keyOf = (p) => {
     if (p === 'mapbox') { const t = String(env.MAPBOX_MAP_TOKEN || ''); return t.startsWith('pk.') ? t : ''; }
     if (p === 'google') return String(env.GOOGLE_MAPS_BROWSER_KEY || '');
-    if (p === 'tomtom') return String(env.TOMTOM_MAP_KEY || env.TOMTOM_KEY || ''); // ayrı harita anahtarı yoksa sunucu anahtarı (TomTom: tek anahtar; tarayıcıya gider, yalnızca Premium'a)
+    // Güvenlik: tarayıcıya YALNIZCA ayrı, adres kısıtlı TOMTOM_MAP_KEY gider. Sunucu anahtarı TOMTOM_KEY (doluluk/rota/arama) asla tarayıcıya
+    // gönderilmez; TOMTOM_MAP_KEY yoksa TomTom haritası yapılandırılmamış sayılır ve Premium sessizce OpenFreeMap'e (osm) düşer.
+    if (p === 'tomtom') return String(env.TOMTOM_MAP_KEY || '');
     return '';
   };
   const usable = (p) => p === 'osm' || !!keyOf(p);

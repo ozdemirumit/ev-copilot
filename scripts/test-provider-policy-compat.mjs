@@ -42,7 +42,7 @@ ok('HERE lisansı unverified, varsayılan kapalı', policy.getProvider('here').l
 ok('TomTom lisansı unverified', policy.getProvider('tomtom').licenseStatus === 'unverified');
 
 // ---- 1) Harita: maps.mjs sahte depo + yer tutucu değerlerle (gerçek anahtar DEĞİL; çıktıya asla basılmaz) ----
-const FAKE = { MAPBOX_MAP_TOKEN: 'pk.PLACEHOLDER-not-a-key', GOOGLE_MAPS_BROWSER_KEY: 'PLACEHOLDER-google-not-a-key', TOMTOM_KEY: 'PLACEHOLDER-tomtom-not-a-key' };
+const FAKE = { MAPBOX_MAP_TOKEN: 'pk.PLACEHOLDER-not-a-key', GOOGLE_MAPS_BROWSER_KEY: 'PLACEHOLDER-google-not-a-key', TOMTOM_MAP_KEY: 'PLACEHOLDER-tomtom-not-a-key' };
 const store = { data: { settings: {} }, save() {} };
 const maps = createMaps(store, FAKE);
 const mapRows = [];

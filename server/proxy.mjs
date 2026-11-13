@@ -26,6 +26,7 @@ import { createCommunity } from './community.mjs';
 import { createStationInfo, MAX_PHOTO_BYTES } from './stationinfo.mjs';
 import { createTesla } from './tesla.mjs';
 import { createMaps } from './maps.mjs';
+import { makeScrub } from './scrub.mjs';
 import { parsePoints, pointsKey, hereSpeedLimits, createLru, MAX_CACHE_ITEM } from './speedlimits.mjs';
 import { createAdminAuth } from './totp.mjs';
 
@@ -241,7 +242,7 @@ async function readJson(req, max) {
 }
 
 // ---------- yardımcılar ----------
-const scrub = (s) => { let t = s; for (const secret of [MAPBOX, OCM, GOOGLE_PLACES, HERE, TOMTOM, env.VERIAPI_KEY, env.TOMTOM_MAP_KEY,env.MAPBOX_MAP_TOKEN, env.GOOGLE_MAPS_BROWSER_KEY, env.ADMIN_TOTP_SECRET]) if (secret) t = t.split(secret).join('***'); return t; };
+const scrub = makeScrub(env); // gizli .env değerlerini günlük/yanıt metninden '***' ile siler (liste: server/scrub.mjs)
 function send(res, status, body, headers = {}) {
   const buf = Buffer.isBuffer(body) ? body : Buffer.from(typeof body === 'string' ? body : JSON.stringify(body));
   res.writeHead(status, { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...headers, 'Content-Length': buf.length });

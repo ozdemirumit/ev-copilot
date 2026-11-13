@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.43';
+self.APP_VERSION = '0.99.44';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.44', date: '2026-11-13',
+    notes: [
+      'Güvenlik sertleştirmesi (sunucu): TomTom sunucu anahtarı (TOMTOM_KEY) artık hiçbir durumda tarayıcıya gönderilmez. Premium TomTom haritası yalnızca ayrı, adres kısıtlı TOMTOM_MAP_KEY tanımlıysa açılır; tanımlı değilse Premium kullanıcılar sessizce OpenFreeMap haritasına düşer. Sunucu tarafı TomTom doluluk, arama ve rota değişmedi.',
+      'Günlük temizleyicisi genişletildi: Google giriş sırrı, SMTP parolası, yönetici erişim kodları ve HERE erişim anahtarları da günlüklerde *** ile gizlenir.',
+      'Mapbox, Google ve OpenFreeMap harita davranışı, lisans/sağlayıcı ayarları ve arayüz değişmedi.',
+    ],
+  },
   {
     v: '0.99.43', date: '2026-11-13',
     notes: [

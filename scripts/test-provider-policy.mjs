@@ -122,7 +122,7 @@ ok('hiç fetch çağrısı yok', fetchCalls === 0);
 {
   const { createMaps, PROVIDERS } = await import('../server/maps.mjs');
   ok('server/maps.mjs PROVIDERS değişmedi (here eklenmedi)', JSON.stringify(PROVIDERS) === '["osm","mapbox","google","tomtom"]');
-  const m = createMaps({ data: { users: {}, settings: {} }, save() {} }, { TOMTOM_KEY: 'tt-dummy' });
+  const m = createMaps({ data: { users: {}, settings: {} }, save() {} }, { TOMTOM_MAP_KEY: 'tt-dummy' });
   ok('maps: Free → osm', JSON.stringify(m.config({}, false)) === '{"provider":"osm"}');
   ok('maps: Premium + TomTom anahtarı → tomtom (politika çalışma zamanına bağlı değil)', m.config({}, true).provider === 'tomtom');
   let threw = false;
