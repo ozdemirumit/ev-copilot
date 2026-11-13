@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.62';
+self.APP_VERSION = '0.99.63';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.63', date: '2026-11-13',
+    notes: [
+      'Düzeltme (Beta): Rota sayfasında Varış kutusuna dokununca (kutu boşken) son hedefler öneri kutusunda listelenir; klavye açıkken tek dokunuşla seçilir. "Son hedefler" açılır listesi klavye açıkken ilk dokunuşta açılır (önceden ilk dokunuş yalnızca klavyeyi kapatıyordu).',
+      'Açık liste en çok ekranın %30\'u kadar yer kaplar, kendi içinde kayar; Planla/Git düğmeleri görünür kalır. Silme (×) ve Listeyi temizle aynı yerde.',
+    ],
+  },
   {
     v: '0.99.62', date: '2026-11-13',
     notes: [
