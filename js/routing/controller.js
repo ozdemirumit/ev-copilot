@@ -27,7 +27,9 @@ let cacheKey = null;
 let timer = null;
 const accessBook = createAccessBook(); // şarj durağı yol ağı erişim sonuçları (istasyon × gidiş yönü); yeni yolculukta temizlenir
 const ACCESS_ROUNDS = 4; // erişilemeyen durak elenince yeni seçilen durak(lar) da doğrulanır: en çok bu kadar tur
-let accessRun = null;
+let accessRun = null; // { key, p }: aynı plan için tek erişim denetimi; yeni planlama/rota eskisini yeniden kullanmaz
+let tripSeq = 0; // her planTrip yeni nesil: eski neslin geç gelen yanıtları (rota, istasyon, erişim, durak üzerinden rota) planı/haritayı yazmaz
+let lastGood = null; // planlama sürerken yeni bir planlama başlarsa geri dönülecek son tutarlı durum
 let lineCache = { coords: null, cum: null, head: new Map() };
 
 /** Rotanın istasyondaki gidiş yönü (tam çözünürlüklü çizgiden; rota değişince yeniden hesaplanır). */
@@ -144,11 +146,16 @@ function applyPlan(out, extra = {}) {
  * korunur ve kullanıcı uyarılır (durak "doğrulanmadı" kalır). Aynı anda tek çalışma.
  */
 export function verifyStopAccess() {
-  if (!accessRun) accessRun = runAccess().catch((err) => console.warn('Durak erişim denetimi:', err.message)).finally(() => { accessRun = null; });
-  return accessRun;
+  const key = `${tripSeq}:${getState('plan').planId}`; // başka plan için süren (eski) çalışma yeni planı doğrulamaz: yenisi başlar, eskisi kendiliğinden bırakır
+  if (accessRun?.key === key) return accessRun.p;
+  const run = { key, p: null };
+  accessRun = run;
+  run.p = runAccess().catch((err) => console.warn('Durak erişim denetimi:', err.message)).finally(() => { if (accessRun === run) accessRun = null; });
+  return run.p;
 }
 
 async function runAccess() {
+  const seq = tripSeq;
   const failedNames = new Set();
   let removed = [];
   for (let round = 0; round < ACCESS_ROUNDS; round++) {
@@ -156,7 +163,7 @@ async function runAccess() {
     if (pl.status !== 'ready' || !pl.profile || !pl.route?.coords) return;
     const fromKm = pl.fromKm ?? 0;
     const res = await verifyStops({ coords: pl.route.coords, stops: pl.stops, fromKm, book: accessBook, probe: probeStopAccess });
-    if (getState('plan').planId !== pl.planId) return; // araya yeni rota girdi
+    if (seq !== tripSeq || getState('plan').planId !== pl.planId) return; // araya yeni planlama/rota girdi
     res.failed.forEach((s) => failedNames.add(s.name));
     if (!res.checked) break;
     removed = [...removed, ...res.rejected.map((s) => s.name)];
@@ -170,8 +177,9 @@ async function runAccess() {
 }
 
 /** İstasyonları getir ve plan durumuna yaz; hata/önbellek bilgisi İstasyon sekmesinde kalıcı gösterilir. */
-async function loadStations(pts, profile) {
+async function loadStations(pts, profile, stale = () => false) {
   const { stations, errors, cached, summary } = await fetchChargers(pts, profile, cacheKey);
+  if (stale()) return; // araya yeni planlama girdi: eski rotanın istasyonları yeni planı ezmez
   if (errors.length) toast(errors.join(' · '), 7000);
   if (cached) toast('İstasyonlar önbellekten alındı');
   patch('plan', { stations, stationInfo: { errors, cached, summary } });
@@ -182,13 +190,15 @@ export async function refetchStations() {
   const plan = getState('plan');
   if (!raw || !plan.profile || plan.status === 'loading') return;
   patch('plan', { status: 'loading', text: 'Şarj istasyonları aranıyor…' });
+  const seq = tripSeq;
   try {
-    await loadStations(raw.pts, plan.profile);
+    await loadStations(raw.pts, plan.profile, () => seq !== tripSeq);
+    if (seq !== tripSeq) return;
     const p = getState('plan');
     applyPlan(computePlan({ fromKm: p.fromKm ?? 0, soc: p.fromSoc ?? startSoc }));
   } catch (err) {
     console.error(err);
-    patch('plan', { status: 'error', text: err.message });
+    if (seq === tripSeq) patch('plan', { status: 'error', text: err.message });
   }
 }
 
@@ -212,15 +222,26 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
     setManual(80, { guess: true });
     toast('Pil bilinmiyor: %80 kabul edildi, Mevcut pil sürgüsünden değiştirebilirsin');
   }
-  const prev = { ...getState('plan') }; // internet yoksa/rota alınamazsa mevcut (kayıtlı) plan bozulmasın
+  // Yeni nesil: önceki planlamanın (ve onun arka plan adımlarının) geç gelen sonuçları bundan sonra yok sayılır
+  const seq = ++tripSeq;
+  const stale = () => seq !== tripSeq;
+  // İnternet yoksa/rota alınamazsa mevcut (kayıtlı) plan bozulmasın. Planlama sürerken yenisi başladıysa son tutarlı durum geri gelir.
+  const cur = getState('plan');
+  const prev = cur.status === 'loading' && lastGood ? lastGood
+    : { plan: { ...cur }, route: { trafficInfo: route.trafficInfo, cruise: route.cruise, traffic: route.traffic }, raw, sig };
+  lastGood = prev;
   const resumeSim = !!from && getState('sim').enabled && getState('sim').play; // yeniden rota (kritik pil, rotadan çıkış): simülasyon oynuyorsa yeni rota kurulunca devam eder
   const restoreSim = () => { if (resumeSim && getState('sim').enabled) patch('sim', { play: true }); };
 
   try {
     patch('plan', { status: 'loading', text: 'Rota alınıyor…', stops: [], totals: null, ranking: [], fromKm: 0, fromSoc: null, pinIds: [], banIds: [] }); // yeni rota: elle değiştirilen duraklar sıfırlanır
-    if (!from) accessBook.clear(); // yeni yolculuk: erişim sonuçları sıfırdan (yeniden rotada aynı yöndeki sonuçlar geçerli kalır)
+    if (!from) {
+      accessBook.clear(); // yeni yolculuk: erişim sonuçları sıfırdan (yeniden rotada aynı yöndeki sonuçlar geçerli kalır)
+      mapApi.drawStations([], []); // önceki rotanın durak/istasyon işaretleri yeni plan gelene kadar haritada kalmaz
+    }
     patch('sim', { routeKm: 0, lat: from?.lat ?? null, lon: from?.lon ?? null, play: false }); // simüle araç yeni rotanın başına (yeniden rotada bulunduğu yere)
     const tm = [Date.now()]; const rt = await fetchRoute(start, end, tripWaypoints(route.via, via)); tm.push(Date.now()); // tm: aşama zamanları (yavaşlık tanısı)
+    if (stale()) return false; // araya yeni planlama girdi: bu rota çizilmez
     if (rt.note) toast(rt.note, 7000);
     const pts = resampleRoute(rt.coords);
     // Hız rota adımlarından: dilim başına serbest akış hızı (yol limiti/sınıfı) ve trafik çarpanı. Elle ayar yok.
@@ -243,11 +264,14 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
       patch('plan', { route: rt, profile: quick, steps: projectSteps(rt.steps, quick), planId: Date.now(), wxInfo: { source: null, fallbackReason: null, error: null }, forceFirstId: via?.id ?? null, lastStopKm: null, stations: keptQ, stationInfo: cur.stationInfo, text: '' });
       if (!keptQ.length) {
         cacheKey = [start, end].map((p) => `${p.lat.toFixed(2)},${p.lon.toFixed(2)}`).join('>');
-        await loadStations(pts, quick);
+        await loadStations(pts, quick, stale);
+        if (stale()) return false;
       }
       applyPlan(computePlan(), { startSoc });
       await verifyStopAccess(); // karşı yöndeki tesis durak olmasın (yol ağı)
+      if (stale()) return false;
       const via2 = await routeThroughStops(start, end, { elev: false }); // otoyol dışı durak: rota onun üzerinden (rakım/hava yine arkadan)
+      if (stale()) return false;
       enrichRoute(via2?.pts ?? pts, via2?.speeds ?? speeds, getState('plan').planId); // beklenmez
       restoreSim();
       return true;
@@ -264,6 +288,7 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
       fetchElevations(pts),
       fetchWeather(wxIdx.map((i) => ({ lat: pts[i].lat, lon: pts[i].lon, t: t0 + speeds.cumH[i] * 3600e3 }))).catch((err) => { console.warn(err); wxError = err.message; return null; }),
     ]);
+    if (stale()) return false;
     if (!elev) toast('Rakım alınamadı: rota düz kabul edildi');
     if (!wxRes) toast('Hava durumu alınamadı: rüzgar/yağış yok sayıldı');
 
@@ -282,25 +307,39 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
 
     if (!kept.length) {
       cacheKey = [start, end].map((p) => `${p.lat.toFixed(2)},${p.lon.toFixed(2)}`).join('>');
-      await loadStations(pts, profile); tm.push(Date.now());
+      await loadStations(pts, profile, stale); tm.push(Date.now());
+      if (stale()) return false;
     }
     applyPlan(computePlan(), { startSoc });
     await verifyStopAccess(); // karşı yöndeki tesis durak olmasın (yol ağı)
+    if (stale()) return false;
     await routeThroughStops(start, end);
+    if (stale()) return false;
     rememberDest(end); planTiming(tm);
     return true;
   } catch (err) {
     console.error(err);
+    if (stale()) return false; // eski planlamanın geç gelen hatası: yeni planı bozmaz, uyarı gösterilmez
     restoreSim();
-    if (prev.profile && prev.status !== 'loading') {
-      patch('plan', { ...prev }); // eski plan ve istasyonlar geri gelir
-      mapApi.drawStations(prev.stations.filter((s) => s.km > (prev.fromKm ?? 0) - 0.3 && shown(s, new Set(prev.stops.map((x) => x.station.id)))), prev.stops);
+    const old = prev.plan;
+    if (old.profile && old.status !== 'loading') {
+      // Eski plan, istasyonlar, harita çizgisi, rota özeti ve ham veri birlikte geri gelir (ağsız yeniden hesap eski rotayla tutarlı kalır)
+      raw = prev.raw; sig = prev.sig;
+      patch('route', prev.route);
+      patch('plan', { ...old });
+      if (old.route?.coords) mapApi.drawRoute(old.route.coords, { fit: false, traffic: old.route.trafficSpans || null });
+      mapApi.drawStations(old.stations.filter((s) => s.km > (old.fromKm ?? 0) - 0.3 && shown(s, new Set(old.stops.map((x) => x.station.id)))), old.stops);
       toast('Yeni rota alınamadı, mevcut plan korundu: ' + err.message, 5000);
     } else {
-      patch('plan', { status: 'error', text: err.message });
+      // Geri dönülecek plan yok: yarım kalan rota/profil plandan ve haritadan kalkar, hata metni Rota sayfasında kalır
+      raw = null; sig = '';
+      patch('plan', { status: 'error', text: err.message, route: null, profile: null, steps: [], stations: [], stationInfo: null, stops: [], totals: null, planId: null });
+      mapApi.clearRoute(); // rota çizgisi ve istasyon işaretleri
       toast('Plan hatası: ' + err.message, 4000);
     }
     return false;
+  } finally {
+    if (!stale()) lastGood = null;
   }
 }
 
@@ -320,8 +359,11 @@ async function routeThroughStops(start, end, { elev = true } = {}) {
     stopover, stopoverKm: stopover ? pl.profile.project(stopover.lat, stopover.lon).km : null,
   });
   if (!wps) return null;
+  const seq = tripSeq;
+  const gone = () => seq !== tripSeq || getState('plan').planId !== pl.planId; // araya yeni planlama/rota girdi
   const prev = { plan: { ...pl }, route: { ...getState('route') }, raw, sig };
   const restore = (msg) => {
+    if (gone()) return null; // yeni planın üzerine eski plan geri yazılmaz
     raw = prev.raw; sig = prev.sig;
     patch('route', { trafficInfo: prev.route.trafficInfo, cruise: prev.route.cruise, traffic: prev.route.traffic });
     patch('plan', prev.plan);
@@ -331,11 +373,11 @@ async function routeThroughStops(start, end, { elev = true } = {}) {
   };
   try {
     const rt = await fetchRoute(start, end, wps);
-    if (getState('plan').planId !== pl.planId) return null; // araya yeni bir rota girdi
+    if (gone()) return null; // araya yeni bir rota girdi
     const pts = resampleRoute(rt.coords);
     const speeds = segmentSpeeds(rt, pts);
     const ev = elev ? await fetchElevations(pts).catch(() => null) : null;
-    if (getState('plan').planId !== pl.planId) return null;
+    if (gone()) return null;
     patch('route', {
       trafficInfo: { ratio: rt.trafficRatio, driveMin: rt.durationH * 60, freeMin: (rt.durationH * 60) / rt.trafficRatio, avgFreeKmh: speeds.avgFreeKmh, live: !!rt.live, jamKm: rt.intervals.reduce((a, iv) => a + (iv.to - iv.from), 0), slowKm: (rt.trafficSpans || []).reduce((a, s) => a + (s.to - s.from), 0) },
       cruise: Math.round(speeds.avgFreeKmh),
@@ -364,6 +406,7 @@ async function routeThroughStops(start, end, { elev = true } = {}) {
 
 /** Yeniden rotanın rakım ve hava verisi (arka plan): gelince profil yenilenir ve plan ağsız yeniden hesaplanır. */
 async function enrichRoute(pts, speeds, planId) {
+  const seq = tripSeq;
   try {
     const wxIdx = pts.map((_, i) => i).filter((i) => i % (WX_STEP_KM / 2) === 0);
     if (wxIdx.at(-1) !== pts.length - 1) wxIdx.push(pts.length - 1);
@@ -374,7 +417,7 @@ async function enrichRoute(pts, speeds, planId) {
       fetchElevations(pts).catch(() => null),
       fetchWeather(wxIdx.map((i) => ({ lat: pts[i].lat, lon: pts[i].lon, t: t0 + speeds.cumH[i] * 3600e3 }))).catch((err) => { wxError = err.message; return null; }),
     ]);
-    if (getState('plan').planId !== planId) return; // araya yeni bir rota girdi
+    if (seq !== tripSeq || getState('plan').planId !== planId) return; // araya yeni planlama/rota girdi
     if (!elev) toast('Rakım alınamadı: rota düz kabul edildi');
     if (!wxRes) toast('Hava durumu alınamadı: rüzgar/yağış yok sayıldı');
     raw = {
@@ -552,6 +595,9 @@ export function initRouteController() {
 /** Navigasyon bitti ya da durduruldu: plan, rota çizgisi ve başlangıç/ara/varış işaretleri temizlenir (yeni rota için sıfırdan başlanır). */
 export function clearTrip() {
   clearTimeout(timer);
+  tripSeq++; // süren planlama/erişim denetimi temizlenen rotayı geri çizmez
+  lastGood = null;
+  accessRun = null;
   accessBook.clear();
   raw = null;
   sig = '';

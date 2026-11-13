@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.60';
+self.APP_VERSION = '0.99.61';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.61', date: '2026-11-13',
+    notes: [
+      'Düzeltme (Beta): rota varken yeniden Rota planla (çift dokunma, hedef değişikliği, navigasyon sürerken) önceki planlamanın geç gelen rota, istasyon, erişim denetimi ve hata yanıtları artık yeni planı ve haritayı ezmez.',
+      'Yeni rota alınamazsa önceki plan, rota çizgisi, istasyonlar ve rota özeti birlikte geri gelir; geri dönülecek plan yoksa yarım kalan rota haritadan kalkar. Yeni yolculukta önceki rotanın istasyon işaretleri planlama başında silinir. Başlangıç, varış ve pil girişleri değişmez. Cihazda doğrulanmadı.',
+    ],
+  },
   {
     v: '0.99.60', date: '2026-11-13',
     notes: [
