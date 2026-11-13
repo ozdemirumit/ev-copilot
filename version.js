@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.55';
+self.APP_VERSION = '0.99.56';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.56', date: '2026-11-13',
+    notes: [
+      'Düzeltme (Beta): "3 km sonra trafik var" uyarısı araç ilerledikçe azalmıyordu (metin veri alındığı anda donduruluyordu). Trafik ve yağış uyarıları artık rota üzerindeki konuma bağlanır; kalan mesafe 5 saniyede bir güncel konumdan hesaplanır, ek ücretli istek yapılmaz.',
+      'Trafik: sıkışıklığa varınca "Şu an", geçince uyarı kalkar. Sesli hatırlatma 5 km, 2 km ve 500 m kala bir kez. Trafik rotası planlı rotayla aynı yolda değilse ya da rotadan çıktıysan geri sayım yerine "mesafe belirsiz" yazılır.',
+      'Yağış: tahmin alan düzeyinde olduğundan mesafe kaba yuvarlanır (10 km üstünde 5 km adım); noktaya varınca "Bu bölgede yağmur bekleniyor" yazılır. Cihazda doğrulanmadı.',
+    ],
+  },
   {
     v: '0.99.55', date: '2026-11-13',
     notes: [

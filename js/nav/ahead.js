@@ -13,6 +13,7 @@ import { mapApi } from '../ui/mapView.js';
 import { buildTrack, locate } from './track.js';
 import { trafficUse } from './trafficGuard.js';
 import { activeMap } from '../net/activeMap.js';
+import { anchorTraffic, anchorRain, mergeEvent, stepEvent, primeThresholds, dueThreshold, fmtTrafficKm, fmtRainKm, OFF_ROUTE_KM } from './aheadEvents.js';
 
 const $ = (id) => document.getElementById(id);
 const CHECK_MS = 5000;
@@ -32,6 +33,34 @@ let busyTr = false;
 let pwAt = 0;
 let busyPw = false;
 let overSince = 0;
+// Rota konumuna bağlı olaylar (aheadEvents.js): metin her check()'te (5 sn) güncel rota km'sinden yeniden yazılır, alınma anında dondurulmaz.
+let trEv = null;
+let rainEv = null;
+
+const navCtx = () => ({ km: getState('engine').routeKm, offRouteKm: getState('engine').offRouteKm ?? 0, planId: getState('plan').planId, now: Date.now() });
+
+/** Olay metinlerini güncel konuma göre yeniden yaz; trafik için eşik geçilince bir kez sesli hatırlat. Olay yoksa metne dokunulmaz. */
+function paintEvents() {
+  const ctx = navCtx();
+  const part = {};
+  if (trEv) {
+    const r = stepEvent(trEv, ctx);
+    part.traffic = r.text;
+    if (r.st.status === 'ahead' || r.st.status === 'inside') {
+      const th = dueThreshold(trEv, r.st.status === 'inside' ? 0 : r.shownKm);
+      const w = trEv.heavy ? 'yoğun trafik' : 'yavaş trafik';
+      if (th != null) speak(r.st.status === 'inside' ? `Şu an ${w}.` : `${fmtTrafficKm(r.shownKm)} kilometre ileride ${w}.`, { key: `traffic@${Math.round(trEv.alongKm)}:${th}`, cooldownMs: 30 * 60e3 });
+    }
+    if (r.drop) trEv = null;
+  }
+  if (rainEv) {
+    const r = stepEvent(rainEv, ctx);
+    part.rain = r.text;
+    if (r.drop) rainEv = null;
+  }
+  const a = getState('nav').ahead;
+  if (('traffic' in part && part.traffic !== a.traffic) || ('rain' in part && part.rain !== a.rain)) setAhead(part);
+}
 
 const setAhead = (part) => patch('nav', { ahead: { ...getState('nav').ahead, ...part } });
 
@@ -54,17 +83,21 @@ async function refreshRain(km) {
       const p = prof.pointAt(km + d);
       return { d, lat: p.lat, lon: p.lon, t: now + prof.timeBetween(km, km + d) * 3600e3 };
     });
-    if (!pts.length) return setAhead({ rain: null });
+    const id = plan.planId;
+    if (!pts.length) { rainEv = null; return setAhead({ rain: null }); }
     const res = await fetchWeather(pts);
+    if (getState('plan').planId !== id) return; // istek sürerken plan değişti
     const i = res.findIndex((w) => w.rain >= RAIN_MM);
-    if (i < 0) return setAhead({ rain: null });
+    if (i < 0) { rainEv = null; return setAhead({ rain: null }); }
     const w = res[i];
-    const d = pts[i].d;
-    const ice = w.temp <= 2 ? ', buzlanma riski' : '';
-    setAhead({ rain: `🌧️ İleride yağmur: ~${d} km sonra (${w.rain.toFixed(1)} mm/sa, ${Math.round(w.temp)}°C${ice})` });
-    speak(`İleride yaklaşık ${d} kilometre sonra yağmur bekleniyor${ice ? '. Buzlanma riski var' : ''}.`, { key: 'rain' + Math.round(d / 50), cooldownMs: 30 * 60e3 });
+    // Plan rotasındaki örnek noktasına bağlanır (alan düzeyinde tahmin: kesin başlangıç noktası değil); metin konumla güncellenir
+    rainEv = mergeEvent(rainEv, anchorRain({ d: pts[i].d, fetchKm: km, mm: w.rain, temp: w.temp, planId: id, at: Date.now() }));
+    const r = stepEvent(rainEv, navCtx());
+    setAhead({ rain: r.text });
+    if (r.st.status === 'ahead') speak(`İleride yaklaşık ${fmtRainKm(r.shownKm)} kilometre sonra yağmur bekleniyor${w.temp <= 2 ? '. Buzlanma riski var' : ''}.`, { key: 'rain@' + Math.round(rainEv.alongKm / 50), cooldownMs: 30 * 60e3 });
   } catch (err) {
     console.warn('Yol önü hava durumu alınamadı:', err.message);
+    rainEv = null;
     setAhead({ rain: null });
   } finally {
     wxAt = Date.now();
@@ -110,22 +143,30 @@ async function refreshTraffic(km) {
     const t = await fetchTrafficAhead(e, getState('route').end);
     const plan = getState('plan');
     if (plan.planId !== id) return; // istek sürerken plan değişti: eski sonuç hiçbir şeye işlenmez (check() trafik metnini zaten sıfırladı)
-    if (!t) return setAhead({ traffic: null });
+    if (!t) { trEv = null; return setAhead({ traffic: null }); }
     // Sağlayıcı koruması (trafficGuard.js): trafik kaynağı seçilen rotanın sağlayıcısıyla aynı değilse hız/enerji/renk/süre/ses değişmez; yalnızca trafik metni silinir
     if (!trafficUse({ routeProvider: plan.route?.routeMeta?.provider, trafficSource: t.trafficSource, map: activeMap() }).ok) {
       patch('nav', { liveRemain: null }); // reddedilen kaynak: önceki canlı varış süresi de kullanılmaz (v0.99.50)
+      trEv = null;
       return setAhead({ traffic: null });
     }
     if (t.rt && (getState('engine').offRouteKm ?? 0) < 1) updateAhead({ km, rt: t.rt, planId: id }); // rotadayken: yeni trafik hızları enerji ve süreye işlenir
-    if (t.rt?.coords && (getState('engine').offRouteKm ?? 0) < 1 && sameRoad(t.rt.coords, getState('plan').route?.coords)) mapApi.setTraffic(t.rt.coords, t.rt.trafficSpans || []); // rota yeniden hesaplanmadan trafik renkleri
+    const onRoute = (getState('engine').offRouteKm ?? 0) < OFF_ROUTE_KM;
+    const same = !!t.rt?.coords && onRoute && sameRoad(t.rt.coords, getState('plan').route?.coords);
+    if (same) mapApi.setTraffic(t.rt.coords, t.rt.trafficSpans || []); // rota yeniden hesaplanmadan trafik renkleri
     const { jam, delayMin } = t;
     patch('nav', { liveRemain: { h: t.remainH, at: Date.now(), planId: id } }); // plana bağlı: navigator.js yalnızca aynı planda okur
-    if (!jam) return setAhead({ traffic: delayMin >= 10 ? `🚦 Rotada trafik kaynaklı ≈ ${delayMin} dk gecikme var` : null });
-    const len = jam.to - jam.from;
-    const where = jam.from < 1 ? 'Şu an' : `~${Math.round(jam.from)} km ileride`;
-    const what = jam.jam ? 'yoğun trafik' : 'yavaş trafik';
-    setAhead({ traffic: `🚦 ${where} ${what} (${len.toFixed(1)} km)` + (delayMin >= 3 ? `, rotada ≈ ${delayMin} dk gecikme` : '') });
-    speak(`${jam.from < 1 ? 'Şu an' : `${Math.round(jam.from)} kilometre ileride`} ${what}, yaklaşık ${len.toFixed(0)} kilometre.${delayMin >= 5 ? ` Tahmini gecikme ${delayMin} dakika.` : ''}`, { key: 'traffic' + Math.round(jam.from / 10), cooldownMs: 15 * 60e3 });
+    if (!jam) { trEv = null; return setAhead({ traffic: delayMin >= 10 ? `🚦 Rotada trafik kaynaklı ≈ ${delayMin} dk gecikme var` : null }); }
+    // Plan rotasına bağla: yalnızca trafik rotası aynı yoldaysa ve araç rotadaysa (aksi hâlde "mesafe belirsiz", geri sayım yok)
+    const prev = trEv;
+    trEv = mergeEvent(prev, anchorTraffic({ jam, fetchKm: km, sameRoad: same, onRoute, delayMin, planId: id, at: Date.now() }));
+    const r = stepEvent(trEv, navCtx());
+    setAhead({ traffic: r.text });
+    if (r.drop) { trEv = null; return; }
+    const what = trEv.heavy ? 'yoğun trafik' : 'yavaş trafik';
+    const where = r.st.status === 'inside' ? 'Şu an' : r.st.status === 'ahead' ? `${fmtTrafficKm(r.shownKm)} kilometre ileride` : 'İleride';
+    if (trEv.anchored) primeThresholds(trEv, r.st.status === 'inside' ? 0 : r.shownKm);
+    if (!trEv.known) speak(`${where} ${what}, yaklaşık ${trEv.lenKm.toFixed(0)} kilometre.${delayMin >= 5 ? ` Tahmini gecikme ${delayMin} dakika.` : ''}`, { key: trEv.anchored ? `traffic@${Math.round(trEv.alongKm)}` : 'traffic?', cooldownMs: 15 * 60e3 });
   } catch (err) {
     console.warn('Trafik bilgisi alınamadı:', err.message);
   } finally {
@@ -155,11 +196,13 @@ function check() {
     if (nav.ahead.speed != null) setAhead({ speed: null });
   }
 
-  if (plan.planId !== planId) { planId = plan.planId; wxAt = 0; trAt = 0; pwAt = Date.now(); setAhead({ rain: null, traffic: null }); }
+  if (plan.planId !== planId) { planId = plan.planId; wxAt = 0; trAt = 0; pwAt = Date.now(); trEv = null; rainEv = null; setAhead({ rain: null, traffic: null }); }
   if (!nav.active || !plan.profile || e.lat == null) {
+    if (!nav.active) { trEv = null; rainEv = null; }
     if (!nav.active && (nav.ahead.rain || nav.ahead.traffic)) setAhead({ rain: null, traffic: null });
     return;
   }
+  paintEvents(); // kalan mesafe her 5 sn'de güncel rota konumundan (yeniden rota/yeniden katılma dahil)
   const km = getState('engine').routeKm;
   if (km == null || plan.profile.totalKm - km < 3) return;
   if (!busyWx && Date.now() - wxAt > WEATHER_EVERY_MS) refreshRain(km);

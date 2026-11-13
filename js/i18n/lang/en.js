@@ -127,6 +127,8 @@ export default {
   "🌦️ Rota boyunca hava": "🌦️ Weather along the route",
   "🌧️ {0} mm/sa": "🌧️ {0} mm/h",
   "🌧️ İleride yağmur: ~{0} km sonra ({1} mm/sa, {2}°C{3})": "🌧️ Rain ahead: in ~{0} km ({1} mm/h, {2}°C{3})",
+  "🌧️ Bu bölgede yağmur bekleniyor ({0} mm/sa, {1}°C{2})": "🌧️ Rain expected in this area ({0} mm/h, {1}°C{2})",
+  "🌧️ İleride yağmur bekleniyor, mesafe belirsiz ({0} mm/sa, {1}°C{2})": "🌧️ Rain expected ahead, distance unknown ({0} mm/h, {1}°C{2})",
   "🎯 Konumumu başlangıç yap": "🎯 Set my location as start",
   "👁️ Göster": "👁️ Show",
   "💨 {0} km/h ({1}{2})": "💨 {0} km/h ({1}{2})",

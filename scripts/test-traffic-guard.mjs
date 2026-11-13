@@ -83,8 +83,8 @@ registerHooks({
   },
 });
 const asrc = readFileSync(new URL('../js/nav/ahead.js', import.meta.url), 'utf8');
-const unstubbed = [...asrc.matchAll(/from '(\.\.?\/[^']+)'/g)].map((m) => m[1]).filter((s) => !(s in STUBS) && s !== './trafficGuard.js');
-ok('ahead.js içe aktarmalarının tamamı sahte (trafficGuard hariç)', unstubbed.length === 0, unstubbed.join(', '));
+const unstubbed = [...asrc.matchAll(/from '(\.\.?\/[^']+)'/g)].map((m) => m[1]).filter((s) => !(s in STUBS) && s !== './trafficGuard.js' && s !== './aheadEvents.js');
+ok('ahead.js içe aktarmalarının tamamı sahte (saf trafficGuard/aheadEvents hariç)', unstubbed.length === 0, unstubbed.join(', '));
 
 // DOM / zamanlayıcı / saat sahteleri
 const el = () => ({ value: 0, textContent: '', classList: { toggle() {} }, replaceChildren() {}, addEventListener() {} });
@@ -154,7 +154,7 @@ async function run(name, { provider = 'mapbox', meta, route, map, src, res, duri
 
 // İzin verilen: davranış aynen (metin + ses)
 await run('mapbox→mapbox @osm', { provider: 'mapbox', map: 'osm', src: 'mapbox', expectAllowed: true });
-ok('mapbox→mapbox: yoğun trafik metni ve ses', /yoğun trafik \(3\.0 km\), rotada ≈ 7 dk gecikme/.test(ahead().traffic) && H.speak.length === 1 && H.speak[0][1].key === 'traffic1' && unrelatedKept());
+ok('mapbox→mapbox: yoğun trafik metni ve ses', /yoğun trafik \(3\.0 km\), rotada ≈ 7 dk gecikme/.test(ahead().traffic) && H.speak.length === 1 && H.speak[0][1].key === 'traffic@15' && unrelatedKept());
 await run('mapbox→mapbox @tomtom', { provider: 'mapbox', map: 'tomtom', src: 'mapbox', expectAllowed: true });
 await run('mapbox→mapbox @harita yok', { provider: 'mapbox', map: null, src: 'mapbox', expectAllowed: true });
 await run('tomtom→tomtom @tomtom', { provider: 'tomtom', map: 'tomtom', src: 'tomtom', expectAllowed: true });
@@ -315,6 +315,38 @@ for (const [name, settle] of [
   ok('statik: finally trAt yalnızca aynı planda', /finally \{\s*if \(getState\('plan'\)\.planId === id\) trAt = Date\.now\(\);/.test(body));
 }
 
+// v0.99.56: kalan mesafe konumla güncellenir (3 km sonra trafik → 1 / 2,5 / 3 km ilerle); yeni sağlayıcı isteği yapılmaz
+{
+  H.map = 'osm';
+  const q = await start({ provider: 'mapbox' }); // routeKm 10
+  q[0].res({ ...trafficResult('mapbox'), jam: { from: 3, to: 4.2, jam: true }, delayMin: 4 });
+  await flush();
+  ok('uçtan uca: ilk metin ~3.0 km', /^🚦 ~3\.0 km ileride yoğun trafik \(1\.2 km\)/.test(ahead().traffic), ahead().traffic);
+  ok('uçtan uca: ilk ses bir kez (konuma bağlı anahtar)', H.speak.length === 1 && H.speak[0][1].key === 'traffic@13');
+  const step = (km) => { H.state.engine = { ...H.state.engine, routeKm: km }; clock += 5000; check(); return ahead().traffic; };
+  reset();
+  ok('uçtan uca: 1 km ilerledi → ~2.0 km', /^🚦 ~2\.0 km ileride/.test(step(11)));
+  ok('uçtan uca: 2 km eşiği bir kez sesli', H.speak.length === 1 && H.speak[0][1].key === 'traffic@13:2');
+  step(11.05); step(11.1);
+  ok('uçtan uca: her GPS adımında ses tekrarlanmaz', H.speak.length === 1);
+  ok('uçtan uca: GPS geri sıçraması (−0,1 km) metni büyütmez', /^🚦 ~1\.9 km/.test(step(11.1)) && /^🚦 ~1\.9 km/.test(step(11.0)));
+  ok('uçtan uca: 2,5 km ilerledi → ~0.5 km + 0,5 km eşiği', /^🚦 ~0\.5 km ileride/.test(step(12.5)) && H.speak.length === 2 && H.speak[1][1].key === 'traffic@13:0.5');
+  ok('uçtan uca: 3 km ilerledi → Şu an', /^🚦 Şu an yoğun trafik/.test(step(13)));
+  ok('uçtan uca: sıkışıklık geçildi → metin kalkar (gecikme < 10 dk)', step(14.5) === null);
+  ok('uçtan uca: yolda yeni ücretli trafik isteği yok', H.traffic.length === 0);
+  // Rota dışı: geri sayım yok, "mesafe belirsiz"; yeniden katılınca geri sayım sürer
+  const q2 = await start({ provider: 'mapbox' });
+  q2[0].res({ ...trafficResult('mapbox'), jam: { from: 6, to: 7, jam: false } });
+  await flush();
+  H.state.engine = { routeKm: 12, offRouteKm: 2 }; clock += 5000; check();
+  ok('uçtan uca: rota dışında mesafe belirsiz', /mesafe belirsiz/.test(ahead().traffic) && !/~\d/.test(ahead().traffic));
+  H.state.engine = { routeKm: 13, offRouteKm: 0 }; clock += 5000; check();
+  ok('uçtan uca: yeniden katılınca ~3.0 km', /^🚦 ~3\.0 km ileride yavaş trafik/.test(ahead().traffic));
+  // Yeniden rota (yeni planId): eski olay temizlenir
+  H.state.plan = { ...H.state.plan, planId: 'reroute-' + pid }; clock += 5000; check();
+  ok('uçtan uca: yeniden rotada eski trafik metni kalmaz', ahead().traffic === null);
+}
+
 // Günlüklerde ham veri / sahte anahtar yok
 const allLogs = JSON.stringify(logs.map(([k, a]) => [k, a.map(String)]));
 ok('günlüklerde ham sağlayıcı verisi ve anahtar yok', !allLogs.includes(SENTINEL) && !allLogs.includes(FAKE_KEY));
@@ -325,7 +357,7 @@ ok('günlüklerde ham sağlayıcı verisi ve anahtar yok', !allLogs.includes(SEN
   const at = (re) => body.search(re);
   const guard = at(/trafficUse\(/), stale = at(/plan\.planId !== id\) return;/), fetchI = at(/await fetchTrafficAhead/);
   ok('statik: planId denetimi ve koruma fetch sonrası, tüm etkilerden önce', fetchI > 0 && stale > fetchI && guard > stale &&
-    [/updateAhead\(/, /mapApi\.setTraffic\(/, /liveRemain/, /speak\(/, /setAhead\(\{ traffic: `/].every((re) => at(re) > guard));
+    [/updateAhead\(/, /mapApi\.setTraffic\(/, /liveRemain/, /speak\(/, /setAhead\(\{ traffic: r\.text \}\)/].every((re) => at(re) > guard));
   ok('statik: koruma girdisi routeMeta.provider + trafficSource + activeMap()', /trafficUse\(\{ routeProvider: plan\.route\?\.routeMeta\?\.provider, trafficSource: t\.trafficSource, map: activeMap\(\) \}\)/.test(body));
   ok('statik: ahead.js HERE etkinleştirmez', !/\bhere\b/i.test(asrc.replace(/\/\/.*$/gm, '')));
   const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
