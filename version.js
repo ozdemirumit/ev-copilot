@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.42';
+self.APP_VERSION = '0.99.43';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.43', date: '2026-11-13',
+    notes: [
+      'Altyapı (görünür değişiklik yok): sağlayıcı politika/yetenek kaydı eklendi (server/providerPolicy.mjs). OSM, TomTom ve HERE için katman (Free/Premium), kaynak, atıf zorunluluğu ve lisans durumu tek yerde tanımlandı; sağlayıcılar arası harita/rota/veri karıştırması varsayılan olarak reddedilir.',
+      'HERE harita ve rota varsayılan olarak kapalı; HERE ve TomTom lisans koşulları doğrulanmadığı için “doğrulanmadı” olarak işaretli, hukuki onay iddia edilmez. Free hesap Premium sağlayıcılara erişemez.',
+      'Kayıt henüz uygulamaya bağlı değil: rota, harita, doluluk, önbellek, hız limiti, ödeme, hava durumu, anahtarlar ve ayarlar ekranı değişmedi; ayarlarda yeni sağlayıcı yok.',
+    ],
+  },
   {
     v: '0.99.42', date: '2026-11-13',
     notes: [
