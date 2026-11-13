@@ -2,8 +2,8 @@
 
 > **Kapsam:** Yalnızca Beta, kaynak dalı `design/modern-ui-soc`. `main` / üretim (v0.86.1) bu kaydın dışında.
 > **Makine okunur kopya:** [`docs/beta-task-registry.json`](beta-task-registry.json). İki dosya birlikte güncellenir. Çelişki olursa JSON esas alınır.
-> **Son güncelleme:** 2026-11-13 06:10 UTC · kaynak HEAD `44308a4` · uygulama v0.99.52
-> **Beta önizleme:** `ozdemirumit/EV-Route-Finder` (`main`) → https://ozdemirumit.github.io/EV-Route-Finder/ · son bilinen yayın `620a068` (v0.99.52)
+> **Son güncelleme:** 2026-11-13 06:50 UTC · kaynak HEAD `bb2f676` · uygulama v0.99.53
+> **Beta önizleme:** `ozdemirumit/EV-Route-Finder` (`main`) → https://ozdemirumit.github.io/EV-Route-Finder/ · son bilinen yayın `8e62927` (v0.99.53, canlı version.js 0.99.53 denetlendi)
 
 ## 1. Kurallar
 
@@ -34,8 +34,8 @@
 | Kimlik | Durum | Konu | Bağlantı ve not |
 |---|---|---|---|
 | `670880fb-b286-4dd8-ae57-f1fc59a5c15c` | `queued` (operatör) | Rota ara nokta hatası: şarj durağı mavi rotanın dışında | **RM-03.** Aynı hata yerel oturum `bae8d633` tarafından `44308a4` (v0.99.52) ile düzeltildi ve Beta'ya yayımlandı. 670880fb o oturumun kendisi olabilir (eşleşme güveni: orta) ya da başlamamış bir kopya. Başlarsa önce HEAD'i denetlemeli, düzeltme varsa `no-change` ile durmalı ve RM-04 dosyalarına dokunmamalı. |
-| `18bfd92d-fc90-480a-95e6-b6f3dfe071a6` | `queued` (operatör) | **Bilinmiyor.** Hiçbir yerel döküm ya da istem bu kimliği anmıyor. | Sınıflandırılmadı. Aday: RM-04 (güven: düşük). Kapsamı öğrenilmeden hiçbir maddeye bağlanmaz. |
-| `71ea067c-78cb-40cc-aed5-9ff7754915d0` (yerel) | `running` | O-7 bölünmüş otoyolda karşı yöndeki şarj istasyonunun (Opet/Trugo) seçilmesi | **RM-04.** Commit edilmemiş dosyaları: `js/providers/index.js`, `js/routing/controller.js`, `scripts/test-route-provenance.mjs`, `scripts/test-stop-swap.mjs`, `scripts/test-stop-via.mjs` (değişmiş); `js/osm/accessProbe.js`, `js/routing/stopAccess.js`, `scripts/fixtures/o7-catalca-access.json`, `scripts/test-stop-access.mjs` (yeni). Bu kayıt görevi bu dosyalara dokunmadı. |
+| `18bfd92d-fc90-480a-95e6-b6f3dfe071a6` | `failed` (operatör / kurtarma denetimi `9dde68df-770e-414f-b6c8-3e7e44cc2261`) | RM-04 karşı yöndeki şarj tesisine erişim (O-7 Çatalca Opet/Trugo) | **RM-04.** Yerel oturum `71ea067c` ile eşleşme (güven: yüksek, operatör istemine dayanır). Commit edilmemiş ve testleri geçen WIP, `7a801c5b-364e-43fc-8736-95d3fd2ab79a` tarafından değiştirilmeden `bb2f676` (v0.99.53) ile tamamlandı. |
+| `7a801c5b-364e-43fc-8736-95d3fd2ab79a` (yerel) | `completed` | RM-04 Beta tamamlama: sw.js önbelleği, 11 dilde iki uyarı, v0.99.53, commit/push, Beta önizleme | **RM-04.** `bb2f676` push edildi; Beta `8e62927`. Gerçek cihazda doğrulanmadı. |
 | `4843e080-f516-461f-8cd3-3393f5503689` (yerel) | `running` | Bu kayıt dosyasını oluşturma | RM-13. Yalnızca `docs/` altındaki iki dosya. |
 
 ## 3. Claude Code teknik görevleri (son 30 + tarihsel)
@@ -44,7 +44,8 @@ Sıralama yeniden eskiye. Commit'ler `design/modern-ui-soc` dalında. "Test" sü
 
 | # | Yerel oturum | Orkestratör kimliği (güven) | Başlangıç (UTC) | Görev | Durum | Commit / sürüm | Test (bildirilen) | Yayın | RM |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | `71ea067c-78cb-40cc-aed5-9ff7754915d0` | — (aday 18bfd92d, düşük) | 11-13 05:43 | Karşı yön şarj istasyonu düzeltmesi | `running` | — | yazılıyor | — | RM-04 |
+| 0 | `7a801c5b-364e-43fc-8736-95d3fd2ab79a` | — (kurtarma denetimi 9dde68df sonrası) | 11-13 06:30 | RM-04 Beta tamamlama (18bfd92d WIP'i + sw.js önbelleği + 11 dil + v0.99.53) | `completed` | `bb2f676` v0.99.53 | check (173 dosya) + 60 test dosyasının hepsi geçti; test-stop-access 69/69 (sw.js önbellek ve 11 dil `{0}` denetimi dahil); i18n-validate 11 dil 410/410. Yalnızca çevrimdışı/sahte testler; gerçek cihaz yok. | Beta `8e62927`, canlı 0.99.53 | RM-04 |
+| 1 | `71ea067c-78cb-40cc-aed5-9ff7754915d0` | `18bfd92d` (yüksek) | 11-13 05:43 | Karşı yön şarj istasyonu düzeltmesi | `failed` (commit edilmeden bitti; WIP korundu, yerini 7a801c5b aldı) | — (WIP `bb2f676` içinde) | test-stop-access.mjs yazıldı; denetime göre geçiyordu | — | RM-04 |
 | 2 | `bae8d633-3093-4167-be2c-932d82446d80` | — (aday 670880fb, orta) | 11-13 05:35 | Otoyol dışı durak zorunlu ara nokta | `completed` | `44308a4` v0.99.52 | test-stop-via 36; 58 dosya + check | Beta `620a068`, canlı 0.99.52 | RM-03 |
 | 3 | `330bdbd7-a2e3-409f-844e-936e2b1be01a` | — | 11-13 05:31 | Başarısız e1168bd5 Faz A uzlaştırma | `no-change` | — (zaten `10f5ad1`) | — | — | RM-06 |
 | 4 | `e83e6d43-b3ab-4a35-bf5e-e680ec7fa710` | — | 11-13 05:27 | v0.99.51'i Beta önizlemeye yayımla | `completed` | — | check + 57 dosya | Beta `ae392d6`, canlı 0.99.51 | RM-07 |
@@ -116,7 +117,7 @@ Daha eski sürümler (v0.40–v0.99.38) için tek kaynak `git log` ve `js/versio
 | RM-01 | İnsan sesine yakın doğal Türkçe navigasyon sesi (TTS) | P1 | `planned` | RM-09 | — |
 | RM-02 | Açık / koyu / otomatik tema | P2 | `planned` | — | — |
 | RM-03 | Rota dışı şarj durağına ara nokta sapması | P0 | `completed` (doğrulanmadı) | — | bae8d633 → 44308a4; 670880fb (`queued`) |
-| RM-04 | Karşı yöndeki şarj istasyonunu reddetme / doğru yön seçimi | P0 | `running` | RM-03 | 71ea067c; aday 18bfd92d |
+| RM-04 | Karşı yöndeki şarj istasyonunu reddetme / doğru yön seçimi | P0 | `completed` (doğrulanmadı) | RM-03 | 71ea067c/18bfd92d (`failed`) → 7a801c5b → `bb2f676`, Beta `8e62927`; denetim 9dde68df |
 | RM-05 | OCR kamera kararlılığı ve 5 saniyelik SOC güncellemesi | P1 | `partial` | RM-09 | 7323ad2c, 770f9991, 9fbfb8a9, 3c58e473 |
 | RM-06 | Şarj doluluğu ve fiyatlar | P1 | `partial` | RM-10 | 78ea04ca, e1ff80e6, 977928af, 81477e1c |
 | RM-07 | Navigasyon arayüzü | P1 | `partial` | — | 65d53ffd, fa2f626a, c6e51a54, 56a718b1 … |
