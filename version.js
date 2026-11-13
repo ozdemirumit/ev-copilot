@@ -2,8 +2,17 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.57';
+self.APP_VERSION = '0.99.58';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.58', date: '2026-11-13',
+    notes: [
+      'Değişiklik (Beta): ekran artık yalnızca navigasyonda değil, uygulama ön plandayken her zaman açık tutulur (gezinirken, rota planlarken, navigasyon bittikten sonra da). Düğme yok, varsayılan açık.',
+      'Uygulama arka plana geçince ya da ekran kilitlenince ekran açık tutma hemen bırakılır, dönüşte yeniden alınır. Telefon güç tasarrufu için kendisi bırakırsa buna uyulur, zorlanmaz. Otomatik karartma yok; eski karartmadan kalan harita duraklatma kancası da silindi.',
+      'Tarayıcı ilk isteği dokunuş olmadan reddederse (ör. iPhone Safari) ilk dokunuşta yeniden denenir. Ekran açık tutulamıyorsa uyarı yalnızca navigasyon başlarken bir kez çıkar.',
+      'Android uygulaması için ön planda FLAG_KEEP_SCREEN_ON eklendi (yeni APK derlenince geçerli olur; mevcut APK değişmez). iPhone ve Android cihazda doğrulanmadı.',
+    ],
+  },
   {
     v: '0.99.57', date: '2026-11-13',
     notes: [

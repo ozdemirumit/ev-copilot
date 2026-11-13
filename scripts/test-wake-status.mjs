@@ -1,10 +1,12 @@
-// Otomatik ekran açık tutma ve durum şeridi testi: kilit yalnızca navigasyon sürerken istenir, desteklenmeyen/reddeden cihazda navigasyon sürer ve en çok bir uyarı çıkar; trafik rozeti veri uydurmaz.
+// Ekran açık tutma ve durum şeridi testi: uygulama ön plandayken (navigasyon olsun olmasın) kilit varsayılan olarak alınır, arka planda
+// bırakılır, sistemin bıraktığı kilit dokunuşla zorlanmaz; desteklenmeyen/reddeden cihazda yalnızca navigasyon başlarken en çok bir uyarı
+// çıkar; Android APK yerel bayrağı (EvrfKeepAwake) varsa web API'si kullanılmaz; eski karartma kalıntısı yok; trafik rozeti veri uydurmaz.
 // Kullanım: node scripts/test-wake-status.mjs
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 
 let pass = 0, fail = 0;
 const ok = (name, cond, extra = '') => { cond ? pass++ : fail++; console.log(cond ? 'ok  ' : 'FAIL', name, cond ? '' : extra); };
-const tick = () => new Promise((r) => setTimeout(r, 0));
+const tick = async () => { for (let i = 0; i < 4; i++) await new Promise((r) => setTimeout(r, 0)); };
 
 // Tarayıcı taklidi (modüller yüklenmeden önce)
 const stored = new Map();
@@ -19,29 +21,36 @@ const makeEl = () => {
   };
 };
 const toastEl = makeEl();
-// Uyarı sayacı: "desteklenmiyor" örneği de state'e abone kaldığı için (dinleyici kaldırılamaz) sonraki senaryolar yalnızca kendi uyarılarını sayar
 let toasts = 0;
-let failToasts = 0;
-Object.defineProperty(toastEl, 'textContent', { get() { return this._t ?? ''; }, set(v) { if (v) toasts++; if (v?.startsWith?.('Ekran açık tutulamadı')) failToasts++; this._t = v; } });
-const docHandlers = {};
-globalThis.document = {
-  visibilityState: 'visible',
-  getElementById: () => toastEl,
-  addEventListener: (ev, fn) => { docHandlers[ev] = fn; },
+Object.defineProperty(toastEl, 'textContent', { get() { return this._t ?? ''; }, set(v) { if (v) toasts++; this._t = v; } });
+// Her modül örneği init anındaki belgeyi tutar; senaryo bitince o belge "gizli" yapılarak örnek emekliye ayrılır
+// (state aboneliği kaldırılamadığı için eski örnekler sonraki senaryolarda kilit istemez, uyarı çıkarmaz)
+let docHandlers = {};
+const newDoc = () => {
+  docHandlers = {};
+  const handlers = docHandlers;
+  globalThis.document = {
+    visibilityState: 'visible',
+    getElementById: () => toastEl,
+    addEventListener: (ev, fn) => { (handlers[ev] ||= []).push(fn); },
+  };
 };
+newDoc();
+const fire = async (ev) => { (docHandlers[ev] || []).forEach((fn) => fn()); await tick(); };
+const setVisible = async (v) => { document.visibilityState = v ? 'visible' : 'hidden'; await fire('visibilitychange'); };
 class FakeLock {
   listeners = [];
   released = false;
   addEventListener(_, fn) { this.listeners.push(fn); }
-  async release() { this.released = true; this.listeners.forEach((fn) => fn()); }
+  async release() { if (this.released) return; this.released = true; this.listeners.forEach((fn) => fn()); }
 }
 let requests = 0;
-let denyNext = false;
+let deny = 0; // sıradaki kaç istek reddedilsin
 let lastLock = null;
 const wakeLock = {
   request: async () => {
     requests++;
-    if (denyNext) { denyNext = false; throw new Error('izin yok'); }
+    if (deny > 0) { deny--; throw new Error('izin yok'); }
     return (lastLock = new FakeLock());
   },
 };
@@ -49,77 +58,141 @@ const setNavigator = (value) => Object.defineProperty(globalThis, 'navigator', {
 
 const { getState, patch } = await import('../js/state.js');
 const held = () => getState('system').wakeLock === true;
+// Önceki örneklerin state aboneliği kaldırılamaz; her senaryo kendi uyarılarını sayar ve navigasyonu kapatarak bitirir
+const reset = async () => { patch('nav', { active: false }); await tick(); document.visibilityState = 'hidden'; newDoc(); toasts = 0; };
 
-// Desteklenmeyen tarayıcı: navigasyon başlar, bir uyarı çıkar, hata fırlamaz
+// 1) Desteklenmeyen tarayıcı: gezinirken uyarı yok; navigasyon başlayınca tek uyarı, hata fırlamaz
 setNavigator({});
 const unsupported = await import('../js/sensors/wakeLock.js?unsupported');
 unsupported.initWakeLock();
-toasts = 0;
+await tick();
+ok('desteklenmiyorsa gezinirken uyarı yok', toasts === 0);
+ok('desteklenmiyorsa açık görünmez', !held());
 patch('nav', { active: true });
 await tick();
-ok('desteklenmiyorsa uyarı çıkar', toasts === 1 && toastEl.textContent === 'Ekran açık tutulamıyor: bu tarayıcı desteklemiyor', toastEl.textContent);
-ok('desteklenmiyorsa açık görünmez', !held());
+ok('desteklenmiyorsa navigasyon başlarken tek uyarı', toasts === 1 && toastEl.textContent === 'Ekran açık tutulamıyor: bu tarayıcı desteklemiyor', toastEl.textContent);
 patch('nav', { voice: true });
+await fire('pointerdown');
 ok('aynı navigasyonda uyarı tekrarlanmaz', toasts === 1);
-patch('nav', { active: false });
-await tick();
+await reset();
 
-// Destekleyen tarayıcı
+// 2) Destekleyen tarayıcı: açılışta, navigasyon olmadan kilit alınır
 setNavigator({ wakeLock });
 const { initWakeLock } = await import('../js/sensors/wakeLock.js');
 initWakeLock();
 await tick();
-ok('navigasyon yokken kilit istenmez', requests === 0 && !held());
-
-failToasts = 0;
+ok('açılışta navigasyon olmadan kilit alınır', requests === 1 && held(), `istek ${requests}`);
+const first = lastLock;
 patch('nav', { active: true });
 await tick();
-ok('navigasyon başlayınca kilit otomatik alınır', requests === 1 && held(), `istek ${requests}`);
-ok('başarılıysa uyarı yok', failToasts === 0);
+ok('navigasyon başlayınca yeni kilit istenmez (zaten açık)', requests === 1 && held());
 patch('nav', { step: 1 }); patch('nav', { step: 2 });
 await tick();
 ok('nav güncellemeleri yeni kilit istemez', requests === 1);
+patch('nav', { active: false });
+await tick();
+ok('navigasyon bitince kilit bırakılmaz (ön planda açık kalır)', !first.released && held());
+ok('başarılıysa uyarı yok', toasts === 0);
 
+// 3) Arka plan: kilit bırakılır; dönüşte yeniden alınır
+await setVisible(false);
+ok('arka plana geçince kilit bırakılır', first.released && !held());
+await fire('pointerdown');
+ok('arka plandayken istenmez', requests === 1);
+await setVisible(true);
+ok('ön plana dönünce yeniden alınır', requests === 2 && held());
+
+// 4) Sistem kilidi bırakırsa (güç tasarrufu) dokunuşla zorlanmaz; ön plana dönüşte bir kez denenir
 await lastLock.release();
+await tick();
 ok('sistem bırakınca açık görünmez', !held());
-await docHandlers.visibilitychange();
-await tick();
-ok('sayfa görünür olunca yeniden alınır', requests === 2 && held());
+await fire('pointerdown');
+ok('sistem bıraktıktan sonra dokunuş yeniden istemez', requests === 2, `istek ${requests}`);
+await setVisible(false);
+await setVisible(true);
+ok('ön plana dönüşte yeniden denenir', requests === 3 && held());
 
-const lock2 = lastLock;
-patch('nav', { active: false });
-await tick();
-ok('navigasyon bitince kilit bırakılır', lock2.released && !held());
-docHandlers.visibilitychange();
-await tick();
-ok('navigasyon yokken görünür olunca alınmaz', requests === 2);
-
-// Reddedilen istek: navigasyon sürer, tek uyarı
-denyNext = true;
-failToasts = 0;
-patch('nav', { active: true });
-await tick(); await tick();
-ok('reddedilirse açık görünmez, navigasyon sürer', !held() && getState('nav').active === true);
-ok('reddedilirse tek kısa uyarı', failToasts === 1 && toastEl.textContent.startsWith('Ekran açık tutulamadı'), toastEl.textContent);
-denyNext = true;
-docHandlers.visibilitychange();
-await tick(); await tick();
-ok('yeniden denemede uyarı tekrarlanmaz', failToasts === 1);
-await docHandlers.visibilitychange();
-await tick(); await tick();
-ok('sonraki deneme başarılıysa alınır', held());
-patch('nav', { active: false });
-await tick();
-
-// Bekleyen istek sırasında navigasyon biterse kilit tutulmaz
+// 5) İstek beklerken arka plana geçilirse geç gelen kilit bırakılır
+await setVisible(false);
 let resolveReq;
-wakeLock.request = () => new Promise((r) => { resolveReq = r; });
-patch('nav', { active: true });
-patch('nav', { active: false });
+const realRequest = wakeLock.request;
+wakeLock.request = () => { requests++; return new Promise((r) => { resolveReq = r; }); };
+document.visibilityState = 'visible';
+await fire('visibilitychange');
+document.visibilityState = 'hidden';
 const late = new FakeLock();
 resolveReq(late);
-await tick(); await tick();
-ok('geç gelen kilit bırakılır', late.released && !held());
+await tick();
+ok('geç gelen kilit arka planda bırakılır', late.released && !held());
+wakeLock.request = realRequest;
+await setVisible(true);
+ok('dönüşte normal alınır', held());
+await reset();
+
+// 6) Reddeden tarayıcı (ör. dokunuş isteyen iOS Safari): açılışta sessiz, ilk dokunuşta alınır; navigasyonda tek uyarı
+deny = 1;
+const r0 = requests;
+const denied = await import('../js/sensors/wakeLock.js?denied');
+denied.initWakeLock();
+await tick();
+ok('açılışta reddedilirse gezinirken uyarı yok', toasts === 0 && requests === r0 + 1);
+await fire('pointerdown');
+ok('ilk dokunuşta yeniden denenir ve alınır', requests === r0 + 2 && held());
+await reset();
+
+deny = 99;
+const r1 = requests;
+const denied2 = await import('../js/sensors/wakeLock.js?denied2');
+denied2.initWakeLock();
+await tick();
+patch('nav', { active: true });
+await tick();
+ok('reddedilirse navigasyon sürer ve tek kısa uyarı', getState('nav').active === true && toasts === 1 && toastEl.textContent.startsWith('Ekran açık tutulamadı'), toastEl.textContent);
+await fire('pointerdown'); await fire('pointerdown');
+ok('dokunuşlarda yeniden denenir ama uyarı tekrarlanmaz', requests > r1 + 2 && toasts === 1);
+deny = 0;
+await fire('pointerdown');
+ok('sonraki deneme başarılıysa alınır', held());
+await reset();
+
+// 7) Android APK yerel bayrağı: web API'si hiç çağrılmaz, ön planda açık görünür, arka planda değil
+const r2 = requests;
+globalThis.Capacitor = { isNativePlatform: () => true, isPluginAvailable: (n) => n === 'EvrfKeepAwake' };
+const native = await import('../js/sensors/wakeLock.js?native');
+native.initWakeLock();
+await tick();
+ok('APK yerel bayrağı varsa web kilidi istenmez', requests === r2);
+ok('APK yerel bayrağıyla açık görünür', held());
+patch('nav', { active: true });
+await tick();
+ok('APK yerel bayrağıyla navigasyonda uyarı yok', toasts === 0);
+await setVisible(false);
+ok('APK arka planda açık görünmez', !held());
+await setVisible(true);
+ok('APK ön plana dönünce açık görünür', held() && requests === r2);
+await reset();
+// Eski APK (eklenti yok): web API'sine düşer
+globalThis.Capacitor = { isNativePlatform: () => true, isPluginAvailable: () => false };
+const oldApk = await import('../js/sensors/wakeLock.js?oldapk');
+oldApk.initWakeLock();
+await tick();
+ok('eklentisiz eski APK web kilidini dener', requests === r2 + 1);
+delete globalThis.Capacitor;
+await reset();
+
+// Android kaynak denetimi: ön planda FLAG_KEEP_SCREEN_ON, arka planda kaldırılır; eklenti kayıtlı
+const act = readFileSync(new URL('../android/app/src/main/java/com/evroutefinder/app/MainActivity.java', import.meta.url), 'utf8');
+const plug = readFileSync(new URL('../android/app/src/main/java/com/evroutefinder/app/KeepAwakePlugin.java', import.meta.url), 'utf8');
+ok('Android: onResume bayrağı koyar', /void onResume\(\)\s*\{[^}]*addFlags\(WindowManager\.LayoutParams\.FLAG_KEEP_SCREEN_ON\)/.test(act));
+ok('Android: onPause bayrağı kaldırır', /void onPause\(\)\s*\{[^}]*clearFlags\(WindowManager\.LayoutParams\.FLAG_KEEP_SCREEN_ON\)/.test(act));
+ok('Android: eklenti super.onCreate öncesi kayıtlı', /registerPlugin\(KeepAwakePlugin\.class\);\s*super\.onCreate/.test(act));
+ok('Android: eklenti adı web ile aynı', /@CapacitorPlugin\(name = "EvrfKeepAwake"\)/.test(plug) && /'EvrfKeepAwake'/.test(readFileSync(new URL('../js/sensors/wakeLock.js', import.meta.url), 'utf8')));
+ok('Android: arka planda uyanık tutan PowerManager kilidi yok', !/PowerManager|newWakeLock/.test(act.replace(/\/\*\*[\s\S]*?\*\//, '') + plug));
+
+// Karartma kalmadı: modül ve harita duraklatma kancası yok
+const mapSrc = readFileSync(new URL('../js/ui/mapView.js', import.meta.url), 'utf8');
+ok('karartma modülü yok', !existsSync(new URL('../js/ui/dimmer.js', import.meta.url)));
+ok('haritada karartma duraklatma kancası yok', !/mapApi\.pause|karartma/.test(mapSrc));
 
 // Trafik rozeti
 const { trafficBadge } = await import('../js/ui/statusBadges.js');

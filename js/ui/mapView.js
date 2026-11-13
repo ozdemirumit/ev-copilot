@@ -271,8 +271,6 @@ export function initMap() {
    * Araç takibi. heading verilirse (navigasyon) harita gidiş yönüne döner (yön-yukarı): dönüş her güncellemede farkın ~%60'ı
    * kadar yumuşatılır. Navigasyonda merkez, aracın biraz İLERİSİNE konur: araç ekranın alt kısmında, yol önü geniş görünür.
    */
-  let paused = false;
-  mapApi.pause = (p) => { paused = p; if (!p) mapApi.recenter(); }; // karartma bitince araca dön
   let lastFollow = null; // son uygulanan konum/dönüş: değişmediyse harita yeniden çizilmez (pil)
   let glideAt = 0; // son kare kamera zamanı: sürerken updateMe konumu ezmesin
   let zoomCur = null;
@@ -312,7 +310,7 @@ export function initMap() {
   };
   mapApi.follow = (lat, lon, zoom = null, force = false, heading = null) => {
     if (!adapter) { if (force) pendingFollow = { lat, lon, zoom, heading }; return; }
-    if (paused || (!force && held())) return;
+    if (!force && held()) return;
     bearCur = null;
     zoomCur = null; // kare kamera bir sonraki karede haritanın gerçek değerinden devam eder
     if (zoom != null) zoomNow = zoom;
@@ -395,7 +393,7 @@ export function initMap() {
    * yalnızca araç işareti hareket eder.
    */
   mapApi.cam = (lat, lon, heading, zoom) => {
-    if (!adapter || paused) return;
+    if (!adapter) return;
     glideAt = performance.now();
     const color = effective().source === 'sim' ? '#5aa9ff' : '#2ee6a6';
     meArrow ??= el('div', 'me-arrow');
