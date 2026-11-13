@@ -409,4 +409,10 @@ export default {
   "Daha fazla göster ({0} kaldı)": "Εμφάνιση περισσότερων ({0} ακόμη)",
   "Karşı yönde/erişilemeyen şarj tesisi plandan çıkarıldı: {0}": "Σταθμός φόρτισης στο αντίθετο ρεύμα/μη προσβάσιμος αφαιρέθηκε από το σχέδιο: {0}",
   "Şarj durağına yol ağıyla erişim doğrulanamadı ({0}); tesis karşı yönde olabilir.": "Η οδική πρόσβαση στη στάση φόρτισης δεν επαληθεύτηκε ({0}). Ο σταθμός ίσως βρίσκεται στο αντίθετο ρεύμα.",
+  "🌓 Görünüm": "🌓 Εμφάνιση",
+  "Görünüm": "Εμφάνιση",
+  "Açık": "Φωτεινό",
+  "Koyu": "Σκοτεινό",
+  "Otomatik (sistem ayarı)": "Αυτόματο (ρύθμιση συστήματος)",
+  "Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.": "Το Αυτόματο ακολουθεί τη φωτεινή/σκοτεινή ρύθμιση του τηλεφώνου. Τα πλακίδια χάρτη δεν αλλάζουν σε αυτή την έκδοση.",
 };

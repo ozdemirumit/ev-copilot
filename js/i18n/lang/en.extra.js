@@ -409,4 +409,10 @@ export default {
   "Daha fazla göster ({0} kaldı)": "Show more ({0} left)",
   "Karşı yönde/erişilemeyen şarj tesisi plandan çıkarıldı: {0}": "Charging site on the opposite carriageway/unreachable removed from the plan: {0}",
   "Şarj durağına yol ağıyla erişim doğrulanamadı ({0}); tesis karşı yönde olabilir.": "Road access to the charging stop could not be verified ({0}); the site may be on the opposite carriageway.",
+  "🌓 Görünüm": "🌓 Appearance",
+  "Görünüm": "Appearance",
+  "Açık": "Light",
+  "Koyu": "Dark",
+  "Otomatik (sistem ayarı)": "Automatic (system setting)",
+  "Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.": "Automatic follows the phone's light/dark setting. Map tiles do not change in this version.",
 };

@@ -409,4 +409,10 @@ export default {
   "Daha fazla göster ({0} kaldı)": "Покажи още ({0} остават)",
   "Karşı yönde/erişilemeyen şarj tesisi plandan çıkarıldı: {0}": "Зарядна станция в насрещното платно/недостъпна е премахната от плана: {0}",
   "Şarj durağına yol ağıyla erişim doğrulanamadı ({0}); tesis karşı yönde olabilir.": "Достъпът по пътната мрежа до спирката за зареждане не можа да бъде проверен ({0}); станцията може да е в насрещното платно.",
+  "🌓 Görünüm": "🌓 Изглед",
+  "Görünüm": "Изглед",
+  "Açık": "Светла",
+  "Koyu": "Тъмна",
+  "Otomatik (sistem ayarı)": "Автоматично (системна настройка)",
+  "Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.": "Автоматично следва светлата/тъмната настройка на телефона. Плочките на картата не се променят в тази версия.",
 };

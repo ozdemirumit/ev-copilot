@@ -409,4 +409,10 @@ export default {
   "Daha fazla göster ({0} kaldı)": "Arată mai multe (încă {0})",
   "Karşı yönde/erişilemeyen şarj tesisi plandan çıkarıldı: {0}": "Stație de încărcare pe sensul opus/inaccesibilă eliminată din plan: {0}",
   "Şarj durağına yol ağıyla erişim doğrulanamadı ({0}); tesis karşı yönde olabilir.": "Accesul rutier la oprirea de încărcare nu a putut fi verificat ({0}); stația poate fi pe sensul opus.",
+  "🌓 Görünüm": "🌓 Aspect",
+  "Görünüm": "Aspect",
+  "Açık": "Luminos",
+  "Koyu": "Întunecat",
+  "Otomatik (sistem ayarı)": "Automat (setarea sistemului)",
+  "Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.": "Automat urmează setarea luminos/întunecat a telefonului. Plăcile de hartă nu se schimbă în această versiune.",
 };

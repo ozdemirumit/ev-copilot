@@ -409,4 +409,10 @@ export default {
   "Daha fazla göster ({0} kaldı)": "Meer tonen ({0} over)",
   "Karşı yönde/erişilemeyen şarj tesisi plandan çıkarıldı: {0}": "Laadlocatie aan de andere rijbaan/onbereikbaar uit het plan verwijderd: {0}",
   "Şarj durağına yol ağıyla erişim doğrulanamadı ({0}); tesis karşı yönde olabilir.": "Toegang via het wegennet tot de laadstop kon niet worden gecontroleerd ({0}); de locatie ligt mogelijk aan de andere rijbaan.",
+  "🌓 Görünüm": "🌓 Weergave",
+  "Görünüm": "Weergave",
+  "Açık": "Licht",
+  "Koyu": "Donker",
+  "Otomatik (sistem ayarı)": "Automatisch (systeeminstelling)",
+  "Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.": "Automatisch volgt de licht/donker-instelling van de telefoon. De kaarttegels veranderen in deze versie niet.",
 };

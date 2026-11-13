@@ -409,4 +409,10 @@ export default {
   "Daha fazla göster ({0} kaldı)": "Mehr anzeigen ({0} übrig)",
   "Karşı yönde/erişilemeyen şarj tesisi plandan çıkarıldı: {0}": "Ladestation auf der Gegenfahrbahn/nicht erreichbar, aus dem Plan entfernt: {0}",
   "Şarj durağına yol ağıyla erişim doğrulanamadı ({0}); tesis karşı yönde olabilir.": "Zufahrt zum Ladestopp über das Straßennetz konnte nicht geprüft werden ({0}); die Anlage liegt evtl. auf der Gegenfahrbahn.",
+  "🌓 Görünüm": "🌓 Darstellung",
+  "Görünüm": "Darstellung",
+  "Açık": "Hell",
+  "Koyu": "Dunkel",
+  "Otomatik (sistem ayarı)": "Automatisch (Systemeinstellung)",
+  "Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.": "Automatisch folgt der Hell-/Dunkel-Einstellung des Telefons. Die Kartenkacheln ändern sich in dieser Version nicht.",
 };

@@ -409,4 +409,10 @@ export default {
   "Daha fazla göster ({0} kaldı)": "Pokaż więcej (pozostało {0})",
   "Karşı yönde/erişilemeyen şarj tesisi plandan çıkarıldı: {0}": "Stacja ładowania po przeciwnej stronie jezdni/niedostępna usunięta z planu: {0}",
   "Şarj durağına yol ağıyla erişim doğrulanamadı ({0}); tesis karşı yönde olabilir.": "Nie udało się zweryfikować dojazdu drogowego do postoju ładowania ({0}); stacja może być po przeciwnej stronie jezdni.",
+  "🌓 Görünüm": "🌓 Wygląd",
+  "Görünüm": "Wygląd",
+  "Açık": "Jasny",
+  "Koyu": "Ciemny",
+  "Otomatik (sistem ayarı)": "Automatyczny (ustawienie systemu)",
+  "Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.": "Tryb automatyczny podąża za ustawieniem jasny/ciemny telefonu. Kafelki mapy nie zmieniają się w tej wersji.",
 };

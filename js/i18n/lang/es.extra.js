@@ -409,4 +409,10 @@ export default {
   "Daha fazla göster ({0} kaldı)": "Mostrar más ({0} restantes)",
   "Karşı yönde/erişilemeyen şarj tesisi plandan çıkarıldı: {0}": "Estación de carga en el sentido contrario/inaccesible eliminada del plan: {0}",
   "Şarj durağına yol ağıyla erişim doğrulanamadı ({0}); tesis karşı yönde olabilir.": "No se pudo verificar el acceso por carretera a la parada de carga ({0}); la estación puede estar en el sentido contrario.",
+  "🌓 Görünüm": "🌓 Apariencia",
+  "Görünüm": "Apariencia",
+  "Açık": "Claro",
+  "Koyu": "Oscuro",
+  "Otomatik (sistem ayarı)": "Automático (ajuste del sistema)",
+  "Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.": "Automático sigue el ajuste claro/oscuro del teléfono. Las teselas del mapa no cambian en esta versión.",
 };

@@ -409,4 +409,10 @@ export default {
   "Daha fazla göster ({0} kaldı)": "Mostra altro ({0} rimanenti)",
   "Karşı yönde/erişilemeyen şarj tesisi plandan çıkarıldı: {0}": "Stazione di ricarica sulla carreggiata opposta/non raggiungibile rimossa dal piano: {0}",
   "Şarj durağına yol ağıyla erişim doğrulanamadı ({0}); tesis karşı yönde olabilir.": "Impossibile verificare l'accesso stradale alla sosta di ricarica ({0}); la stazione potrebbe essere sulla carreggiata opposta.",
+  "🌓 Görünüm": "🌓 Aspetto",
+  "Görünüm": "Aspetto",
+  "Açık": "Chiaro",
+  "Koyu": "Scuro",
+  "Otomatik (sistem ayarı)": "Automatico (impostazione di sistema)",
+  "Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.": "Automatico segue l'impostazione chiaro/scuro del telefono. Le tessere della mappa non cambiano in questa versione.",
 };
