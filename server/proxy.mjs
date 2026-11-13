@@ -26,6 +26,7 @@ import { createCommunity } from './community.mjs';
 import { createStationInfo, MAX_PHOTO_BYTES } from './stationinfo.mjs';
 import { createTesla } from './tesla.mjs';
 import { createMaps } from './maps.mjs';
+import { buildCatalog } from './providerCatalog.mjs';
 import { makeScrub } from './scrub.mjs';
 import { parsePoints, pointsKey, hereSpeedLimits, createLru, MAX_CACHE_ITEM } from './speedlimits.mjs';
 import { createAdminAuth } from './totp.mjs';
@@ -715,6 +716,11 @@ const server = http.createServer(async (req, res) => {
       if (cfg.provider !== 'osm' && !mapAllowed(id)) return json(res, 429, { error: 'günlük harita hakkı doldu' }, { 'Retry-After': '3600' });
       if (cfg.provider !== 'osm') costs.add(id, 'map_' + cfg.provider); // anahtar VERME sayılır (map_mapbox / map_google); harita yüklemesi tarayıcıdan doğrudan sağlayıcıya gider
       return json(res, 200, cfg, { 'Cache-Control': 'no-store' });
+    }
+    if (p === '/v1/providers' && req.method === 'GET') { // Premium sağlayıcı kataloğu (F2): SALT OKUNUR; seçim yazmaz, üst sunucu çağırmaz, harita hakkı harcamaz; yalnızca boolean yapılandırma, anahtar/kullanıcı bilgisi yok
+      const premium = premiumOk(id), av = maps.available();
+      const cat = buildCatalog({ plan: premium ? 'premium' : 'free', configured: { mapbox: { map: av.mapbox, route: !!MAPBOX }, tomtom: { map: av.tomtom, route: !!TOMTOM }, google: { map: av.google } } });
+      return json(res, 200, { plan: cat.plan, selected: { map: maps.effective(id.kind === 'user' ? id.user : null, premium) }, providers: cat.providers }, { 'Cache-Control': 'no-store' });
     }
     if (adminAuth && p === '/admin/logout' && req.method === 'POST' && id.admin) { // yönetim sayfası Çıkış; ?all=1 yalnızca bu makineden: her yerden çıkış
       if (url.searchParams.get('all') === '1') {
