@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.51';
+self.APP_VERSION = '0.99.52';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.52', date: '2026-11-13',
+    notes: [
+      'Rota düzeltmesi: planlanan şarj durağı otoyoldan uzaktaysa (rota çizgisine 150 m den uzak) mavi rota artık istasyona uğramadan otoyolda devam etmez. Rota, ileri şarj durakları ve varsa ara durak zorunlu ara nokta olacak şekilde aynı sağlayıcı zinciriyle (TomTom, Mapbox, Valhalla) yeniden alınır; duraklar zorunlu olur ve plan yeni rotada yeniden hesaplanır.',
+      'Yol üstündeki duraklarda davranış aynı: ikinci rota isteği yapılmaz. Yeni rota alınamaz veya plan kurulamazsa ilk plan korunur ve uyarı gösterilir. İstasyon girişi bilinmez: ara nokta istasyonun kayıtlı koordinatıdır, sağlayıcı en yakın yola bağlar.',
+    ],
+  },
   {
     v: '0.99.51', date: '2026-11-13',
     notes: [

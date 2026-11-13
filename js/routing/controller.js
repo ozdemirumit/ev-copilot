@@ -16,6 +16,7 @@ import { setManual } from '../physics/socEstimate.js';
 import { rememberDest } from '../ui/recentDest.js';
 import { projectSteps } from '../nav/steps.js';
 import { t as tpl } from '../i18n/index.js';
+import { stopWaypoints, offRouteKm } from './stopVia.js';
 
 const WX_STEP_KM = 50;
 let raw = null; // { pts, elevations, elevSource, wx } — profil ayarları değişince yeniden kurmak için
@@ -193,7 +194,8 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
         await loadStations(pts, quick);
       }
       applyPlan(computePlan(), { startSoc });
-      enrichRoute(pts, speeds, getState('plan').planId); // beklenmez
+      const via2 = await routeThroughStops(start, end, { elev: false }); // otoyol dışı durak: rota onun üzerinden (rakım/hava yine arkadan)
+      enrichRoute(via2?.pts ?? pts, via2?.speeds ?? speeds, getState('plan').planId); // beklenmez
       restoreSim();
       return true;
     }
@@ -230,6 +232,7 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
       await loadStations(pts, profile); tm.push(Date.now());
     }
     applyPlan(computePlan(), { startSoc });
+    await routeThroughStops(start, end);
     rememberDest(end); planTiming(tm);
     return true;
   } catch (err) {
@@ -244,6 +247,64 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
       toast('Plan hatası: ' + err.message, 4000);
     }
     return false;
+  }
+}
+
+/**
+ * Plandaki şarj durakları rota sağlayıcısına ara nokta olarak gitmez (planlayıcı onları 3 km'lik koridordan seçer, sapmayı yalnızca
+ * enerji/süre olarak sayar). Bir durak çizimdeki rotadan VIA_OFF_KM'den uzaksa (otoyoldan çıkmak gerekir) rota, ileri durakların hepsi
+ * (ve kullanıcının ara durağı) ZORUNLU ara nokta olacak şekilde aynı sağlayıcı zinciriyle yeniden alınır; duraklar zorunlu (pinIds) olur ve
+ * plan yeni rotada yeniden hesaplanır (sapma artık rota enerjisinde, ikinci kez sayılmaz). Yeni rota alınamaz ya da plan kurulamazsa
+ * ilk plan aynen geri yüklenir ve kullanıcı uyarılır. Dönüş: { pts, speeds } (yeni rota) ya da null.
+ */
+async function routeThroughStops(start, end, { elev = true } = {}) {
+  const pl = getState('plan');
+  if (pl.status !== 'ready' || !pl.profile || !pl.route?.coords) return null;
+  const stopover = getState('route').via || null;
+  const wps = stopWaypoints({
+    coords: pl.route.coords, stops: pl.stops, fromKm: pl.fromKm ?? 0,
+    stopover, stopoverKm: stopover ? pl.profile.project(stopover.lat, stopover.lon).km : null,
+  });
+  if (!wps) return null;
+  const prev = { plan: { ...pl }, route: { ...getState('route') }, raw, sig };
+  const restore = (msg) => {
+    raw = prev.raw; sig = prev.sig;
+    patch('route', { trafficInfo: prev.route.trafficInfo, cruise: prev.route.cruise, traffic: prev.route.traffic });
+    patch('plan', prev.plan);
+    mapApi.drawStations(prev.plan.stations.filter((s) => s.km > (prev.plan.fromKm ?? 0) - 0.3 && shown(s, new Set(prev.plan.stops.map((x) => x.station.id)))), prev.plan.stops);
+    toast(tpl('Rota şarj istasyonu üzerinden geçirilemedi ({0}); istasyon için otoyoldan ayrılmanız gerekebilir.', msg), 7000);
+    return null;
+  };
+  try {
+    const rt = await fetchRoute(start, end, wps);
+    if (getState('plan').planId !== pl.planId) return null; // araya yeni bir rota girdi
+    const pts = resampleRoute(rt.coords);
+    const speeds = segmentSpeeds(rt, pts);
+    const ev = elev ? await fetchElevations(pts).catch(() => null) : null;
+    if (getState('plan').planId !== pl.planId) return null;
+    patch('route', {
+      trafficInfo: { ratio: rt.trafficRatio, driveMin: rt.durationH * 60, freeMin: (rt.durationH * 60) / rt.trafficRatio, avgFreeKmh: speeds.avgFreeKmh, live: !!rt.live, jamKm: rt.intervals.reduce((a, iv) => a + (iv.to - iv.from), 0), slowKm: (rt.trafficSpans || []).reduce((a, s) => a + (s.to - s.from), 0) },
+      cruise: Math.round(speeds.avgFreeKmh),
+      traffic: densityFromRatio(rt.trafficRatio),
+    });
+    raw = { ...raw, pts, speeds: speeds.segs, elevations: ev?.elevations ?? null, elevSource: ev?.source ?? null };
+    sig = routeSig();
+    const profile = buildFromRaw();
+    const pinIds = [...new Set([...(pl.pinIds || []), ...pl.stops.filter((s) => s.km > (pl.fromKm ?? 0) + 0.5).map((s) => s.station.id)])];
+    // Ara nokta olan durak artık rotanın üzerinde: sapması (offKm) 2 km örnekli profile göre değil tam çizgiye göre ölçülür; yoksa
+    // sapma hem rota enerjisinde hem durak sapmasında iki kez sayılırdı.
+    const pinSet = new Set(pinIds);
+    const stations = reproject(pl.stations, profile).map((s) => (pinSet.has(s.id) ? { ...s, offKm: Math.min(s.offKm, offRouteKm(rt.coords, s)) } : s));
+    patch('plan', { route: rt, profile, steps: projectSteps(rt.steps, profile), planId: Date.now(), stations, pinIds });
+    const out = computePlan({ fromKm: pl.fromKm ?? 0, soc: pl.fromSoc ?? startSoc });
+    if (!out?.result.feasible) return restore(out?.result.reason || 'plan kurulamadı');
+    applyPlan(out);
+    mapApi.drawRoute(rt.coords, { fit: false, traffic: rt.trafficSpans || null });
+    if (rt.note) toast(rt.note, 7000);
+    return { pts, speeds };
+  } catch (err) {
+    console.warn('Durak üzerinden rota alınamadı:', err.message);
+    return restore(err.message);
   }
 }
 

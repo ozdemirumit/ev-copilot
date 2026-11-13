@@ -11,7 +11,7 @@ const SHELL = [
   './js/physics/model.js', './js/physics/rangeCalc.js', './js/physics/traffic.js', 
   './js/physics/routeProfile.js', './js/physics/routeSpeed.js', './js/physics/consumption.js', './js/physics/rangeEngine.js',
   './js/routing/operators.js', './js/routing/tariffs.js', './js/providers/index.js', './js/nav/routeMeta.js', './js/nav/trafficGuard.js', './js/osm/valhalla.js', './js/osm/route.js', './js/osm/chargers.js', './js/osm/search.js', './js/osm/speedLimit.js', './js/osm/weather.js', './js/osm/elevation.js', './js/routing/chargeCurve.js', './js/routing/chargerSource.js', './js/routing/region.js', './js/account/stationInfo.js', './js/routing/tesla.js',
-  './js/routing/planner.js', './js/routing/routeOptions.js', './js/routing/powerFilter.js', './js/routing/controller.js', './js/routing/aheadUpdate.js', './js/routing/livePlan.js', './js/routing/slots.js',
+  './js/routing/planner.js', './js/routing/routeOptions.js', './js/routing/powerFilter.js', './js/routing/controller.js', './js/routing/stopVia.js', './js/routing/aheadUpdate.js', './js/routing/livePlan.js', './js/routing/slots.js',
   './js/advisor/voice.js', './js/advisor/ecoSpeed.js', './js/advisor/fallback.js',
   './js/abrp/telemetry.js', './js/sim/simulator.js',
   './js/sensors/camera.js', './js/sensors/wakeLock.js', './js/sensors/gps.js', './js/sensors/driveGuard.js', './js/sensors/ocr.js',
