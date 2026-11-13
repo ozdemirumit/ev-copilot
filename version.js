@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.50';
+self.APP_VERSION = '0.99.51';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.51', date: '2026-11-13',
+    notes: [
+      'Navigasyon üst panelindeki sağ dönüşümlü hücreye "Varış" eklendi: varış saati ve kalan km, pil, varışta pil ve sonraki şarj ile 3 sn aralıkla sırayla gösterilir. Geçerli varış saati yoksa (--:--) bu adım atlanır.',
+      'Hız aşımı önceliği, sürekli görünen hız ve hız sınırı levhası, yol adı, harita, rota planlama, OCR, kamera, sağlayıcılar ve sensörler değişmedi; sol taraftaki gizli satır gizli kalır (kimlikler taşındı, çoğaltılmadı).',
+    ],
+  },
   {
     v: '0.99.50', date: '2026-11-13',
     notes: [

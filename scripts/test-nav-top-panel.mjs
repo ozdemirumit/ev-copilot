@@ -1,6 +1,6 @@
 // Navigasyon üst paneli (iki sütun), rota stili, durdurma, OCR/kamera sabitleri. Kullanım: node scripts/test-nav-top-panel.mjs
 import { readFileSync } from 'node:fs';
-import { pickAlert, pickSlot, speedOver, ALERT_MS } from '../js/nav/panelLogic.js';
+import { pickAlert, pickSlot, speedOver, etaShown, ALERT_MS } from '../js/nav/panelLogic.js';
 import { OCR } from '../js/config.js';
 
 let pass = 0, fail = 0;
@@ -77,6 +77,25 @@ ok('clearTrip: plan sıfırlanır, çizgi ve işaretler kalkar', /export functio
 ok('sol ikincil satır (sonra/kalan süre/varış) gizli', /class="nav-then hidden" id="nav-then"/.test(banner) && /class="nb-trip hidden"/.test(banner));
 ok('yol adı talimatla aynı boy/ağırlık, en çok 2 satır', /\.nb-man \.nav-text, \.nb-man \.nav-road \{ font-size: 18px; font-weight: 700;[^}]*-webkit-line-clamp: 2; \}/.test(css));
 ok('sağ dönüşümlü değerler büyük (≥ 20 px)', /\.nb-cell \.ne-v b \{ font-size: 24px;/.test(css) && /\.nb-alert \{ font-size: 15px;/.test(css));
+
+// --- v0.99.51: varış saati (ETA) dönüşümlü hücrede
+const rot = banner.slice(banner.indexOf('id="nb-rot"'), banner.indexOf('id="nb-alert"'));
+const trip = banner.slice(banner.indexOf('class="nb-trip hidden"'), banner.indexOf('class="nb-right"'));
+ok('ETA: geçerli değer gösterilir, --:--/boş/Invalid Date/NaN atlanır', etaShown('14:05') && etaShown(' 2:05 PM ') && ![ '--:--', '', '  ', null, undefined, 'Invalid Date', 'NaN:NaN', '--'].some((x) => etaShown(x)));
+ok('ETA: dönüşüm sırası pil, varışta, varış, sonraki şarj, uyarı', ['soc', 'arrive', 'eta', 'next', 'alert:0', 'soc'].every((x, t) => pickSlot(['soc', 'arrive', 'eta', 'next', 'alert:0'], t, false) === x));
+ok('ETA yoksa adım atlanır (boş hücre gösterilmez)', ['soc', 'arrive', 'next', 'soc'].every((x, t) => pickSlot(['soc', 'arrive', etaShown('--:--') && 'eta', 'next'], t, false) === x));
+const seqEta = [0, 1, 2, 3, 4, 5, 6, 7].map((t) => pickSlot(['soc', 'arrive', 'eta', 'next'], t, true)).join();
+ok('ETA: hız aşımı önceliği korunur (her ikinci adım)', seqEta === 'over,soc,over,arrive,over,eta,over,next', seqEta);
+ok('navigator: eta adımı arrive ile next arasında, yalnızca etaShown ve nav.active ile', /const eta = nav\.active && etaShown\(\$\('nh-eta'\)\.textContent\);/.test(nav) && /has\('ne-arrive'\) && 'arrive', eta && 'eta', has\('ne-next'\) && 'next', \.\.\.alerts/.test(nav));
+ok('ETA hücresi tek: #ne-eta-box data-slot="eta" #nb-rot içinde, "Varış" etiketli, başta gizli', (html.match(/id="ne-eta-box"/g) || []).length === 1 && (html.match(/data-slot="eta"/g) || []).length === 1
+  && /<div class="nb-cell hidden" id="ne-eta-box" data-slot="eta"><small>Varış<\/small><span class="ne-v"><b id="nh-eta">--:--<\/b><span class="ne-sub" id="nh-rem">—<\/span><\/span><\/div>/.test(rot));
+ok('ETA hücresi sırası: varışta pil → varış → sonraki şarj', rot.indexOf('id="ne-arrive-box"') < rot.indexOf('id="ne-eta-box"') && rot.indexOf('id="ne-eta-box"') < rot.indexOf('id="ne-next-box"'));
+ok('nh-eta/nh-rem taşındı (çoğaltılmadı): yalnızca ETA hücresinde, gizli satırda yok', rot.includes('id="nh-eta"') && rot.includes('id="nh-rem"') && !trip.includes('id="nh-eta"') && !trip.includes('id="nh-rem"'));
+const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]);
+const dup = ids.filter((x, i) => ids.indexOf(x) !== i);
+ok('index.html kimlikleri benzersiz', dup.length === 0, dup.join());
+ok('eski gizli satır: .nb-trip gizli kalır, #nh-dur gizli satırda ve tek', /<div class="nb-trip hidden"><b id="nh-dur">--<\/b><\/div>/.test(banner) && (html.match(/id="nh-dur"/g) || []).length === 1 && /\.nb-left \.nav-then, \.nb-left \.nb-trip \{ display: none; \}/.test(css));
+ok('paintHud aynı değerleri her saniye yazar (nh-eta, nh-rem, nh-dur)', /\$\('nh-eta'\)\.textContent = eta;/.test(nav) && /\$\('nh-rem'\)\.textContent = `\$\{remainKm\.toFixed\(0\)\} km`;/.test(nav) && /\$\('nh-dur'\)\.textContent = /.test(nav));
 
 // --- normal sürüş paneli ile aynı ölçü
 ok('rotasız sürüş paneli ve navigasyon paneli aynı en düşük yükseklikte', /.navbar, .mapsoc { box-sizing: border-box; min-height: 150px; }/.test(css));

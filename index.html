@@ -58,7 +58,7 @@
       </div>
     </div>
     <div class="nav-then hidden" id="nav-then"></div><!-- v0.99.34: ikincil dönüş/varış satırı gösterilmez (kimlikler JS için korunur) -->
-    <div class="nb-trip hidden"><b id="nh-dur">--</b><span aria-hidden="true">·</span><b id="nh-rem">—</b><span aria-hidden="true">·</span><svg class="ic nh-flag" aria-hidden="true"><use href="#i-flag"/></svg><b id="nh-eta">--:--</b><small class="nh-word" data-i18n-skip>varış</small></div>
+    <div class="nb-trip hidden"><b id="nh-dur">--</b></div><!-- v0.99.51: nh-eta/nh-rem sağdaki dönüşümlü "Varış" hücresine taşındı -->
   </div>
   <div class="nb-right">
     <div class="nb-speedrow" id="nb-speedrow">
@@ -68,6 +68,7 @@
     <div class="nb-rot" id="nb-rot" aria-live="off">
       <button type="button" class="nb-cell" id="ne-soc-btn" data-slot="soc" aria-haspopup="dialog" aria-controls="soc-sheet"><small>Pil</small><span class="ne-v"><b id="ne-soc">--</b><span class="ne-sub"><span aria-hidden="true">≈</span><span id="ne-range">--</span> km</span></span></button>
       <div class="nb-cell hidden" id="ne-arrive-box" data-slot="arrive"><small>Varışta</small><span class="ne-v"><b id="ne-arrive">--</b></span></div>
+      <div class="nb-cell hidden" id="ne-eta-box" data-slot="eta"><small>Varış</small><span class="ne-v"><b id="nh-eta">--:--</b><span class="ne-sub" id="nh-rem">—</span></span></div>
       <div class="nb-cell hidden" id="ne-next-box" data-slot="next"><small>Sonraki şarj</small><span class="ne-v"><b id="ne-next">--</b><span class="ne-sub" id="ne-next-t"></span></span></div>
       <div class="nb-alert hidden" id="nb-alert" role="status" aria-live="off"></div>
       <span class="hidden"><b id="nh-soc">--</b><i class="ind" id="nh-soc-dot"></i></span>

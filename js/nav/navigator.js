@@ -13,7 +13,7 @@ import { buildTrack, locate, headingAt, pointAtKm } from './track.js';
 import { bearing, haversineKm } from '../utils/geo.js';
 import { icon, setManeuverIcon } from '../ui/icons.js';
 import { currentLimit } from './speedLimit.js';
-import { speedOver, pickSlot, ALERT_MS } from './panelLogic.js';
+import { speedOver, pickSlot, etaShown, ALERT_MS } from './panelLogic.js';
 import { liveRemainH } from './trafficGuard.js';
 
 const $ = (id) => document.getElementById(id);
@@ -260,7 +260,7 @@ function paintSpeed(e) {
 
 let alertTick = 0;
 /**
- * Sağ bölüm alt hücresi: pil, varışta pil, sonraki şarj ve yalnızca gerçek uyarılar (pil/varış planı uyarısı, trafik, yağış) 3 sn aralıkla dönüşümlü.
+ * Sağ bölüm alt hücresi: pil, varışta pil, varış saati (+kalan km), sonraki şarj ve yalnızca gerçek uyarılar (pil/varış planı uyarısı, trafik, yağış) 3 sn aralıkla dönüşümlü.
  * Hız aşımı (ahead.js 5 sn bekletmesi + şu anki hız hâlâ limit üstünde) öncelikli: her ikinci adımda gösterilir. step=true sırayı ilerletir.
  */
 function paintAlert(step) {
@@ -269,7 +269,8 @@ function paintAlert(step) {
   const adv = getState('advisor');
   const alerts = nav.active ? [adv.level === 'warn' || adv.level === 'bad' ? adv.text : null, a.traffic, a.rain].filter((x) => typeof x === 'string' && x.trim()) : [];
   const has = (id) => !['--', ''].includes($(id).textContent.trim());
-  const slots = [has('ne-soc') && 'soc', has('ne-arrive') && 'arrive', has('ne-next') && 'next', ...alerts.map((_, i) => 'alert:' + i)];
+  const eta = nav.active && etaShown($('nh-eta').textContent); // geçerli varış saati yoksa (--:--) hücre atlanır (v0.99.51)
+  const slots = [has('ne-soc') && 'soc', has('ne-arrive') && 'arrive', eta && 'eta', has('ne-next') && 'next', ...alerts.map((_, i) => 'alert:' + i)];
   const e = effective();
   const over = a.speed ? overNow(e) : null;
   if (step) alertTick++;

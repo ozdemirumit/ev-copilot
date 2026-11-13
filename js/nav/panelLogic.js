@@ -30,3 +30,9 @@ export function pickSlot(slots, tick, over) {
   if (over) return n % 2 === 0 || !list.length ? 'over' : list[Math.floor(n / 2) % list.length];
   return list.length ? list[n % list.length] : null;
 }
+
+/** Varış saati dönüşümlü hücrede gösterilebilir mi: dolu, '--:--' değil, rakam içerir, "Invalid Date"/NaN değil (v0.99.51). */
+export function etaShown(text) {
+  const s = typeof text === 'string' ? text.trim() : '';
+  return !!s && s !== '--:--' && /\d/.test(s) && !/invalid|nan/i.test(s);
+}
