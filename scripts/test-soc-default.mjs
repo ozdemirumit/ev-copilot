@@ -129,6 +129,10 @@ function load() { const r = storage.getItem('evcp.socLast'); return r === null ?
   ok('kamera varsayılanı geçersiz kılar', effective().soc === 63 && s.socSource() === 'live');
   patch('system', { camera: true, ocr: true });
   ok('taze kamerada elle kilit', s.manualLocked());
+  patch('ocr', { contested: 47 });
+  ok('okumalar tutulan değerle çelişiyorsa (ham 47, kabul 63) elle düzeltme serbest', !s.manualLocked());
+  patch('ocr', { contested: null });
+  ok('çelişki bitince kilit geri gelir', s.manualLocked());
   // kamera kapandı, 46 sn geçti: eski
   patch('system', { camera: false, ocr: false });
   ok('kamera kapanınca kilit açılır', !s.manualLocked());

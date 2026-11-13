@@ -34,6 +34,26 @@ export function confusable(a, b) {
   return diff === 1;
 }
 
+// Çizgi kaybı yönü: parlama/eşik rakamdan çizgi siler, nadiren ekler. Soldaki rakam sağdakinin çizgi kaybetmiş hâli olabilir
+// (1⊂4, 1⊂7, 3⊂8, 3⊂9, 5⊂6, 5⊂9, 6⊂8, 9⊂8, 0⊂8). Kabul edilen değer, okunan değerin çizgi kaybetmiş hâliyse (17 tutulurken 47)
+// tutulan değer şüphelidir: yanlış okuma kabul edilmiş olabilir.
+const INK_UP = new Set(['14', '17', '38', '39', '56', '59', '68', '98', '08']);
+
+/** held → value tek hane değişimi ve held'deki rakam value'dakinin çizgi kaybetmiş hâli mi? (17→47 evet, 47→17 hayır) */
+export function inkUpgrade(held, value) {
+  if (held == null || value == null || held === value) return false;
+  const x = String(held);
+  const y = String(value);
+  if (x.length !== y.length) return false;
+  let up = 0;
+  for (let i = 0; i < x.length; i++) {
+    if (x[i] === y[i]) continue;
+    if (!INK_UP.has(x[i] + y[i])) return false;
+    up++;
+  }
+  return up === 1;
+}
+
 /** short tek haneli ve long iki haneli long'un bir hanesi mi? (42 → 4 veya 2: hane kaybı) */
 export function isFragment(short, long) {
   return short != null && long != null && short >= 0 && short < 10 && long >= 10 && long <= 99 && String(long).includes(String(short));
@@ -48,6 +68,7 @@ export function createFilter({
   minScore = 0.4, firstMinScore = 0.5, resyncMinScore = 0.6,
   fragmentGuard = false, recoverCycles = 2, recoverNoEvidenceCycles = 4, recoverMinScore = 0.5, recentMax = 8, recentMaxAgeMs = 60000,
   confirmCycles = 1, confusableConfirmCycles = confirmCycles + 1,
+  latchGuard = false, latchCycles = 6,
 } = {}) {
   let last = null; // { value, t }
   let pending = null; // { value, count, t }
@@ -66,8 +87,18 @@ export function createFilter({
     if (!Number.isInteger(value) || value < min || value > max) return { ok: false, reason: 'range', value: held() };
     if (score < minScore) return { ok: false, reason: 'low-score', value: held() };
 
+    if (score >= recoverMinScore) {
+      recent = recent.filter((r) => t - r.t <= recentMaxAgeMs).slice(-(recentMax - 1));
+      recent.push({ value, digits, t });
+    }
+
     if (!last) {
       if (score < firstMinScore) return { ok: false, reason: 'low-score', value: null };
+      // Elle girilen değerle (ipucu) aynı okuma: araya karışan tek yanlış okuma sayımı sıfırlamasın (elle 47, okumalar 47/17/47)
+      if (hint != null && Math.abs(value - hint) <= candidateTol) {
+        const agree = recent.filter((r) => Math.abs(r.value - hint) <= candidateTol && t - r.t <= pendingMaxAgeMs).length;
+        if (agree >= firstCycles) { commit(value, t); return { ok: true, reason: 'first', value }; }
+      }
       const count = bump(value, t);
       let need = firstCycles;
       if (hint != null) {
@@ -76,11 +107,6 @@ export function createFilter({
       }
       if (count >= need) { commit(value, t); return { ok: true, reason: 'first', value }; }
       return { ok: false, reason: 'verifying', value: null, count, need };
-    }
-
-    if (score >= recoverMinScore) {
-      recent = recent.filter((r) => t - r.t <= recentMaxAgeMs).slice(-(recentMax - 1));
-      recent.push({ value, digits, t });
     }
 
     // Elde hatalı tek hane var (gerçek 42 iken 4 kabul edilmiş): araya 4/2 karışsa da iki haneli kanıt birikir, kilit kalmaz.
@@ -105,6 +131,19 @@ export function createFilter({
 
     const reason = fragment ? 'fragment' : 'jump';
     if (score < resyncMinScore) return { ok: false, reason, value: last.value };
+    // Yanlış kilit (gerçek 47 iken 17, gerçek 63 iken 7 kabul edilmiş): tutulan değer okunanın çizgi ya da hane kaybetmiş hâli gibi
+    // görünüyorsa son ~60 sn'deki kanıt ARDIŞIK olmadan sayılır; araya karışan eski değer okuması kanıtı sıfırlamaz. Okunan değer
+    // pencerede en az latchCycles kez görülmeli ve tutulan değerin en az iki katı olmalı (yarı yarıya ise karar yok). Hane artışı
+    // (7→63) yalnızca görüntüde o kadar hane görülen okumalarla sayılır; gerçek tek haneli pil ara sıra çıkan iki haneli okumayla değişmez.
+    if (latchGuard) {
+      const len = String(value).length;
+      const gain = len > String(last.value).length && last.value !== 0;
+      if (gain || inkUpgrade(last.value, value)) {
+        const support = recent.filter((r) => Math.abs(r.value - value) <= candidateTol && (!gain || r.digits >= len)).length;
+        const heldSupport = recent.filter((r) => Math.abs(r.value - last.value) <= candidateTol).length;
+        if (support >= latchCycles && support >= 2 * heldSupport) { commit(value, t); return { ok: true, reason: 'unlatched', value }; }
+      }
+    }
     const count = bump(value, t);
     // Gerçekten tek haneye düşmüşse (görüntüde tek rakam) yasak değil: yalnızca kanıt süresi kısalır
     const need = (confusable(value, last.value) && !(fragment && digits === 1) ? confusableResyncCycles : resyncCycles) * resyncFactor(delta, ctx);
@@ -119,13 +158,29 @@ export function createFilter({
     recent = [];
   }
 
+  /**
+   * İtiraz: son ~60 sn'de tutulan değerden farklı ve en az 2 kez okunan değer (en sık olanı), yoksa null. Arayüz bu durumda elle
+   * düzeltmeyi kilitlemez (kamera 'ok' görünse bile okumalar tutulan değerle çelişiyor olabilir).
+   */
+  function contested(t = Date.now()) {
+    if (!last) return null;
+    const counts = new Map();
+    for (const r of recent) {
+      if (t - r.t > recentMaxAgeMs || Math.abs(r.value - last.value) <= candidateTol) continue;
+      counts.set(r.value, (counts.get(r.value) || 0) + 1);
+    }
+    let best = null;
+    for (const [v, n] of counts) if (n >= 2 && (!best || n > best[1])) best = [v, n];
+    return best ? best[0] : null;
+  }
+
   /** Motor değişti: doğrulanmış değer kalır, birikmiş aday kanıtı silinir. */
   function clearEvidence() {
     pending = null;
     recent = [];
   }
 
-  return { accept, reset, clearEvidence, get last() { return held(); } };
+  return { accept, reset, clearEvidence, contested, get last() { return held(); } };
 }
 
 const WINDOW_MS = 5000; // bu süreye kadar yalnızca temel tolerans geçerli
@@ -146,6 +201,7 @@ export function createSocFilter({ chargePctPerMin = 3, maxJump = 2 } = {}) {
     resyncFactor: (delta, { speedKmh = null } = {}) => (delta > 0 && isMoving(speedKmh) === true ? 2 : 1),
     fragmentGuard: true,
     confirmCycles: 2, // tek farklı okuma geçerli pili değiştirmez
+    latchGuard: true, // yanlış kabul edilmiş değerden (47 iken 17) pencere kanıtıyla kurtul
 
   });
 }

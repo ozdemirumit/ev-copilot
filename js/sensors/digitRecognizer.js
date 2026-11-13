@@ -186,8 +186,39 @@ export function classifyGlyph(cells) {
  * Dönüş: { text, confidence, n: hane kanıtı 1..3 | null (belirsiz), merged, clipped, glyphs }.
  */
 export function readDigits(bw, w, h, pad = 0) {
-  const { labels, boxes } = components(bw, w, h);
+  return readParts(bw, w, h, pad).result;
+}
+
+/**
+ * Rakam satırının dışındaki küçük parçalar (ayrı satırdaki % işareti, birim): rakamlarla dikeyde hiç örtüşmeyen ve rakam boyunun
+ * OFF_LINE_REL katından kısa bileşenler. Togg ekranında küçük % iri rakamların altında durur; eskiden mergeStacked onu üstteki
+ * rakamla aynı kutuya katıyor, rakam dikeyde ezilip 4→1, 8→1, 7→1 okunuyordu (47→17). Rakam bandı, bandı belirleyecek kadar uzun
+ * bileşenlerden (en uzunun en az %60'ı) kurulur; kopuk rakam parçaları bandın içinde kaldığı için birleşmeye devam eder.
+ */
+const OFF_LINE_REL = 0.6;
+function offLineIds(boxes, contentW, h) {
+  const tall = boxes.filter((b) => boxW(b) < 0.8 * contentW || boxH(b) > 0.3 * h);
+  const tallest = tall.reduce((m, b) => Math.max(m, boxH(b)), 0);
+  if (!tallest) return new Set();
+  const band = tall.filter((b) => boxH(b) >= OFF_LINE_REL * tallest);
+  const y0 = Math.min(...band.map((b) => b.y0));
+  const y1 = Math.max(...band.map((b) => b.y1));
+  const bandH = y1 - y0 + 1;
+  // Yalnızca bir rakamın tam altında/üstünde duran parça: yanda kalan artık (eski stil yazıda taban altına inen 3'ün parlamadan
+  // kalan alt ucu) ayrı satır sayılmaz, hane kaybı kanıtı olarak kalır.
+  const under = (b) => band.some((d) => Math.min(b.x1, d.x1) >= Math.max(b.x0, d.x0));
+  return new Set(boxes.filter((b) => (b.y0 > y1 || b.y1 < y0) && boxH(b) < OFF_LINE_REL * bandH && under(b)).flatMap((b) => b.ids));
+}
+
+function readParts(bw, w, h, pad) {
+  const { labels, boxes: raw } = components(bw, w, h);
   const contentW = w - 2 * pad;
+  const off = offLineIds(raw, contentW, h);
+  const boxes = off.size ? raw.filter((b) => !off.has(b.ids[0])) : raw;
+  return { labels, off, result: readBoxes(labels, boxes, w, h, pad, contentW) };
+}
+
+function readBoxes(labels, boxes, w, h, pad, contentW) {
   let cands = mergeStacked(boxes).filter((b) => boxW(b) < 0.8 * contentW || boxH(b) > 0.3 * h);
   const tallest = cands.reduce((m, b) => Math.max(m, boxH(b)), 0);
   const empty = { text: '', confidence: 0, n: null, merged: false, clipped: false, glyphs: [] };
@@ -229,13 +260,29 @@ export function readDigits(bw, w, h, pad = 0) {
   return { text, confidence, n, merged, clipped, glyphs };
 }
 
-/** Ön işlenmiş tuvalden okur (yazı rengi fark etmez: binarize azınlık sınıfını yazı sayar). */
-export function readCanvasDigits(canvas, pad = 0) {
+/**
+ * Ön işlenmiş tuvalden okur (yazı rengi fark etmez: binarize azınlık sınıfını yazı sayar).
+ * clearOffLine: rakam satırı dışındaki parçalar (ayrı satırdaki %) tuvalde zemin rengine boyanır; aynı tuvali okuyan OCR 1 (Tesseract)
+ * de % işaretini rakam sanmaz. Silinecek bir şey yoksa tuvale yazılmaz. Dönüş readDigits ile aynı, ek olarak offLine: silinen parça sayısı.
+ */
+export function readCanvasDigits(canvas, pad = 0, { clearOffLine = false } = {}) {
   const { width: w, height: h } = canvas;
-  const px = canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, w, h).data;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const img = ctx.getImageData(0, 0, w, h);
+  const px = img.data;
   const gray = new Uint8Array(w * h);
   for (let i = 0; i < gray.length; i++) gray[i] = px[i * 4];
-  return readDigits(binarize(gray), w, h, pad);
+  const bw = binarize(gray);
+  const { labels, off, result } = readParts(bw, w, h, pad);
+  if (clearOffLine && off.size) {
+    let sum = 0;
+    let n = 0;
+    for (let i = 0; i < bw.length; i++) if (bw[i] !== 0) { sum += gray[i]; n++; }
+    const bg = n ? Math.round(sum / n) : 255;
+    for (let i = 0; i < labels.length; i++) if (off.has(labels[i])) { px[i * 4] = px[i * 4 + 1] = px[i * 4 + 2] = bg; px[i * 4 + 3] = 255; }
+    ctx.putImageData(img, 0, 0);
+  }
+  return { ...result, offLine: off.size };
 }
 
 /** Okunan değerin hane sayısı görüntüdeki rakam sayısıyla çelişiyor mu? null | 'truncated' (hane eksik) | 'extra-digit' (fazla hane). */

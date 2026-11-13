@@ -82,10 +82,11 @@ function getWorker() {
  * Geniş aralıklı rakamlar boşlukla bölünebilir ("4 2"): aynı satırdaki gruplar birleştirilir (yalnızca ilk grubu almak 42'yi 4 okuyordu).
  */
 function digitsOf(text) {
-  const line = String(text).split(/\r?\n/).find((l) => /\d/.test(l));
-  if (!line) return null;
-  const runs = line.replace(/^\D+/, '').split('%')[0].match(/\d+/g);
-  return runs ? runs.join('') : null;
+  // Birden çok satırda rakam varsa en çok rakamlı satır (eşitlikte ilki): iri rakamların altındaki ayrı satırdaki % rakam sanılırsa
+  // ("47\n7", "1\n47") iri rakam satırı seçilir.
+  const groups = String(text).split(/\r?\n/).map((l) => (l.replace(/^\D+/, '').split('%')[0].match(/\d+/g) || []).join('')).filter(Boolean);
+  if (!groups.length) return null;
+  return groups.reduce((a, b) => (b.length > a.length ? b : a));
 }
 
 export function parseSoc(text) {
@@ -136,7 +137,7 @@ async function readRoi(worker, video, stage, key, roi, parse, { timeLeft, isCurr
     if (i > 0 && timeLeft() <= 0) break;
     if (!isCurrent()) return EMPTY_SAMPLE;
     if (!preprocess(video, stage, { ...o, roi, variant: order[i] }, work)) break;
-    const seg = readCanvasDigits(work, PAD); // OCR 2 sonucu; OCR 1 için hane sayısı kanıtı ve karşılaştırma
+    const seg = readCanvasDigits(work, PAD, { clearOffLine: true }); // OCR 2 sonucu; OCR 1 için hane kanıtı. Ayrı satırdaki % tuvalden silinir, Tesseract da görmez
     const read = engine === 'digit' ? { text: seg.text, confidence: seg.confidence } : (await worker.recognize(work)).data;
     const rawValue = parse(read.text);
     const mismatch = digitMismatch(rawValue, seg.n);
@@ -214,6 +215,7 @@ function applySoc(samples) {
   }
   const reliability = percent(via === 'window' ? win.score : c.score);
   const res = socFilter.accept(candidate, now, { score, speedKmh: effective().speed, hint: socHint(), digits: c.digits });
+  patch('ocr', { contested: socFilter.contested(now) }); // okumalar tutulan değerle çelişiyorsa elle düzeltme kilitlenmez
   if (res.ok) {
     patch('ocr', { raw: candidate, accepted: res.value, status: 'ok', lastOkAt: now, readAt: now, stale: false, reliability, reason: null, via }); // readAt: yalnızca gerçek kamera okuması (tahmin/elle girişte değişmez)
     patch('live', { soc: res.value });
@@ -319,6 +321,7 @@ function onHide() {
   socCycles = [];
   socFilter.clearEvidence();
   speedFilter.clearEvidence();
+  patch('ocr', { contested: null });
   patch('ocr', { status: 'paused', stale: true, speedStale: true, note: 'Arka planda: OCR duraklatıldı' });
   trace({ kind: 'lifecycle', result: 'paused', accepted: getState('ocr').accepted });
 }
@@ -390,6 +393,7 @@ export async function setOcrEngine(engine) {
   patch('ocr', { engine, reason: null });
   socFilter.clearEvidence();
   speedFilter.clearEvidence();
+  patch('ocr', { contested: null });
   socCycles = [];
   Object.keys(preferredVariant).forEach((k) => delete preferredVariant[k]);
   if (engine === 'digit') dropWorker(); // kullanılmayan Tesseract belleği bırakılır
@@ -403,11 +407,13 @@ export async function setOcrEngine(engine) {
 /** Manuel +/- veya dış kaynak: outlier filtresinin referansını ayarla. */
 export function calibrateSoc(value) {
   socFilter.reset(value);
+  patch('ocr', { contested: null });
 }
 
 /** Elle/tahmin pil girildi: filtre referansı bırakılır, kamera okuması bir sonraki okumada bu değeri geçersiz kılar. */
 export function releaseSoc() {
   socFilter.reset(null);
+  patch('ocr', { contested: null });
 }
 
 /** Filtre önizlemesi: kullanıcı eşik/kontrastı ayarlarken pil ROI'sinin işlenmiş halini gösterir. */

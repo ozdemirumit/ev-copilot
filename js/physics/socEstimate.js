@@ -38,8 +38,11 @@ const ONLINE_MS = 45_000; // kamera okuması bu süreden eskiyse pil "çevrimdı
 /** Pil değeri şu an kameradan canlı mı okunuyor? (Yeşil: evet. Kırmızı: elle girilmiş, tahmin ya da kamera okuması eski/yok.) */
 export const isOnline = () => mode === 'ocr' && Date.now() - ocrAt <= ONLINE_MS;
 
-/** Elle pil ayarı kilitli mi? Yalnızca kamera açık, pili şu an sorunsuz okuyor ve değer canlıysa. Kamera kapalıysa ya da son okuma "okunamadı/reddedildi" ise sürgüler serbesttir. */
-export const manualLocked = () => isOnline() && getState('system').camera && getState('ocr').status === 'ok';
+/**
+ * Elle pil ayarı kilitli mi? Yalnızca kamera açık, pili şu an sorunsuz okuyor ve değer canlıysa. Kamera kapalıysa ya da son okuma "okunamadı/reddedildi" ise sürgüler serbesttir.
+ * Okumalar kabul edilen değerle çelişiyorsa (ocr.contested: ör. 17 tutulurken tekrar tekrar 47 okunuyor) arada 'ok' çevrimler olsa da serbesttir: yanlış kilit elle düzeltilebilir.
+ */
+export const manualLocked = () => isOnline() && getState('system').camera && getState('ocr').status === 'ok' && getState('ocr').contested == null;
 
 /** Tahmin yapılıyor mu (elle değerden düşüyor)? rangeEngine bu durumda pili öğrenmeye katmaz. */
 export const isEstimating = () => (mode === 'manual' || mode === 'default') && est != null && !getState('sim').enabled;
