@@ -116,7 +116,7 @@ ok('stopNav yalnızca onaydan sonra', /\$\('stop-nav-yes'\)\.addEventListener\('
 ok('üst paneldeki ✕ ve Rota sayfasındaki büyük durdur kalktı', !html.includes('id="nav-stop"') && !/Navigasyonu durdur'? : 'Git'/.test(panel) && !/stopNav/.test(panel));
 ok('varsayılan odak Devam et', /id="stop-nav-no"[^>]*autofocus/.test(html));
 ok('navigasyon şeridi: pil, menzil, varış, sonraki şarj', ['ne-soc', 'ne-range', 'ne-arrive', 'ne-next', 'ne-next-t'].every((id) => html.includes(`id="${id}"`)));
-ok('şerit değerleri gerçek kaynaktan', /plan\.totals \? pct\(plan\.totals\.arriveSoc\)/.test(nav) && /totalRangeKm/.test(nav) && /timeBetween\(km, nextStop\.km\)/.test(nav));
+ok('şerit değerleri gerçek kaynaktan', /topMetrics\(\{[^}]*arriveSoc: plan\.totals\?\.arriveSoc/.test(nav) && /put\('ne-arrive', m\.arrive, pct\(m\.arrive\)\)/.test(nav) && /totalRangeKm/.test(nav) && /timeBetween\(km, nextStop\.km\)/.test(nav));
 
 // Örnek değerler yok
 const statics = html.replace(/<symbol[\s\S]*?<\/symbol>/g, '');

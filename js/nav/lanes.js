@@ -28,3 +28,35 @@ export function lanesToShow(step, distM) {
   if (!step?.lanes?.length || !(distM <= LANES_SHOW_M)) return null;
   return step.lanes;
 }
+
+export const LANE_VOICE_MIN_M = 120; // son komut eşiği (steps.js VOICE_TIERS_M[0]): orada şerit söylenmez, komut kısa kalır
+
+/**
+ * Sesli şerit önerisi (Türkçe): yalnızca uygun (valid) şeritler bitişik ve konumları kesinse (kenarda ya da tam ortada); değilse null.
+ * Girdi parseLanes çıktısıdır: veri yoksa, tüm şeritler uygunsa ya da hiçbiri uygun değilse zaten null gelir.
+ */
+export function laneHint(lanes) {
+  if (!Array.isArray(lanes) || lanes.length < 2) return null;
+  const first = lanes.findIndex((l) => l?.ok);
+  const last = lanes.length - 1 - [...lanes].reverse().findIndex((l) => l?.ok);
+  if (first < 0) return null;
+  const n = last - first + 1;
+  if (n === lanes.length || lanes.slice(first, last + 1).some((l) => !l?.ok)) return null; // hepsi uygun / bitişik değil
+  const many = n > 1;
+  if (first === 0) return many ? 'Sol şeritleri kullanın.' : 'En sol şeridi kullanın.';
+  if (last === lanes.length - 1) return many ? 'Sağ şeritleri kullanın.' : 'En sağ şeridi kullanın.';
+  if (first === lanes.length - 1 - last) return many ? 'Orta şeritleri kullanın.' : 'Orta şeridi kullanın.';
+  return null; // ortada ama simetrik değil: "orta" belirsiz, söylenmez
+}
+
+/**
+ * Dönüş anonsuna şerit önerisini ekler: adım başına bir kez, şerit paneli görünürken (LANES_SHOW_M) ve son komut eşiğinden önce.
+ * Ayrı bir konuşma üretmez (dönüş anonsu kesilmez, sıra bozulmaz); öneri yoksa metin aynen döner.
+ */
+export function addLaneHint(said, idx, st, distM, text) {
+  if (!(distM > LANE_VOICE_MIN_M) || said.has(`${idx}:lane`)) return text;
+  const hint = laneHint(lanesToShow(st, distM));
+  if (!hint) return text;
+  said.add(`${idx}:lane`);
+  return `${text} ${hint}`;
+}

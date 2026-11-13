@@ -1,6 +1,6 @@
 // Sağlayıcı şerit verisi (Mapbox/OSRM lanes) ayrıştırma ve gösterim kuralı. Kullanım: node scripts/test-lanes.mjs
 import { readFileSync } from 'node:fs';
-import { parseLanes, lanesToShow, LANES_SHOW_M } from '../js/nav/lanes.js';
+import { parseLanes, lanesToShow, laneHint, addLaneHint, LANES_SHOW_M } from '../js/nav/lanes.js';
 import { mapSteps } from '../js/mapbox/route.js';
 
 let pass = 0, fail = 0;
@@ -33,6 +33,33 @@ const steps = mapSteps([{ steps: [
 ] }]);
 ok('Mapbox adımına lanes eklenir', steps[1].lanes?.length === 3, JSON.stringify(steps[1]));
 ok('şeritsiz adım null', steps[0].lanes === null);
+
+// Sesli şerit önerisi: yalnızca sağlayıcının valid bayraklarından, konum kesinse; adım başına bir kez, dönüş anonsuna eklenir
+const L = (...v) => parseLanes(v.map((x) => ({ indications: [x ? 'right' : 'left'], valid: !!x })));
+ok('sağdaki tek şerit', laneHint(L(0, 0, 1)) === 'En sağ şeridi kullanın.', laneHint(L(0, 0, 1)));
+ok('soldaki tek şerit', laneHint(L(1, 0, 0)) === 'En sol şeridi kullanın.');
+ok('sağdaki şeritler', laneHint(L(0, 1, 1)) === 'Sağ şeritleri kullanın.');
+ok('soldaki şeritler', laneHint(L(1, 1, 0, 0)) === 'Sol şeritleri kullanın.');
+ok('tam ortadaki şerit', laneHint(L(0, 1, 0)) === 'Orta şeridi kullanın.');
+ok('tam ortadaki şeritler', laneHint(L(0, 1, 1, 0)) === 'Orta şeritleri kullanın.');
+ok('ortada ama simetrik değil: söylenmez', laneHint(L(0, 1, 0, 0)) === null);
+ok('bitişik olmayan uygun şeritler: söylenmez', laneHint(L(1, 0, 1)) === null);
+ok('veri yok / seçim önemsiz: söylenmez', laneHint(null) === null && laneHint(undefined) === null && laneHint([]) === null);
+ok('hepsi uygun (ayrıştırılmamış) söylenmez', laneHint([{ arrow: '↑', ok: true }, { arrow: '↑', ok: true }]) === null);
+
+const step = { type: 'turn', modifier: 'right', lanes: L(0, 0, 1) };
+const s1 = new Set();
+ok('2 km eşiğinde anonsa eklenir', addLaneHint(s1, 4, step, 1900, '2 kilometre sonra sağa dönün.') === '2 kilometre sonra sağa dönün. En sağ şeridi kullanın.');
+ok('aynı adımda tekrar söylenmez', addLaneHint(s1, 4, step, 480, '500 metre sonra sağa dönün.') === '500 metre sonra sağa dönün.');
+ok('sonraki adım ayrı söylenir', addLaneHint(s1, 5, step, 480, 'X.') === 'X. En sağ şeridi kullanın.');
+const s2 = new Set();
+ok('son komutta (120 m) eklenmez, dönüş komutu aynen', addLaneHint(s2, 1, step, 100, 'Sağa dönün.') === 'Sağa dönün.' && !s2.size);
+ok('şerit gösterim mesafesi dışında eklenmez', addLaneHint(new Set(), 1, step, LANES_SHOW_M + 1, 'X.') === 'X.');
+ok('şerit verisi yoksa metin aynen', addLaneHint(new Set(), 1, { type: 'turn' }, 400, 'X.') === 'X.');
+ok('kesin olmayan şeritte metin aynen', addLaneHint(new Set(), 1, { lanes: L(1, 0, 1) }, 400, 'X.') === 'X.');
+const nav = read('js/nav/navigator.js');
+ok('navigator şerit önerisini dönüş anonsuna ekler', nav.includes('addLaneHint(said, idx, st, distM, voiceNow.text)'));
+ok('şerit önerisi yalnızca Türkçe seste (çeviri yok)', /startsWith\('tr'\)\s*\?\s*addLaneHint/.test(nav));
 
 ok('panelde nav-lanes alanı', read('index.html').includes('id="nav-lanes"'));
 ok('sw önbelleğinde lanes.js', read('sw.js').includes("'./js/nav/lanes.js'"));

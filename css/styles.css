@@ -968,7 +968,7 @@ body.navmode .mapsoc, body.sheet-open .mapsoc { display: none; }
 @media (max-width: 340px) { html .navhud .nh-word { display: none; } } /* bayrak simgesi varışı zaten anlatır */
 @media (max-width: 340px) { .socbar-line2:has(.socbar-avg:not(.hidden)) .socbar-cons > small:last-child { display: none; } }
 
-/* Navigasyon üst paneli: iki sütun (sol: sonraki manevra + mesafe, sağ: büyük hız sınırı levhası + hız sabit, altında 3 sn dönüşümlü pil/varış/durak/uyarı) */
+/* Navigasyon üst paneli: üst satır manevra + sabit varış saati, altında altı sabit metrik, en altta dönüşümlü uyarı (v0.99.59 düzeni dosyanın navigasyon bölümünün sonunda) */
 .navbar { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 6px 10px; padding: 8px 10px 6px; align-items: stretch; }
 .nb-left { display: flex; flex-direction: column; justify-content: space-between; gap: 4px; min-width: 0; }
 .nb-man { display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -977,17 +977,12 @@ body.navmode .mapsoc, body.sheet-open .mapsoc { display: none; }
 .nb-left .nav-then { grid-column: auto; margin-top: 0; padding-top: 4px; font-size: 12px; }
 .nb-trip { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; }
 .nb-trip b { font-size: 13px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
-.nb-right { display: flex; flex-direction: column; gap: 5px; min-width: 0; padding-left: 10px; border-left: 1px solid var(--line); }
-.nb-speedrow { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.nb-speedrow .limit-sign { width: 58px; height: 58px; border-width: 6px; font-size: 24px; letter-spacing: -.5px; }
 .nb-speed { flex: none; align-items: center; }
 .nb-speed .ne-v b { font-size: 34px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
 .nb-speed small { font-size: 11px; }
 .nb-speed.over .ne-v b { color: #e53935; }
 .nb-speed .nh-avg { display: inline-flex; align-items: baseline; gap: 2px; font-size: 13px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .nb-speed .nh-avg small { color: var(--muted); font-size: 11px; font-weight: 700; }
-.nb-rot { min-width: 0; min-height: 40px; display: flex; flex-direction: column; justify-content: center; }
-.nb-rot .hidden { display: none; }
 .nb-cell { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; padding: 0; background: none; border: 0; color: inherit; font: inherit; text-align: left; }
 .nb-cell small { max-width: 100%; overflow: hidden; color: var(--muted); font-size: 11px; white-space: nowrap; text-overflow: ellipsis; }
 .nb-cell .ne-v { align-items: flex-start; }
@@ -995,6 +990,9 @@ body.navmode .mapsoc, body.sheet-open .mapsoc { display: none; }
 .nb-alert { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; padding: 0 6px; border-block: 4px solid transparent; border-radius: 8px; background: rgba(255, 145, 0, .16); font-size: 12px; font-weight: 600; line-height: 1.25; }
 .nb-alert.over { background: rgba(229, 57, 53, .14); color: #c62828; }
 .nb-alert.hidden { display: none; }
+/* Sonraki planlı şarj durağı (dönüşümlü hücre): ad etiket satırında, varış pili + süre alt satırda; panel yüksekliği değişmez, taşan kısım … ile kesilir */
+#ne-next-t { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.nb-cell .ne-name { font-weight: 700; color: var(--text); }
 /* v0.99.34 okunabilirlik: sol bölümde yalnızca mesafe + talimat + yol adı (talimatla aynı boy/ağırlık, en çok 2 satır); ikincil satır yok. Sağda pil/menzil/varış/durak/uyarı büyük. Panel yüksekliği aynı (en düşük 150 px). */
 .nb-left { justify-content: center; }
 .nb-left .nav-then, .nb-left .nb-trip { display: none; }
@@ -1028,8 +1026,41 @@ body.navmode .mapsoc, body.sheet-open .mapsoc { display: none; }
 @media (max-height: 520px) {
   .nb-man .nav-arrow { font-size: 30px; width: 38px; }
   .nb-man .nav-dist { font-size: 22px; }
-  .nb-speedrow .limit-sign { width: 46px; height: 46px; border-width: 5px; font-size: 19px; }
   .nb-speed .ne-v b { font-size: 28px; }
+}
+
+/* ===== v0.99.59 Navigasyon üst barı: 1) büyük dönüş oku + manevra + yol adı, sağda sabit varış saati; 2) altı sabit metrik
+   Hız | Limit | Pil | Menzil | Sonraki şarj | Varışta (tek satır, 360/375/390 px'te sığar, taşan … ile kesilir); 3) uyarı satırı (boşsa yok).
+   Renkler tema değişkenlerinden: açık ve koyu temada aynı kurallar. ===== */
+.navbar { grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 8px 8px 6px; }
+.nb-man { align-items: center; }
+.nb-man .nav-main { flex: 1 1 auto; min-width: 0; }
+.nb-eta { flex: none; display: flex; flex-direction: column; align-items: flex-end; align-self: flex-start; max-width: 34%; padding-left: 8px; border-left: 1px solid var(--line); line-height: 1.15; text-align: right; }
+.nb-eta small { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.nb-eta b { font-size: clamp(20px, 6vw, 24px); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nb-eta .ne-sub { color: var(--muted); font-size: 13px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.nb-metrics { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1.1fr) minmax(0, 1.5fr) minmax(0, 1.1fr); align-items: stretch; padding-top: 5px; border-top: 1px solid var(--line); }
+.nb-metrics .nb-cell { align-items: center; justify-content: flex-start; min-height: 44px; padding: 0 2px; border-left: 1px solid var(--line); text-align: center; }
+.nb-metrics .nb-cell:first-child { border-left: 0; }
+.nb-metrics .nb-cell small { max-width: 100%; overflow: hidden; color: var(--muted); font-size: 11px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
+.nb-metrics .ne-v { display: flex; flex-direction: column; align-items: center; max-width: 100%; line-height: 1.1; }
+.nb-metrics .ne-v b { font-size: clamp(18px, 5.4vw, 22px); font-weight: 800; letter-spacing: -.3px; }
+.nb-metrics .nb-speed .ne-v b { font-size: clamp(22px, 6.6vw, 28px); line-height: 1; }
+.nb-metrics .ne-sub { max-width: 100%; overflow: hidden; color: var(--muted); font-size: 11px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
+.nb-metrics .nh-avg { display: inline-flex; align-items: baseline; gap: 1px; max-width: 100%; overflow: hidden; color: var(--muted); font-size: 11px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.nb-metrics .nh-avg small, .nb-metrics .nh-avg b { font-size: 11px; color: inherit; }
+.nb-limit .limit-sign { width: 38px; height: 38px; border-width: 4px; font-size: 15px; letter-spacing: -.5px; }
+.nb-limit .limit-sign:not(.hidden) + .ne-nolim { display: none; }
+.nb-metrics b.approx::before { content: '≈'; font-size: .7em; font-weight: 600; color: var(--muted); }
+#ne-next.none { font-size: 13px; font-weight: 700; line-height: 1.15; white-space: normal; }
+.nb-metrics .ne-name { font-weight: 700; color: var(--text); }
+.navbar > .nb-alert { grid-column: 1 / -1; }
+@media (max-height: 520px) {
+  .nb-metrics .nb-cell { min-height: 40px; }
+  .nb-metrics .ne-v b { font-size: 17px; }
+  .nb-metrics .nb-speed .ne-v b { font-size: 21px; }
+  .nb-limit .limit-sign { width: 32px; height: 32px; border-width: 3px; font-size: 13px; }
+  .nb-eta b { font-size: 19px; }
 }
 
 /* ===== RM-02 Koyu tema (Ayarlar > Görünüm: Koyu ya da Otomatik + sistem koyu). Yalnızca <html data-theme="dark"> altında geçerli;

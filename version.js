@@ -2,8 +2,18 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.63';
+self.APP_VERSION = '0.99.64';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.64', date: '2026-11-14',
+    notes: [
+      'Yeni (Beta): navigasyon üst barı altı sabit metrik gösterir — Hız (Ø ortalama), Limit, Pil, Menzil, Sonraki şarj (ad, kalan km, durakta varış pili ve süre), Varışta; hücreler artık dönüşümlü değil. Varış saati üst satırın sağında sabit.',
+      'Pil güveni: eski kamera/tahmin değerleri ≈ ile, varsayılan ya da kamerayla çelişkili pilde menzil ve varışta pil -- gösterilir; durakta varış pili yalnızca canlı kamera, elle giriş ve Test Modu\'nda.',
+      'Rota hesaplanırken, konum yokken ya da rotadan çıkınca sonraki şarj ve varış saati eski değerde kalmaz (--).',
+      'Uyarı satırı (pil/plan uyarısı, trafik, yağış, dik eğim, hız aşımı) üst barın altında yalnızca uyarı varken görünür.',
+      'Sesli yönlendirme (Türkçe): şerit verisi kesinse dönüş anonsuna adım başına bir kez şerit önerisi eklenir (ör. "Sağ şeritleri kullanın."). Gerçek cihazda doğrulanmadı.',
+    ],
+  },
   {
     v: '0.99.63', date: '2026-11-13',
     notes: [

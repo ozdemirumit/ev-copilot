@@ -36,3 +36,61 @@ export function etaShown(text) {
   const s = typeof text === 'string' ? text.trim() : '';
   return !!s && s !== '--:--' && /\d/.test(s) && !/invalid|nan/i.test(s);
 }
+
+// Durakta varış pili yalnızca bu pil kaynaklarında gösterilir (socSource(): taze kamera, elle girilen; Test Modu 'sim').
+// Eski kamera/tahmin/varsayılan değerden çıkan plan pili ölçüme dayanmaz: '--' gösterilir.
+const NEXT_SOC_TRUSTED = ['live', 'manual', 'sim'];
+
+/**
+ * Sonraki PLANLI şarj durağı görünümü (DOM'suz). stop = plan.stops içindeki sıradaki durak, km = aracın rota üstü km'si,
+ * source = pil kaynağı. Durak yoksa null (hücre gizlenir). km: rota boyunca kalan mesafe (durak km − araç km, ≥ 0);
+ * name: plandaki istasyon adı (yoksa ''); soc: plandaki durakta varış pili (yuvarlanmış), güvenilir kaynak yoksa null.
+ */
+export function nextChargeView(stop, km, source) {
+  if (!stop || !Number.isFinite(stop.km) || !Number.isFinite(km)) return null;
+  const name = typeof stop.station?.name === 'string' ? stop.station.name.trim() : '';
+  const soc = NEXT_SOC_TRUSTED.includes(source) && Number.isFinite(stop.arriveSoc) ? Math.max(0, Math.round(stop.arriveSoc)) : null;
+  return { name, km: Math.max(0, stop.km - km), soc };
+}
+
+// --- v0.99.59 üst bar: altı sabit metrik (Hız | Limit | Pil | Menzil | Sonraki şarj | Varışta). Değerler mevcut hesaplardan gelir
+// (effective().soc, engine.totalRangeKm, plan.totals.arriveSoc, plan.stops[].km − locate(track).km); burada yalnızca güvene göre süzülür.
+
+/**
+ * Pil değerine güven: 'trusted' (live/manual/sim), 'approx' (stale/estimate: ≈ ile gösterilir), 'contested' (kamera okumaları tutulan
+ * değerle çelişiyor: ocr.contested), 'none' (default/none/bilinmeyen). Çelişki yalnızca kamera kaynağını (live/stale) etkiler.
+ */
+export function socTrust(source, contested = null) {
+  if (contested != null && (source === 'live' || source === 'stale')) return 'contested';
+  if (NEXT_SOC_TRUSTED.includes(source)) return 'trusted';
+  if (source === 'stale' || source === 'estimate') return 'approx';
+  return 'none';
+}
+
+/**
+ * Üst bar pil/menzil/varışta pil (yuvarlanmış sayılar ya da null = '--'). Varsayılan/olmayan pilde hepsi null; çelişkili kamerada pil ≈ ile,
+ * menzil ve varışta pil null (yanlış pille yanlış menzil gösterilmez). approx: değerler ≈ ile işaretlenir.
+ */
+export function topMetrics({ soc, source, contested = null, rangeKm, arriveSoc } = {}) {
+  const trust = socTrust(source, contested);
+  const pct = trust !== 'none' && Number.isFinite(soc) ? Math.min(100, Math.max(0, Math.round(soc))) : null;
+  const sure = pct != null && (trust === 'trusted' || trust === 'approx');
+  return {
+    trust,
+    approx: trust === 'approx' || trust === 'contested',
+    soc: pct,
+    range: sure && Number.isFinite(rangeKm) ? Math.max(0, Math.round(rangeKm)) : null,
+    arrive: sure && Number.isFinite(arriveSoc) ? Math.round(arriveSoc) : null,
+  };
+}
+
+export const NO_STOP = 'Durak yok'; // Türkçe kaynak metin (sözlükte çevrilir)
+
+/**
+ * Sonraki şarj hücresi metni. view = nextChargeView(...) (rota boyunca kalan km); ready = plan hazır; reliable = araç rotada ve konum
+ * biliniyor. Güvenilmez ya da plan hazır değilse '--'; hazır ve sıradaki durak yoksa NO_STOP; aksi halde "42 km".
+ */
+export function nextChargeText(view, { ready = false, reliable = false } = {}) {
+  if (!reliable || !ready) return '--';
+  return view ? `${view.km.toFixed(0)} km` : NO_STOP;
+}

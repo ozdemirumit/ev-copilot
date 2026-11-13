@@ -66,7 +66,7 @@ const setAhead = (part) => patch('nav', { ahead: { ...getState('nav').ahead, ...
 
 function render() {
   const a = getState('nav').ahead;
-  const lines = [a.cam, a.grade].filter(Boolean); // kamera ve dik eğim: nav/roadWarnings.js; hız aşımı, yağış ve trafik navigasyon üst panelinde dönüşümlü gösterilir
+  const lines = [a.cam].filter(Boolean); // hız kamerası: nav/roadWarnings.js; dik eğim, hız aşımı, yağış ve trafik navigasyon üst barının uyarı satırında (v0.99.59)
   const bar = $('road-alert');
   bar.replaceChildren(...lines.map((t) => Object.assign(document.createElement('div'), { textContent: t })));
   bar.classList.toggle('hidden', !lines.length);
