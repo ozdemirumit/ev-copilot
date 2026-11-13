@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.53';
+self.APP_VERSION = '0.99.54';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.54', date: '2026-11-13',
+    notes: [
+      'Yeni (Beta): Daha Fazla > Görünüm ile Açık, Koyu veya Otomatik tema. Otomatik, telefonun açık/koyu ayarını canlı izler. Seçim cihazda saklanır; varsayılan Açık, mevcut görünüm değişmez.',
+      'Koyu temada navigasyon, rota ve istasyon panelleri koyu zemin kullanır. Harita karoları bu sürümde değişmez (ayrı iş).',
+    ],
+  },
   {
     v: '0.99.53', date: '2026-11-13',
     notes: [

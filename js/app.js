@@ -14,6 +14,7 @@
 import { installMeter } from './net/meter.js';
 import { initI18n } from './i18n/index.js';
 import { initLangSelect } from './ui/langSelect.js';
+import { initTheme } from './ui/theme.js';
 import { initVersionInfo } from './ui/versionInfo.js';
 import { initDataUsage } from './ui/dataUsage.js';
 import { initTabs } from './ui/tabs.js';
@@ -76,6 +77,7 @@ await initI18n(); // önce dil: sayfa metinleri çevrilir, sonra paneller kendi 
 installMeter(); // sonraki tüm fetch çağrıları sayılsın
 restoreSoc(); // pil başlangıcı (kayıtlı son değer ya da varsayılan): paneller ilk çizimde bunu görsün
 initLangSelect();
+initTheme();
 initVersionInfo();
 initDataUsage();
 initStatusBadges();

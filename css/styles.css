@@ -736,6 +736,12 @@ html[lang="tr"] .nh-flag { display: none; }
   --bad: #c8263a;
   --info: #1a66d6;
   --float: 0 4px 16px rgba(15, 39, 68, .24);
+  --surface: #fff; /* yüzen panel/kart zemini (koyu temada değişir) */
+  --tint-warn: #fff4e2;
+  --tint-bad: #ffe9eb;
+  --tint-ok: #e6f6ed;
+  --tint-info: #e8f1fd;
+  --tint-info-line: #b8d2f5;
 }
 
 /* Üst bar ve durum satırı: lacivert üstünde kendi renkleri */
@@ -763,7 +769,7 @@ body.navmode .statusrow { padding-top: calc(2px + var(--safe-t)); }
 .topinfo + .hud { margin-left: 8px; }
 
 /* Yüzen paneller ve düğmeler */
-.socbar, .fabs button, .searchbar, .rota-btn, .navhud, .station-card, .toppanel, #banners > .toppanel { background: #fff; border-color: var(--line); box-shadow: var(--float); }
+.socbar, .fabs button, .searchbar, .rota-btn, .navhud, .station-card, .toppanel, #banners > .toppanel { background: var(--surface); border-color: var(--line); box-shadow: var(--float); }
 .socbar:active { background: var(--card-2); }
 .socbar.low { border-color: var(--warn); }
 .fabs button, .searchbar .ic { color: var(--text); }
@@ -772,15 +778,15 @@ body.navmode .statusrow { padding-top: calc(2px + var(--safe-t)); }
 .searchbar { color: var(--muted); }
 .station-card { backdrop-filter: none; -webkit-backdrop-filter: none; }
 #banners > * { border-color: var(--line); box-shadow: var(--float); }
-.advisor { background: #fff; }
-.advisor.warn { background: #fff4e2; }
-.advisor.bad { background: #ffe9eb; }
-.pickbar { background: #e6f6ed; }
-.test-banner { background: #e8f1fd; border-color: #b8d2f5; }
+.advisor { background: var(--surface); }
+.advisor.warn { background: var(--tint-warn); }
+.advisor.bad { background: var(--tint-bad); }
+.pickbar { background: var(--tint-ok); }
+.test-banner { background: var(--tint-info); border-color: var(--tint-info-line); }
 main { background: var(--bg); box-shadow: 0 10px 44px rgba(15, 39, 68, .35); }
-.sheet-dlg { background: #fff; }
+.sheet-dlg { background: var(--surface); }
 .sheet-dlg::backdrop { background: rgba(15, 39, 68, .45); }
-.dock { background: #fff; box-shadow: 0 -2px 10px rgba(15, 39, 68, .12); }
+.dock { background: var(--surface); box-shadow: 0 -2px 10px rgba(15, 39, 68, .12); }
 
 /* Yeşil/renkli zeminde koyu yazı yerine beyaz (kontrast) */
 .btn.primary, #fab-nav, #fab-plan { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -797,7 +803,7 @@ main { background: var(--bg); box-shadow: 0 10px 44px rgba(15, 39, 68, .35); }
 .stop-yes { background: var(--bad); border-color: var(--bad); color: #fff; }
 
 /* Navigasyon pil şeridi: pil + menzil, varışta pil, sonraki şarj */
-.nav-ev { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 5px 2px; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--float); }
+.nav-ev { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 5px 2px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--float); }
 .ne-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; min-height: 44px; padding: 0 4px; background: none; border: 0; border-left: 1px solid var(--line); border-radius: 0; color: var(--text); text-align: center; }
 .ne-cell:first-child { border-left: 0; }
 .ne-cell small { color: var(--muted); font-size: 11px; white-space: nowrap; }
@@ -890,7 +896,7 @@ body.typing .suggest { max-height: calc(var(--app-h, 100dvh) - var(--hud-h, 72px
 body.navmode .mapsoc, body.sheet-open .mapsoc { display: none; }
 @media (min-height: 521px) {
   /* Rotasız sürüşte üst panel, navigasyon üst barıyla (#banners > .toppanel) aynı kenar boşluğu, genişlik ve köşe yarıçapında durur */
-  .mapsoc { width: auto; margin: 0 10px 6px; padding: 6px 14px 4px; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--float); }
+  .mapsoc { width: auto; margin: 0 10px 6px; padding: 6px 14px 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--float); }
   .mapsoc .socbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 10px; row-gap: 2px; width: 100%; max-width: none; min-height: 44px; margin: 0; padding: 2px 0; background: none; border: 0; border-radius: 0; box-shadow: none; text-align: left; }
   /* Okunabilirlik: sürerken bir bakışta okunacak büyüklük (pil yüzdesi en büyük, etiketler koyu gri) */
   /* Tek satır: sığmayan öğe (önce eşik menzili) yarım rakam göstermek yerine görünmeyen ikinci satıra iner */
@@ -1014,3 +1020,36 @@ body.navmode .mapsoc, body.sheet-open .mapsoc { display: none; }
   .nb-speedrow .limit-sign { width: 46px; height: 46px; border-width: 5px; font-size: 19px; }
   .nb-speed .ne-v b { font-size: 28px; }
 }
+
+/* ===== RM-02 Koyu tema (Ayarlar > Görünüm: Koyu ya da Otomatik + sistem koyu). Yalnızca <html data-theme="dark"> altında geçerli;
+   varsayılan açık görünüm yukarıdaki :root değerleriyle aynen kalır. Kontrast: metin/zemin en az 4.5:1. Harita karoları değişmez. ===== */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --navy: #0a1424;
+  --bg: #0e1116;
+  --bg-2: #13171e;
+  --card: #181d25;
+  --card-2: #222832;
+  --line: #2f3845;
+  --text: #eef1f5;
+  --muted: #a3adbb;
+  --accent: #3ddc84;
+  --accent-dim: #1d5e3f;
+  --warn: #f5b13d;
+  --bad: #ff6b78;
+  --info: #6cb2ff;
+  --float: 0 4px 16px rgba(0, 0, 0, .55);
+  --surface: #1a2029;
+  --tint-warn: #3a2a10;
+  --tint-bad: #3d1a20;
+  --tint-ok: #12301f;
+  --tint-info: #14263d;
+  --tint-info-line: #2a4a73;
+}
+:root[data-theme="dark"] main { box-shadow: 0 10px 44px rgba(0, 0, 0, .6); }
+:root[data-theme="dark"] .sheet-dlg::backdrop { background: rgba(0, 0, 0, .6); }
+:root[data-theme="dark"] .dock { box-shadow: 0 -2px 10px rgba(0, 0, 0, .5); }
+:root[data-theme="dark"] .statusrow { box-shadow: 0 2px 8px rgba(0, 0, 0, .5); }
+/* Yeşil zeminli birincil düğmeler: parlak yeşil üstünde koyu yazı (beyaz yazı 4.5:1 tutmaz) */
+:root[data-theme="dark"] .btn.primary, :root[data-theme="dark"] #fab-nav, :root[data-theme="dark"] #fab-plan { color: #06210f; }
+:root[data-theme="dark"] .nb-alert.over { color: #ff9ca7; }

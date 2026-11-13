@@ -9,6 +9,7 @@
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="css/styles.css">
+  <script src="js/ui/themeBoot.js"></script>
   <style>html:not(.i18n-ready) body { visibility: hidden; }</style>
   <script>setTimeout(function () { document.documentElement.classList.add('i18n-ready'); }, 3000);</script>
 </head>
@@ -734,6 +735,16 @@
       <label class="field" for="lang-select">🌐 Dil / Language
         <select id="lang-select" aria-label="Language"></select>
       </label>
+    </div>
+    <div class="card stack" id="theme-card">
+      <label class="field" for="theme-select">🌓 Görünüm
+        <select id="theme-select" aria-label="Görünüm">
+          <option value="light">Açık</option>
+          <option value="dark">Koyu</option>
+          <option value="auto">Otomatik (sistem ayarı)</option>
+        </select>
+      </label>
+      <div class="small muted">Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.</div>
     </div>
     <div class="card stack" id="account-card">
       <h2 style="margin:0">👤 Hesap</h2>
