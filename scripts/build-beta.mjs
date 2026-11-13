@@ -64,6 +64,14 @@ walk(join(out, 'js'));
   if (!s.includes('<title>EV Route Finder</title>')) throw new Error('index.html başlığı beklenen biçimde değil');
   writeFileSync(p, s.replace('<title>EV Route Finder</title>', '<title>EV Route Finder (Beta)</title>'));
 }
+// offline.html "Tekrar dene": Beta önizleme adresinde kalsın (kaynak/üretim offline.html ve Android server.url değişmez)
+{
+  const p = join(out, 'offline.html');
+  const s = readFileSync(p, 'utf8');
+  const prod = "location.replace('https://ozdemirumit.github.io/ev-copilot/')";
+  if (!s.includes(prod)) throw new Error('offline.html yeniden deneme adresi beklenen biçimde değil');
+  writeFileSync(p, s.replace(prod, "location.replace('https://ozdemirumit.github.io/EV-Route-Finder/')"));
+}
 writeFileSync(join(out, '.nojekyll'), '');
 
 // Doğrulama: çakışan adlar kalmadı mı?

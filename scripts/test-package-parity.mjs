@@ -1,8 +1,8 @@
 // Çevrimdışı paket eşliği (Beta) testi: node scripts/test-package-parity.mjs
 // scripts/build-beta.mjs'i işletim sisteminin geçici klasöründe YENİ ve BENZERSİZ bir klasöre üretir (proje, www/, android/,
 // ../ev-copilot-beta veya herhangi bir git deposu içinde değil) ve çıktının kaynakla eşliğini doğrular:
-// sürüm, sw.js SHELL dosyaları, beta depolama/önbellek ad değişiklikleri, js dosyalarının içerik eşliği (trafficGuard/routeMeta/ahead/navigator dahil),
-// üretimle çakışan ad kalmaması. build-beta.mjs değiştirilmez. Ağ, anahtar, .env, cap sync, APK/AAB, yayın yoktur.
+// sürüm, sw.js SHELL dosyaları, offline.html Beta yeniden deneme adresi, beta depolama/önbellek ad değişiklikleri, js dosyalarının içerik eşliği (trafficGuard/routeMeta/ahead/navigator dahil),
+// üretimle çakışan ad ve üretim adresi kalmaması. Bu test build-beta.mjs'i değiştirmez. Ağ, anahtar, .env, cap sync, APK/AAB, yayın yoktur.
 // Yalnızca bu testin oluşturduğu geçici klasör silinir.
 import { mkdtempSync, realpathSync, readFileSync, readdirSync, statSync, existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -53,6 +53,12 @@ const LEFTOVER = /'evcp\.|'evcp-kv'|'ev-copilot-(?!beta-)/; // build-beta.mjs'in
 const applyRenames = (s) => RENAMES.reduce((acc, [re, to]) => acc.replace(re, to), s);
 const ITEMS = ['index.html', 'offline.html', 'manifest.webmanifest', 'version.js', 'sw.js', 'css', 'js', 'vendor', 'icons'];
 const PROD_URL = 'ozdemirumit.github.io/ev-copilot/';
+const BETA_URL = 'https://ozdemirumit.github.io/EV-Route-Finder/';
+const PROD_RETRY = "location.replace('https://" + PROD_URL + "')";
+const BETA_RETRY = "location.replace('" + BETA_URL + "')";
+const srcOffline = readFileSync(join(root, 'offline.html'), 'utf8');
+const capConfigs = ['capacitor.config.json', join('android', 'app', 'src', 'main', 'assets', 'capacitor.config.json')].filter((r) => existsSync(join(root, r)));
+const capBefore = capConfigs.map((r) => readFileSync(join(root, r), 'utf8'));
 
 const listFiles = (dir, skip = new Set()) => {
   const out = [];
@@ -150,7 +156,7 @@ try {
   const renamedSet = new Set(['sw.js', ...[...srcRel].filter((r) => r.split(sep)[0] === 'js' && r.endsWith('.js'))]);
   const diff = [];
   for (const r of srcRel) {
-    if (!outRel.has(r) || r === 'index.html' || r === 'manifest.webmanifest') continue;
+    if (!outRel.has(r) || r === 'index.html' || r === 'manifest.webmanifest' || r === 'offline.html') continue;
     const a = readFileSync(join(root, r)), b = readFileSync(join(out, r));
     const same = renamedSet.has(r) && !isVendor(r) ? applyRenames(a.toString('utf8')) === b.toString('utf8') : a.equals(b);
     if (!same) diff.push(r);
@@ -179,11 +185,16 @@ try {
   ok('index.html yalnızca başlıkta farklı', html === readFileSync(join(root, 'index.html'), 'utf8').replace('<title>EV Route Finder</title>', '<title>EV Route Finder (Beta)</title>'));
   ok('.nojekyll var', existsSync(join(out, '.nojekyll')));
 
-  // ---------------------------------------------------------------- 8) Üretim adresi sızıntısı (derleyici bunu denetlemez: bilinen tek yer uyarı olarak raporlanır)
+  // ---------------------------------------------------------------- 7b) offline.html "Tekrar dene" Beta önizleme adresinde kalır
+  const offOut = readFileSync(join(out, 'offline.html'), 'utf8');
+  ok('kaynak offline.html üretim yeniden deneme adresini taşır (üretim değişmedi)', srcOffline.includes(PROD_RETRY) && !srcOffline.includes(BETA_URL));
+  ok('Beta offline.html yeniden deneme Beta adresine gider', offOut.includes(BETA_RETRY), BETA_RETRY);
+  ok('Beta offline.html üretim adresi içermez', !offOut.includes(PROD_URL));
+  ok('Beta offline.html yalnızca yeniden deneme adresinde farklı', offOut === srcOffline.replace(PROD_RETRY, BETA_RETRY));
+
+  // ---------------------------------------------------------------- 8) Üretim adresi sızıntısı
   const prodHits = all.filter((p) => !isVendor(relative(out, p)) && /\.(js|html|webmanifest|css)$/.test(p) && readFileSync(p, 'utf8').includes(PROD_URL)).map((p) => relative(out, p));
-  const unknownHits = prodHits.filter((r) => r !== 'offline.html');
-  ok('bilinen dışında üretim adresi yok', unknownHits.length === 0, unknownHits.join(', '));
-  if (prodHits.includes('offline.html')) warns.push(`offline.html "Tekrar dene" düğmesi üretim adresine (https://${PROD_URL}) gider; build-beta.mjs bunu değiştirmez (bilinen eksik, davranış değiştirilmedi)`);
+  ok('Beta çıktısında üretim adresi yok (offline.html dahil)', prodHits.length === 0, prodHits.join(', '));
 } finally {
   // Yalnızca bu testin oluşturduğu klasör silinir (önek + tmp içi yeniden doğrulanır)
   if (inside(out, tmpBase) && out !== tmpBase && basename(out).startsWith(PREFIX)) rmSync(out, { recursive: true, force: true });
@@ -194,6 +205,8 @@ try {
 const after = GUARDED.map(([, d, deep]) => fingerprint(d, deep));
 GUARDED.forEach(([label], i) => ok(`${label} değişmedi`, before[i] === after[i]));
 ok('izlenen çalışma ağacı değişmedi (git status)', gitStatus() === gitBefore);
+ok('kaynak offline.html değişmedi', readFileSync(join(root, 'offline.html'), 'utf8') === srcOffline);
+ok('Capacitor server.url üretim adresinde ve değişmedi', capConfigs.length > 0 && capConfigs.every((r, i) => { const c = readFileSync(join(root, r), 'utf8'); return c === capBefore[i] && JSON.parse(c).server?.url === 'https://' + PROD_URL; }), capConfigs.join(', '));
 
 for (const w of warns) console.log('UYARI', w);
 console.log(`\n${pass} geçti, ${fail} kaldı`);
