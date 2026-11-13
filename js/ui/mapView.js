@@ -42,6 +42,17 @@ const pinEl = (kind, label) => {
   return d;
 };
 
+/**
+ * Rota noktası iğnesi çizilsin mi? "Konumum" başlangıcı (varsayılan/yeniden rota/istasyona git) araç işaretiyle aynı yeri gösterir:
+ * araç konumu biliniyorsa ikinci bir yuvarlak iğne çizilmez. Varış, ara durak ve kullanıcının seçtiği başlangıç her zaman çizilir.
+ */
+export function pointPinShown(kind, point, vehicle) {
+  if (!point) return false;
+  if (kind !== 'start') return true;
+  const own = point.auto === true || point.label === 'Konumum';
+  return !(own && vehicle?.lat != null && vehicle?.lon != null);
+}
+
 /** İstasyon iğnesi: damla biçimi, güce göre renk (AC mavi, DC turuncu, ≥150 kW mor). num: planlanan durak sırası. */
 const PIN_PATH = 'M18 45C18 45 3 28 3 17A15 15 0 0 1 33 17C33 28 18 45 18 45Z';
 function stationPin(s, { planned = false, num = 0, focus = false } = {}) {
@@ -177,7 +188,7 @@ export function initMap() {
     inputFor(kind).value = point ? point.label || fmt(point) : '';
     whenMap(() => {
       unmark(markers[kind]);
-      markers[kind] = point ? marker(point, pinEl(kind), point.label || '') : null;
+      markers[kind] = pointPinShown(kind, point, effective()) ? marker(point, pinEl(kind), point.label || '') : null; // Konumum başlangıcı = araç işareti
       const { start, end, via } = getState('route');
       if (start && end && doFit) fit(via ? [start, via, end] : [start, end], 40);
       else if (point && zoom && doFit) adapter.moveTo({ center: point, zoom: 12 });

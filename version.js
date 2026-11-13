@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.61';
+self.APP_VERSION = '0.99.62';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.62', date: '2026-11-13',
+    notes: [
+      'Düzeltme (Beta): haritada araç işaretinin yanında duran ikinci yuvarlak "Konumum" başlangıç iğnesi artık çizilmez (varsayılan başlangıç, yeniden rota, istasyona git). Araç işareti, rota çizgisi, varış, ara durak ve şarj durakları değişmedi; başka bir yer başlangıç seçilirse iğnesi görünür, konum bilinmiyorsa Konumum iğnesi de kalır.',
+    ],
+  },
   {
     v: '0.99.61', date: '2026-11-13',
     notes: [
