@@ -32,6 +32,7 @@ const STUBS = {
   '../osm/weather.js': 'export const fetchWeather = () => {};',
   '../osm/elevation.js': 'export const fetchElevations = () => {};',
   '../osm/speedLimit.js': 'export const fetchSpeedLimit = () => {};',
+  '../osm/accessProbe.js': 'export const probeStopAccess = () => {};',
 };
 registerHooks({
   resolve(spec, ctx, next) {

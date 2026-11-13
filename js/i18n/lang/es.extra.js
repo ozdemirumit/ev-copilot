@@ -407,4 +407,6 @@ export default {
   "Ortalama hız": "Velocidad media",
   "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş": "Velocidad media: {0} km recorridos, {1} min en marcha, {2} min parado",
   "Daha fazla göster ({0} kaldı)": "Mostrar más ({0} restantes)",
+  "Karşı yönde/erişilemeyen şarj tesisi plandan çıkarıldı: {0}": "Estación de carga en el sentido contrario/inaccesible eliminada del plan: {0}",
+  "Şarj durağına yol ağıyla erişim doğrulanamadı ({0}); tesis karşı yönde olabilir.": "No se pudo verificar el acceso por carretera a la parada de carga ({0}); la estación puede estar en el sentido contrario.",
 };

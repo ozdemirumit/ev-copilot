@@ -19,6 +19,7 @@ export { searchPlaces, resolvePlace, reverseLabel } from '../osm/search.js';
 export { fetchWeather } from '../osm/weather.js';
 export { fetchElevations } from '../osm/elevation.js';
 export { fetchSpeedLimit } from '../osm/speedLimit.js';
+export { probeStopAccess } from '../osm/accessProbe.js'; // şarj durağına yol ağıyla erişim (her zaman Valhalla)
 
 /** TomTom rotası: sunucuda TomTom anahtarı var, hesap Premium ve açık harita TomTom ise (TomTom sonuçları yalnızca TomTom haritasında gösterilir). */
 const tomtomRouteOn = () => proxyHas('tomtom') && premiumAccess() && activeMap() === 'tomtom';

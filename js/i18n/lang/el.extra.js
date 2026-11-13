@@ -407,4 +407,6 @@ export default {
   "Ortalama hız": "Μέση ταχύτητα",
   "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş": "Μέση ταχύτητα: {0} km διαδρομή, {1} λεπ. κίνηση, {2} λεπ. στάση",
   "Daha fazla göster ({0} kaldı)": "Εμφάνιση περισσότερων ({0} ακόμη)",
+  "Karşı yönde/erişilemeyen şarj tesisi plandan çıkarıldı: {0}": "Σταθμός φόρτισης στο αντίθετο ρεύμα/μη προσβάσιμος αφαιρέθηκε από το σχέδιο: {0}",
+  "Şarj durağına yol ağıyla erişim doğrulanamadı ({0}); tesis karşı yönde olabilir.": "Η οδική πρόσβαση στη στάση φόρτισης δεν επαληθεύτηκε ({0}). Ο σταθμός ίσως βρίσκεται στο αντίθετο ρεύμα.",
 };

@@ -407,4 +407,6 @@ export default {
   "Ortalama hız": "Average speed",
   "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş": "Average speed: {0} km driven, {1} min moving, {2} min stopped",
   "Daha fazla göster ({0} kaldı)": "Show more ({0} left)",
+  "Karşı yönde/erişilemeyen şarj tesisi plandan çıkarıldı: {0}": "Charging site on the opposite carriageway/unreachable removed from the plan: {0}",
+  "Şarj durağına yol ağıyla erişim doğrulanamadı ({0}); tesis karşı yönde olabilir.": "Road access to the charging stop could not be verified ({0}); the site may be on the opposite carriageway.",
 };

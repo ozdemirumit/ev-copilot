@@ -407,4 +407,6 @@ export default {
   "Ortalama hız": "Średnia prędkość",
   "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş": "Średnia prędkość: {0} km przejechane, {1} min jazdy, {2} min postoju",
   "Daha fazla göster ({0} kaldı)": "Pokaż więcej (pozostało {0})",
+  "Karşı yönde/erişilemeyen şarj tesisi plandan çıkarıldı: {0}": "Stacja ładowania po przeciwnej stronie jezdni/niedostępna usunięta z planu: {0}",
+  "Şarj durağına yol ağıyla erişim doğrulanamadı ({0}); tesis karşı yönde olabilir.": "Nie udało się zweryfikować dojazdu drogowego do postoju ładowania ({0}); stacja może być po przeciwnej stronie jezdni.",
 };

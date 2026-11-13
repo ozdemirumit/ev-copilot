@@ -407,4 +407,6 @@ export default {
   "Ortalama hız": "Gemiddelde snelheid",
   "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş": "Gemiddelde snelheid: {0} km gereden, {1} min rijden, {2} min stilstand",
   "Daha fazla göster ({0} kaldı)": "Meer tonen ({0} over)",
+  "Karşı yönde/erişilemeyen şarj tesisi plandan çıkarıldı: {0}": "Laadlocatie aan de andere rijbaan/onbereikbaar uit het plan verwijderd: {0}",
+  "Şarj durağına yol ağıyla erişim doğrulanamadı ({0}); tesis karşı yönde olabilir.": "Toegang via het wegennet tot de laadstop kon niet worden gecontroleerd ({0}); de locatie ligt mogelijk aan de andere rijbaan.",
 };

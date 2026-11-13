@@ -406,5 +406,7 @@
  "Kamera okuması eski ({0} sn önce doğrulandı): son doğrulanan değer gösteriliyor.",
  "Ortalama hız",
  "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş",
- "Daha fazla göster ({0} kaldı)"
+ "Daha fazla göster ({0} kaldı)",
+ "Karşı yönde/erişilemeyen şarj tesisi plandan çıkarıldı: {0}",
+ "Şarj durağına yol ağıyla erişim doğrulanamadı ({0}); tesis karşı yönde olabilir."
 ]

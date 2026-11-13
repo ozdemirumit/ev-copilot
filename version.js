@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.52';
+self.APP_VERSION = '0.99.53';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.53', date: '2026-11-13',
+    notes: [
+      'Rota düzeltmesi: bölünmüş otoyolda karşı yönün dinlenme tesisi rota çizgisine yakın göründüğü için "yol üstü" sayılıyordu. Planlanan ileri şarj durakları artık yol ağıyla (Valhalla, gidiş yönüyle kısıtlı) doğrulanır; sapma orantısızsa tesis plandan çıkarılır ve plan yeniden kurulur, erişilebilirse gerçek sapma maliyete girer. Elle seçilen durak korunur.',
+      'Yol ağı sorgusu başarısız olursa plan korunur ve "erişim doğrulanamadı" uyarısı gösterilir; düz çizgi yakınlığı erişim kanıtı sayılmaz. Yeni modüller (stopAccess.js, accessProbe.js) çevrimdışı önbellekte; iki yeni uyarı 11 dile çevrildi.',
+    ],
+  },
   {
     v: '0.99.52', date: '2026-11-13',
     notes: [

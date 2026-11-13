@@ -146,7 +146,7 @@ ok('zaten planda olanı eklemek planı bozmaz', a3.feasible && a3.stops.map((x) 
 // Arayüz ve denetleyici bağlantıları
 const ctrl = read('js/routing/controller.js');
 ok('swapStop: yeni zorunlu, eski dışlanır; kurulamazsa plan korunur', /export function swapStop\(oldId, newId\)/.test(ctrl) && /pinIds: \[\.\.\.prev\.pinIds\.filter/.test(ctrl) && /banIds: \[\.\.\.new Set/.test(ctrl) && /if \(!out\?\.result\.feasible\) return \{ ok: false/.test(ctrl));
-ok('swapStop önce yalnızca o durağı değiştirir (zincir + yeni istasyon), olmazsa yeniden düzenler', /onlyIds: \[\.\.\.chain, newId\]/.test(ctrl) && /reflowed = true/.test(ctrl) && /const all = plan\.stations;/.test(ctrl) && /stations: all, startKm/.test(ctrl));
+ok('swapStop önce yalnızca o durağı değiştirir (zincir + yeni istasyon), olmazsa yeniden düzenler', /onlyIds: \[\.\.\.chain, newId\]/.test(ctrl) && /reflowed = true/.test(ctrl) && /const all = acc\.stations;/.test(ctrl) && /applyAccess\(plan\.stations, accessBook/.test(ctrl) && /stations: all, startKm/.test(ctrl));
 ok('yeni rotada zorunlu/dışlanan listeleri sıfırlanır', /pinIds: \[\], banIds: \[\]/.test(ctrl));
 ok('computePlan zorunlu/dışlanan istasyonları planlayıcıya verir', /mustIds:/.test(ctrl) && /excludeIds:/.test(ctrl));
 const html = read('index.html');

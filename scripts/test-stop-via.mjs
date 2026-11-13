@@ -29,7 +29,8 @@ const PARENT_STUBS = {
       export const fetchRoute = async (...a) => { ${g}.calls.push(a); return ${g}.route(...a); };
       export const fetchElevations = async () => null;
       export const fetchWeather = async () => null;
-      export const fetchChargers = async (pts, profile) => ({ stations: ${g}.chargers(profile), errors: [], cached: false, summary: null });`,
+      export const fetchChargers = async (pts, profile) => ({ stations: ${g}.chargers(profile), errors: [], cached: false, summary: null });
+      export const probeStopAccess = async (q) => (q.b.km - q.a.km) + 0.1; // yol ağı erişim sahtesi: durak erişilebilir, sapma 0,1 km`,
     '../ui/mapView.js': `export const mapApi = { drawRoute: (c) => { ${g}.drawn = c; }, drawStations: () => {}, setPoint: () => {}, clearRoute: () => {} };`,
     '../ui/toast.js': `export const toast = (m) => { ${g}.toasts.push(String(m)); };`,
     '../ui/recentDest.js': 'export const rememberDest = () => {};',
@@ -51,6 +52,7 @@ const PARENT_STUBS = {
     '../osm/weather.js': 'export const fetchWeather = () => {};',
     '../osm/elevation.js': 'export const fetchElevations = () => {};',
     '../osm/speedLimit.js': 'export const fetchSpeedLimit = () => {};',
+    '../osm/accessProbe.js': 'export const probeStopAccess = () => {};',
   },
   // sağlayıcı istek biçimi testleri
   '/js/osm/route.js': { './valhalla.js': `export const valhalla = async (path, body) => { ${g}.valhallaBody = body; return ${g}.valhallaJson; };` },

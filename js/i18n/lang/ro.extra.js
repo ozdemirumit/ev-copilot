@@ -407,4 +407,6 @@ export default {
   "Ortalama hız": "Viteză medie",
   "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş": "Viteză medie: {0} km parcurși, {1} min în mers, {2} min oprit",
   "Daha fazla göster ({0} kaldı)": "Arată mai multe (încă {0})",
+  "Karşı yönde/erişilemeyen şarj tesisi plandan çıkarıldı: {0}": "Stație de încărcare pe sensul opus/inaccesibilă eliminată din plan: {0}",
+  "Şarj durağına yol ağıyla erişim doğrulanamadı ({0}); tesis karşı yönde olabilir.": "Accesul rutier la oprirea de încărcare nu a putut fi verificat ({0}); stația poate fi pe sensul opus.",
 };

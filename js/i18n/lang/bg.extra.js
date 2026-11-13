@@ -407,4 +407,6 @@ export default {
   "Ortalama hız": "Средна скорост",
   "Ortalama hız: {0} km yol, {1} dk sürüş, {2} dk duruş": "Средна скорост: {0} км изминати, {1} мин движение, {2} мин престой",
   "Daha fazla göster ({0} kaldı)": "Покажи още ({0} остават)",
+  "Karşı yönde/erişilemeyen şarj tesisi plandan çıkarıldı: {0}": "Зарядна станция в насрещното платно/недостъпна е премахната от плана: {0}",
+  "Şarj durağına yol ağıyla erişim doğrulanamadı ({0}); tesis karşı yönde olabilir.": "Достъпът по пътната мрежа до спирката за зареждане не можа да бъде проверен ({0}); станцията може да е в насрещното платно.",
 };

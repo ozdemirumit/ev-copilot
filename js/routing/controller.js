@@ -1,7 +1,7 @@
 import { getState, patch, subscribe, effective } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { kvDel } from '../utils/idb.js';
-import { fetchRoute, fetchChargers, fetchElevations, fetchWeather } from '../providers/index.js';
+import { fetchRoute, fetchChargers, fetchElevations, fetchWeather, probeStopAccess } from '../providers/index.js';
 import { reprice, reproject } from './chargerSource.js';
 import { planRoute, rankStations, shown } from './planner.js';
 import { resampleRoute, buildProfile } from '../physics/routeProfile.js';
@@ -17,6 +17,7 @@ import { rememberDest } from '../ui/recentDest.js';
 import { projectSteps } from '../nav/steps.js';
 import { t as tpl } from '../i18n/index.js';
 import { stopWaypoints, offRouteKm } from './stopVia.js';
+import { createAccessBook, applyAccess, verifyStops, lineKm, locateOnLine } from './stopAccess.js';
 
 const WX_STEP_KM = 50;
 let raw = null; // { pts, elevations, elevSource, wx } — profil ayarları değişince yeniden kurmak için
@@ -24,6 +25,20 @@ let startSoc = 80;
 let sig = '';
 let cacheKey = null;
 let timer = null;
+const accessBook = createAccessBook(); // şarj durağı yol ağı erişim sonuçları (istasyon × gidiş yönü); yeni yolculukta temizlenir
+const ACCESS_ROUNDS = 4; // erişilemeyen durak elenince yeni seçilen durak(lar) da doğrulanır: en çok bu kadar tur
+let accessRun = null;
+let lineCache = { coords: null, cum: null, head: new Map() };
+
+/** Rotanın istasyondaki gidiş yönü (tam çözünürlüklü çizgiden; rota değişince yeniden hesaplanır). */
+function headingAt(s) {
+  const coords = getState('plan').route?.coords;
+  if (!coords) return null;
+  if (lineCache.coords !== coords) lineCache = { coords, cum: lineKm(coords), head: new Map() };
+  const key = `${s.id}@${Math.round(s.km ?? -1)}`;
+  if (!lineCache.head.has(key)) lineCache.head.set(key, locateOnLine(coords, lineCache.cum, s, Number.isFinite(s.km) ? s.km : null, 8)?.heading ?? null);
+  return lineCache.head.get(key);
+}
 
 const routeSig = () => {
   const r = getState('route');
@@ -73,7 +88,10 @@ export function computePlan({ fromKm = 0, soc = startSoc, maxFirstStopKm = Infin
   if (!plan.profile) return null;
   const kInfo = planK();
   const k = kInfo.k;
-  const all = plan.stations;
+  // Yol ağıyla doğrulanmış sapma maliyete girer; erişilemeyen (karşı yön) istasyon aday olmaz (kullanıcının elle seçtiği hariç)
+  const keep = new Set([...(pins?.pinIds ?? plan.pinIds ?? []), plan.forceFirstId].filter(Boolean));
+  const acc = applyAccess(plan.stations, accessBook, headingAt, keep);
+  const all = acc.stations;
   const stations = onlyIds ? all.filter((s) => onlyIds.includes(s.id)) : all;
   // Zorunlu ilk durak yalnızca hâlâ ilerideyse geçerlidir (geçildiyse veya listede yoksa yok sayılır)
   const forced = plan.forceFirstId && stations.some((s) => s.id === plan.forceFirstId && s.km > fromKm + 0.5) ? plan.forceFirstId : null;
@@ -81,7 +99,7 @@ export function computePlan({ fromKm = 0, soc = startSoc, maxFirstStopKm = Infin
     profile: plan.profile, stations, startKm: fromKm, startSoc: soc,
     minArrival: r.minArrivalSoc, mode: mode || plan.mode, k, maxFirstStopKm, forceFirstId: forced,
     mustIds: (pins?.pinIds ?? plan.pinIds ?? []).filter((id) => stations.some((s) => s.id === id && s.km > fromKm + 0.5)), // kullanıcının seçtiği duraklar; geçilmiş olanlar yok sayılır
-    excludeIds: pins?.banIds ?? plan.banIds ?? [],
+    excludeIds: [...(pins?.banIds ?? plan.banIds ?? []), ...acc.blocked],
   });
   const ranking = rank ? rankStations({ profile: plan.profile, stations: all, startKm: fromKm, startSoc: soc, k, mode: plan.mode }) : [];
   return { result, ranking, kInfo, maxFirstStopKm };
@@ -116,6 +134,39 @@ function applyPlan(out, extra = {}) {
   const from = (pl.fromKm ?? 0) - 0.3;
   const planned = new Set(result.stops.map((x) => x.station.id));
   mapApi.drawStations(pl.stations.filter((s) => s.km > from && shown(s, planned)), result.stops); // geride kalan istasyonlar haritadan da çıkar
+  if (result.feasible && result.stops.some((x) => !x.station.access?.verified && x.km > (pl.fromKm ?? 0) + 0.5)) verifyStopAccess(); // beklenmez: elle değişiklik/mod sonrası yeni durak
+}
+
+/**
+ * Plandaki ileri şarj duraklarını YOL AĞIYLA doğrula (düz çizgi yakınlığı erişim kanıtı değildir). Bölünmüş otoyolda karşı yönün tesisi
+ * rota çizgisine yakın görünür ama ancak sonraki kavşaktan dönülerek ulaşılır: sapma orantısızsa istasyon elenir ve plan yeniden kurulur;
+ * erişilebilirse gerçek sapma maliyete girer. Yeni seçilen durak(lar) da doğrulanır (en çok ACCESS_ROUNDS tur). Sorgu başarısızsa plan
+ * korunur ve kullanıcı uyarılır (durak "doğrulanmadı" kalır). Aynı anda tek çalışma.
+ */
+export function verifyStopAccess() {
+  if (!accessRun) accessRun = runAccess().catch((err) => console.warn('Durak erişim denetimi:', err.message)).finally(() => { accessRun = null; });
+  return accessRun;
+}
+
+async function runAccess() {
+  const failedNames = new Set();
+  let removed = [];
+  for (let round = 0; round < ACCESS_ROUNDS; round++) {
+    const pl = getState('plan');
+    if (pl.status !== 'ready' || !pl.profile || !pl.route?.coords) return;
+    const fromKm = pl.fromKm ?? 0;
+    const res = await verifyStops({ coords: pl.route.coords, stops: pl.stops, fromKm, book: accessBook, probe: probeStopAccess });
+    if (getState('plan').planId !== pl.planId) return; // araya yeni rota girdi
+    res.failed.forEach((s) => failedNames.add(s.name));
+    if (!res.checked) break;
+    removed = [...removed, ...res.rejected.map((s) => s.name)];
+    const out = computePlan({ fromKm, soc: pl.fromSoc ?? startSoc, maxFirstStopKm: pl.maxFirstStopKm ?? Infinity });
+    if (!out) return;
+    applyPlan(out);
+    if (!out.result.feasible) break;
+  }
+  if (removed.length) toast(tpl('Karşı yönde/erişilemeyen şarj tesisi plandan çıkarıldı: {0}', [...new Set(removed)].join(', ')), 7000);
+  if (failedNames.size) toast(tpl('Şarj durağına yol ağıyla erişim doğrulanamadı ({0}); tesis karşı yönde olabilir.', [...failedNames].join(', ')), 7000);
 }
 
 /** İstasyonları getir ve plan durumuna yaz; hata/önbellek bilgisi İstasyon sekmesinde kalıcı gösterilir. */
@@ -167,6 +218,7 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
 
   try {
     patch('plan', { status: 'loading', text: 'Rota alınıyor…', stops: [], totals: null, ranking: [], fromKm: 0, fromSoc: null, pinIds: [], banIds: [] }); // yeni rota: elle değiştirilen duraklar sıfırlanır
+    if (!from) accessBook.clear(); // yeni yolculuk: erişim sonuçları sıfırdan (yeniden rotada aynı yöndeki sonuçlar geçerli kalır)
     patch('sim', { routeKm: 0, lat: from?.lat ?? null, lon: from?.lon ?? null, play: false }); // simüle araç yeni rotanın başına (yeniden rotada bulunduğu yere)
     const tm = [Date.now()]; const rt = await fetchRoute(start, end, tripWaypoints(route.via, via)); tm.push(Date.now()); // tm: aşama zamanları (yavaşlık tanısı)
     if (rt.note) toast(rt.note, 7000);
@@ -194,6 +246,7 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
         await loadStations(pts, quick);
       }
       applyPlan(computePlan(), { startSoc });
+      await verifyStopAccess(); // karşı yöndeki tesis durak olmasın (yol ağı)
       const via2 = await routeThroughStops(start, end, { elev: false }); // otoyol dışı durak: rota onun üzerinden (rakım/hava yine arkadan)
       enrichRoute(via2?.pts ?? pts, via2?.speeds ?? speeds, getState('plan').planId); // beklenmez
       restoreSim();
@@ -232,6 +285,7 @@ export async function planTrip(from = null, { via = null, extra = [] } = {}) {
       await loadStations(pts, profile); tm.push(Date.now());
     }
     applyPlan(computePlan(), { startSoc });
+    await verifyStopAccess(); // karşı yöndeki tesis durak olmasın (yol ağı)
     await routeThroughStops(start, end);
     rememberDest(end); planTiming(tm);
     return true;
@@ -498,6 +552,7 @@ export function initRouteController() {
 /** Navigasyon bitti ya da durduruldu: plan, rota çizgisi ve başlangıç/ara/varış işaretleri temizlenir (yeni rota için sıfırdan başlanır). */
 export function clearTrip() {
   clearTimeout(timer);
+  accessBook.clear();
   raw = null;
   sig = '';
   patch('plan', { status: 'none', text: '', route: null, profile: null, wxInfo: null, stations: [], stationInfo: null, stops: [], steps: [], pinIds: [], banIds: [], totals: null, planId: null, fromKm: 0, fromSoc: null });
