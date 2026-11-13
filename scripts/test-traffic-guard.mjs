@@ -129,7 +129,8 @@ async function start(opts) {
   return q;
 }
 const ahead = () => H.state.nav.ahead;
-const noEffects = () => H.upd.length === 0 && H.setTraffic.length === 0 && H.speak.length === 0 && !H.patches.some(([k, v]) => k === 'nav' && 'liveRemain' in v);
+// v0.99.50: red yolunda liveRemain yalnızca null'a çekilebilir; yeni canlı süre yazılmaz
+const noEffects = () => H.upd.length === 0 && H.setTraffic.length === 0 && H.speak.length === 0 && !H.patches.some(([k, v]) => k === 'nav' && 'liveRemain' in v && v.liveRemain !== null);
 const unrelatedKept = () => ahead().rain === '🌧️ yağmur' && ahead().cam === '📷 kamera' && ahead().grade === '⛰️ eğim';
 
 async function run(name, { provider = 'mapbox', meta, route, map, src, res, during, expectAllowed, jam, delayMin }) {
@@ -143,10 +144,11 @@ async function run(name, { provider = 'mapbox', meta, route, map, src, res, duri
   if (expectAllowed) {
     ok(`${name}: hız/enerji güncellenir (updateAhead, aynı planId)`, H.upd.length === 1 && H.upd[0].planId === planBefore && H.upd[0].km === 10 && H.upd[0].rt.coords === ROUTE_COORDS);
     ok(`${name}: trafik renkleri çizilir`, H.setTraffic.length === 1 && H.setTraffic[0][0] === ROUTE_COORDS);
-    ok(`${name}: canlı kalan süre yazılır`, H.state.nav.liveRemain?.h === 1.25);
+    ok(`${name}: canlı kalan süre yazılır (plana bağlı)`, H.state.nav.liveRemain?.h === 1.25 && H.state.nav.liveRemain.planId === planBefore && H.state.nav.liveRemain.at === clock);
   } else {
     ok(`${name}: hız/enerji/renk/süre/ses değişmez`, noEffects(), JSON.stringify({ upd: H.upd.length, st: H.setTraffic.length, sp: H.speak.length }));
     ok(`${name}: trafik metni silinir, diğer uyarılar korunur`, ahead().traffic === null && unrelatedKept());
+    ok(`${name}: canlı kalan süre yok`, H.state.nav.liveRemain === null);
   }
 }
 
@@ -230,8 +232,87 @@ await run('trafik kaynağı yok (null)', { provider: 'mapbox', map: 'osm', res: 
   H.traffic[0].res(trafficResult('mapbox'));
   await flush();
   ok('aynı plan 2. tur uyumsuz: hız/enerji/renk/ses yok', H.upd.length === 0 && H.setTraffic.length === 0 && H.speak.length === 0);
-  ok('aynı plan 2. tur uyumsuz: liveRemain değişmez (aynı nesne)', H.state.nav.liveRemain === live);
+  ok('aynı plan 2. tur uyumsuz: önceki liveRemain silinir (v0.99.50)', H.state.nav.liveRemain === null && H.patches.filter(([k, v]) => k === 'nav' && 'liveRemain' in v).length === 1);
   ok('aynı plan 2. tur uyumsuz: trafik metni silinir, diğer uyarılar korunur', ahead().traffic === null && unrelatedKept());
+}
+
+// ---------------------------------------------------------------- 3) v0.99.50: plana bağlı trafik zamanlayıcısı ve canlı varış süresi
+// A planının isteği sürerken B planına geçilir: A'nın finally'si trAt'ı güncellememeli, B hemen (sonraki check) kendi isteğini yapmalı
+for (const [name, settle] of [
+  ['izinli sonuç', (q) => q.res(trafficResult('mapbox'))],
+  ['boş sonuç', (q) => q.res(null)],
+  ['hata', (q) => q.rej(new Error('Mapbox 503'))],
+  ['uyumsuz kaynak', (q) => q.res(trafficResult('tomtom'))],
+]) {
+  H.map = 'osm';
+  const q = await start({ provider: 'mapbox' });
+  const pidA = H.state.plan.planId;
+  clock += 60e3;
+  H.state.plan = { ...H.state.plan, planId: 'B-' + name, route: { coords: ROUTE_COORDS, routeMeta: { provider: 'mapbox' } } };
+  check(); // B görülür: trAt=0, ama A sürdüğü için yeni istek yok
+  ok(`A→B (${name}): A sürerken ikinci istek yok`, H.traffic.length === 0);
+  reset();
+  settle(q[0]);
+  await flush();
+  ok(`A→B (${name}): A sonucu B'ye etki etmez (liveRemain yazılmaz/silinmez)`, noEffects() && H.patches.length === 0);
+  clock += 5000;
+  check();
+  ok(`A→B (${name}): B'nin ilk trafik isteği ertelenmeden yapılır (tek istek)`, H.traffic.length === 1 && pidA !== H.state.plan.planId);
+  H.traffic[0].res(trafficResult('mapbox'));
+  await flush();
+  ok(`A→B (${name}): B sonucu B planına bağlı yazılır`, H.state.nav.liveRemain?.planId === 'B-' + name);
+  reset();
+  clock += 5000; check();
+  ok(`A→B (${name}): B sonrası 10 dk kısıtı geçerli`, H.traffic.length === 0);
+}
+// Aynı plan kısıtı: istek bitince 10 dk dolmadan yeni istek yok (izinli, boş, hata, red)
+for (const [name, settle] of [
+  ['izinli', (q) => q.res(trafficResult('mapbox'))], ['boş', (q) => q.res(null)],
+  ['hata', (q) => q.rej(new Error('x'))], ['red', (q) => q.res(trafficResult('tomtom'))],
+]) {
+  H.map = 'osm';
+  const q = await start({ provider: 'mapbox' });
+  clock += 30e3; // yanıt 30 sn sürdü: kısıt yanıt anından sayılır (eski davranış)
+  settle(q[0]);
+  await flush();
+  reset();
+  const t0 = clock;
+  for (const dt of [5e3, 60e3, 9 * 60e3, 10 * 60e3]) { clock = t0 + dt; check(); }
+  ok(`aynı plan (${name}): ≤10 dk içinde ek istek yok`, H.traffic.length === 0);
+  clock = t0 + 10 * 60e3 + 1; check();
+  ok(`aynı plan (${name}): 10 dk sonra tek istek`, H.traffic.length === 1);
+  H.traffic[0].rej(new Error('kapat')); await flush();
+}
+
+// liveRemainH saf okuma kuralı (navigator.js bunu kullanır)
+{
+  const { liveRemainH, LIVE_REMAIN_MAX_MS } = G;
+  const now = 1_800_000_000_000;
+  ok('liveRemainH: 15 dk sınırı', LIVE_REMAIN_MAX_MS === 15 * 60e3);
+  ok('liveRemainH: aynı plan, yeni kayıt → kalan süre (geçen süre düşülür)', Math.abs(liveRemainH({ h: 1, at: now - 6 * 60e3, planId: 'P' }, 'P', now) - 0.9) < 1e-12);
+  ok('liveRemainH: aynı an → h', liveRemainH({ h: 2, at: now, planId: 'P' }, 'P', now) === 2);
+  ok('liveRemainH: başka planın kaydı kullanılmaz', liveRemainH({ h: 1, at: now, planId: 'A' }, 'B', now) === null);
+  ok("liveRemainH: planId'siz eski kayıt kullanılmaz", liveRemainH({ h: 1, at: now }, 'P', now) === null && liveRemainH({ h: 1, at: now }, undefined, now) === null);
+  ok('liveRemainH: plan kimliği yoksa kullanılmaz', liveRemainH({ h: 1, at: now, planId: null }, null, now) === null);
+  ok('liveRemainH: 14:59 geçerli, tam 15 dk ve sonrası süresi dolmuş', liveRemainH({ h: 1, at: now - (15 * 60e3 - 1000), planId: 'P' }, 'P', now) > 0 &&
+    liveRemainH({ h: 1, at: now - 15 * 60e3, planId: 'P' }, 'P', now) === null && liveRemainH({ h: 1, at: now - 16 * 60e3, planId: 'P' }, 'P', now) === null);
+  ok("liveRemainH: negatif kalan süre yok (0'a kırpılır)", liveRemainH({ h: 0.05, at: now - 10 * 60e3, planId: 'P' }, 'P', now) === 0 && liveRemainH({ h: -1, at: now, planId: 'P' }, 'P', now) === 0);
+  ok('liveRemainH: geleceğe tarihli / geçersiz kayıt yok sayılır', liveRemainH({ h: 1, at: now + 1000, planId: 'P' }, 'P', now) === null &&
+    liveRemainH({ h: NaN, at: now, planId: 'P' }, 'P', now) === null && liveRemainH({ h: 1, at: 'x', planId: 'P' }, 'P', now) === null &&
+    liveRemainH(null, 'P', now) === null && liveRemainH(undefined, 'P', now) === null);
+  // Uçtan uca: ahead.js'in yazdığı kayıt, plan değişince navigator kuralıyla okunmaz
+  H.map = 'osm';
+  const q = await start({ provider: 'mapbox' });
+  q[0].res(trafficResult('mapbox')); await flush();
+  const rec = H.state.nav.liveRemain, pA = H.state.plan.planId;
+  ok('uçtan uca: aynı plan okunur', liveRemainH(rec, pA, clock) === 1.25);
+  ok('uçtan uca: yeni plan önceki planın varış süresini görmez', liveRemainH(rec, 'baska-plan', clock) === null);
+  ok('uçtan uca: 15 dk sonra kullanılmaz', liveRemainH(rec, pA, clock + 15 * 60e3) === null);
+  const nsrc = readFileSync(new URL('../js/nav/navigator.js', import.meta.url), 'utf8');
+  ok("statik: navigator.js liveRemain'i yalnızca liveRemainH(…, plan.planId, Date.now()) ile okur", /liveRemainH\(nav\.liveRemain, plan\.planId, Date\.now\(\)\)/.test(nsrc) &&
+    (nsrc.match(/\.liveRemain\b/g) || []).length === 1 && /import \{ liveRemainH \} from '\.\/trafficGuard\.js'/.test(nsrc));
+  const body = asrc.slice(asrc.indexOf('async function refreshTraffic'), asrc.indexOf('function check()'));
+  ok('statik: finally trAt yalnızca aynı planda', /finally \{\s*if \(getState\('plan'\)\.planId === id\) trAt = Date\.now\(\);/.test(body));
 }
 
 // Günlüklerde ham veri / sahte anahtar yok

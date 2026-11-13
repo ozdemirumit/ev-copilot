@@ -14,6 +14,7 @@ import { bearing, haversineKm } from '../utils/geo.js';
 import { icon, setManeuverIcon } from '../ui/icons.js';
 import { currentLimit } from './speedLimit.js';
 import { speedOver, pickSlot, ALERT_MS } from './panelLogic.js';
+import { liveRemainH } from './trafficGuard.js';
 
 const $ = (id) => document.getElementById(id);
 const THEN_MAX_M = 500; // sonraki manevra panelde yalnızca bu kadar yakınsa gösterilir
@@ -178,8 +179,8 @@ function tick() {
   const nextStop = plan.stops.find((s) => s.km > km + 0.3);
   // Varış: canlı kalan süre varsa o (ahead.js yeniler; arada geçen süre düşülür) + kalan şarj molaları.
   // Yoksa rota süresinin kalan oranı, o da yoksa profil süresi.
-  const live = nav.liveRemain;
-  const driveH = live && Date.now() - live.at < 15 * 60e3 ? Math.max(0, live.h - (Date.now() - live.at) / 3600e3)
+  const liveH = liveRemainH(nav.liveRemain, plan.planId, Date.now()); // yalnızca bu planın ≤15 dk'lık canlı süresi (trafficGuard.js)
+  const driveH = liveH != null ? liveH
     : plan.route?.durationH ? plan.route.durationH * (remain / plan.profile.totalKm)
       : plan.profile.timeBetween(km, plan.profile.totalKm);
   const chargeMin = plan.stops.filter((s) => s.km > km).reduce((a, s) => a + s.minutes + s.overheadMin, 0);

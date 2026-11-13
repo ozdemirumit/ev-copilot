@@ -27,3 +27,15 @@ export function trafficUse({ routeProvider, trafficSource, map } = {}) {
   if (routeProvider === 'tomtom') return map === 'tomtom' ? ALLOW : R.map;
   return R.unsupported;
 }
+
+export const LIVE_REMAIN_MAX_MS = 15 * 60e3;
+
+/** Canlı kalan sürüş süresi (saat) ya da null (v0.99.50). nav.liveRemain { h, at, planId } yalnızca AYNI plan için ve 15 dk'dan
+ *  yeni ise kullanılır; planId'siz (eski biçim), başka plana ait, geçersiz ya da geleceğe tarihli kayıt yok sayılır. Geçen süre düşülür, sonuç ≥ 0. */
+export function liveRemainH(live, planId, now) {
+  if (!live || planId == null || live.planId !== planId) return null;
+  if (!Number.isFinite(live.h) || !Number.isFinite(live.at) || !Number.isFinite(now)) return null;
+  const age = now - live.at;
+  if (age < 0 || age >= LIVE_REMAIN_MAX_MS) return null;
+  return Math.max(0, live.h - age / 3600e3);
+}

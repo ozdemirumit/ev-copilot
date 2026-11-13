@@ -104,19 +104,22 @@ function sameRoad(rtCoords, planCoords) {
 
 async function refreshTraffic(km) {
   busyTr = true;
+  const id = getState('plan').planId;
   try {
     const e = effective();
-    const id = getState('plan').planId;
     const t = await fetchTrafficAhead(e, getState('route').end);
     const plan = getState('plan');
     if (plan.planId !== id) return; // istek sürerken plan değişti: eski sonuç hiçbir şeye işlenmez (check() trafik metnini zaten sıfırladı)
     if (!t) return setAhead({ traffic: null });
     // Sağlayıcı koruması (trafficGuard.js): trafik kaynağı seçilen rotanın sağlayıcısıyla aynı değilse hız/enerji/renk/süre/ses değişmez; yalnızca trafik metni silinir
-    if (!trafficUse({ routeProvider: plan.route?.routeMeta?.provider, trafficSource: t.trafficSource, map: activeMap() }).ok) return setAhead({ traffic: null });
+    if (!trafficUse({ routeProvider: plan.route?.routeMeta?.provider, trafficSource: t.trafficSource, map: activeMap() }).ok) {
+      patch('nav', { liveRemain: null }); // reddedilen kaynak: önceki canlı varış süresi de kullanılmaz (v0.99.50)
+      return setAhead({ traffic: null });
+    }
     if (t.rt && (getState('engine').offRouteKm ?? 0) < 1) updateAhead({ km, rt: t.rt, planId: id }); // rotadayken: yeni trafik hızları enerji ve süreye işlenir
     if (t.rt?.coords && (getState('engine').offRouteKm ?? 0) < 1 && sameRoad(t.rt.coords, getState('plan').route?.coords)) mapApi.setTraffic(t.rt.coords, t.rt.trafficSpans || []); // rota yeniden hesaplanmadan trafik renkleri
     const { jam, delayMin } = t;
-    patch('nav', { liveRemain: { h: t.remainH, at: Date.now() } });
+    patch('nav', { liveRemain: { h: t.remainH, at: Date.now(), planId: id } }); // plana bağlı: navigator.js yalnızca aynı planda okur
     if (!jam) return setAhead({ traffic: delayMin >= 10 ? `🚦 Rotada trafik kaynaklı ≈ ${delayMin} dk gecikme var` : null });
     const len = jam.to - jam.from;
     const where = jam.from < 1 ? 'Şu an' : `~${Math.round(jam.from)} km ileride`;
@@ -126,7 +129,7 @@ async function refreshTraffic(km) {
   } catch (err) {
     console.warn('Trafik bilgisi alınamadı:', err.message);
   } finally {
-    trAt = Date.now();
+    if (getState('plan').planId === id) trAt = Date.now(); // plan değiştiyse yeni planın ilk yenilemesi ertelenmez (check() trAt=0 yaptı)
     busyTr = false;
   }
 }

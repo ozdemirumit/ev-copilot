@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.49';
+self.APP_VERSION = '0.99.50';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.50', date: '2026-11-13',
+    notes: [
+      'Düzeltme: canlı trafik isteği sürerken rota değişirse eski isteğin bitişi yeni rotanın ilk trafik yenilemesini artık 10 dk ertelemez; aynı rotada 10 dk aralık aynen korunur.',
+      'Düzeltme: canlı kalan süre artık rotaya bağlı; navigasyon yalnızca aynı rotanın son 15 dk içindeki canlı süresini kullanır, önceki rotanın varış saatini göstermez. Trafik kaynağı reddedilirse önceki canlı süre de silinir; diğer uyarılar, sağlayıcı sırası, istek sayısı ve arayüz değişmedi.',
+    ],
+  },
   {
     v: '0.99.49', date: '2026-11-13',
     notes: [
