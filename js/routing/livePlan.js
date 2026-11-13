@@ -8,6 +8,8 @@ import { slotKind } from './slots.js';
 import { speak } from '../advisor/voice.js';
 import { t } from '../i18n/index.js';
 import { proxyHas } from '../net/proxy.js';
+import { socSource } from '../physics/socEstimate.js';
+import { shouldReplan } from './socTrust.js';
 
 const BAT = VEHICLE.batteryNetKwh;
 const CHECK_MS = 5000;
@@ -43,7 +45,9 @@ function check() {
   const drift = expected == null ? 0 : Math.abs(e.soc - expected);
   const far = km - fromKm >= REFRESH_KM;
 
-  if (passed || drift > SOC_TOLERANCE || far) {
+  // SOC farkı yalnızca güvenilir kaynakta (canlı kamera, elle giriş, Test Modu) tek başına tetikler; eski/tahmin/varsayılan değer tetiklemez.
+  const source = e.source === 'sim' ? 'sim' : socSource();
+  if (shouldReplan({ passed, far, drift, tolerance: SOC_TOLERANCE, source })) {
     lastReplan = Date.now();
     const behind = plan.stops.filter((s) => s.km < km - PASSED_KM).map((s) => s.km);
     if (behind.length) patch('plan', { lastStopKm: Math.max(...behind) }); // sonraki durağa 'önceki duraktan' mesafe için
