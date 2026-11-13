@@ -28,7 +28,14 @@ ok('denetleyici mod değişiminde yeniden planlar (çiplerle aynı akış)', /if
 ok('İstasyon çipleri aynı akışı kullanır', /save\('planMode', c\.dataset\.sort\);\s*patch\('plan', \{ mode: c\.dataset\.sort \}\)/.test(read('js/ui/stationsView.js')));
 {
   const self = {}; new Function('self', read('version.js'))(self);
-  ok('version.js 0.99.40 ve günlük en üstte', self.APP_VERSION === '0.99.40' && self.APP_CHANGELOG[0].v === '0.99.40');
+  // Sürüm sabit yazılmaz: geçerli sürüm günlüğün en üstündedir ve rota seçenekleri arayüzünü getiren 0.99.40'tan eski değildir.
+  const ver = self.APP_VERSION;
+  const num = (v) => String(v).split('.').map(Number);
+  const cmp = (a, b) => { const x = num(a), y = num(b); for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] - y[i]; return 0; };
+  ok('version.js: geçerli sürüm x.y.z biçiminde', /^\d+\.\d+\.\d+$/.test(ver), String(ver));
+  ok('version.js: günlüğün en üstü geçerli sürüm', self.APP_CHANGELOG[0].v === ver, `${self.APP_CHANGELOG[0].v} != ${ver}`);
+  ok('version.js: sürüm rota seçenekleri arayüzünden (0.99.40) eski değil', cmp(ver, '0.99.40') >= 0, String(ver));
+  ok('version.js: günlükte 0.99.40 kaydı korunur', self.APP_CHANGELOG.some((e) => e.v === '0.99.40'));
   const notes = self.APP_CHANGELOG[0].notes.join(' ');
   ok('günlük Türkçe karakterli (ASCII yazım yok)', /ş/.test(notes) && /ı/.test(notes) && !/\b(secenek|sarj|guzergah|dusuk|degismedi)\b/i.test(notes));
 }
