@@ -777,6 +777,17 @@ body.navmode .statusrow { padding-top: calc(2px + var(--safe-t)); }
 #fab-me.gps-bad { color: var(--warn); border-color: var(--warn); }
 .searchbar { color: var(--muted); }
 .station-card { backdrop-filter: none; -webkit-backdrop-filter: none; }
+/* v0.99.57: istasyon kartı görünür alanın içinde kalır. Kök neden: grid sütunu (auto) olanak çiplerinin (.chips, sarmasız flex)
+   min-content genişliğine (~398px) büyüyordu; kart yatay kayıyor, X sağda ekran dışına düşüyordu. Sütun minmax(0,1fr), çipler sarar,
+   başlık (X dahil) kaydırmada üstte yapışık kalır, X 44x44 dokunma alanı. Kenarlar güvenli alan payını da gözetir. */
+.station-card { grid-template-columns: minmax(0, 1fr); overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; box-sizing: border-box; padding-top: 0; left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); max-height: calc(100vh - var(--nav-h) - var(--safe-b) - var(--safe-t) - 24px); max-height: min(62vh, calc(100dvh - var(--nav-h) - var(--safe-b) - var(--safe-t) - 24px)); }
+.station-card > * { min-width: 0; }
+.station-card .sc-head { position: sticky; top: 0; z-index: 1; align-items: flex-start; padding-top: 8px; background: var(--surface); }
+.station-card .sc-title { flex: 1 1 auto; min-width: 0; padding-top: 4px; overflow-wrap: anywhere; }
+.station-card .sheet-x { flex: none; width: 44px; height: 44px; margin: -2px -6px 0 0; }
+.station-card .chips { flex-wrap: wrap; }
+.station-card .chips .btn { flex: 1 1 auto; min-width: 0; }
+.station-card .row.wrap > * { min-width: 0; }
 #banners > * { border-color: var(--line); box-shadow: var(--float); }
 .advisor { background: var(--surface); }
 .advisor.warn { background: var(--tint-warn); }

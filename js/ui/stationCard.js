@@ -166,9 +166,11 @@ function open(s) {
   current = s;
   freeUrls();
   const card = $('station-card');
-  const head = el('div', 'row between');
+  const head = el('div', 'row between sc-head'); // yapışık başlık: X kaydırmada da görünür (css .sc-head)
   head.append(el('b', 'sc-title', s.name));
-  head.append(btn('✕', close, 'sheet-x'));
+  const x = btn('✕', close, 'sheet-x');
+  x.setAttribute('aria-label', tr('Kapat'));
+  head.append(x);
   const meta = el('div', 'small muted');
   meta.append(el('span', '', s.opName || ''), ' · ', el('span', '', `${s.slow ? tr('AC/yavaş') + ' ' : ''}${s.kw} kW${s.uncertain ? '*' : ''}`));
   const price = el('div', 'sc-price', s.foreign ? 'Fiyat bilgisi yok (liste fiyatı yalnızca Türkiye için)' : s.price != null ? `${s.price.toFixed(2)} TL/kWh (${s.tariffSrc === 'published' ? 'işletmeci tarifesi · VeriApi.Pro' : 'tahmini'})` : '');

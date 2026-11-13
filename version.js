@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.56';
+self.APP_VERSION = '0.99.57';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.57', date: '2026-11-13',
+    notes: [
+      'Düzeltme (Beta): telefonda istasyon ayrıntı kartı ekrandan taşıyor, sağ üstteki kapat (X) düğmesi görünmüyor ve dokunulamıyordu. Kök neden: olanak düğmeleri tek satırda kalıp kartın içeriğini ekrandan geniş yapıyordu.',
+      'Kart artık ekran genişliğine sığar (güvenli alan payıyla), olanak düğmeleri alt satıra geçer, uzun istasyon adı sarar. Başlık ve X kart kaydırılırken üstte kalır; X dokunma alanı 44x44 piksel. Gerçek cihazda doğrulanmadı.',
+    ],
+  },
   {
     v: '0.99.56', date: '2026-11-13',
     notes: [
