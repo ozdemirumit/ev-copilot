@@ -1,0 +1,28 @@
+{
+  "_synthetic": true,
+  "_note": "Elle yazılmış SENTETİK örnek (BL-P2-05a). Gerçek OSRM/OSM yanıtı değildir; kayıt/kanıt sayılmaz. Bağdaştırıcı bu alanlardan olay üretmemelidir.",
+  "code": "Ok",
+  "routes": [
+    {
+      "distance": 8000,
+      "duration": 480,
+      "legs": [
+        {
+          "steps": [
+            {
+              "distance": 700,
+              "name": "Sentetik Cadde",
+              "exits": "3",
+              "destinations": "Sentetik Merkez",
+              "intersections": [
+                { "location": [32.8, 39.9], "classes": ["tunnel"] },
+                { "location": [32.81, 39.9], "classes": ["toll"], "toll_collection": { "type": "toll_gantry" } }
+              ],
+              "signpostText": "Sentetik Tabela"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

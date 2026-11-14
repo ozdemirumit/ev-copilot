@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.71';
+self.APP_VERSION = '0.99.72';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.72', date: '2026-11-14',
+    notes: [
+      'Altyapı: OSM, Mapbox ve TomTom rota yanıtları için yol olayları bağdaştırıcı iskeleti eklendi (BL-P2-05a). Bağdaştırıcılar bilerek boş sonuç döndürür: yanıtta tünel, gişe, çıkış ya da tabela bilgisi olsa bile alanlar gerçek kayıtla doğrulanmadığı için hiçbir yol olayı üretilmez. Uygulamaya bağlı değildir; görünür bir değişiklik yok, yol uyarısı gösterilmez.',
+    ],
+  },
   {
     v: '0.99.71', date: '2026-11-14',
     notes: [

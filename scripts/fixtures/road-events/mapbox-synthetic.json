@@ -1,0 +1,30 @@
+{
+  "_synthetic": true,
+  "_note": "Elle yazılmış SENTETİK örnek (BL-P2-05a). Gerçek Mapbox yanıtı değildir; kayıt/kanıt sayılmaz. Bağdaştırıcı bu alanlardan olay üretmemelidir.",
+  "code": "Ok",
+  "routes": [
+    {
+      "distance": 12000,
+      "duration": 600,
+      "legs": [
+        {
+          "steps": [
+            {
+              "distance": 900,
+              "name": "Sentetik Yol",
+              "exits": "12",
+              "intersections": [
+                { "location": [29.0, 41.0], "classes": ["tunnel", "motorway"] },
+                { "location": [29.01, 41.0], "classes": ["toll"], "toll_collection": { "type": "toll_booth", "name": "Sentetik Gişe" } }
+              ],
+              "bannerInstructions": [
+                { "primary": { "text": "Çıkış 12", "components": [{ "type": "exit-number", "text": "12" }] } }
+              ],
+              "signpostText": "Sentetik Tabela"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

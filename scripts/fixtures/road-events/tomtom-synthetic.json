@@ -1,0 +1,22 @@
+{
+  "_synthetic": true,
+  "_note": "Elle yazılmış SENTETİK örnek (BL-P2-05a). Gerçek TomTom yanıtı değildir; kayıt/kanıt sayılmaz. Bağdaştırıcı bu alanlardan olay üretmemelidir.",
+  "routes": [
+    {
+      "summary": { "lengthInMeters": 15000, "travelTimeInSeconds": 720 },
+      "sections": [
+        { "startPointIndex": 2, "endPointIndex": 5, "sectionType": "TUNNEL" },
+        { "startPointIndex": 6, "endPointIndex": 9, "sectionType": "TOLL_ROAD" }
+      ],
+      "guidance": {
+        "instructions": [
+          { "routeOffsetInMeters": 4000, "maneuver": "TAKE_EXIT", "exitNumber": "7", "signpostText": "Sentetik Tabela", "exits": "7" }
+        ]
+      },
+      "_offSchema": {
+        "classes": ["tunnel", "toll"],
+        "toll_collection": { "type": "toll_booth" }
+      }
+    }
+  ]
+}
