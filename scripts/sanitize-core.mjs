@@ -21,6 +21,12 @@
 //   errorStyle:'default'|'compact' (varsayılan 'default'): 'compact' → yol '$.' öneksiz (kök 'kök'), sayı hatası tek sabit
 //     ileti "geçersiz sayı (number; min..max)", zorunlu alan "<yol> yok; reddedildi" (Mapbox temizleyicisiyle uyumlu).
 //   Değerler katı enumdur; bilinmeyen değer → SanitizeError (ileti ham değeri içermez). Kabul edilen girdi kümesi değişmez.
+// - İsteğe bağlı (opt-in, BL-P2-05c-2e) 'presence' şema düğümü: {type:'presence', accept:['string'|'number', ...]}.
+//   Yalnızca bir object alanı olabilir (kök/dizi elemanı olamaz). Girdide alan varsa ve türü accept içindeyse çıktıya
+//   ham değer DEĞİL, '<alan>_present': true yazılır (ör. exits:'73B' → exits_present:true); alan yoksa çıktıda anahtar yoktur.
+//   Yanlış tür (boolean/null/nesne/dizi/accept dışı) → SanitizeError. Girdide '<alan>_present' anahtarı (sahte varlık) her
+//   unknown kipinde reddedilir. Çıktı anahtarı şemada başka bir alan adıyla çakışamaz ve ad denetiminden geçmelidir.
+//   Şemada presence düğümü yoksa davranış birebir eskisi gibidir.
 // - Hiçbir çalışma zamanı dosyası bu modülü içe aktarmaz. scripts/mapbox-sanitize.mjs'in bu çekirdeğe göçü ayrı bir iştir.
 import * as nodePath from 'node:path';
 
@@ -143,14 +149,20 @@ const NODE_KEYS = {
   number: ['type', 'min', 'max', 'integer'],
   enum: ['type', 'values'],
   boolean: ['type'],
+  presence: ['type', 'accept'],
 };
+const PRESENCE_TYPES = new Set(['string', 'number']);
+const PRESENCE_SUFFIX = '_present';
+const presenceKey = (n) => n + PRESENCE_SUFFIX;
 const isBoundInt = (x) => Number.isSafeInteger(x) && Math.abs(x) <= LIMITS.maxNum;
 
 /** Şemayı doğrular; geçersizse SanitizeError. Derinlik/düğüm sınırı ve döngü denetimi yapılır. */
 export function validateSpec(spec) {
   let count = 0;
   const stack = new Set();
-  const visit = (s, depth) => {
+  const fieldNames = new Set();
+  const presenceKeys = new Set();
+  const visit = (s, depth, inField) => {
     if (depth > LIMITS.maxSpecDepth) bad('şema aşırı derin (depth sınırı)');
     if (++count > LIMITS.maxSpecNodes) bad('şema düğüm sınırı aşıldı');
     if (!isPlain(s)) bad('şema düğümü düz nesne olmalı');
@@ -158,7 +170,7 @@ export function validateSpec(spec) {
     const keys = Object.keys(s);
     if (keys.some((k) => FORBIDDEN_OBJ_KEYS.has(k))) bad('şemada yasak anahtar');
     const allowed = typeof s.type === 'string' && own(NODE_KEYS, s.type) ? NODE_KEYS[s.type] : null;
-    if (!allowed) bad('şema: bilinmeyen tür (yalnızca object/array/number/enum/boolean)');
+    if (!allowed) bad('şema: bilinmeyen tür (yalnızca object/array/number/enum/boolean/presence)');
     if (keys.some((k) => !allowed.includes(k))) bad('şema: düğümde bilinmeyen anahtar');
     stack.add(s);
     switch (s.type) {
@@ -167,7 +179,17 @@ export function validateSpec(spec) {
         const names = Object.keys(s.fields);
         if (!names.length) bad('şema: fields boş olamaz');
         if (Object.getOwnPropertySymbols(s.fields).length) bad('şema: symbol alan adı');
-        for (const n of names) { checkFieldName(n); visit(s.fields[n], depth + 1); }
+        for (const n of names) {
+          checkFieldName(n);
+          fieldNames.add(n);
+          visit(s.fields[n], depth + 1, true);
+          if (s.fields[n].type === 'presence') {
+            const pk = presenceKey(n);
+            checkFieldName(pk);
+            if (presenceKeys.has(pk)) bad('şema: presence çıktı anahtarı yinelenemez');
+            presenceKeys.add(pk);
+          }
+        }
         if (own(s, 'required')) {
           if (!Array.isArray(s.required) || s.required.some((r) => typeof r !== 'string' || !names.includes(r))) bad('şema: required yalnızca tanımlı alanları içerebilir');
         }
@@ -175,7 +197,7 @@ export function validateSpec(spec) {
       }
       case 'array':
         if (!Number.isSafeInteger(s.max) || s.max < 0 || s.max > LIMITS.maxArray) bad(`şema: array max 0..${LIMITS.maxArray} tam sayı olmalı`);
-        visit(s.items, depth + 1);
+        visit(s.items, depth + 1, false);
         break;
       case 'number':
         if (!isBoundInt(s.min) || !isBoundInt(s.max) || s.min > s.max) bad(`şema: number min/max ±${LIMITS.maxNum} içinde tam sayı ve min ≤ max olmalı`);
@@ -185,25 +207,35 @@ export function validateSpec(spec) {
         if (!Array.isArray(s.values) || !s.values.length || s.values.length > LIMITS.maxEnumValues) bad('şema: enum values 1..200 eleman olmalı');
         s.values.forEach(checkEnumValue);
         break;
+      case 'presence':
+        if (!inField) bad('şema: presence yalnızca object alanı olabilir (kök/dizi elemanı olamaz)');
+        if (!Array.isArray(s.accept) || Object.getPrototypeOf(s.accept) !== Array.prototype || !s.accept.length
+          || s.accept.length > PRESENCE_TYPES.size || s.accept.some((t) => typeof t !== 'string' || !PRESENCE_TYPES.has(t))
+          || new Set(s.accept).size !== s.accept.length) bad("şema: presence accept yalnızca 'string'/'number' (yinelenmeden, en az bir)");
+        break;
       default:
         break;
     }
     stack.delete(s);
   };
-  visit(spec, 0);
+  visit(spec, 0, false);
+  for (const pk of presenceKeys) if (fieldNames.has(pk)) bad('şema: presence çıktı anahtarı bir alan adıyla çakışıyor');
   return true;
 }
 
 function collectSpec(spec) {
   const keys = new Set(META_KEYS);
   const enums = new Set();
+  const presence = new Set();
   const visit = (s) => {
-    if (s.type === 'object') for (const [n, c] of Object.entries(s.fields)) { keys.add(n); visit(c); }
+    if (s.type === 'object') for (const [n, c] of Object.entries(s.fields)) {
+      if (c.type === 'presence') { const pk = presenceKey(n); keys.add(pk); presence.add(pk); } else { keys.add(n); visit(c); }
+    }
     else if (s.type === 'array') visit(s.items);
     else if (s.type === 'enum') for (const v of s.values) enums.add(v);
   };
   visit(spec);
-  return { keys, enums };
+  return { keys, enums, presence };
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -267,6 +299,9 @@ export function walkAllowlist(spec) {
         return v.map((x, i) => copy(s.items, x, `${path}[${i}]`, ctx));
       case 'object': {
         if (!isPlain(v)) bad(`${L}: nesne (object) bekleniyor`);
+        // Sahte varlık anahtarı: girdide '<alan>_present' → unknown kipinden bağımsız red (ad şemadan gelir, girdiden değil).
+        for (const [k, c] of Object.entries(s.fields))
+          if (c.type === 'presence' && own(v, presenceKey(k))) bad(`${label(ctx, keyPath(ctx, path, presenceKey(k)))}: varlık anahtarı girdide olamaz; reddedildi`);
         const req = s.required || [];
         if (ctx.required === 'upfront') for (const r of req) if (!own(v, r)) missing(ctx, path, r);
         const o = {};
@@ -276,7 +311,7 @@ export function walkAllowlist(spec) {
               if (ctx.unknown === 'reject') bad(`${L}: izin listesi dışı alan; reddedildi`);
               continue;
             }
-            o[k] = copy(s.fields[k], v[k], keyPath(ctx, path, k), ctx);
+            put(o, s.fields[k], k, v[k], path, ctx);
           }
           return o;
         }
@@ -287,13 +322,22 @@ export function walkAllowlist(spec) {
             if (ctx.required === 'inline' && req.includes(k)) missing(ctx, path, k);
             continue;
           }
-          o[k] = copy(s.fields[k], v[k], keyPath(ctx, path, k), ctx);
+          put(o, s.fields[k], k, v[k], path, ctx);
         }
         return o;
       }
       default:
         return bad('şema: bilinmeyen tür');
     }
+  };
+  // Alan yazımı: presence → yalnızca '<alan>_present': true (ham değer kopyalanmaz); diğerleri → izinli kopya.
+  const put = (o, c, k, x, path, ctx) => {
+    const p = keyPath(ctx, path, k);
+    if (c.type !== 'presence') { o[k] = copy(c, x, p, ctx); return; }
+    const t = typeof x;
+    if (!((t === 'string' && c.accept.includes('string')) || (t === 'number' && Number.isFinite(x) && c.accept.includes('number'))))
+      bad(`${label(ctx, p)}: beklenmeyen tür`);
+    o[presenceKey(k)] = true;
   };
   return (value, opts = {}) => {
     const ctx = walkOptions(opts);
@@ -310,7 +354,7 @@ export function leakScan(input, output, spec) {
   const problems = [];
   try { validateSpec(spec); } catch { return ['şema geçersiz']; }
   if (!isPlain(output)) return ['çıktı nesne değil'];
-  const { keys, enums } = collectSpec(spec);
+  const { keys, enums, presence } = collectSpec(spec);
   const synthetic = isPlain(input) && input._synthetic === true;
   if (output._sanitized !== true) problems.push('_sanitized true değil');
   if (output._verified !== false) problems.push('_verified false değil');
@@ -336,6 +380,7 @@ export function leakScan(input, output, spec) {
     } else if (isPlain(v)) {
       for (const k of Object.keys(v)) {
         if (!keys.has(k) || (META_KEYS.includes(k) && path !== '$')) { problems.push(`${path}: izin listesi dışı anahtar`); continue; }
+        if (presence.has(k) && v[k] !== true) { problems.push(`${path}: varlık anahtarı true değil`); continue; }
         walk(v[k], `${path}.${k}`, depth + 1);
       }
     } else {

@@ -434,6 +434,167 @@ const good = () => ({
     === '_sanitized,_recorded,_synthetic,_verified,_evidence,_source,_sanitizerVersion,status,items');
 }
 
+// --- BL-P2-05c-2e: isteğe bağlı 'presence' şema düğümü (ham değer kopyalanmaz, yalnızca '<alan>_present': true)
+{
+  const SE = (fn) => { try { fn(); return null; } catch (e) { return e; } };
+  const isSE = (fn) => SE(fn) instanceof SanitizeError;
+  const FAKE = 'pk.FAKEFAKEFAKEFAKE';
+  const PSPEC = {
+    type: 'object',
+    fields: {
+      code: { type: 'enum', values: ['Ok', 'NoRoute'] },
+      steps: {
+        type: 'array', max: 5,
+        items: {
+          type: 'object',
+          fields: {
+            mode: { type: 'enum', values: ['driving', 'ferry'] },
+            exits: { type: 'presence', accept: ['string', 'number'] },
+            ref: { type: 'presence', accept: ['string'] },
+            level: { type: 'number', min: 0, max: 10 },
+          },
+        },
+      },
+    },
+  };
+  const RSPEC = {
+    type: 'object',
+    required: ['exits'],
+    fields: {
+      mode: { type: 'enum', values: ['driving', 'ferry'] },
+      exits: { type: 'presence', accept: ['string', 'number'] },
+      level: { type: 'number', min: 0, max: 10 },
+    },
+  };
+  const prun = walkAllowlist(PSPEC);
+  const rrun = walkAllowlist(RSPEC);
+  const S = { source: 'synthetic-core' };
+
+  // Şema doğrulama: geçerli
+  ok('presence: geçerli şema kabul edilir', validateSpec(PSPEC) === true && validateSpec(RSPEC) === true);
+  ok('presence: accept tek tür kabul edilir', validateSpec({ type: 'object', fields: { exits: { type: 'presence', accept: ['number'] } } }) === true);
+
+  // Şema doğrulama: katı, fail-closed
+  const PS = (node, extra = {}) => ({ type: 'object', fields: { mode: { type: 'boolean' }, exits: node, ...extra } });
+  const badSpecs = [
+    ['kök presence', { type: 'presence', accept: ['string'] }],
+    ['dizi elemanı presence', { type: 'object', fields: { a: { type: 'array', max: 2, items: { type: 'presence', accept: ['string'] } } } }],
+    ['accept yok', PS({ type: 'presence' })],
+    ['accept boş', PS({ type: 'presence', accept: [] })],
+    ['accept dize', PS({ type: 'presence', accept: 'string' })],
+    ['accept yinelenen', PS({ type: 'presence', accept: ['string', 'string'] })],
+    ['accept boolean', PS({ type: 'presence', accept: ['boolean'] })],
+    ['accept object', PS({ type: 'presence', accept: ['object'] })],
+    ['accept büyük harf', PS({ type: 'presence', accept: ['String'] })],
+    ['accept sayı', PS({ type: 'presence', accept: [1] })],
+    ['accept fazla', PS({ type: 'presence', accept: ['string', 'number', 'string'] })],
+    ['accept düz olmayan dizi', PS({ type: 'presence', accept: Object.setPrototypeOf(['string'], Object.create(Array.prototype)) })],
+    ['bilinmeyen seçenek', PS({ type: 'presence', accept: ['string'], copy: true })],
+    ['bilinmeyen seçenek (as)', PS({ type: 'presence', accept: ['string'], as: 'exits_present' })],
+    ['required presence düğümünde', PS({ type: 'presence', accept: ['string'], required: true })],
+    ['tür büyük harf', PS({ type: 'Presence', accept: ['string'] })],
+    ['çakışma: aynı nesnede <alan>_present', PS({ type: 'presence', accept: ['string'] }, { exits_present: { type: 'boolean' } })],
+    ['çakışma: iç içe nesnede <alan>_present', { type: 'object', fields: { exits: { type: 'presence', accept: ['string'] }, sub: { type: 'object', fields: { exits_present: { type: 'boolean' } } } } }],
+    ['güvensiz ad (location)', { type: 'object', fields: { location: { type: 'presence', accept: ['string'] } } }],
+    ['güvensiz ad (token)', { type: 'object', fields: { token: { type: 'presence', accept: ['string'] } } }],
+    ['güvensiz ad (stepName)', { type: 'object', fields: { stepName: { type: 'presence', accept: ['string'] } } }],
+    ['güvensiz ad (apiKey)', { type: 'object', fields: { apiKey: { type: 'presence', accept: ['string'] } } }],
+    ['güvensiz ad (_ önek)', { type: 'object', fields: { _exits: { type: 'presence', accept: ['string'] } } }],
+    ['çıktı adı 64 karakteri aşar', { type: 'object', fields: { ['e'.repeat(60)]: { type: 'presence', accept: ['string'] } } }],
+    ['kirlilik: düğümde __proto__', PS(JSON.parse('{"type":"presence","accept":["string"],"__proto__":{"polluted":1}}'))],
+    ['kirlilik: accept içinde __proto__', PS({ type: 'presence', accept: ['__proto__'] })],
+    ['kirlilik: accept içinde constructor', PS({ type: 'presence', accept: ['constructor'] })],
+    ['kirlilik: accept içinde toString', PS({ type: 'presence', accept: ['toString'] })],
+  ];
+  for (const [n, sp] of badSpecs) ok(`presence şema reddi: ${n}`, isSE(() => validateSpec(sp)) && isSE(() => walkAllowlist(sp)));
+  ok('presence: kirlilik Object.prototype nesnesine ulaşmaz', ({}).polluted === undefined);
+  ok('presence: şema hata iletisi ham değer içermez', !errMsg(() => validateSpec(PS({ type: 'presence', accept: ['ZZsentinelQQ'] }))).includes('ZZsentinelQQ'));
+
+  // Geçerli dize / sayı → true; ham değer kopyalanmaz
+  const o1 = prun({ steps: [{ exits: '73B', mode: 'driving' }] });
+  ok('presence: dize → exits_present:true', o1.steps[0].exits_present === true && !('exits' in o1.steps[0]));
+  ok('presence: ham dize çıktıda yok', !JSON.stringify(o1).includes('73B'));
+  const o2 = prun({ steps: [{ exits: 12345678 }] });
+  ok('presence: sayı → exits_present:true, ham sayı yok', o2.steps[0].exits_present === true && !JSON.stringify(o2).includes('12345678'));
+  ok('presence: boş dize ve 0 da varlıktır', prun({ steps: [{ exits: '' }] }).steps[0].exits_present === true && prun({ steps: [{ exits: 0 }] }).steps[0].exits_present === true);
+  {
+    const s0 = prun({ steps: [{ exits: 'x', ref: 'A1' }] }).steps[0];
+    ok('presence: birden çok varlık alanı, değer tam olarak true', s0.exits_present === true && s0.ref_present === true && Object.keys(s0).join() === 'exits_present,ref_present');
+  }
+
+  // Yok (isteğe bağlı) → anahtar yok
+  ok('presence: isteğe bağlı alan yoksa anahtar yok', JSON.stringify(prun({ steps: [{ mode: 'ferry' }] })) === '{"steps":[{"mode":"ferry"}]}');
+  ok('presence: undefined değer reddedilir (varlık sayılmaz)', isSE(() => prun({ steps: [{ exits: undefined }] })));
+
+  // Zorunlu alan eksik
+  ok('presence: zorunlu eksik (upfront) varsayılan ileti', errMsg(() => rrun({ mode: 'driving' })) === '$.exits: zorunlu alan yok; reddedildi');
+  ok('presence: zorunlu eksik (inline) varsayılan ileti', errMsg(() => rrun({ mode: 'driving' }, { order: 'spec', required: 'inline' })) === '$.exits: zorunlu alan yok; reddedildi');
+  ok('presence: zorunlu eksik (compact) ileti', errMsg(() => rrun({}, { order: 'spec', required: 'inline', errorStyle: 'compact' })) === 'exits yok; reddedildi');
+  ok('presence: inline — şemada önceki alan hatası önce bildirilir', errMsg(() => rrun({ mode: 'bad' }, { order: 'spec', required: 'inline' })) === '$.mode: izin listesi dışı enum değeri; reddedildi');
+  ok('presence: inline — eksik zorunlu presence sonraki alandan önce bildirilir', errMsg(() => rrun({ level: 99 }, { order: 'spec', required: 'inline' })) === '$.exits: zorunlu alan yok; reddedildi');
+  ok('presence: upfront — eksik zorunlu her şeyden önce', errMsg(() => rrun({ mode: 'bad' })) === '$.exits: zorunlu alan yok; reddedildi');
+  ok('presence: zorunlu mevcut → true', JSON.stringify(rrun({ exits: 'A' })) === '{"exits_present":true}');
+  ok('presence: zorunlu sanitize eksik → red', isSE(() => sanitize({ mode: 'driving' }, RSPEC, S)));
+
+  // Geçersiz türler
+  const BADT = [true, false, null, {}, [], ['73B'], { v: '73B' }, [1], NaN, Infinity, -Infinity];
+  ok('presence: geçersiz türler reddedilir', BADT.every((x) => isSE(() => prun({ steps: [{ exits: x }] }))));
+  ok('presence: accept dışı tür (sayı, yalnızca string) reddedilir', isSE(() => prun({ steps: [{ ref: 7 }] })));
+  ok('presence: geçersiz tür iletisi (iç içe yol, varsayılan)', errMsg(() => prun({ steps: [{}, { exits: true }] })) === '$.steps[1].exits: beklenmeyen tür');
+  ok('presence: geçersiz tür iletisi (iç içe yol, compact = Mapbox biçimi)', errMsg(() => prun({ steps: [{}, { exits: {} }] }, { errorStyle: 'compact' })) === 'steps[1].exits: beklenmeyen tür');
+  ok('presence: hata iletisi ham değer içermez', BADT.concat([['HAMdegerQQ'], { HAMkeyQQ: 'HAMdegerQQ' }]).every((x) => { const m = errMsg(() => prun({ steps: [{ exits: x }] })); return m && !m.includes('HAMdegerQQ') && !m.includes('HAMkeyQQ'); }));
+  ok('presence: sanitize geçersiz türü reddeder', isSE(() => sanitize({ steps: [{ exits: { a: 1 } }] }, PSPEC, S)) && isSE(() => sanitize({ steps: [{ exits: [] }] }, PSPEC, S)));
+
+  // Sahte varlık anahtarı (spoofing)
+  const SPOOF = [{ steps: [{ exits_present: true }] }, { steps: [{ exits: '1', exits_present: true }] }, { steps: [{ ref_present: false }] }];
+  const allModes = [];
+  for (const order of ['input', 'spec']) for (const unknown of ['reject', 'drop']) for (const errorStyle of ['default', 'compact']) allModes.push({ order, unknown, errorStyle });
+  ok('presence: sahte <alan>_present her kipte reddedilir (walk)', SPOOF.every((inp) => allModes.every((m) => isSE(() => prun(inp, m)))));
+  ok('presence: sahte <alan>_present her kipte reddedilir (sanitize)', SPOOF.every((inp) => allModes.every((m) => isSE(() => sanitize(inp, PSPEC, { ...S, ...m })))));
+  ok('presence: sahte anahtar iletisi şemadan gelir', errMsg(() => prun({ steps: [{ exits_present: 'HAMdegerQQ' }] }, { unknown: 'drop' })) === '$.steps[0].exits_present: varlık anahtarı girdide olamaz; reddedildi');
+  ok('presence: sahte anahtar kökte de reddedilir', isSE(() => rrun({ exits: 'A', exits_present: true }, { unknown: 'drop' })) && errMsg(() => rrun({ exits_present: true }, { errorStyle: 'compact', unknown: 'drop' })) === 'exits_present: varlık anahtarı girdide olamaz; reddedildi');
+
+  // Sıra
+  const inp = { steps: [{ level: 3, ref: 'R', exits: '9', mode: 'driving' }], code: 'Ok' };
+  ok('presence: order:spec → şema sırası, varlık anahtarı alanın yerinde', JSON.stringify(prun(inp, { order: 'spec' })) === '{"code":"Ok","steps":[{"mode":"driving","exits_present":true,"ref_present":true,"level":3}]}');
+  ok('presence: order:input (varsayılan) → girdi sırası', JSON.stringify(prun(inp)) === '{"steps":[{"level":3,"ref_present":true,"exits_present":true,"mode":"driving"}],"code":"Ok"}');
+
+  // Varsayılan eşdeğerlik: varlık alanı olmayan girdide çıktı, presence içermeyen şemayla aynı
+  const F = PSPEC.fields.steps.items.fields;
+  const NOP = { type: 'object', fields: { code: PSPEC.fields.code, steps: { type: 'array', max: 5, items: { type: 'object', fields: { mode: F.mode, level: F.level } } } } };
+  const plain = { code: 'NoRoute', steps: [{ mode: 'ferry', level: 2.6 }, {}] };
+  const nrun = walkAllowlist(NOP);
+  ok('presence: varlık alanı yoksa çıktı presence içermeyen şemayla aynı', allModes.every((m) => JSON.stringify(prun(plain, m)) === JSON.stringify(nrun(plain, m))));
+  ok('presence: sanitize varsayılan eşdeğerlik (işaretler dahil)', JSON.stringify(sanitize(plain, PSPEC, S)) === JSON.stringify(sanitize(plain, NOP, S)));
+  ok('presence: izin dışı alan varsayılan reject korunur, drop yalnızca atar', errMsg(() => prun({ steps: [{ zz: 1 }] })) === '$.steps[0]: izin listesi dışı alan; reddedildi'
+    && JSON.stringify(prun({ steps: [{ zz: 1, exits: 'a' }] }, { unknown: 'drop' })) === '{"steps":[{"exits_present":true}]}');
+
+  // sanitize + leakScan
+  const sin = { _synthetic: true, code: 'Ok', steps: [{ exits: '73B', ref: 'D100', mode: 'driving', level: 1 }] };
+  const before = JSON.stringify(sin);
+  const sout = sanitize(sin, PSPEC, { ...S, order: 'spec', required: 'inline', errorStyle: 'compact' });
+  ok('presence: sanitize geçerli, işaretler doğru', sout._verified === false && sout._synthetic === true && sout.steps[0].exits_present === true && sout.steps[0].ref_present === true);
+  ok('presence: sanitize çıktısında ham değer yok', !/73B|D100/.test(JSON.stringify(sout)));
+  ok('presence: leakScan temiz', leakScan(sin, sout, PSPEC).length === 0);
+  ok('presence: girdi değiştirilmez', JSON.stringify(sin) === before);
+  const tamper = (f) => { const o = JSON.parse(JSON.stringify(sout)); f(o); return leakScan(sin, o, PSPEC); };
+  ok('presence leakScan: ham alan adı (exits) çıktıda → bulgu', tamper((o) => { o.steps[0].exits = 'Ok'; }).length > 0);
+  ok('presence leakScan: varlık değeri dize → bulgu', tamper((o) => { o.steps[0].exits_present = '73B'; }).length > 0);
+  ok('presence leakScan: varlık değeri false → bulgu', tamper((o) => { o.steps[0].exits_present = false; }).length > 0);
+  ok('presence leakScan: varlık değeri sayı → bulgu', tamper((o) => { o.steps[0].exits_present = 1; }).length > 0);
+  ok('presence leakScan: varlık değeri nesne → bulgu', tamper((o) => { o.steps[0].exits_present = { v: true }; }).length > 0);
+  ok('presence leakScan: bulgular ham değer içermez', tamper((o) => { o.steps[0].exits_present = 'HAMdegerQQ'; }).every((p) => !p.includes('HAMdegerQQ')));
+
+  // Sır taraması zayıflamaz
+  const SECRETS = [FAKE, 'Bearer abcdefgh', 'eyJabcdefghijkl', 'api_key=abc', 'AIzaFAKEFAKEFAKE12', '-----BEGIN RSA PRIVATE KEY-----'];
+  ok('presence: sır benzeri dize değeri her kipte reddedilir (preScan), ileti ham değer içermez', SECRETS.every((x) => allModes.every((m) => {
+    const e = SE(() => sanitize({ steps: [{ exits: x }] }, PSPEC, { ...S, ...m }));
+    return e instanceof SanitizeError && /sır|secret/i.test(e.message) && !e.message.includes(x);
+  })));
+  ok('presence: sır anahtarı yanında reddedilir', isSE(() => sanitize({ steps: [{ exits: '1', token: 'x' }] }, PSPEC, { ...S, unknown: 'drop' })));
+  ok('presence: __proto__ girdisi reddedilir', isSE(() => sanitize(JSON.parse('{"steps":[{"exits":"1","__proto__":{"polluted":1}}]}'), PSPEC, { ...S, unknown: 'drop' })) && ({}).polluted === undefined);
+}
+
 // --- çalışma zamanı bu modülü içe aktarmaz; mapbox-sanitize.mjs bu göreve bağlı değil
 {
   function walk(dir, acc = []) {
