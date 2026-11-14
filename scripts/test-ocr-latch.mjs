@@ -139,6 +139,21 @@ const mix = (good, bad, n, every = 4) => Array.from({ length: n }, (_, i) => ((i
   const legit2 = run(9, [9, 8, 8, 8, 7, 7, 7], { speed: 80 });
   ok('gerçek tek haneli düşüş (9→8→7) normal teyitle ilerler', legit2.f.last === 7, String(legit2.f.last));
 }
+{
+  // BL-P1-01 (63→7 ters yön): doğru 63 tutulurken art arda 7 okuması. 7, 63'ün hanesi değil (fragment yolu değil) ve karışık çift
+  // de değil; eskiden 6 ardışık çevrimde (≈30 sn) 'resync' ile 7'ye iniyordu. İki haneden tek haneye inmek için görüntüde tek hane
+  // kanıtı (digits=1) zorunlu: digits=null (kanıt yok) ve digits=2 (görüntüde iki hane) okumaları 63'ü düşürmez.
+  const noEv = run(63, Array(40).fill(7), { speed: 0, digitsOf: () => null });
+  ok('63 tutulurken 40 ardışık 7 (digits=null) 63\'ü düşürmez', noEv.f.last === 63 && noEv.firstAt(7) === 0, `last=${noEv.f.last} at=${noEv.firstAt(7)} ${noEv.res.slice(0, 8).map((r) => r.reason).join(',')}`);
+  const two = run(63, Array(40).fill(7), { speed: 0, digitsOf: () => 2 });
+  ok('63 tutulurken 40 ardışık 7 (digits=2) 63\'ü düşürmez', two.f.last === 63 && two.firstAt(7) === 0, `last=${two.f.last} at=${two.firstAt(7)}`);
+  const drive = run(63, Array(40).fill(7), { speed: 80, digitsOf: () => null });
+  ok('sürüşte de (digits=null) 63 korunur', drive.f.last === 63 && drive.firstAt(7) === 0, `last=${drive.f.last} at=${drive.firstAt(7)}`);
+  const real = run(63, Array(12).fill(7), { speed: 0, digitsOf: () => 1 });
+  ok('görüntüde tek hane sürüyorsa (digits=1) gerçek düşüş 6 çevrimde kabul edilir', real.f.last === 7 && real.firstAt(7) === 6, `last=${real.f.last} at=${real.firstAt(7)}`);
+  const mixed = run(63, Array(24).fill(7), { speed: 0, digitsOf: (() => { let i = 0; return () => (i++ % 2 ? null : 2); })() });
+  ok('digits=null/2 karışık 7 akışı da 63\'ü düşürmez', mixed.f.last === 63, `last=${mixed.f.last}`);
+}
 ok('çizgi ekleme yönü: 17→47, 13→73, 3→8 yükseltme; ters yön değil', inkUpgrade(17, 47) && inkUpgrade(13, 73) && inkUpgrade(35, 85) && !inkUpgrade(47, 17) && !inkUpgrade(73, 13) && !inkUpgrade(42, 73));
 
 // ---------- 3) Elle düzeltme ve itiraz durumu ----------

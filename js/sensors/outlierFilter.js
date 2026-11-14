@@ -144,6 +144,8 @@ export function createFilter({
         if (support >= latchCycles && support >= 2 * heldSupport) { commit(value, t); return { ok: true, reason: 'unlatched', value }; }
       }
     }
+    // Hane kaybı (63→7, okunan tutulanın hanesi değil): görüntüde tek rakam görülmedikçe (digits=1) yeniden eşitleme sayılmaz
+    if (fragmentGuard && !fragment && String(value).length < String(last.value).length && digits !== 1) return { ok: false, reason, value: last.value };
     const count = bump(value, t);
     // Gerçekten tek haneye düşmüşse (görüntüde tek rakam) yasak değil: yalnızca kanıt süresi kısalır
     const need = (confusable(value, last.value) && !(fragment && digits === 1) ? confusableResyncCycles : resyncCycles) * resyncFactor(delta, ctx);
