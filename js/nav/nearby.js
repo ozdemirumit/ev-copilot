@@ -19,7 +19,8 @@ import { fetchAvailability } from '../routing/occupancyClient.js';
 import { proxyHas } from '../net/proxy.js';
 import { startNav, syncTopPanel } from './navigator.js';
 import { icon } from '../ui/icons.js';
-import { measuredSoc } from '../physics/socEstimate.js';
+import { measuredSoc, socSource } from '../physics/socEstimate.js';
+import { socTrusted } from '../routing/socTrust.js';
 import { paintMore } from '../ui/moreToggle.js';
 import { pickEmergency, priceText, isFast, PICK_TITLES, ROUTE_OFF_KM, ROUTE_NEAR_KM, ALERT_PAGE, alertList, alertPage, priceStatus } from './chargePick.js';
 import { sortNearby, sortNote, availability, priceLabel, powerLabel, NEAR_SORTS } from './nearSort.js';
@@ -446,8 +447,10 @@ function checkLow() {
   const card = pick.station ?? best; // 150 kW üstü uygun istasyon yoksa en yakın uygun istasyon ("en ucuz" denmez)
   const stations = alertList(card, pick.fast, ranked); // sınırsız: önerilen kart, uygun hızlı istasyonlar, kalan uygun istasyonlar
   showAlert(t(PICK_TITLES[pick.kind], soc) + (updated ? ' ' + t('(rota otomatik güncellendi)') : ''), stations, notes);
-  // Plan sıradaki durağa/varışa ulaşılamıyor diyorsa: navigasyonda rotayı en uygun istasyon üzerinden kendiliğinden güncelle
-  if (planBroken && nav.active && getState('route').end && !updated && card.reachable && (card.arrive ?? 99) >= 5
+  // Plan sıradaki durağa/varışa ulaşılamıyor diyorsa: navigasyonda rotayı en uygun istasyon üzerinden kendiliğinden güncelle.
+  // Yalnızca güvenilir pil (taze kamera, elle, Test Modu): tahmin/eski/varsayılan pilde uyarı ve ses sürer, rota kendiliğinden değişmez.
+  const socOk = socTrusted(e.source === 'sim' ? 'sim' : socSource());
+  if (planBroken && socOk && nav.active && getState('route').end && !updated && card.reachable && (card.arrive ?? 99) >= 5
       && getState('plan').stops[0]?.station.id !== card.id && getState('plan').status !== 'loading') {
     lastAutoVia = Date.now();
     goTo(card, { auto: true }); // panelde görünen istasyonun aynısı
