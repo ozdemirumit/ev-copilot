@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.66';
+self.APP_VERSION = '0.99.67';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.67', date: '2026-11-14',
+    notes: [
+      'Düzeltme (Beta): kamera pil okumasında iki okuyucu (OCR 1 ve OCR 2) artık karşılaştırılır. OCR 1 tek hane (ör. 7) okurken OCR 2 aynı karede daha çok hane (ör. 63) görüyorsa o kare geçersiz sayılır; böylece 63\'ün 7, 42\'nin 4 okunması pili düşürmez (BL-P1-02). Gerçek tek haneli değer eskisi gibi kabul edilir. Cihazda doğrulanmadı.',
+    ],
+  },
   {
     v: '0.99.66', date: '2026-11-14',
     notes: [
