@@ -595,6 +595,127 @@ const good = () => ({
   ok('presence: __proto__ girdisi reddedilir', isSE(() => sanitize(JSON.parse('{"steps":[{"exits":"1","__proto__":{"polluted":1}}]}'), PSPEC, { ...S, unknown: 'drop' })) && ({}).polluted === undefined);
 }
 
+// --- BL-P2-05c-2f T3: leakScan isteğe bağlı seçenekleri (geriye uyumlu) ve saf buildSanitized (sanitize → leakScan → çıktı)
+{
+  const { buildSanitized } = C;
+  const SRC_OPTS = { source: 'synthetic-test', unknown: 'drop' };
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  ok('T3: buildSanitized dışa aktarılır', typeof buildSanitized === 'function');
+
+  // leakScan: seçeneksiz / undefined / {} → birebir eski sonuç (temiz ve kurcalanmış çıktılarda)
+  const input = good();
+  const out = sanitize(input, SPEC, SRC_OPTS);
+  const variants = [
+    (o) => o,
+    (o) => { o.items[0].extra = 1; return o; },
+    (o) => { o.status = 'zzz'; return o; },
+    (o) => { o.total = 41.0123; return o; },
+    (o) => { o._verified = true; return o; },
+    (o) => { o.items[0].level = -3; return o; },
+  ];
+  ok('T3 leakScan: 3 argüman, undefined ve {} aynı bulguları verir', variants.every((f) => {
+    const o = f(JSON.parse(JSON.stringify(out)));
+    const a = leakScan(input, o, SPEC);
+    return same(a, leakScan(input, o, SPEC, undefined)) && same(a, leakScan(input, o, SPEC, {}))
+      && same(a, leakScan(input, o, SPEC, { rawExempt: 'vocab' })) && same(a, leakScan(input, o, SPEC, { minNumber: -LIMITS.maxNum }));
+  }));
+  ok('T3 leakScan: varsayılan seçenekle temiz çıktı temiz kalır', leakScan(input, out, SPEC, {}).length === 0);
+
+  // minNumber: 0 → negatif sayı bulgu (Mapbox temizleyicisiyle uyumlu); varsayılan -maxNum → izinli
+  const neg = leakScan(input, out, SPEC, { minNumber: 0 });
+  ok('T3 leakScan minNumber:0: negatif tam sayı bulgu olur', neg.length === 1 && neg[0] === '$.items[0].level: izin dışı sayı', neg.join('; '));
+  ok('T3 leakScan minNumber:0: sıfır ve pozitif izinli', (() => {
+    const o = JSON.parse(JSON.stringify(out)); o.items[0].level = 0; return leakScan(input, o, SPEC, { minNumber: 0 }).length === 0;
+  })());
+  ok('T3 leakScan minNumber: üst sınır (maxNum) yine uygulanır', (() => {
+    const o = JSON.parse(JSON.stringify(out)); o.total = LIMITS.maxNum + 1; return leakScan(input, o, SPEC, { minNumber: 0 }).some((p) => p === '$.total: izin dışı sayı');
+  })());
+
+  // rawExempt:'exact' → yalnızca enum ∪ {'unverified', çıktı _source} muaf; sözcük dağarcığı alt dize muafiyeti yok
+  const keyRaw = { ...good(), note: 'status' }; // 'status' bir alan adı: çıktı JSON'unda anahtar olarak geçer
+  const keyOut = sanitize(keyRaw, SPEC, SRC_OPTS);
+  ok('T3 leakScan: varsayılan (vocab) alan adı ile aynı ham dizeyi muaf tutar', leakScan(keyRaw, keyOut, SPEC).length === 0);
+  ok("T3 leakScan rawExempt:'exact': alan adıyla aynı ham dize bulgu olur",
+    same(leakScan(keyRaw, keyOut, SPEC, { rawExempt: 'exact' }), ['ham girdi dizesi çıktıda']));
+  const exempt = { ...good(), a: 'unverified', b: 'synthetic-test', c: 'alpha', d: 'ok' };
+  const exemptOut = sanitize(good(), SPEC, SRC_OPTS); // aynı izinli gövde; ek ham dizeler yalnız girdide
+  ok("T3 leakScan: varsayılan (vocab) _source değeriyle aynı ham dizeyi bulgu sayar (değişmedi)", same(leakScan(exempt, exemptOut, SPEC), ['ham girdi dizesi çıktıda']));
+  ok("T3 leakScan rawExempt:'exact': enum / unverified / _source değeri muaf", leakScan(exempt, exemptOut, SPEC, { rawExempt: 'exact' }).length === 0,
+    leakScan(exempt, exemptOut, SPEC, { rawExempt: 'exact' }).join('; '));
+  ok("T3 leakScan rawExempt:'exact': temiz çıktı temiz kalır", leakScan(input, out, SPEC, { rawExempt: 'exact', minNumber: -10 }).length === 0);
+  ok("T3 leakScan rawExempt:'exact': ham girdi dizesi yine bulunur", (() => {
+    const i2 = { ...good(), note: 'alpha-secret-raw' }; const o = JSON.parse(JSON.stringify(out)); o.status = 'alpha-secret-raw';
+    return leakScan(i2, o, SPEC, { rawExempt: 'exact' }).includes('ham girdi dizesi çıktıda');
+  })());
+  ok("T3 leakScan rawExempt:'exact': sahte _source muafiyet kazandırmaz", (() => {
+    const i2 = { ...good(), note: 'evil-src' }; const o = JSON.parse(JSON.stringify(out)); o._source = 'Evil Src'; o.status = 'evil-src';
+    const p = leakScan(i2, o, SPEC, { rawExempt: 'exact' }); return p.includes('_source geçersiz') && p.includes('ham girdi dizesi çıktıda');
+  })());
+
+  // geçersiz seçenek → fail-closed (boş olmayan bulgu, tek sabit ileti, ham değer yok); asla fırlatmaz
+  const badOpts = [null, [], 'exact', 7, { rawExempt: 'loose' }, { rawExempt: 'EXACT' }, { minNumber: 1.5 }, { minNumber: '0' },
+    { minNumber: NaN }, { minNumber: LIMITS.maxNum + 1 }, { minNumber: -LIMITS.maxNum - 1 }, { zz: 1 }, { rawExempt: 'exact', unknown: 'drop' },
+    Object.create({ rawExempt: 'exact' }), JSON.parse('{"__proto__":{"rawExempt":"exact"}}')];
+  ok('T3 leakScan: geçersiz seçenek → tek sabit bulgu (fırlatmaz)', badOpts.every((o) => {
+    let r; try { r = leakScan(input, out, SPEC, o); } catch { return false; }
+    return same(r, ['leakScan seçeneği geçersiz']);
+  }));
+  ok('T3 leakScan: geçersiz seçenek iletisi ham değer içermez', !leakScan(input, out, SPEC, { rawExempt: 'HAMsecenekQQ' }).join(' ').includes('HAMsecenekQQ'));
+  ok('T3 leakScan: bulgular ham değer içermez (exact/minNumber)', (() => {
+    const o = JSON.parse(JSON.stringify(out)); o.status = 'GIZLI-XYZ-2'; o.items[0].level = -7;
+    return !leakScan(input, o, SPEC, { rawExempt: 'exact', minNumber: 0 }).join(' ').match(/GIZLI-XYZ-2|-7/);
+  })());
+
+  // buildSanitized: olumlu yol — sanitize ile birebir aynı çıktı, leakScan temiz
+  const before = JSON.stringify(input);
+  const r = buildSanitized(input, SPEC, SRC_OPTS);
+  ok('T3 buildSanitized: ok:true ve çıktı sanitize ile birebir aynı', r.ok === true && same(r.output, sanitize(good(), SPEC, SRC_OPTS)) && same(r.problems, []));
+  ok('T3 buildSanitized: girdi değiştirilmez', JSON.stringify(input) === before);
+  ok('T3 buildSanitized: işaretler verified değil', r.output._verified === false && r.output._evidence === 'unverified' && r.output._synthetic === true);
+  ok('T3 buildSanitized: çıktı bağımsız leakScan ile temiz', leakScan(input, r.output, SPEC).length === 0);
+  ok('T3 buildSanitized: sonuç sarmalayıcısı ve bulgu dizisi dondurulmuş', Object.isFrozen(r) && Object.isFrozen(r.problems));
+  ok('T3 buildSanitized: dolaşma seçenekleri aktarılır (spec/inline/compact)', (() => {
+    const o = { source: 'synthetic-test', unknown: 'drop', order: 'spec', required: 'inline', errorStyle: 'compact' };
+    const b = buildSanitized(good(), SPEC, o); return b.ok && same(b.output, sanitize(good(), SPEC, o));
+  })());
+
+  // buildSanitized: temizleme aşaması hataları → stage 'sanitize', ileti sanitize ile aynı, çıktı yok
+  const failSan = (inp, o) => { const b = buildSanitized(inp, SPEC, o); return b.ok === false && b.stage === 'sanitize' && !('output' in b) && b.message === errMsg(() => sanitize(inp, SPEC, o)); };
+  ok('T3 buildSanitized: izin dışı alan (reject) → stage sanitize', failSan(good(), { source: 'synthetic-test' }));
+  ok('T3 buildSanitized: sır benzeri değer → stage sanitize', failSan({ ...good(), note: 'pk.FAKEFAKEFAKEFAKE' }, SRC_OPTS));
+  ok('T3 buildSanitized: geçersiz source → stage sanitize', failSan(good(), { source: 'Bad Source', unknown: 'drop' }));
+  ok('T3 buildSanitized: geçersiz dolaşma seçeneği → stage sanitize', failSan(good(), { ...SRC_OPTS, order: 'x' }));
+  ok('T3 buildSanitized: kök nesne değil → stage sanitize', failSan([], SRC_OPTS) && failSan(null, SRC_OPTS));
+  ok('T3 buildSanitized: sanitize iletisi ham değer içermez', !JSON.stringify(buildSanitized({ ...good(), note: 'Bearer HAMtokenQQ' }, SPEC, SRC_OPTS)).includes('HAMtokenQQ'));
+  ok('T3 buildSanitized: beklenmeyen hata (getter) yakalanır, ham ileti sızmaz', (() => {
+    const evil = good(); Object.defineProperty(evil, 'boom', { enumerable: true, get() { throw new Error('HAMgetterQQ'); } });
+    let b; try { b = buildSanitized(evil, SPEC, SRC_OPTS); } catch { return false; }
+    return b.ok === false && b.stage === 'sanitize' && b.message === 'temizleme reddedildi' && !JSON.stringify(b).includes('HAMgetterQQ');
+  })());
+
+  // buildSanitized: leakScan aşaması → stage 'leak', çıktı yok (sanitize yalnız başına geçse bile)
+  const lk = buildSanitized(good(), SPEC, { ...SRC_OPTS, leak: { minNumber: 0 } });
+  ok('T3 buildSanitized: leak seçeneği bulgusu → stage leak, çıktı yok', lk.ok === false && lk.stage === 'leak' && !('output' in lk)
+    && same(lk.problems, ['$.items[0].level: izin dışı sayı']) && lk.message === 'sızıntı taraması başarısız (1 bulgu); reddedildi', JSON.stringify(lk));
+  ok('T3 buildSanitized: aynı girdi sanitize ile (leak seçeneksiz) geçer', !throws(() => sanitize(good(), SPEC, SRC_OPTS)));
+  const lk2 = buildSanitized(keyRaw, SPEC, { ...SRC_OPTS, leak: { rawExempt: 'exact' } });
+  ok("T3 buildSanitized: rawExempt:'exact' bulgusu → stage leak", lk2.ok === false && lk2.stage === 'leak' && same(lk2.problems, ['ham girdi dizesi çıktıda']));
+  ok('T3 buildSanitized: leak seçenekleri ikisi birden temiz girdide geçer', buildSanitized(exempt, SPEC, { ...SRC_OPTS, leak: { rawExempt: 'exact', minNumber: -10 } }).ok === true);
+
+  // buildSanitized: geçersiz leak seçeneği → stage 'options', temizleme hiç çalışmaz
+  ok('T3 buildSanitized: geçersiz leak seçeneği → stage options', [null, [], { rawExempt: 'loose' }, { minNumber: 0.5 }, { zz: 1 }].every((l) => {
+    const b = buildSanitized(good(), SPEC, { ...SRC_OPTS, leak: l });
+    return b.ok === false && b.stage === 'options' && b.message === 'leakScan seçeneği geçersiz' && !('output' in b);
+  }));
+  ok('T3 buildSanitized: leak seçeneği verilmezse varsayılan leakScan (sanitize ile aynı karar)', buildSanitized(keyRaw, SPEC, SRC_OPTS).ok === true);
+  ok('T3 buildSanitized: opts verilmezse source eksik → stage sanitize', (() => { const b = buildSanitized(good(), SPEC); return b.ok === false && b.stage === 'sanitize'; })());
+
+  // statik: buildSanitized leakScan çağırır; sanitize davranışı/imzası değişmedi
+  const body = (SRC.match(/export function buildSanitized[\s\S]*?\r?\n}\r?\n/) || [''])[0];
+  ok('T3 statik: buildSanitized gövdesi leakScan çağırır', /\bleakScan\(/.test(body));
+  ok('T3 statik: sanitize hâlâ leakScan bulgusunda fırlatır', /export function sanitize\(input, spec, opts = \{\}\)/.test(SRC) && /sızıntı taraması başarısız \(\$\{problems\.length\} bulgu\); reddedildi/.test(SRC));
+}
+
 // --- çalışma zamanı bu modülü içe aktarmaz; mapbox-sanitize.mjs bu göreve bağlı değil
 {
   function walk(dir, acc = []) {

@@ -27,6 +27,9 @@
 //   Yanlış tür (boolean/null/nesne/dizi/accept dışı) → SanitizeError. Girdide '<alan>_present' anahtarı (sahte varlık) her
 //   unknown kipinde reddedilir. Çıktı anahtarı şemada başka bir alan adıyla çakışamaz ve ad denetiminden geçmelidir.
 //   Şemada presence düğümü yoksa davranış birebir eskisi gibidir.
+// - İsteğe bağlı (opt-in, BL-P2-05c-2f T3) leakScan(input, output, spec, opts) seçenekleri {rawExempt:'vocab'|'exact',
+//   minNumber}; verilmezse davranış birebir eskisi gibidir, geçersiz seçenek → tek sabit bulgu. buildSanitized: saf
+//   temizleme → leakScan(opts.leak) → çıktı akışı; fırlatmaz, {ok, stage, message, problems, output} döndürür.
 // - Hiçbir çalışma zamanı dosyası bu modülü içe aktarmaz. scripts/mapbox-sanitize.mjs'in bu çekirdeğe göçü ayrı bir iştir.
 import * as nodePath from 'node:path';
 
@@ -349,9 +352,34 @@ export function walkAllowlist(spec) {
 // leakScan
 // ---------------------------------------------------------------------------------------------------------------------
 
-/** Bağımsız sızıntı taraması. Bulgu dizisi döner (boş = temiz). Bulgular ham değer içermez. */
-export function leakScan(input, output, spec) {
+const RAW_EXEMPT_MODES = new Set(['vocab', 'exact']);
+const LEAK_OPT_KEYS = new Set(['rawExempt', 'minNumber']);
+const LEAK_OPT_ERROR = 'leakScan seçeneği geçersiz';
+
+/**
+ * leakScan seçeneklerini katı biçimde doğrular (BL-P2-05c-2f T3). undefined → varsayılan. Hata iletisi sabittir (ham değer yok).
+ * rawExempt:'vocab'|'exact' (varsayılan 'vocab'): 'exact' → ham girdi dizesi muafiyeti yalnızca enum değerleri, 'unverified' ve
+ *   çıktının (geçerli) _source değeri için; sözcük dağarcığının (enum/alan adları) alt dizesi muafiyeti YOK (Mapbox ile uyumlu).
+ * minNumber: tam sayı, -maxNum..maxNum (varsayılan -maxNum): daha küçük sayı bulgu olur (ör. 0 → negatif yok). Üst sınır maxNum kalır.
+ * Bilinmeyen anahtar, düz olmayan nesne, null/dizi → hata.
+ */
+function leakOptions(opts) {
+  if (opts === undefined) return { exact: false, minNumber: -LIMITS.maxNum };
+  if (!isPlain(opts) || Object.getPrototypeOf(opts) !== Object.prototype || Object.keys(opts).some((k) => !LEAK_OPT_KEYS.has(k))) bad(LEAK_OPT_ERROR);
+  const { rawExempt = 'vocab', minNumber = -LIMITS.maxNum } = opts;
+  if (!RAW_EXEMPT_MODES.has(rawExempt) || !isBoundInt(minNumber)) bad(LEAK_OPT_ERROR);
+  return { exact: rawExempt === 'exact', minNumber };
+}
+
+/**
+ * Bağımsız sızıntı taraması. Bulgu dizisi döner (boş = temiz). Bulgular ham değer içermez. Asla fırlatmaz.
+ * opts (isteğe bağlı, BL-P2-05c-2f T3): {rawExempt?, minNumber?} — bkz. leakOptions; verilmezse davranış birebir eskisi gibidir.
+ * Geçersiz seçenek → ['leakScan seçeneği geçersiz'] (fail-closed).
+ */
+export function leakScan(input, output, spec, opts) {
   const problems = [];
+  let lo;
+  try { lo = leakOptions(opts); } catch { return [LEAK_OPT_ERROR]; }
   try { validateSpec(spec); } catch { return ['şema geçersiz']; }
   if (!isPlain(output)) return ['çıktı nesne değil'];
   const { keys, enums, presence } = collectSpec(spec);
@@ -372,7 +400,7 @@ export function leakScan(input, output, spec) {
       const okStr = path === '$._source' ? true : path === '$._evidence' ? v === EVIDENCE : enums.has(v);
       if (!okStr) problems.push(`${path}: izin listesi dışı dize`);
     } else if (typeof v === 'number') {
-      if (!Number.isSafeInteger(v) || Math.abs(v) > LIMITS.maxNum) problems.push(`${path}: izin dışı sayı`);
+      if (!Number.isSafeInteger(v) || Math.abs(v) > LIMITS.maxNum || v < lo.minNumber) problems.push(`${path}: izin dışı sayı`);
     } else if (typeof v === 'boolean') {
       // izinli
     } else if (Array.isArray(v)) {
@@ -397,10 +425,13 @@ export function leakScan(input, output, spec) {
     if (typeof v === 'string') { if (!enums.has(v) && v !== EVIDENCE) raw.push(v); } else if (v && typeof v === 'object') for (const x of Object.values(v)) collect(x, depth + 1);
   };
   collect(input, 0);
-  // Yalnızca izinli sabit sözcük dağarcığının (enum, alan/işaret adları) parçası olan ham dize bilgi taşımaz; diğerleri çıktıda olamaz.
+  // Varsayılan ('vocab'): yalnızca izinli sabit sözcük dağarcığının (enum, alan/işaret adları) parçası olan ham dize bilgi taşımaz.
+  // 'exact': yalnızca tam enum değeri, 'unverified' ve çağıranın verdiği geçerli _source sabiti muaftır. Diğerleri çıktıda olamaz.
   const vocab = [...enums, ...keys, EVIDENCE];
+  const srcOk = typeof output._source === 'string' && SOURCE_RE.test(output._source) && !isSecretLike(output._source);
+  const exempt = (s) => (lo.exact ? (srcOk && s === output._source) : vocab.some((w) => w.includes(s)));
   for (const s of raw) {
-    if (vocab.some((w) => w.includes(s))) continue;
+    if (exempt(s)) continue;
     if (outStrings.has(s) || (s.length >= 6 && outJ.includes(s))) { problems.push('ham girdi dizesi çıktıda'); break; }
   }
   if (URL_RE.test(outJ)) problems.push('çıktıda URL');
@@ -422,6 +453,40 @@ export function leakScan(input, output, spec) {
  *   errorStyle?:'default'|'compact', maxDepth?:number, maxNodes?:number}} opts
  */
 export function sanitize(input, spec, opts = {}) {
+  const out = assemble(input, spec, opts);
+  const problems = leakScan(input, out, spec);
+  if (problems.length) bad(`sızıntı taraması başarısız (${problems.length} bulgu); reddedildi`);
+  return out;
+}
+
+/**
+ * Saf birleşik akış (BL-P2-05c-2f T3): temizleme (preScan + izin listesi kopyası + işaretler) → leakScan(opts.leak) → çıktı.
+ * Asla fırlatmaz; sonuç dondurulmuş bir sarmalayıcıdır ve çıktı YALNIZCA ok:true iken vardır:
+ *   { ok:true, output, problems:[] }
+ *   { ok:false, stage:'options',  message }            — opts.leak geçersiz (temizleme çalıştırılmaz)
+ *   { ok:false, stage:'sanitize', message }            — sanitize ile aynı ileti; beklenmeyen hata → sabit ileti
+ *   { ok:false, stage:'leak', message, problems }      — bulgular ham değer içermez
+ * opts: sanitize seçenekleri + leak?: {rawExempt?, minNumber?}. leak verilmezse karar sanitize ile aynıdır.
+ * Dosya/ağ/ortam erişimi yoktur; yazma kararı çağırana aittir (yalnızca ok:true çıktısı yazılabilir).
+ */
+export function buildSanitized(input, spec, opts = {}) {
+  const fail = (stage, message, problems) => Object.freeze(problems ? { ok: false, stage, message, problems: Object.freeze(problems) } : { ok: false, stage, message });
+  const plain = isPlain(opts);
+  const leakOpts = plain && own(opts, 'leak') ? opts.leak : undefined;
+  let sanOpts = opts;
+  if (plain) { sanOpts = {}; for (const k of Object.keys(opts)) if (k !== 'leak') sanOpts[k] = opts[k]; }
+  try { leakOptions(leakOpts); } catch { return fail('options', LEAK_OPT_ERROR); }
+  let out;
+  try { out = assemble(input, spec, sanOpts); } catch (e) {
+    return fail('sanitize', e instanceof SanitizeError ? e.message : 'temizleme reddedildi');
+  }
+  const problems = leakScan(input, out, spec, leakOpts);
+  if (problems.length) return fail('leak', `sızıntı taraması başarısız (${problems.length} bulgu); reddedildi`, [...problems]);
+  return Object.freeze({ ok: true, output: out, problems: Object.freeze([]) });
+}
+
+/** preScan + izin listesi kopyası + işaretler (leakScan YOK; yalnızca sanitize / buildSanitized çağırır). */
+function assemble(input, spec, opts = {}) {
   const { source, unknown = 'reject', order = 'input', required = 'upfront', errorStyle = 'default' } = opts || {};
   if (typeof source !== 'string' || !SOURCE_RE.test(source) || isSecretLike(source)) bad('source geçersiz (a-z0-9- biçiminde olmalı)');
   walkOptions({ unknown, order, required, errorStyle });
@@ -439,8 +504,6 @@ export function sanitize(input, spec, opts = {}) {
     _source: source, _sanitizerVersion: SANITIZER_CORE_VERSION,
   };
   for (const k of Object.keys(body)) out[k] = body[k];
-  const problems = leakScan(input, out, spec);
-  if (problems.length) bad(`sızıntı taraması başarısız (${problems.length} bulgu); reddedildi`);
   return out;
 }
 
