@@ -118,6 +118,7 @@ Daha eski sürümler (v0.40–v0.99.38) için tek kaynak `git log` ve `js/versio
 | `0a39e01b` | `unknown` | Uzlaştırma (3c58e473 "tamamlandı" diyor) | — | — | Yerel döküm yok |
 | `5674fd65` | `unknown` | UI kompaktlaştırma (e1168bd5 çakışması yüzünden engellendi) | — | — | Sonucu bilinmiyor |
 | `65664093` | `unknown` | Kompakt UI (çakışmayı önlemek için durdu) | — | — | Sonucu bilinmiyor |
+| `663ecbf5-4e4b-4686-b1c8-af465ee3c55c` (yerel `01d65a9e`, güven: yüksek) | `failed` (önceki: kayıtta eski `running`) | 44 BL maddesini kalıcı kayda aktarma (a71a56a2 kaynağı) | Köprü zaman aşımı: claim 2026-11-13 20:43:50Z, bitiş 21:13:56Z, çıkış 1; oturum commit atmadı | Commit edilmemiş 44 BL içeriği sonradan `04928ad` ile taban alındı (yalnız yerel); 2026-11-14 uzlaştırma köprü `8428313a` @`fc36cb8` | Görevin kendisi tamamlanmadı; RM-13 / BL-P0-08 `running` kalır |
 
 ## 5. Ürün yol haritası (henüz görev verilmemiş olanlar dahil)
 
