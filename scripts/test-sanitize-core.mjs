@@ -250,6 +250,190 @@ const good = () => ({
   ok('bilinmeyen platform reddedilir', validateInputPath({ inputPath: '/a.json', repoRoot: '/repo', platform: 'beos' }).ok === false);
 }
 
+// --- BL-P2-05c-2d T1: isteğe bağlı order / required / errorStyle seçenekleri (varsayılan davranış birebir korunur)
+{
+  const SE = (fn) => { try { fn(); return null; } catch (e) { return e; } };
+  const canon = (v) => (Array.isArray(v) ? v.map(canon) : v && typeof v === 'object'
+    ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, canon(v[k])])) : v);
+  const same = (a, b) => JSON.stringify(canon(a)) === JSON.stringify(canon(b));
+  const run = walkAllowlist(SPEC);
+  const ALL = { order: 'spec', required: 'inline', errorStyle: 'compact' };
+  const FAKE_PK = 'pk.FAKEFAKEFAKEFAKE';
+
+  // Varsayılan eşdeğerliği: seçeneksiz çağrı = açık varsayılan değerler (çıktı ve hata iletisi birebir)
+  const DEF = { unknown: 'reject', order: 'input', required: 'upfront', errorStyle: 'default' };
+  const cases = [
+    { total: 5, items: [{ kind: 'beta', flagged: true, distance: 2.6 }], status: 'ok' },
+    { items: [] },
+    { status: 'ok' },
+    { items: 'x', status: 'bad' },
+    { status: 'bad', items: 'x' },
+    { items: [{ level: 1.5 }] },
+    { items: [{ distance: -1 }] },
+    { items: [{ zz: 1 }] },
+    { items: [], zz: 1 },
+    { items: [1] },
+    { items: [{}, {}, {}, {}, {}, {}] },
+    { items: [{ tags: ['x', 'q'] }] },
+    { items: [{ flagged: 'yes' }] },
+  ];
+  let parity = true;
+  for (const c of cases) {
+    const a = SE(() => run(c)), b = SE(() => run(c, DEF));
+    const oa = a ? null : run(c), ob = b ? null : run(c, DEF);
+    if (a || b) { if (!a || !b || a.message !== b.message || !(a instanceof SanitizeError) || !(b instanceof SanitizeError)) parity = false; }
+    else if (JSON.stringify(oa) !== JSON.stringify(ob)) parity = false; // anahtar sırası dahil
+    const sa = SE(() => sanitize(c, SPEC, { source: 'synthetic-core' })), sb = SE(() => sanitize(c, SPEC, { source: 'synthetic-core', ...DEF }));
+    if (sa || sb) { if (!sa || !sb || sa.message !== sb.message) parity = false; }
+    else if (JSON.stringify(sanitize(c, SPEC, { source: 'synthetic-core' })) !== JSON.stringify(sanitize(c, SPEC, { source: 'synthetic-core', ...DEF }))) parity = false;
+  }
+  ok('varsayılan eşdeğerliği: seçeneksiz = açık varsayılanlar (çıktı + ileti birebir)', parity);
+  ok('varsayılan ileti biçimi korunur ($ önekli, aralık iletisi)', errMsg(() => run({ items: [{ distance: -1 }] })) === '$.items[0].distance: aralık dışı sayı (0..1000000)');
+  ok('varsayılan zorunlu alan iletisi korunur', errMsg(() => run({ status: 'ok' })) === '$.items: zorunlu alan yok; reddedildi');
+  ok('varsayılan: zorunlu alan denetimi alanlardan önce (upfront)', errMsg(() => run({ status: 'bad' })) === '$.items: zorunlu alan yok; reddedildi');
+  ok('varsayılan: girdi sırasıyla dolaşılır', /^\$\.items:/.test(errMsg(() => run({ items: 'x', status: 'bad' }))) && /^\$\.status:/.test(errMsg(() => run({ status: 'bad', items: 'x' }))));
+  ok('varsayılan: çıktı anahtarları girdi sırasında', Object.keys(run({ total: 1, items: [], status: 'ok' })).join() === 'total,items,status');
+  ok('varsayılan: tam sayı iletisi korunur', errMsg(() => run({ items: [{ level: 1.5 }] })) === '$.items[0].level: tam sayı bekleniyor');
+  ok('varsayılan: tür iletisi korunur', errMsg(() => run({ items: [{ distance: 'x' }] })) === '$.items[0].distance: sayı (number) bekleniyor');
+
+  // order:'spec'
+  const o1 = run({ total: 1, items: [{ tags: ['x'], flagged: false, kind: 'alpha', level: 2, distance: 3 }], status: 'ok' }, { order: 'spec' });
+  ok("order:'spec' kök çıktı anahtarları şema sırasında", Object.keys(o1).join() === 'status,total,items');
+  ok("order:'spec' iç içe çıktı anahtarları şema sırasında", Object.keys(o1.items[0]).join() === 'kind,distance,level,flagged,tags');
+  ok("order:'spec' değerler varsayılanla aynı (yalnızca sıra değişir)", same(o1, run({ total: 1, items: [{ tags: ['x'], flagged: false, kind: 'alpha', level: 2, distance: 3 }], status: 'ok' })));
+  ok("order:'spec' yalnızca girdide olan alanlar yazılır", Object.keys(run({ items: [{ level: 1 }] }, { order: 'spec' }).items[0]).join() === 'level');
+  ok("order:'spec' dolaşma şema sırasında (status, items'tan önce)", /^\$\.status:/.test(errMsg(() => run({ items: 'x', status: 'bad' }, { order: 'spec' }))));
+  ok("order:'spec' iç içe dolaşma şema sırasında (kind, distance'tan önce)", /^\$\.items\[0\]\.kind:/.test(errMsg(() => run({ items: [{ distance: -1, kind: 'q' }] }, { order: 'spec' }))));
+  ok("order:'spec' + reject: izin dışı alan, alan hatalarından önce reddedilir", errMsg(() => run({ status: 'bad', zz: 1, items: [] }, { order: 'spec' })) === '$: izin listesi dışı alan; reddedildi');
+  ok("order:'spec' + reject: iç içe izin dışı alan", errMsg(() => run({ items: [{ kind: 'alpha', zz: 1 }] }, { order: 'spec' })) === '$.items[0]: izin listesi dışı alan; reddedildi');
+  const dropped = run({ zz: 'ham-deger-1', items: [{ yy: 2, kind: 'beta' }], status: 'none' }, { order: 'spec', unknown: 'drop' });
+  ok("order:'spec' + drop: izin dışı alanlar atılır", Object.keys(dropped).join() === 'status,items' && Object.keys(dropped.items[0]).join() === 'kind' && !JSON.stringify(dropped).includes('ham-deger-1'));
+  ok("order:'spec' + upfront: zorunlu alan yine önce", errMsg(() => run({ status: 'bad' }, { order: 'spec' })) === '$.items: zorunlu alan yok; reddedildi');
+  ok("order:'spec' + upfront: zorunlu alan, izin dışı alandan önce", errMsg(() => run({ zz: 1 }, { order: 'spec' })) === '$.items: zorunlu alan yok; reddedildi');
+
+  // required:'inline' (yalnızca order:'spec' ile)
+  const RSPEC = {
+    type: 'object', required: ['level', 'rows'],
+    fields: {
+      status: { type: 'enum', values: ['ok', 'none'] },
+      level: { type: 'number', min: 0, max: 9 },
+      rows: { type: 'array', max: 4, items: { type: 'object', required: ['kind'], fields: { total: { type: 'number', min: 0, max: 50 }, kind: { type: 'enum', values: ['alpha'] } } } },
+    },
+  };
+  const rrun = walkAllowlist(RSPEC);
+  const IN = { order: 'spec', required: 'inline' };
+  ok("required:'inline': önceki alan hatası, eksik zorunlu alandan önce", /^\$\.status: izin listesi dışı enum/.test(errMsg(() => rrun({ status: 'bad' }, IN))));
+  ok("required:'upfront' (karşılaştırma): eksik zorunlu alan önce", errMsg(() => rrun({ status: 'bad' }, { order: 'spec' })) === '$.level: zorunlu alan yok; reddedildi');
+  ok("required:'inline': eksik zorunlu alan kendi sırasında bildirilir", errMsg(() => rrun({ status: 'ok' }, IN)) === '$.level: zorunlu alan yok; reddedildi');
+  ok("required:'inline': ilk zorunlu varsa sonraki eksik bildirilir", errMsg(() => rrun({ level: 1 }, IN)) === '$.rows: zorunlu alan yok; reddedildi');
+  ok("required:'inline': geçersiz önceki zorunlu alan, sonraki eksikten önce", /^\$\.level: aralık dışı/.test(errMsg(() => rrun({ level: 99 }, IN))));
+  ok("required:'inline': iç içe yol", errMsg(() => rrun({ level: 1, rows: [{ kind: 'alpha' }, { total: 3 }] }, IN)) === '$.rows[1].kind: zorunlu alan yok; reddedildi');
+  ok("required:'inline': iç içe önceki alan hatası önce", /^\$\.rows\[0\]\.total: aralık dışı/.test(errMsg(() => rrun({ level: 1, rows: [{ total: 99 }] }, IN))));
+  ok("required:'inline' + reject: izin dışı alan, eksik zorunludan önce", errMsg(() => rrun({ zz: 1 }, IN)) === '$: izin listesi dışı alan; reddedildi');
+  ok("required:'inline' + drop: izin dışı alan atılır, eksik zorunlu yine reddedilir", errMsg(() => rrun({ zz: 1, level: 2 }, { ...IN, unknown: 'drop' })) === '$.rows: zorunlu alan yok; reddedildi');
+  ok("required:'inline': geçerli girdi kabul, değerler varsayılanla aynı", same(rrun({ rows: [{ kind: 'alpha', total: 2 }], level: 3 }, IN), rrun({ rows: [{ kind: 'alpha', total: 2 }], level: 3 })));
+  ok("required:'inline' order:'input' ile reddedilir", SE(() => run({ items: [] }, { required: 'inline' })) instanceof SanitizeError
+    && SE(() => run({ items: [] }, { required: 'inline', order: 'input' })) instanceof SanitizeError
+    && SE(() => sanitize({ items: [] }, SPEC, { source: 'synthetic-core', required: 'inline' })) instanceof SanitizeError);
+
+  // errorStyle:'compact' (Mapbox uyumlu: '$.' öneki yok, sabit sayı iletisi)
+  const C1 = { errorStyle: 'compact' };
+  ok("compact: sayı aralık dışı → sabit ileti", errMsg(() => run({ items: [{ distance: -1 }] }, C1)) === 'items[0].distance: geçersiz sayı (number; 0..1000000)');
+  ok("compact: sayı türü yanlış → aynı sabit ileti", errMsg(() => run({ items: [{ distance: '5' }] }, C1)) === 'items[0].distance: geçersiz sayı (number; 0..1000000)');
+  ok("compact: null sayı → aynı sabit ileti", errMsg(() => run({ items: [{ distance: null }] }, C1)) === 'items[0].distance: geçersiz sayı (number; 0..1000000)');
+  ok("compact: tam sayı değil → aynı sabit ileti (negatif aralık)", errMsg(() => run({ items: [{ level: 1.5 }] }, C1)) === 'items[0].level: geçersiz sayı (number; -10..10)');
+  ok("compact: kök sayı alanı", errMsg(() => run({ total: 100001, items: [] }, C1)) === 'total: geçersiz sayı (number; 0..100000)');
+  ok("compact: enum iletisi", errMsg(() => run({ status: 'bad', items: [] }, C1)) === 'status: izin listesi dışı enum değeri; reddedildi');
+  ok("compact: dizi içi enum", errMsg(() => run({ items: [{ tags: ['x', 'q'] }] }, C1)) === 'items[0].tags[1]: izin listesi dışı enum değeri; reddedildi');
+  ok("compact: dizi bekleniyor", errMsg(() => run({ items: 'x' }, C1)) === 'items: dizi (array) bekleniyor');
+  ok("compact: eleman sınırı", errMsg(() => run({ items: [{}, {}, {}, {}, {}, {}] }, C1)) === 'items: eleman sınırı (limit 5) aşıldı');
+  ok("compact: nesne bekleniyor", errMsg(() => run({ items: [1] }, C1)) === 'items[0]: nesne (object) bekleniyor');
+  ok("compact: boolean bekleniyor", errMsg(() => run({ items: [{ flagged: 'x' }] }, C1)) === 'items[0].flagged: boolean bekleniyor');
+  ok("compact: zorunlu alan iletisi (kök)", errMsg(() => run({ status: 'ok' }, C1)) === 'items yok; reddedildi');
+  ok("compact: zorunlu alan iletisi (iç içe, inline)", errMsg(() => rrun({ level: 1, rows: [{ total: 3 }] }, { ...IN, ...C1 })) === 'rows[0].kind yok; reddedildi');
+  ok("compact: kök izin dışı alan → 'kök' etiketi", errMsg(() => run({ items: [], zz: 1 }, C1)) === 'kök: izin listesi dışı alan; reddedildi');
+  ok("compact: iç içe izin dışı alan", errMsg(() => run({ items: [{ zz: 1 }] }, C1)) === 'items[0]: izin listesi dışı alan; reddedildi');
+  ok("compact: kök nesne değil → 'kök' etiketi", errMsg(() => run([], C1)) === 'kök: nesne (object) bekleniyor');
+  const aRun = walkAllowlist({ type: 'array', max: 2, items: { type: 'number', min: 0, max: 3 } });
+  ok("compact: kökü dizi olan şema yolu", errMsg(() => aRun([1, 9], C1)) === '[1]: geçersiz sayı (number; 0..3)' && errMsg(() => aRun([1, 9])) === '$[1]: aralık dışı sayı (0..3)');
+  ok("compact: hiçbir ileti '$' ile başlamaz", cases.every((c) => { const e = SE(() => run(c, C1)); return !e || !e.message.startsWith('$'); }));
+  ok("compact: geçerli girdide çıktı varsayılanla birebir", JSON.stringify(run(cases[0], C1)) === JSON.stringify(run(cases[0])));
+
+  // Mapbox biçimini taklit eden SENTETİK şema; üç seçenek birlikte (golden göç korkuluklarıyla aynı iletiler)
+  const MSPEC = {
+    type: 'object', required: ['routes'],
+    fields: {
+      code: { type: 'enum', values: ['Ok', 'NoRoute'] },
+      routes: { type: 'array', max: 3, items: { type: 'object', fields: {
+        distance: { type: 'number', min: 0, max: 10000000 },
+        duration: { type: 'number', min: 0, max: 10000000 },
+        legs: { type: 'array', max: 3, items: { type: 'object', fields: { distance: { type: 'number', min: 0, max: 10000000 } } } },
+      } } },
+    },
+  };
+  const mrun = walkAllowlist(MSPEC);
+  const MO = { ...ALL, unknown: 'drop' };
+  ok('Mapbox biçimi: routes yok iletisi', /^routes yok; reddedildi$/.test(errMsg(() => mrun({ code: 'Ok' }, MO))));
+  ok('Mapbox biçimi: $ öneksiz yol ve sabit sayı iletisi', /^routes\[0\]\.distance: geçersiz sayı \(number; 0\.\.10000000\)$/.test(errMsg(() => mrun({ routes: [{ distance: -1 }] }, MO))));
+  ok('Mapbox biçimi: sabit alan sırası (distance, legs’ten önce)', /^routes\[0\]\.distance:/.test(errMsg(() => mrun({ routes: [{ legs: 'x', distance: -1 }] }, MO))));
+  ok('Mapbox biçimi: code hatası, eksik routes’tan önce (inline)', /^code: izin listesi dışı enum/.test(errMsg(() => mrun({ code: 'Bad' }, MO))));
+  ok('Mapbox biçimi: iç içe yol', errMsg(() => mrun({ routes: [{ legs: [{}, { distance: 1e9 }] }] }, MO)) === 'routes[0].legs[1].distance: geçersiz sayı (number; 0..10000000)');
+  const mOut = mrun({ routes: [{ legs: [{ distance: 4.4 }], duration: 2.5, distance: 9.6, extra: 1 }], code: 'Ok', other: 'x' }, MO);
+  ok('Mapbox biçimi: çıktı şema sırasında, atılanlar yok, yuvarlama aynı', JSON.stringify(mOut) === '{"code":"Ok","routes":[{"distance":10,"duration":3,"legs":[{"distance":4}]}]}');
+
+  // Seçenek doğrulama: katı enum, ham değer iletiye girmez
+  const SENT = 'ZZsentinelQQ';
+  const BADV = [null, '', 'SPEC', 'Spec', ' spec', 'spec ', 1, 0, true, false, {}, [], ['spec'], SENT, 'pk.abcdefghijkl12', 'toString', '__proto__'];
+  for (const key of ['order', 'required', 'errorStyle']) {
+    const allRej = BADV.every((val) => {
+      const opt = { [key]: val };
+      if (key === 'required') opt.order = 'spec';
+      const e1 = SE(() => run({ items: [] }, opt));
+      const e2 = SE(() => sanitize({ items: [] }, SPEC, { source: 'synthetic-core', ...opt }));
+      return e1 instanceof SanitizeError && e2 instanceof SanitizeError;
+    });
+    ok(`${key}: geçersiz değerler (tür/harf/boşluk/prototip adı) SanitizeError ile reddedilir`, allRej);
+    const m1 = errMsg(() => run({ items: [] }, { [key]: SENT, order: key === 'required' ? 'spec' : SENT }));
+    const m2 = errMsg(() => sanitize({ items: [] }, SPEC, { source: 'synthetic-core', [key]: 'pk.abcdefghijkl12' }));
+    ok(`${key}: hata iletisi ham seçenek değerini içermez`, m1 && !m1.includes(SENT) && m2 && !m2.includes('pk.abcdefghijkl12'));
+  }
+  ok('undefined seçenek = varsayılan', JSON.stringify(run(cases[0], { order: undefined, required: undefined, errorStyle: undefined })) === JSON.stringify(run(cases[0])));
+  ok('geçersiz seçenekte girdi dolaşılmaz (seçenek denetimi önce)', errMsg(() => run({ status: 'bad' }, { order: 'x' })) !== errMsg(() => run({ status: 'bad' })) && !/^\$/.test(errMsg(() => run({ status: 'bad' }, { order: 'x' }))));
+  ok('mevcut unknown iletisi korunur (öncelik: unknown önce)', errMsg(() => run({ items: [] }, { unknown: 'x', order: 'x' })) === "unknown kipi yalnızca 'reject' ya da 'drop'"
+    && errMsg(() => sanitize({ items: [] }, SPEC, { source: 'synthetic-core', unknown: 'x', order: 'x' })) === "unknown kipi yalnızca 'reject' ya da 'drop'");
+  ok('source denetimi seçeneklerden önce', /source/.test(errMsg(() => sanitize({ items: [] }, SPEC, { source: 'BAD', order: 'x' }))));
+
+  // Güvenlik: seçenekler kabul edilen kümeyi genişletmez, preScan / leakScan zayıflamaz
+  const combos = [];
+  for (const order of ['input', 'spec']) for (const required of ['upfront', 'inline']) for (const errorStyle of ['default', 'compact']) for (const unknown of ['reject', 'drop'])
+    if (!(required === 'inline' && order === 'input')) combos.push({ order, required, errorStyle, unknown });
+  ok('geçerli seçenek kombinasyon sayısı 12', combos.length === 12);
+  const deepSecret = { items: [{ kind: 'alpha', tags: ['x'] }], status: 'ok', nested: { z: [{ q: FAKE_PK }] } };
+  const ctxs = [
+    ['iç içe sır her kombinasyonda reddedilir, ileti ham değer içermez', (o) => { const e = SE(() => sanitize(deepSecret, SPEC, { source: 'synthetic-core', ...o })); return e instanceof SanitizeError && /sır|secret/i.test(e.message) && !e.message.includes(FAKE_PK); }],
+    ['Authorization anahtarı her kombinasyonda reddedilir', (o) => SE(() => sanitize({ items: [], Authorization: 'x' }, SPEC, { source: 'synthetic-core', ...o })) instanceof SanitizeError],
+    ['__proto__ her kombinasyonda reddedilir', (o) => SE(() => sanitize(JSON.parse('{"items":[],"__proto__":{"p":1}}'), SPEC, { source: 'synthetic-core', ...o })) instanceof SanitizeError && ({}).p === undefined],
+    ['sayı alanında dize her kombinasyonda reddedilir', (o) => SE(() => sanitize({ items: [{ distance: '5' }] }, SPEC, { source: 'synthetic-core', ...o })) instanceof SanitizeError],
+    ['izin dışı enum her kombinasyonda reddedilir (düşürülmez)', (o) => SE(() => sanitize({ items: [{ kind: 'serbest metin' }] }, SPEC, { source: 'synthetic-core', ...o })) instanceof SanitizeError],
+    ['aşırı derin girdi her kombinasyonda reddedilir', (o) => { let d = { v: 1 }; for (let i = 0; i < 80; i++) d = { a: d }; return SE(() => sanitize({ items: [], d }, SPEC, { source: 'synthetic-core', ...o, unknown: 'drop' })) instanceof SanitizeError; }],
+    ['geçerli girdide değerler varsayılanla aynı, işaretler doğru, leakScan temiz', (o) => {
+      const inp = { _synthetic: true, _verified: true, total: 7.7, items: [{ level: -3, kind: 'beta', tags: ['y'] }], status: 'none' };
+      const out = sanitize(inp, SPEC, { source: 'synthetic-core', ...o });
+      return same(out, sanitize(inp, SPEC, { source: 'synthetic-core' })) && out._verified === false && out._synthetic === true && leakScan(inp, out, SPEC).length === 0;
+    }],
+    ['girdi değiştirilmez', (o) => { const inp = { status: 'ok', items: [{ kind: 'alpha', distance: 1.5 }], zz: 1 }; const before = JSON.stringify(inp); SE(() => sanitize(inp, SPEC, { source: 'synthetic-core', ...o })); return JSON.stringify(inp) === before; }],
+    ['hata iletileri ham girdi değeri içermez', (o) => { const e = SE(() => sanitize({ status: 'HAMdegerQQ', items: [{ zzHAM: 'HAMdegerQQ' }] }, SPEC, { source: 'synthetic-core', ...o })); return e instanceof SanitizeError && !e.message.includes('HAMdegerQQ') && !e.message.includes('zzHAM'); }],
+  ];
+  for (const [name, f] of ctxs) ok(`seçenekler: ${name}`, combos.every((o) => { try { return f(o); } catch { return false; } }));
+  ok('seçenekler: drop + spec çıktısında izin dışı anahtar yok, leakScan temiz', (() => {
+    const inp = { zz: 'gizli-olmayan-ham', items: [{ yy: 1, kind: 'alpha' }] };
+    const out = sanitize(inp, SPEC, { source: 'synthetic-core', order: 'spec', unknown: 'drop' });
+    return !('zz' in out) && !('yy' in out.items[0]) && leakScan(inp, out, SPEC).length === 0 && Object.keys(out).slice(-1)[0] === 'items';
+  })());
+  ok('seçenekler: sanitize çıktısında işaretler önce, gövde şema sırasında', Object.keys(sanitize({ items: [], status: 'ok' }, SPEC, { source: 'synthetic-core', order: 'spec' })).join()
+    === '_sanitized,_recorded,_synthetic,_verified,_evidence,_source,_sanitizerVersion,status,items');
+}
+
 // --- çalışma zamanı bu modülü içe aktarmaz; mapbox-sanitize.mjs bu göreve bağlı değil
 {
   function walk(dir, acc = []) {

@@ -13,6 +13,14 @@
 // - sanitize: kök nesne → preScan → izin listesi kopyası → işaretler → leakScan; herhangi bir bulgu → hata.
 //   Çıktı ASLA doğrulanmış değildir (_verified:false, _evidence:'unverified'); girdideki iddialar yok sayılır,
 //   yalnızca input._synthetic === true okunur.
+// - İsteğe bağlı (opt-in, BL-P2-05c-2d) dolaşma seçenekleri; verilmezse davranış birebir eskisi gibidir:
+//   order:'input'|'spec' (varsayılan 'input'): 'spec' → alanlar şema sırasında dolaşılır ve çıktıya şema sırasında yazılır;
+//     izin dışı alan denetimi (reject) alanlardan önce yapılır.
+//   required:'upfront'|'inline' (varsayılan 'upfront'): 'inline' → eksik zorunlu alan şema sırasında kendi yerinde bildirilir;
+//     yalnızca order:'spec' ile geçerlidir (aksi → hata).
+//   errorStyle:'default'|'compact' (varsayılan 'default'): 'compact' → yol '$.' öneksiz (kök 'kök'), sayı hatası tek sabit
+//     ileti "geçersiz sayı (number; min..max)", zorunlu alan "<yol> yok; reddedildi" (Mapbox temizleyicisiyle uyumlu).
+//   Değerler katı enumdur; bilinmeyen değer → SanitizeError (ileti ham değeri içermez). Kabul edilen girdi kümesi değişmez.
 // - Hiçbir çalışma zamanı dosyası bu modülü içe aktarmaz. scripts/mapbox-sanitize.mjs'in bu çekirdeğe göçü ayrı bir iştir.
 import * as nodePath from 'node:path';
 
@@ -203,42 +211,83 @@ function collectSpec(spec) {
 // ---------------------------------------------------------------------------------------------------------------------
 
 const UNKNOWN_MODES = new Set(['reject', 'drop']);
+const ORDER_MODES = new Set(['input', 'spec']);
+const REQUIRED_MODES = new Set(['upfront', 'inline']);
+const ERROR_STYLES = new Set(['default', 'compact']);
+
+/** Dolaşma seçeneklerini katı biçimde doğrular. İletiler ham değer içermez. Öncelik: unknown → order → required → errorStyle. */
+function walkOptions({ unknown = 'reject', order = 'input', required = 'upfront', errorStyle = 'default' }) {
+  if (!UNKNOWN_MODES.has(unknown)) bad("unknown kipi yalnızca 'reject' ya da 'drop'");
+  if (!ORDER_MODES.has(order)) bad("order kipi yalnızca 'input' ya da 'spec'");
+  if (!REQUIRED_MODES.has(required)) bad("required kipi yalnızca 'upfront' ya da 'inline'");
+  if (!ERROR_STYLES.has(errorStyle)) bad("errorStyle yalnızca 'default' ya da 'compact'");
+  if (required === 'inline' && order !== 'spec') bad("required:'inline' yalnızca order:'spec' ile kullanılabilir");
+  return { unknown, order, required, compact: errorStyle === 'compact' };
+}
+// Yol biçimi: varsayılan '$', '$.a', '$.a[0]'; compact '', 'a', 'a[0]' (iletide kök 'kök' olarak etiketlenir).
+const keyPath = (ctx, p, k) => (ctx.compact && p === '' ? k : `${p}.${k}`);
+const label = (ctx, p) => (ctx.compact && p === '' ? 'kök' : p);
 
 /**
  * Şemayı doğrular ve (value, {unknown}) → izinli kopya döndüren işlev üretir. Kopyalayıcı preScan YAPMAZ (bkz. sanitize).
  * Hata yolları yalnızca şemadaki alan adlarını ve dizinleri içerir; ham girdi anahtarı/değeri içermez.
+ * Kopyalayıcı seçenekleri: {unknown?, order?, required?, errorStyle?} (bkz. dosya başı; verilmezse varsayılan davranış).
  */
 export function walkAllowlist(spec) {
   validateSpec(spec);
-  const copy = (s, v, path, unknown) => {
+  const missing = (ctx, path, r) => {
+    const p = keyPath(ctx, path, r);
+    return ctx.compact ? bad(`${p} yok; reddedildi`) : bad(`${p}: zorunlu alan yok; reddedildi`);
+  };
+  const copy = (s, v, path, ctx) => {
+    const L = label(ctx, path);
     switch (s.type) {
       case 'enum':
-        if (typeof v !== 'string' || !s.values.includes(v)) bad(`${path}: izin listesi dışı enum değeri; reddedildi`);
+        if (typeof v !== 'string' || !s.values.includes(v)) bad(`${L}: izin listesi dışı enum değeri; reddedildi`);
         return v;
       case 'boolean':
-        if (typeof v !== 'boolean') bad(`${path}: boolean bekleniyor`);
+        if (typeof v !== 'boolean') bad(`${L}: boolean bekleniyor`);
         return v;
       case 'number': {
-        if (typeof v !== 'number' || !Number.isFinite(v)) bad(`${path}: sayı (number) bekleniyor`);
-        if (s.integer && !Number.isInteger(v)) bad(`${path}: tam sayı bekleniyor`);
-        if (v < s.min || v > s.max) bad(`${path}: aralık dışı sayı (${s.min}..${s.max})`);
+        if (ctx.compact) {
+          // Tek sabit ileti (tür/tam sayı/aralık ayrımı yok); sınırlar şemadan gelir, girdiden değil.
+          if (typeof v !== 'number' || !Number.isFinite(v) || (s.integer && !Number.isInteger(v)) || v < s.min || v > s.max)
+            bad(`${L}: geçersiz sayı (number; ${s.min}..${s.max})`);
+        } else {
+          if (typeof v !== 'number' || !Number.isFinite(v)) bad(`${L}: sayı (number) bekleniyor`);
+          if (s.integer && !Number.isInteger(v)) bad(`${L}: tam sayı bekleniyor`);
+          if (v < s.min || v > s.max) bad(`${L}: aralık dışı sayı (${s.min}..${s.max})`);
+        }
         const r = Math.round(v);
         return r === 0 ? 0 : r; // -0 → 0
       }
       case 'array':
-        if (!Array.isArray(v)) bad(`${path}: dizi (array) bekleniyor`);
-        if (v.length > s.max) bad(`${path}: eleman sınırı (limit ${s.max}) aşıldı`);
-        return v.map((x, i) => copy(s.items, x, `${path}[${i}]`, unknown));
+        if (!Array.isArray(v)) bad(`${L}: dizi (array) bekleniyor`);
+        if (v.length > s.max) bad(`${L}: eleman sınırı (limit ${s.max}) aşıldı`);
+        return v.map((x, i) => copy(s.items, x, `${path}[${i}]`, ctx));
       case 'object': {
-        if (!isPlain(v)) bad(`${path}: nesne (object) bekleniyor`);
-        for (const r of s.required || []) if (!own(v, r)) bad(`${path}.${r}: zorunlu alan yok; reddedildi`);
+        if (!isPlain(v)) bad(`${L}: nesne (object) bekleniyor`);
+        const req = s.required || [];
+        if (ctx.required === 'upfront') for (const r of req) if (!own(v, r)) missing(ctx, path, r);
         const o = {};
-        for (const k of Object.keys(v)) {
-          if (!own(s.fields, k)) {
-            if (unknown === 'reject') bad(`${path}: izin listesi dışı alan; reddedildi`);
+        if (ctx.order === 'input') {
+          for (const k of Object.keys(v)) {
+            if (!own(s.fields, k)) {
+              if (ctx.unknown === 'reject') bad(`${L}: izin listesi dışı alan; reddedildi`);
+              continue;
+            }
+            o[k] = copy(s.fields[k], v[k], keyPath(ctx, path, k), ctx);
+          }
+          return o;
+        }
+        // order:'spec' — önce izin dışı alan (reject), sonra şema sırasında alanlar (inline zorunlu denetimi yerinde).
+        if (ctx.unknown === 'reject' && Object.keys(v).some((k) => !own(s.fields, k))) bad(`${L}: izin listesi dışı alan; reddedildi`);
+        for (const k of Object.keys(s.fields)) {
+          if (!own(v, k)) {
+            if (ctx.required === 'inline' && req.includes(k)) missing(ctx, path, k);
             continue;
           }
-          o[k] = copy(s.fields[k], v[k], `${path}.${k}`, unknown);
+          o[k] = copy(s.fields[k], v[k], keyPath(ctx, path, k), ctx);
         }
         return o;
       }
@@ -246,9 +295,9 @@ export function walkAllowlist(spec) {
         return bad('şema: bilinmeyen tür');
     }
   };
-  return (value, { unknown = 'reject' } = {}) => {
-    if (!UNKNOWN_MODES.has(unknown)) bad("unknown kipi yalnızca 'reject' ya da 'drop'");
-    return copy(spec, value, '$', unknown);
+  return (value, opts = {}) => {
+    const ctx = walkOptions(opts);
+    return copy(spec, value, ctx.compact ? '' : '$', ctx);
   };
 }
 
@@ -324,12 +373,13 @@ export function leakScan(input, output, spec) {
  * Girdi → izin listesiyle temizlenmiş nesne. Girdi değiştirilmez. Herhangi bir sorun → SanitizeError.
  * @param {object} input
  * @param {object} spec kök türü 'object' olmalı
- * @param {{source:string, unknown?:'reject'|'drop', maxDepth?:number, maxNodes?:number}} opts
+ * @param {{source:string, unknown?:'reject'|'drop', order?:'input'|'spec', required?:'upfront'|'inline',
+ *   errorStyle?:'default'|'compact', maxDepth?:number, maxNodes?:number}} opts
  */
 export function sanitize(input, spec, opts = {}) {
-  const { source, unknown = 'reject' } = opts || {};
+  const { source, unknown = 'reject', order = 'input', required = 'upfront', errorStyle = 'default' } = opts || {};
   if (typeof source !== 'string' || !SOURCE_RE.test(source) || isSecretLike(source)) bad('source geçersiz (a-z0-9- biçiminde olmalı)');
-  if (!UNKNOWN_MODES.has(unknown)) bad("unknown kipi yalnızca 'reject' ya da 'drop'");
+  walkOptions({ unknown, order, required, errorStyle });
   const run = walkAllowlist(spec);
   if (spec.type !== 'object') bad('şema kökü object olmalı');
   if (!isPlain(input)) bad('kök: nesne (object) bekleniyor');
@@ -338,7 +388,7 @@ export function sanitize(input, spec, opts = {}) {
   // Kökteki işaret anahtarları (_synthetic vb.) içerik değildir: kopyalanmaz; yalnızca _synthetic === true okunur, diğer iddialar yok sayılır.
   const view = {};
   for (const k of Object.keys(input)) if (!META_KEYS.includes(k)) view[k] = input[k];
-  const body = run(view, { unknown });
+  const body = run(view, { unknown, order, required, errorStyle });
   const out = {
     _sanitized: true, _recorded: !synthetic, _synthetic: synthetic, _verified: false, _evidence: EVIDENCE,
     _source: source, _sanitizerVersion: SANITIZER_CORE_VERSION,
