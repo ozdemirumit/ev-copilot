@@ -1,0 +1,58 @@
+{
+  "_synthetic": true,
+  "_note": "Elle yazılmış SENTETİK sanitizer GİRDİSİ (BL-P2-05b-1). Gerçek Mapbox yanıtı değildir; kayıt/kanıt sayılmaz. Adlar, konumlar, geometri, kimlikler ve zaman damgaları uydurmadır ve sanitizer çıktısına KOPYALANMAMALIDIR.",
+  "code": "Ok",
+  "uuid": "synthetic-uuid-0000-ornek",
+  "metadata": { "query_time": "2026-01-01T00:00:00Z", "request_url": "https://example.invalid/directions/v5/mapbox/driving" },
+  "waypoints": [
+    { "name": "Sentetik Baslangic Caddesi", "location": [28.9784123, 41.0082456], "distance": 3.25 },
+    { "name": "Sentetik Varis Sokagi", "location": [29.0234567, 41.0456789], "distance": 1.5 }
+  ],
+  "routes": [
+    {
+      "distance": 12000.4,
+      "duration": 600.6,
+      "weight": 640.2,
+      "weight_name": "auto",
+      "geometry": "sentetik_polyline_degeri_abc123",
+      "legs": [
+        {
+          "distance": 12000.4,
+          "duration": 600.6,
+          "summary": "Sentetik Otoyolu, Sentetik Caddesi",
+          "steps": [
+            {
+              "distance": 900.2,
+              "duration": 45.1,
+              "name": "Sentetik Otoyolu",
+              "ref": "S-99",
+              "destinations": "Sentetik Sehir",
+              "exits": "12",
+              "mode": "driving",
+              "driving_side": "right",
+              "geometry": "sentetik_adim_geometrisi",
+              "maneuver": { "type": "off ramp", "modifier": "slight right", "location": [29.0012345, 41.0112345], "bearing_before": 87, "instruction": "Sentetik Sehir cikisini kullanin" },
+              "intersections": [
+                { "location": [29.0012345, 41.0112345], "bearings": [90, 270], "entry": [true, false], "classes": ["tunnel", "motorway"] },
+                { "location": [29.0098765, 41.0123456], "classes": ["toll"], "toll_collection": { "type": "toll_booth", "name": "Sentetik Gise" } }
+              ],
+              "bannerInstructions": [
+                { "distanceAlongGeometry": 900, "primary": { "text": "Cikis 12 Sentetik Sehir", "type": "off ramp", "components": [{ "type": "exit-number", "text": "12" }, { "type": "text", "text": "Sentetik Sehir" }] } }
+              ],
+              "voiceInstructions": [{ "announcement": "Sentetik Sehir cikisini kullanin" }]
+            },
+            {
+              "distance": 0,
+              "duration": 0,
+              "name": "Sentetik Varis Sokagi",
+              "mode": "driving",
+              "driving_side": "right",
+              "maneuver": { "type": "arrive", "location": [29.0234567, 41.0456789] },
+              "intersections": [{ "location": [29.0234567, 41.0456789], "bearings": [180] }]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
