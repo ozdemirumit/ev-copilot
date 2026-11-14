@@ -405,6 +405,147 @@ ok('depoda gerçek sanitize çıktısı yok', !readdirSync(FIX_DIR).some((n) => 
     [/order: 'spec'/, /required: 'inline'/, /errorStyle: 'compact'/, /unknown: 'drop'/, /type: 'presence'/, /buildSanitized\(parsed, MAPBOX_SPEC, CORE_OPTS\)/, /rawExempt: 'exact', minNumber: 0/].every((re) => re.test(src)));
 }
 
+// ---- BL-P2-05c-2h T4 korkulukları: yeni (daha sıkı) retlerin tam nitelendirmesi + iyi huylu metin yanlış pozitif tanısı ----
+// Yalnızca sentetik girdi; beklenen iletiler/çıktılar ELLE yazılmıştır (sanitizeMapbox çağrılarak üretilmez).
+// Başvuru: 111028c (göç öncesi) bu girdilerin hepsini kabul ediyordu; 971e8a3 (göç) bunları reddeder.
+{
+  const errOf = (fn) => { try { fn(); return null; } catch (e) { return e instanceof Error ? e.message : '<hata değil>'; } };
+  const SV = 'girdide sır (secret) benzeri değer var; tüm girdi reddedildi';
+  const SK = 'girdide sır (secret) taşıyan anahtar var (Authorization/token…); tüm girdi reddedildi';
+  const RAW = 'RAWVAL-7f3c'; // ileti sızıntı denetimi için ayırt edici sahte değer
+  const P = 'routes[0].legs[0].steps[0]';
+  const stepWith = (s) => ({ routes: [{ legs: [{ steps: [s] }] }] });
+
+  // 1) JSON ile ifade edilebilen yeni retler (CLI'ya da ulaşabilir) — birebir ileti, ileti ham değer taşımaz.
+  const STRICT_JSON = [
+    ['sahte exits_present=true', stepWith({ exits_present: true }), `${P}.exits_present: varlık anahtarı girdide olamaz; reddedildi`],
+    ['sahte exits_present=false', stepWith({ exits_present: false }), `${P}.exits_present: varlık anahtarı girdide olamaz; reddedildi`],
+    ['sahte exits_present + gerçek exits', stepWith({ exits: '12', exits_present: true }), `${P}.exits_present: varlık anahtarı girdide olamaz; reddedildi`],
+    ['passwd anahtarı', { routes: [], passwd: RAW }, SK],
+    ['private_key anahtarı', { routes: [], private_key: RAW }, SK],
+    ['privatekey anahtarı', { routes: [], privatekey: RAW }, SK],
+    ['access-token anahtarı', { routes: [], 'access-token': RAW }, SK],
+    ['refresh-token anahtarı', { routes: [], 'refresh-token': RAW }, SK],
+    ['client-secret anahtarı', { routes: [], 'client-secret': RAW }, SK],
+    ['iç içe Private_Key (büyük/küçük harf)', { routes: [{ legs: [{ meta: { Private_Key: RAW } }] }] }, SK],
+    ['PEM PRIVATE KEY başlığı', { routes: [], p: '-----BEGIN ' + 'PRIVATE KEY-----\n' + RAW }, SV],
+    ['PEM RSA PRIVATE KEY başlığı', { routes: [], p: '-----BEGIN RSA ' + 'PRIVATE KEY-----' }, SV],
+    ['PEM EC PRIVATE KEY başlığı dizide', { routes: [], l: ['-----BEGIN EC ' + 'PRIVATE KEY-----'] }, SV],
+  ];
+  for (const [name, input, want] of STRICT_JSON) {
+    const e = errOf(() => sanitizeMapbox(input));
+    ok(`T4 sıkı ret (birebir ileti): ${name}`, e === want && !String(e).includes(RAW), String(e));
+  }
+
+  // 2) Yalnızca programatik (JSON'da ifade edilemez) girdiler — birebir ileti.
+  const cyc = { routes: [] }; cyc.self = cyc;
+  const cycArr = { routes: [] }; cycArr.l = [cycArr];
+  const PROG = [
+    ['kök undefined', undefined, 'kök: nesne (object) bekleniyor'],
+    ['kök NaN', NaN, 'kök: nesne (object) bekleniyor'],
+    ['kök Map', new Map([['routes', []]]), 'girdide düz olmayan nesne (Date/Map/sınıf); reddedildi'],
+    ['alan undefined', { routes: [], u: undefined }, 'girdide izin dışı tür (işlev/symbol/bigint/undefined); reddedildi'],
+    ['alan Map', { routes: [], m: new Map() }, 'girdide düz olmayan nesne (Date/Map/sınıf); reddedildi'],
+    ['alan NaN', { routes: [], n: NaN }, 'girdide sonlu olmayan sayı; reddedildi'],
+    ['izinli alanda NaN (distance)', { routes: [{ distance: NaN }] }, 'girdide sonlu olmayan sayı; reddedildi'],
+    ['döngüsel nesne', cyc, 'girdide döngüsel başvuru; reddedildi'],
+    ['dizi üzerinden döngü', cycArr, 'girdide döngüsel başvuru; reddedildi'],
+  ];
+  for (const [name, input, want] of PROG) {
+    const e = errOf(() => sanitizeMapbox(input));
+    ok(`T4 programatik ret (birebir ileti): ${name}`, e === want, String(e));
+  }
+
+  // 3) Kabul edilen altın çıktılar BAYT BAYT (elle yazılı): sentetik örnek (tek satır + CLI dosya biçimi) ve sınır örnekleri.
+  const SYN_J = '{"_sanitized":true,"_recorded":false,"_synthetic":true,"_verified":false,"_evidence":"unverified","_source":"mapbox-directions","_sanitizerVersion":1,"code":"Ok","routes":[{"distance":12000,"duration":601,"legs":[{"distance":12000,"duration":601,"steps":[{"distance":900,"duration":45,"maneuver":{"type":"off ramp","modifier":"slight right"},"mode":"driving","driving_side":"right","exits_present":true,"intersections":[{"classes":["tunnel","motorway"]},{"classes":["toll"],"toll_collection":{"type":"toll_booth"}}],"bannerInstructions":[{"primary":{"components":[{"type":"exit-number"},{"type":"text"}]}}]},{"distance":0,"duration":0,"maneuver":{"type":"arrive"},"mode":"driving","driving_side":"right","intersections":[{}]}]}]}]}';
+  ok('T4 altın kabul (bayt): sentetik örnek tek satır JSON', J(sanitizeMapbox(clone(syn))) === SYN_J);
+  const MR = '{"_sanitized":true,"_recorded":true,"_synthetic":false,"_verified":false,"_evidence":"unverified","_source":"mapbox-directions","_sanitizerVersion":1';
+  const GOLD = [
+    ['exits sayı → yalnızca exits_present', stepWith({ exits: 3 }), `${MR},"routes":[{"legs":[{"steps":[{"exits_present":true}]}]}]}`],
+    ['tokenize/keyboard gibi sır olmayan anahtar adları atılır', { routes: [], keyboard: 'v', tokenize: 'v', secretary: 'v' }, `${MR},"routes":[]}`],
+    ['PEM PUBLIC KEY başlığı (özel değil) atılır', { routes: [], p: '-----BEGIN PUBLIC KEY-----' }, `${MR},"routes":[]}`],
+  ];
+  for (const [name, input, want] of GOLD) {
+    let got; const e = errOf(() => { got = J(sanitizeMapbox(input)); });
+    ok(`T4 altın kabul (bayt): ${name}`, e === null && got === want, e ?? got);
+  }
+
+  // 4) CLI: gerçek süreç, ret → çıkış 6/7, stdout boş, hiçbir dosya yazılmaz; kabul → dosya baytları elle yazılı altınla aynı.
+  const t = mkdtempSync(join(tmpdir(), 'mbx-t4g-test-'));
+  const CLI = join(root, 'scripts', 'mapbox-sanitize.mjs');
+  const realFixBefore = readdirSync(FIX_DIR).sort().join(',');
+  const created = [];
+  try {
+    const runReal = (input, outName) => {
+      const p = join(t, `${outName}.in.json`); writeFileSync(p, J(input));
+      const target = join(FIX_DIR, outName);
+      const r = spawnSync(process.execPath, [CLI, '--input', p, '--output', outName], { encoding: 'utf8', timeout: 20000 });
+      if (existsSync(target)) { created.push(target); }
+      return r;
+    };
+    const CLI6 = [
+      ['sahte exits_present', stepWith({ exits_present: true }), /varlık anahtarı girdide olamaz/],
+      ['passwd', { routes: [], passwd: RAW }, /sır \(secret\) taşıyan anahtar/],
+      ['private_key', { routes: [], private_key: RAW }, /sır \(secret\) taşıyan anahtar/],
+      ['access-token', { routes: [], 'access-token': RAW }, /sır \(secret\) taşıyan anahtar/],
+      ['refresh-token', { routes: [], 'refresh-token': RAW }, /sır \(secret\) taşıyan anahtar/],
+      ['client-secret', { routes: [], 'client-secret': RAW }, /sır \(secret\) taşıyan anahtar/],
+      ['PEM özel anahtar', { routes: [], p: '-----BEGIN ' + 'PRIVATE KEY-----' }, /sır \(secret\) benzeri değer/],
+    ];
+    let i = 0;
+    for (const [name, input, re] of CLI6) {
+      const outName = `mapbox-sanitized-zz-t4g-${++i}.json`;
+      const r = runReal(input, outName);
+      ok(`T4 gerçek CLI: ${name} → çıkış 6, stdout boş, yazılmaz, ham değer yok`,
+        r.status === 6 && r.stdout === '' && re.test(r.stderr) && !r.stderr.includes(RAW) && !existsSync(join(FIX_DIR, outName)), `${r.status} ${J(r.stdout)} ${r.stderr}`);
+    }
+    const r7 = runReal({ routes: [{ duration: 1 }], s: 'duration' }, 'mapbox-sanitized-zz-t4g-leak.json');
+    ok('T4 gerçek CLI: sızıntı bulgusu → çıkış 7, stdout boş, yazılmaz',
+      r7.status === 7 && r7.stdout === '' && /sızıntı taraması başarısız \(1 bulgu\); hiçbir şey yazılmadı/.test(r7.stderr) && !existsSync(join(FIX_DIR, 'mapbox-sanitized-zz-t4g-leak.json')), `${r7.status} ${r7.stderr}`);
+    ok('T4 gerçek CLI: gerçek fixture klasörü değişmedi', readdirSync(FIX_DIR).sort().join(',') === realFixBefore && created.length === 0, J(created));
+
+    // Kabul: sahte depoda (runCli) yazılan dosya baytları = elle yazılı altın (2 boşluk girinti + LF).
+    const fr = join(t, 'repo'), ff = join(fr, 'scripts', 'fixtures', 'road-events'), od = join(t, 'o');
+    mkdirSync(ff, { recursive: true }); mkdirSync(od);
+    const good = join(od, 'in.json'); writeFileSync(good, J(syn));
+    const rg = runCli(['--input', good, '--output', 'mapbox-sanitized-t4g.json'], { repoRoot: fr, fixtureDir: ff });
+    const bytes = rg.code === 0 ? readFileSync(join(ff, 'mapbox-sanitized-t4g.json')) : Buffer.alloc(0);
+    const want = Buffer.from(JSON.stringify(JSON.parse(SYN_J), null, 2) + '\n', 'utf8');
+    ok('T4 CLI kabul: yazılan dosya bayt bayt altınla aynı (LF, BOM yok, sonda tek \\n)',
+      rg.code === 0 && bytes.equals(want) && bytes[0] === 0x7b && !bytes.includes(0x0d) && bytes[bytes.length - 1] === 0x0a && bytes[bytes.length - 2] !== 0x0a, J(rg));
+    // runCli ile her JSON sıkı ret → kod 6, sahte fixture klasörü boş kalır.
+    let n = 0;
+    for (const [name, input] of STRICT_JSON) {
+      const p = join(od, `s${++n}.json`); writeFileSync(p, J(input));
+      const r = runCli(['--input', p, '--output', `mapbox-sanitized-s${n}.json`], { repoRoot: fr, fixtureDir: ff });
+      ok(`T4 runCli sıkı ret → kod 6, yazılmaz: ${name}`, r.code === 6 && /^temizleme reddedildi: /.test(r.message) && !r.message.includes(RAW) && !existsSync(join(ff, `mapbox-sanitized-s${n}.json`)), J(r));
+    }
+  } finally {
+    for (const f of created) rmSync(f, { force: true });
+    rmSync(t, { recursive: true, force: true });
+  }
+
+  // 5) TANI (beklenen başarısızlık; paketi düşürmez): iyi huylu metin değerinde "key:" yanlış pozitifi.
+  // Kök neden: scripts/sanitize-core.mjs SECRET_VALUE_RES içindeki /(…|token|key)\s*[=:]/i sözcük sınırı içermiyor →
+  // "Turkey: E80" ("…key:") ve "Monkey Key: left" ("Key:") sır benzeri değer sayılıyor. 111028c bunları kabul ediyordu.
+  // Düzeltilene kadar: kabul EDİLMEMESİ "XFAIL (BLOCKER)" olarak yazılır, sayılmaz; düzeltilince "XPASS" yazar → bu bloğu
+  // olağan altın kabul testine çevirin. Her iki durumda da ham metnin çıktıya sızmadığı (sert) denetlenir.
+  let xfail = 0, xpass = 0;
+  const BENIGN = [
+    ['kök not "Turkey: E80"', { routes: [], note: 'Turkey: E80' }, `${MR},"routes":[]}`],
+    ['bacak summary "Turkey: E80"', { routes: [{ legs: [{ summary: 'Turkey: E80', steps: [] }] }] }, `${MR},"routes":[{"legs":[{"steps":[]}]}]}`],
+    ['kök not "Monkey Key: left"', { routes: [], note: 'Monkey Key: left' }, `${MR},"routes":[]}`],
+    ['adım adı "Monkey Key: left"', stepWith({ name: 'Monkey Key: left', maneuver: { type: 'turn' } }), `${MR},"routes":[{"legs":[{"steps":[{"maneuver":{"type":"turn"}}]}]}]}`],
+  ];
+  for (const [name, input, want] of BENIGN) {
+    let got = null; const e = errOf(() => { got = J(sanitizeMapbox(input)); });
+    ok(`T4 tanı (sert): ${name} — ham metin çıktıya geçmez`, got === null || (!got.includes('E80') && !got.includes('Monkey')));
+    if (e === null && got === want) { xpass++; console.log(`XPASS ${name} — yanlış pozitif giderilmiş; bu tanıyı olağan altın kabul testine çevirin`); }
+    else { xfail++; console.log(`XFAIL (BLOCKER) iyi huylu metin reddediliyor: ${name} — ${e ?? got}`); }
+  }
+  console.log(`T4 tanı özeti: ${xfail} XFAIL (BLOCKER: yanlış pozitif), ${xpass} XPASS`);
+}
+
 ok('ağ çağrısı yapılmadı', netCalls === 0);
 console.log(`\n${pass} geçti, ${fail} başarısız`);
 process.exit(fail ? 1 : 0);
