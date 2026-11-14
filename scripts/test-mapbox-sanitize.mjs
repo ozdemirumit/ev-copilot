@@ -244,6 +244,23 @@ ok('depoda gerçek sanitize çıktısı yok', !readdirSync(FIX_DIR).some((n) => 
   ok('hiçbir çalışma zamanı dosyası temizleyiciye bağlı değil', users.length === 0, users.join(', '));
 }
 
+// ---- BL-P2-05c-2: sanitize-core göçü için davranış eşitliği korkulukları ----
+// Bu davranışlar sanitize-core.mjs'ten FARKLIDIR; ileride yapılacak bir göç bunları değiştirmemelidir.
+{
+  const ex = sanitizeMapbox({ routes: [{ legs: [{ steps: [{ distance: 1, exits: '73B' }] }] }] });
+  const exJ = J(ex);
+  ok('göç korkuluğu: exits değeri kopyalanmaz, yalnızca exits_present=true', ex.routes[0].legs[0].steps[0].exits_present === true && !exJ.includes('73B') && !('exits' in ex.routes[0].legs[0].steps[0]));
+  ok('göç korkuluğu: exits nesne ise reddedilir', throws(() => sanitizeMapbox({ routes: [{ legs: [{ steps: [{ exits: { n: 1 } }] }] }] }), /exits: beklenmeyen tür/));
+  // Atılan bir alandaki ham dize çıktı anahtar adıyla aynıysa sızıntı sayılır (çekirdek bunu sözcük dağarcığı diye atlar).
+  const rk = { routes: [{ distance: 1, duration: 2, summary: 'duration' }] };
+  ok('göç korkuluğu: anahtar adına eşit ham dize leakScan bulgusu', leakScan(rk, sanitizeMapbox(clone(rk))).includes('ham girdi dizesi çıktıda'));
+  ok('göç korkuluğu: hata yolu $ öneksiz ve sayı iletisi biçimi', throws(() => sanitizeMapbox({ routes: [{ distance: -1 }] }), /^routes\[0\]\.distance: geçersiz sayı \(number; 0\.\.10000000\)$/));
+  ok('göç korkuluğu: routes yok iletisi', throws(() => sanitizeMapbox({ code: 'Ok' }), /^routes yok; reddedildi$/));
+  ok('göç korkuluğu: sabit alan sırası (distance, legs’ten önce denetlenir)', throws(() => sanitizeMapbox({ routes: [{ legs: 'x', distance: -1 }] }), /^routes\[0\]\.distance:/));
+  ok('göç korkuluğu: kök meta iddiaları yok sayılır, _verified=false', (() => { const m = sanitizeMapbox({ _verified: true, _recorded: false, _evidence: 'x', routes: [] }); return m._verified === false && m._recorded === true && m._evidence === 'unverified' && m._synthetic === false; })());
+  ok('göç korkuluğu: _sanitizerVersion=1, _source=mapbox-directions', (() => { const m = sanitizeMapbox({ routes: [] }); return m._sanitizerVersion === 1 && m._source === 'mapbox-directions'; })());
+}
+
 ok('ağ çağrısı yapılmadı', netCalls === 0);
 console.log(`\n${pass} geçti, ${fail} başarısız`);
 process.exit(fail ? 1 : 0);
