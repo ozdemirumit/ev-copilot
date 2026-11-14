@@ -68,11 +68,12 @@ export function createFilter({
   minScore = 0.4, firstMinScore = 0.5, resyncMinScore = 0.6,
   fragmentGuard = false, recoverCycles = 2, recoverNoEvidenceCycles = 4, recoverMinScore = 0.5, recentMax = 8, recentMaxAgeMs = 60000,
   confirmCycles = 1, confusableConfirmCycles = confirmCycles + 1,
-  latchGuard = false, latchCycles = 6,
+  latchGuard = false, latchCycles = 6, latchUpward = false,
 } = {}) {
   let last = null; // { value, t }
   let pending = null; // { value, count, t }
   let recent = []; // son çevrimler { value, digits, t }: hatalı tek haneden kurtulmak için ardışık olmayan kanıt da sayılır
+  let upFloor = -Infinity; // latchUpward: tutulandan farklı makul okuma (40 iken 41) bu andan önceki yukarı kanıtı geçersiz kılar
 
   const bump = (value, t, tol = candidateTol) => {
     const same = pending && Math.abs(value - pending.value) <= tol && t - pending.t <= pendingMaxAgeMs;
@@ -89,7 +90,7 @@ export function createFilter({
 
     if (score >= recoverMinScore) {
       recent = recent.filter((r) => t - r.t <= recentMaxAgeMs).slice(-(recentMax - 1));
-      recent.push({ value, digits, t });
+      recent.push({ value, digits, t, score });
     }
 
     if (!last) {
@@ -123,6 +124,7 @@ export function createFilter({
     if (Math.abs(delta) <= allowance(delta, t - last.t, ctx) && (!fragment || digits === 1)) {
       if (delta === 0 || confirmCycles <= 1) { commit(value, t); return { ok: true, reason: 'ok', value }; }
       // Makul ama farklı değer: aynı değer (tam eşit) yeniden görülene kadar geçerli değer korunur
+      upFloor = t;
       const count = bump(value, t, 0);
       const need = confusable(value, last.value) && Math.abs(delta) > 1 ? confusableConfirmCycles : confirmCycles;
       if (count >= need) { commit(value, t); return { ok: true, reason: 'confirmed', value }; }
@@ -135,11 +137,15 @@ export function createFilter({
     // görünüyorsa son ~60 sn'deki kanıt ARDIŞIK olmadan sayılır; araya karışan eski değer okuması kanıtı sıfırlamaz. Okunan değer
     // pencerede en az latchCycles kez görülmeli ve tutulan değerin en az iki katı olmalı (yarı yarıya ise karar yok). Hane artışı
     // (7→63) yalnızca görüntüde o kadar hane görülen okumalarla sayılır; gerçek tek haneli pil ara sıra çıkan iki haneli okumayla değişmez.
+    // latchUpward: aynı hane sayısında yukarı sapma (gerçek 77 iken 18 tutuluyor, "77,77,4" deseni) da pencere kanıtıyla sayılır; bu
+    // yolda yalnızca yeniden eşitleme skorundaki (resyncMinScore) okumalar kanıttır. Aşağı yön (77→18, 39→33, 63→7) bu yoldan geçmez.
     if (latchGuard) {
       const len = String(value).length;
       const gain = len > String(last.value).length && last.value !== 0;
-      if (gain || inkUpgrade(last.value, value)) {
-        const support = recent.filter((r) => Math.abs(r.value - value) <= candidateTol && (!gain || r.digits >= len)).length;
+      // Sürüşte fiziksel olmayan yükseliş (resyncFactor > 1) bu yoldan geçmez; orada ardışık kanıt kuralı korunur.
+      const up = latchUpward && delta > 0 && len === String(last.value).length && !inkUpgrade(last.value, value) && resyncFactor(delta, ctx) <= 1;
+      if (gain || inkUpgrade(last.value, value) || up) {
+        const support = recent.filter((r) => Math.abs(r.value - value) <= candidateTol && (!gain || r.digits >= len) && (!up || (r.score >= resyncMinScore && r.t > upFloor))).length;
         const heldSupport = recent.filter((r) => Math.abs(r.value - last.value) <= candidateTol).length;
         if (support >= latchCycles && support >= 2 * heldSupport) { commit(value, t); return { ok: true, reason: 'unlatched', value }; }
       }
@@ -204,6 +210,7 @@ export function createSocFilter({ chargePctPerMin = 3, maxJump = 2 } = {}) {
     fragmentGuard: true,
     confirmCycles: 2, // tek farklı okuma geçerli pili değiştirmez
     latchGuard: true, // yanlış kabul edilmiş değerden (47 iken 17) pencere kanıtıyla kurtul
+    latchUpward: true, // aynı haneli yukarı sapma (18 iken 77) da pencere kanıtıyla (DEF-02)
 
   });
 }

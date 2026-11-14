@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.67';
+self.APP_VERSION = '0.99.68';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.68', date: '2026-11-14',
+    notes: [
+      'Kamera pil okuması yanlış düşük değerde (ör. 18) takılıp gerçek yüksek değere (ör. 77) dönmüyordu; araç dururken ya da hız bilinmiyorken araya karışan tek hatalı okumalar artık kanıtı sıfırlamaz, değer 60 saniye içinde düzelir. Sürüşte fiziksel olmayan ani yükselişe karşı koruma aynen sürer. Ara sıra çıkan sahte yüksek okumalar ve aşağı yöndeki korumalar değişmedi.',
+    ],
+  },
   {
     v: '0.99.67', date: '2026-11-14',
     notes: [
