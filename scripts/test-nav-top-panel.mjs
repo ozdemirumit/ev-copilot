@@ -75,7 +75,7 @@ ok('rota yeniden hesaplanmadan trafik renkleri', /mapApi\.setTraffic\(t\.rt\.coo
 // --- harita ve durdurma
 ok('gidiş yönü yukarı varsayılan', /headingUp: load\('headingUp', true\)/.test(read('js/state.js')));
 ok('yakın zoom: başlangıç 18, yavaş 18, kavşak 19', /zoomNow = 18;/.test(nav) && /junction \? 19 : speedAvg < 40 \? 18 : speedAvg < 80 \? 17 : 16/.test(nav));
-ok('durdurma: rota/plan temizlenir ve konuma yakınlaşılır', /function endNav\([^)]*\) \{[\s\S]*?clearTrip\(\);[\s\S]*?mapApi\.follow\(e\.lat, e\.lon, 17, true, null\)/.test(nav) && /export function stopNav\(\) \{\s*endNav\(\);/.test(nav));
+ok('durdurma: rota/plan temizlenir ve güvenilir konuma normal sürüş zoom\'uyla dönülür (RM-12, test-nav-stop-recenter)', /function endNav\([^)]*\) \{[\s\S]*?clearTrip\(\);[\s\S]*?const to = stopRecenter\(\{[^}]*panned \}\);\s*if \(to\) mapApi\.follow\(to\.lat, to\.lon, to\.zoom, true, null\)/.test(nav) && /export function stopNav\(\) \{\s*endNav\(\);/.test(nav));
 ok('varışta da aynı temizlik (sesi kesmeden)', /endNav\(true\);\s*toast\('Varış noktasına ulaştınız'\)/.test(nav));
 ok('clearTrip: plan sıfırlanır, çizgi ve işaretler kalkar', /export function clearTrip\(\)/.test(ctl) && /mapApi\.clearRoute\(\)/.test(ctl) && /setPoint\(k, null/.test(ctl));
 

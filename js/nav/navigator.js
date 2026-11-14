@@ -16,6 +16,7 @@ import { currentLimit } from './speedLimit.js';
 import { speedOver, pickSlot, nextChargeView, topMetrics, nextChargeText, NO_STOP, ALERT_MS } from './panelLogic.js';
 import { liveRemainH } from './trafficGuard.js';
 import { socSource } from '../physics/socEstimate.js';
+import { stopRecenter } from './freeDrive.js';
 
 const $ = (id) => document.getElementById(id);
 const THEN_MAX_M = 500; // sonraki manevra panelde yalnızca bu kadar yakınsa gösterilir
@@ -387,14 +388,19 @@ export async function startNav() {
   tick();
 }
 
-/** Navigasyon bitti (durdurma ya da varış): düz kuzey-yukarı harita, rota/plan/işaretler temizlenir, harita bulunulan konuma yakınlaşır. */
+/**
+ * Navigasyon bitti (durdurma ya da varış): düz kuzey-yukarı harita, rota/plan/işaretler temizlenir. Güvenilir konum varsa harita oraya
+ * normal sürüş zoom'uyla döner; konum yok/güvenilmez ya da kullanıcı haritayı elle geziyorsa harita yerinde kalır (stopRecenter).
+ */
 function endNav(keepVoice = false) {
+  const panned = !!mapApi.dragged?.(); // navView(false) elle kaydırma bayrağını sıfırlar: önce oku
   patch('nav', { active: false });
   mapApi.navView(false);
   if (!keepVoice) stopSpeech();
   clearTrip();
   const e = effective();
-  if (e.lat != null) mapApi.follow(e.lat, e.lon, 17, true, null);
+  const to = stopRecenter({ source: e.source, gps: getState('live').gps, lat: e.lat, lon: e.lon, acc: getState('live').acc, speed: e.speed, panned });
+  if (to) mapApi.follow(to.lat, to.lon, to.zoom, true, null);
 }
 
 export function stopNav() {

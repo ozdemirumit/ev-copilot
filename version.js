@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.65';
+self.APP_VERSION = '0.99.66';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.66', date: '2026-11-14',
+    notes: [
+      'Beta: navigasyon durdurulunca (ya da varışta) harita güvenilir güncel konumuna döner ve hıza uygun normal sürüş yakınlığına geçer (durağanken 17, 40-80 km/s 16, üstü 15).',
+      'Konum yoksa, GPS kapalı/aranıyor ya da doğruluk 100 metreden kaba ise harita olduğu yerde kalır; haritayı elle geziyorsan yeniden ortalanmaz. Cihazda doğrulanmadı.',
+    ],
+  },
   {
     v: '0.99.65', date: '2026-11-14',
     notes: [

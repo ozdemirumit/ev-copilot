@@ -22,6 +22,20 @@ export function followDecision({ navActive, live, speed, blocked, on, stillMs })
 /** Hıza göre zoom: yavaşta yakın (navigasyondaki eşikler). */
 export const zoomForSpeed = (kmh) => (kmh < 40 ? 17 : kmh < 80 ? 16 : 15);
 
+export const STOP_FIX_ACC_M = 100; // navigasyon bitince ortalamak için en kaba kabul edilen GPS doğruluğu (m)
+
+/**
+ * Navigasyon durunca harita nereye dönsün (saf, RM-12). s: { source ('live'|'sim'), gps, lat, lon, acc, speed, panned }.
+ * Güvenilir konum (Test Modu ya da gps 'ok', sonlu koordinat, doğruluk ≤ STOP_FIX_ACC_M ya da bilinmiyor) varsa
+ * { lat, lon, zoom: zoomForSpeed(speed) } döner. Konum yok/güvenilmez ya da kullanıcı haritayı elle geziyorsa null: harita yerinde kalır.
+ */
+export function stopRecenter({ source, gps, lat, lon, acc, speed, panned } = {}) {
+  if (panned) return null;
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  if (source !== 'sim' && (gps !== 'ok' || (acc != null && !(acc <= STOP_FIX_ACC_M)))) return null;
+  return { lat, lon, zoom: zoomForSpeed(speed ?? 0) };
+}
+
 export function initFreeDrive() {
   let on = false;
   let stillSince = 0;
