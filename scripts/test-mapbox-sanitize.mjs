@@ -225,7 +225,7 @@ ok('depoda gerçek sanitize çıktısı yok', !readdirSync(FIX_DIR).some((n) => 
   const src = read('scripts/mapbox-sanitize.mjs');
   const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1');
   const imports = [...code.matchAll(/^\s*import\b[^'"]*['"]([^'"]+)['"]/gm)].map((m) => m[1]);
-  ok('yalnızca node:fs/node:path/node:url içe aktarılır', imports.length > 0 && imports.every((m) => ['node:fs', 'node:path', 'node:url'].includes(m)), J(imports));
+  ok('yalnızca node:fs/node:path/node:url (+ ./sanitize-core.mjs) içe aktarılır', imports.length > 0 && imports.every((m) => ['node:fs', 'node:path', 'node:url', './sanitize-core.mjs'].includes(m)), J(imports));
   ok('dinamik import/require yok', !/\bimport\s*\(|\brequire\s*\(/.test(code));
   ok('ağ/ortam/çocuk süreç yok', !/\b(fetch|XMLHttpRequest|WebSocket|process\.env|child_process|node:https?|node:net|node:dns)\b/.test(code));
   ok('araçta gerçek belirteç biçimi yok', !/pk\.eyJ|sk\.eyJ|AIza[0-9A-Za-z_-]{10}/.test(src));
@@ -360,6 +360,49 @@ ok('depoda gerçek sanitize çıktısı yok', !readdirSync(FIX_DIR).some((n) => 
     ok(`gelecek sıkılaştırma (kasıtlı, kilitlenmez): ${name} — çekirdek reddeder, Mapbox çıktısına ham değer geçmez`,
       coreRejects && (o === null || (raw === null || !J(o).includes(raw))), `core=${coreRejects}`);
   }
+}
+
+// ---- BL-P2-05c-2g T4: çekirdek göçü — yalnızca DAHA SIKI yeni retler (sentetik; beklenen iletiler elle yazılı) ----
+{
+  const C = await import('./sanitize-core.mjs');
+  const errOf = (fn) => { try { fn(); return null; } catch (e) { return e instanceof Error ? e.message : '<hata değil>'; } };
+  const SV = 'girdide sır (secret) benzeri değer var; tüm girdi reddedildi';
+  const SK = 'girdide sır (secret) taşıyan anahtar var (Authorization/token…); tüm girdi reddedildi';
+  const STRICT = [
+    ['Basic yetki değeri', { routes: [], h: 'Basic QUJDREVGR0hJ' }, SV],
+    ['key= değeri', { routes: [], q: 'key=abc123' }, SV],
+    ['session anahtarı', { routes: [], session: 'sess-value-1' }, SK],
+    ['atılan alanda sonsuz sayı', { routes: [], n: Infinity }, 'girdide sonlu olmayan sayı; reddedildi'],
+    ['atılan alanda Date nesnesi', { routes: [], d: new Date(0) }, 'girdide düz olmayan nesne (Date/Map/sınıf); reddedildi'],
+    ['sahte exits_present (varlık iddiası)', { routes: [{ legs: [{ steps: [{ exits_present: true }] }] }] }, 'routes[0].legs[0].steps[0].exits_present: varlık anahtarı girdide olamaz; reddedildi'],
+    ['passwd anahtarı', { routes: [], passwd: 'x' }, SK],
+    ['PEM özel anahtar başlığı', { routes: [], p: '-----BEGIN ' + 'PRIVATE KEY-----' }, SV],
+  ];
+  for (const [name, input, want] of STRICT) {
+    const e = errOf(() => sanitizeMapbox(input));
+    ok(`göç sıkılaştırması (yeni ret): ${name}`, e === want, String(e));
+  }
+  // CLI: sahte varlık anahtarı → kod 6, hiçbir şey yazılmaz; başarılı çıktı çekirdek buildSanitized çıktısıyla birebir aynı.
+  const t = mkdtempSync(join(tmpdir(), 'mbx-core-test-'));
+  try {
+    const fr = join(t, 'repo'), ff = join(fr, 'scripts', 'fixtures', 'road-events'), od = join(t, 'o');
+    mkdirSync(ff, { recursive: true }); mkdirSync(od);
+    const fake = join(od, 'fake.json'); writeFileSync(fake, J({ routes: [{ legs: [{ steps: [{ exits_present: true }] }] }] }));
+    const r = runCli(['--input', fake, '--output', 'mapbox-sanitized-fake.json'], { repoRoot: fr, fixtureDir: ff });
+    ok('CLI: sahte exits_present → kod 6, dosya yazılmaz', r.code === 6 && /varlık anahtarı/.test(r.message) && readdirSync(ff).length === 0, J(r));
+    const good = join(od, 'in.json'); writeFileSync(good, J(syn));
+    const r2 = runCli(['--input', good, '--output', 'mapbox-sanitized-core.json'], { repoRoot: fr, fixtureDir: ff });
+    const core = C.buildSanitized(clone(syn), { type: 'object', fields: { x: { type: 'boolean' } } }, { source: 'mapbox-directions', unknown: 'drop' });
+    const w = r2.code === 0 ? readFileSync(join(ff, 'mapbox-sanitized-core.json'), 'utf8') : '';
+    ok('CLI: başarılı çıktı = sanitizeMapbox çıktısı (2 boşluk + LF), çekirdek işaretleri aynı', r2.code === 0 && w === JSON.stringify(sanitizeMapbox(clone(syn)), null, 2) + '\n'
+      && core.ok && ['_sanitized', '_recorded', '_synthetic', '_verified', '_evidence', '_source', '_sanitizerVersion'].every((k) => JSON.parse(w)[k] === core.output[k]), J(r2));
+  } finally {
+    rmSync(t, { recursive: true, force: true });
+  }
+  // Statik: çekirdek seçenekleri kaynakta açıkça (opt-in) verilir.
+  const src = read('scripts/mapbox-sanitize.mjs');
+  ok("statik: order:'spec', required:'inline', errorStyle:'compact', unknown:'drop', presence, buildSanitized, rawExempt:'exact', minNumber:0",
+    [/order: 'spec'/, /required: 'inline'/, /errorStyle: 'compact'/, /unknown: 'drop'/, /type: 'presence'/, /buildSanitized\(parsed, MAPBOX_SPEC, CORE_OPTS\)/, /rawExempt: 'exact', minNumber: 0/].every((re) => re.test(src)));
 }
 
 ok('ağ çağrısı yapılmadı', netCalls === 0);

@@ -19,12 +19,12 @@
 import * as nodeFs from 'node:fs';
 import { join, resolve, relative, isAbsolute, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { preScan, walkAllowlist, buildSanitized, SanitizeError, SANITIZER_CORE_VERSION } from './sanitize-core.mjs';
 
-export const SANITIZER_VERSION = 1;
+export const SANITIZER_VERSION = SANITIZER_CORE_VERSION; // = 1
 export const MAX_INPUT_BYTES = 5 * 1024 * 1024;
 export const OUTPUT_NAME_RE = /^mapbox-sanitized-[a-z0-9][a-z0-9-]{0,48}\.json$/;
 const MAX_DEPTH = 64;
-const MAX_NODES = 2_000_000;
 const MAX_NUM = 10_000_000;
 const LIMITS = { routes: 5, legs: 100, steps: 10000, intersections: 500, classes: 10, bannerInstructions: 20, components: 50 };
 
@@ -46,7 +46,6 @@ const OUT_KEYS = set(['_sanitized', '_recorded', '_synthetic', '_verified', '_ev
   'code', 'routes', 'distance', 'duration', 'legs', 'steps', 'maneuver', 'type', 'modifier', 'mode', 'driving_side',
   'exits_present', 'intersections', 'classes', 'toll_collection', 'bannerInstructions', 'primary', 'components']);
 
-const SECRET_KEY_RE = /^(authorization|proxy-authorization|access_token|refresh_token|id_token|token|api[_-]?key|apikey|x-api-key|client_secret|secret|password|cookie|set-cookie)$/i;
 const SECRET_VALUE_RES = [
   /(^|[^A-Za-z0-9])(pk|sk|tk)\.[A-Za-z0-9_-]{8,}/,
   /(^|[^A-Za-z0-9])eyJ[A-Za-z0-9_-]{8,}/,
@@ -55,138 +54,63 @@ const SECRET_VALUE_RES = [
   /\bAIza[0-9A-Za-z_-]{10,}/,
 ];
 
-class SanitizeError extends Error {}
 const bad = (msg) => { throw new SanitizeError(msg); };
-const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
-// Tüm girdiyi dolaşır: derinlik/düğüm sınırı, __proto__/constructor anahtarı ve sır benzeri anahtar/değer → reddedilir.
-// Hata iletileri ham değeri/anahtarı İÇERMEZ.
-function preScan(input) {
-  let nodes = 0;
-  const walk = (v, depth) => {
-    if (depth > MAX_DEPTH) bad('girdi aşırı derin (depth sınırı); reddedildi');
-    if (++nodes > MAX_NODES) bad('girdi düğüm sayısı sınırı (limit) aşıldı; reddedildi');
-    if (typeof v === 'string') {
-      if (SECRET_VALUE_RES.some((re) => re.test(v))) bad('girdide sır (secret) benzeri değer var; tüm girdi reddedildi');
-    } else if (Array.isArray(v)) {
-      for (const x of v) walk(x, depth + 1);
-    } else if (v !== null && typeof v === 'object') {
-      for (const k of Object.keys(v)) {
-        if (k === '__proto__' || k === 'constructor' || k === 'prototype') bad('girdide yasak nesne anahtarı var; reddedildi');
-        if (SECRET_KEY_RE.test(k)) bad('girdide sır (secret) taşıyan anahtar var (Authorization/token…); tüm girdi reddedildi');
-        if (SECRET_VALUE_RES.some((re) => re.test(k))) bad('girdide sır (secret) benzeri anahtar var; tüm girdi reddedildi');
-        walk(v[k], depth + 1);
-      }
-    }
-  };
-  walk(input, 0);
-}
-
-const obj = (v, path) => (isObj(v) ? v : bad(`${path}: nesne (object) bekleniyor`));
-const arr = (v, path, max) => {
-  if (!Array.isArray(v)) bad(`${path}: dizi (array) bekleniyor`);
-  if (v.length > max) bad(`${path}: eleman sınırı (limit ${max}) aşıldı`);
-  return v;
-};
-const num = (v, path) => {
-  if (typeof v !== 'number' || !Number.isFinite(v) || v < 0 || v > MAX_NUM) bad(`${path}: geçersiz sayı (number; 0..${MAX_NUM})`);
-  return Math.round(v);
-};
-const en = (v, s, path) => (typeof v === 'string' && s.has(v) ? v : bad(`${path}: izin listesi dışı enum değeri; reddedildi`));
-
-function copyNums(src, dst, path) {
-  for (const k of ['distance', 'duration']) if (own(src, k)) dst[k] = num(src[k], `${path}.${k}`);
-}
-
-function step(s, path) {
-  obj(s, path);
-  const o = {};
-  copyNums(s, o, path);
-  if (own(s, 'maneuver')) {
-    const m = obj(s.maneuver, `${path}.maneuver`);
-    const mo = {};
-    if (own(m, 'type')) mo.type = en(m.type, ENUMS.maneuverType, `${path}.maneuver.type`);
-    if (own(m, 'modifier')) mo.modifier = en(m.modifier, ENUMS.modifier, `${path}.maneuver.modifier`);
-    o.maneuver = mo;
-  }
-  if (own(s, 'mode')) o.mode = en(s.mode, ENUMS.mode, `${path}.mode`);
-  if (own(s, 'driving_side')) o.driving_side = en(s.driving_side, ENUMS.drivingSide, `${path}.driving_side`);
-  if (own(s, 'exits')) {
-    // Çıkış numarası/tabela değeri kopyalanmaz; yalnızca alanın varlığı kaydedilir.
-    if (typeof s.exits !== 'string' && typeof s.exits !== 'number') bad(`${path}.exits: beklenmeyen tür`);
-    o.exits_present = true;
-  }
-  if (own(s, 'intersections')) {
-    o.intersections = arr(s.intersections, `${path}.intersections`, LIMITS.intersections).map((x, i) => {
-      const p = `${path}.intersections[${i}]`;
-      obj(x, p);
-      const io = {};
-      if (own(x, 'classes')) io.classes = arr(x.classes, `${p}.classes`, LIMITS.classes).map((c, j) => en(c, ENUMS.classes, `${p}.classes[${j}]`));
-      if (own(x, 'toll_collection')) {
-        const t = obj(x.toll_collection, `${p}.toll_collection`);
-        const to = {};
-        if (own(t, 'type')) to.type = en(t.type, ENUMS.tollType, `${p}.toll_collection.type`);
-        io.toll_collection = to;
-      }
-      return io;
-    });
-  }
-  if (own(s, 'bannerInstructions')) {
-    o.bannerInstructions = arr(s.bannerInstructions, `${path}.bannerInstructions`, LIMITS.bannerInstructions).map((b, i) => {
-      const p = `${path}.bannerInstructions[${i}]`;
-      obj(b, p);
-      const bo = {};
-      if (own(b, 'primary')) {
-        const pr = obj(b.primary, `${p}.primary`);
-        const po = {};
-        if (own(pr, 'components')) {
-          po.components = arr(pr.components, `${p}.primary.components`, LIMITS.components).map((c, j) => {
-            obj(c, `${p}.primary.components[${j}]`);
-            const co = {};
-            if (own(c, 'type')) co.type = en(c.type, ENUMS.componentType, `${p}.primary.components[${j}].type`);
-            return co;
-          });
-        }
-        bo.primary = po;
-      }
-      return bo;
-    });
-  }
-  return o;
-}
+// ---- Çekirdek (sanitize-core.mjs) şeması — BL-P2-05c-2g T4 göçü ----
+// Alan sırası = eski elle yazılmış kopyalayıcının denetim/yazım sırası (order:'spec'); sınırlar/enumlar yukarıdaki sabitlerdendir.
+const N = Object.freeze({ type: 'number', min: 0, max: MAX_NUM });
+const E = (s) => ({ type: 'enum', values: [...s] });
+const A = (max, items) => ({ type: 'array', max, items });
+const O = (fields, required) => (required ? { type: 'object', fields, required } : { type: 'object', fields });
+const STEP_SPEC = O({
+  distance: N, duration: N,
+  maneuver: O({ type: E(ENUMS.maneuverType), modifier: E(ENUMS.modifier) }),
+  mode: E(ENUMS.mode),
+  driving_side: E(ENUMS.drivingSide),
+  // Çıkış numarası/tabela değeri kopyalanmaz; yalnızca alanın varlığı (exits_present:true) kaydedilir.
+  exits: { type: 'presence', accept: ['string', 'number'] },
+  intersections: A(LIMITS.intersections, O({ classes: A(LIMITS.classes, E(ENUMS.classes)), toll_collection: O({ type: E(ENUMS.tollType) }) })),
+  bannerInstructions: A(LIMITS.bannerInstructions, O({ primary: O({ components: A(LIMITS.components, O({ type: E(ENUMS.componentType) })) }) })),
+});
+const MAPBOX_SPEC = O({
+  code: E(ENUMS.code),
+  routes: A(LIMITS.routes, O({ distance: N, duration: N, legs: A(LIMITS.legs, O({ distance: N, duration: N, steps: A(LIMITS.steps, STEP_SPEC) })) })),
+}, ['routes']);
+const SOURCE = 'mapbox-directions';
+const WALK_OPTS = Object.freeze({ order: 'spec', required: 'inline', errorStyle: 'compact', unknown: 'drop' });
+const CORE_OPTS = Object.freeze({ source: SOURCE, ...WALK_OPTS, leak: Object.freeze({ rawExempt: 'exact', minNumber: 0 }) });
+const copyMapbox = walkAllowlist(MAPBOX_SPEC); // şema modül yüklenirken doğrulanır (geçersiz şema → yükleme hatası)
+// Çekirdek iletisi → eski Mapbox iletisi (birebir uyumluluk). Diğer çekirdek iletileri aynıdır ya da yalnızca yeni (daha sıkı) retlerdir.
+const LEGACY_MSG = new Map([
+  ['girdide yasak nesne anahtarı (prototip kirlenmesi) var; reddedildi', 'girdide yasak nesne anahtarı var; reddedildi'],
+]);
+const legacyMsg = (m) => LEGACY_MSG.get(m) ?? m;
 
 /**
  * Mapbox Directions yanıtı → katı izin listesiyle temizlenmiş nesne. Girdi değiştirilmez. Fail-closed: herhangi bir sorun → hata.
  * İşaretler girdideki iddialardan bağımsızdır; yalnızca input._synthetic === true okunur. Çıktı asla verified değildir.
+ * BL-P2-05c-2g T4: çekirdek preScan + walkAllowlist(MAPBOX_SPEC) (order:'spec', required:'inline', errorStyle:'compact',
+ * unknown:'drop', presence düğümü). Burada leakScan YAPILMAZ; CLI hem bu modülün leakScan'ini hem çekirdek buildSanitized
+ * (leakScan rawExempt:'exact', minNumber:0) denetimini uygular.
  */
 export function sanitizeMapbox(input) {
   if (!isObj(input)) bad('kök: nesne (object) bekleniyor');
-  preScan(input);
+  let body;
+  try {
+    preScan(input);
+    // Kökteki işaret anahtarları (_synthetic vb.) şemada yoktur; unknown:'drop' ile atılır (girdi iddiası kopyalanmaz).
+    body = copyMapbox(input, WALK_OPTS);
+  } catch (e) {
+    if (e instanceof SanitizeError) bad(legacyMsg(e.message));
+    throw e;
+  }
   const synthetic = input._synthetic === true;
   const out = {
     _sanitized: true, _recorded: !synthetic, _synthetic: synthetic, _verified: false, _evidence: 'unverified',
-    _source: 'mapbox-directions', _sanitizerVersion: SANITIZER_VERSION,
+    _source: SOURCE, _sanitizerVersion: SANITIZER_VERSION,
   };
-  if (own(input, 'code')) out.code = en(input.code, ENUMS.code, 'code');
-  if (!own(input, 'routes')) bad('routes yok; reddedildi');
-  out.routes = arr(input.routes, 'routes', LIMITS.routes).map((r, i) => {
-    const p = `routes[${i}]`;
-    obj(r, p);
-    const ro = {};
-    copyNums(r, ro, p);
-    if (own(r, 'legs')) {
-      ro.legs = arr(r.legs, `${p}.legs`, LIMITS.legs).map((l, j) => {
-        const lp = `${p}.legs[${j}]`;
-        obj(l, lp);
-        const lo = {};
-        copyNums(l, lo, lp);
-        if (own(l, 'steps')) lo.steps = arr(l.steps, `${lp}.steps`, LIMITS.steps).map((s, k) => step(s, `${lp}.steps[${k}]`));
-        return lo;
-      });
-    }
-    return ro;
-  });
+  for (const k of Object.keys(body)) out[k] = body[k];
   return out;
 }
 
@@ -293,8 +217,17 @@ export function runCli(argv, { repoRoot = REPO_ROOT, fixtureDir = FIXTURE_DIR, f
     }
     const problems = leakScan(parsed, out);
     if (problems.length) return { code: 7, message: `sızıntı taraması başarısız (${problems.length} bulgu); hiçbir şey yazılmadı` };
+    // İkinci kapı (BL-P2-05c-2g T4): çekirdek buildSanitized → çekirdek leakScan (rawExempt:'exact', minNumber:0).
+    // Yalnızca ok:true ve yukarıdaki çıktıyla birebir aynı çekirdek çıktısı yazılır; aksi → hiçbir şey yazılmaz.
+    const core = buildSanitized(parsed, MAPBOX_SPEC, CORE_OPTS);
+    if (!core.ok) {
+      if (core.stage === 'leak') return { code: 7, message: `sızıntı taraması başarısız (${core.problems.length} bulgu); hiçbir şey yazılmadı` };
+      return { code: 6, message: `temizleme reddedildi: ${legacyMsg(core.message)}` };
+    }
+    const outText = JSON.stringify(core.output, null, 2) + '\n';
+    if (outText !== JSON.stringify(out, null, 2) + '\n') return { code: 7, message: 'sızıntı taraması başarısız (çekirdek çıktısı uyumsuz); hiçbir şey yazılmadı' };
     try {
-      fs.writeFileSync(target, JSON.stringify(out, null, 2) + '\n', { encoding: 'utf8', flag: 'wx' });
+      fs.writeFileSync(target, outText, { encoding: 'utf8', flag: 'wx' });
     } catch (e) {
       if (e && e.code === 'EEXIST') return { code: 3, message: 'çıktı zaten var (exists); üzerine yazılmaz' };
       return { code: 8, message: 'çıktı yazılamadı' };
