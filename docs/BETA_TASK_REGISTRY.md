@@ -5,6 +5,7 @@
 > **Son güncelleme:** 2026-11-14 14:50 UTC · yerel entegrasyon dalı `integ/beta-2026-11-14` @`2aee1ae` (v0.99.72; `8f6e71c`..`2aee1ae` BL-P2-05b-1 / BL-P2-05c zinciri eklendi, yalnız `scripts/` araç/test, **push edilmedi**, Beta yayını yok, cihaz testi yok; `4932efe` **reddedildi**) · bu güncelleme yeni yalıtılmış dal `docs/registry-reconcile-2aee1ae` (taban `2aee1ae`) üzerinde; eski `docs/registry-reconcile-2026-11-14` @`1b11704` yalnız okundu, birleştirilmedi · `origin/design/modern-ui-soc` = `132d610` (v0.99.61, son ls-remote kanıtı 2026-11-14; bu görevde ağ yok) · ana kopya `design/modern-ui-soc` @`0c6dffd` hâlâ kirli (35 kayıt, dokunulmadı). Uzlaştırma §7.
 > **Önceki güncelleme:** 2026-11-14 08:00 UTC · yerel entegrasyon dalı `integ/beta-2026-11-14` @`7097a3d` (v0.99.72; BL-P2-05a `7097a3d` eklendi, **push edilmedi**, Beta yayını yok, cihaz testi yok) · önceki uzlaştırmalar @`309e044` (06:40 UTC, `b40e715`), @`88313a2` (04:10 UTC, `d25a761`), @`3975941` (03:15 UTC, `f7d0225`) · `origin/design/modern-ui-soc` = `132d610` (v0.99.61, ls-remote 2026-11-14) · ana kopya `design/modern-ui-soc` @`0c6dffd` hâlâ kirli. Uzlaştırma §7. (dal `1b11704`, integ'e alınmadı)
 > **Beta önizleme:** `ozdemirumit/EV-Route-Finder` (`main`) → https://ozdemirumit.github.io/EV-Route-Finder/ · son bilinen yayın `4c3bd73` (v0.99.61, kaynak `132d610`, yayımlayan `1d3a3004`). Canlı `version.js` = **0.99.61** (salt okunur okuma: `b069193a` / köprü `5c147383`, 2026-11-14 ~03:30 UTC). Canlı Beta en son **0.99.61** olarak doğrulandı; bu görev yeniden denetlemedi. v0.99.62–0.99.72 ve `8f6e71c`..`2aee1ae` araç commit'leri yayımlanmadı. Önceki: `6540e59` (0.99.58), `415bd81` (0.99.57), `8e62927` (0.99.53).
+> **Belge eki (2026-11-14 15:45 UTC, yalnız belge):** sağlayıcı bağdaştırıcı backlog görünümü (§9; JSON `backlog.provider_adapter_backlog`) — yalıtılmış dal `docs/provider-adapter-backlog-google` (taban `6cacbe2`). Yeni BL kimliği yok, mevcut kimlik/durum/bağımlılık değişmedi. Kod, sürüm, ağ, push, yayın yok.
 > **Kalıcı backlog:** 44 BL maddesi, açık hatalar ve backlog dışı tamamlananlar JSON'da (`backlog`, `open_defects`); MD'de yalnızca 2026-11-14 uzlaştırması (§7) ve açık hatalar (§8) var.
 
 ## 1. Kurallar
@@ -273,3 +274,31 @@ SOC A, v0.99.69–72 ve BL-P2-05b/05c görevleri (yalnız yerel, push yok):
 |---|---|---|---|
 | DEF-01 | Google Places "arama üst sınır" uyarısı, 502/429/402, eski aramanın iptali (b8d9813e FAILED) | açık | integ'de Google commit'i yok; `MBRP-gplaces` WIP commit edilmemiş (17 dosya), korunmalı |
 | DEF-02 | SOC 18→77 yukarı düzelmesi takılıyor ("77,77,4") — BL-P1-03 | açık (düzeltme yalnız yerel entegre) | `3975941` v0.99.68 `integ/beta-2026-11-14`'te; push/Beta/cihaz testi yok. Kapanış: push + Beta + cihazda 18→77 |
+
+## 9. Sağlayıcı bağdaştırıcı backlog'u: TomTom, OSM/Valhalla, HERE, Google Maps (+ mevcut Mapbox)
+
+Yalnız belge (2026-11-14 15:45 UTC, taban `6cacbe2`, kod = integ v0.99.72). Yeni BL kimliği açılmadı; mevcut maddeler yeniden kullanıldı (BL-P2-04/05/06/08, BL-P3-03/04/05/06/07, RM-08, RM-10). Durumlar değişmedi. Aşağıdaki hiçbir yetenek uygulanmış, alan desteği kanıtlanmış ya da lisansı doğrulanmış değildir; yalnızca anılan commit'ler vardır. Bu güncelleme için ağ/API çağrısı yapılmadı. Ayrıntı JSON `backlog.provider_adapter_backlog`.
+
+| Sağlayıcı | Bugün kodda olan (@`6cacbe2`) | Backlog maddeleri | Lisans | Alan desteği |
+|---|---|---|---|---|
+| TomTom | Harita gösterimi `js/ui/maps/tomtom.js` (Premium); rota `js/tomtom/route.js` + `server/tomtom.mjs`; `providerPolicy.mjs` `tomtom` | BL-P2-06, BL-P2-08, BL-P3-07 | **UNVERIFIED** | Kanıt yok; gerçek kayıt olmadan alan adı uydurulmaz |
+| OSM / Valhalla | OpenFreeMap harita (Free varsayılan); FOSSGIS Valhalla rota `js/osm/route.js`, erişim yoklaması `js/osm/accessProbe.js`; `providerPolicy.mjs` `osm` | BL-P2-04 (engelli), BL-P2-05 | `providerPolicy.mjs` approved; FOSSGIS kullanım sınırı burada yeniden denetlenmedi | `turn_lanes` kodda yok; classes/toll yalnız BL-P2-05a fail-closed bağdaştırıcıda, gerçek kayıt yok |
+| HERE | Harita/rota kodu **yok**; yalnız `server/here.mjs` istasyon verisi (Browse show=ev); `providerPolicy.mjs` `here` kapalı | BL-P3-05, BL-P3-07 | **UNVERIFIED** | Yok |
+| Google Maps | Yalnız **harita gösterimi**: Google Maps JavaScript API `js/ui/maps/google.js` + `server/maps.mjs` (Premium, yönetici seçimli, yönlendiren kısıtlı tarayıcı anahtarı). Google Places araması ayrı (RM-14, DEF-01, BL-P2-12/13), rota değil. **Google Routes API ile rota yok** (js/ ve server/ içinde çağrı yok) | BL-P3-06 (rota, onay gerekir), BL-P3-04, BL-P3-03, BL-P3-07 | **UNVERIFIED** (rota, önbellek, Google dışı haritada gösterim, araç içi navigasyon şartları yazılı onaylanmalı) | Yok. Routes yanıtı → routeMeta/roadEvents eşlemesi **UNVERIFIED**, tasarlanmadı. `google` `providerPolicy.mjs`'te yok (birleştirme BL-P3-03) |
+| Mapbox (mevcut, ayrı tutulur, kaldırılmadı) | Harita `js/ui/maps/mapbox.js`, rota `js/mapbox/route.js`, şerit paneli v0.99.35, sesli şerit önerisi BL-P0-04, temizleyici BL-P2-05b-1/05c (`scripts/`) | BL-P0-04, BL-P2-05, BL-P2-08, BL-P3-01 | Bu güncellemede yeniden denetlenmedi | Gerçek kayıt BL-P2-05b-2 engelli |
+
+**Sağlayıcı bazında araştırılacak yetenekler:** köprü, tünel, alt geçit, üst geçit, gişe/ücretli yol, çıkış numarası, yol tabelası, şerit yönlendirmesi ve bunların sesli uyarıları. Her sağlayıcı ve yetenek, (1) API belgesinde alan görünene, (2) lisans bu uygulama ve katmanda kullanıma izin verene, (3) kullanıcı onayıyla kaydedilip temizlenmiş (BL-P2-05b yöntemi) gerçek yanıtta görülene kadar **UNVERIFIED / unsupported** kalır (fail-closed, BL-P2-05a). Doğrulanmamış alandan arayüz ya da sesli uyarı üretilmez; veri yalnızca etkin rotanın sağlayıcısından gelir (RM-08, karıştırma yok).
+
+**Güvenlik / gizlilik denetimleri (her sağlayıcı için):**
+- Sunucu anahtarları sunucuda kalır; tarayıcıya yalnız açıkça kısıtlı harita anahtarı/jetonu gider (Google yönlendiren kısıtlı anahtar, Mapbox harita jetonu). Yeni her gizli ad `server/scrub.mjs` listesine eklenir.
+- Test ve fixture'larda gerçek anahtar yok; kaydedilen yanıtlar commit öncesi sanitize-core'dan (deny-by-default) geçer.
+- Sağlayıcıya yalnız rotanın gerektirdiği veri (başlangıç/varış/ara nokta) gider; konum geçmişi, e-posta, hesap verisi gitmez.
+- Sağlayıcı logosu/atıfı ve şart bağlantıları görünür kalır; şartların izin verdiğinden fazla önbellek/saklama yok.
+- Hız sınırı, 402/429/5xx hataları ve OSM'ye fail-closed geri dönüş belgelenir ve çevrimdışı test edilir.
+
+**Free / Premium politika denetimleri:**
+- Free = yalnız OSM/Valhalla (BL-P3-04); TomTom, HERE, Google ve Mapbox yalnız sunucuda doğrulanmış Premium için.
+- Mapbox rotası bugün Free kullanıcıya da ulaşıyor (BL-P3-01): yeni ücretli sağlayıcı açılmadan önce kapatılmalı.
+- Her sağlayıcı runtime'da açılmadan önce `providerPolicy.mjs`'te `licenseStatus` ile yer almalı (BL-P3-03, `maps.mjs` birleştirmesi).
+- Google rotası BL-P3-06 lisans/ücret onayına kadar, HERE BL-P3-05/BL-P3-07'ye kadar "Yakında" kalır.
+- Örnek kayıt öncesi sağlayıcı başına maliyet sınırı/kota ve ücretli çağrı onayı (CLAUDE.md §7).
