@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.70';
+self.APP_VERSION = '0.99.71';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.71', date: '2026-11-14',
+    notes: [
+      'Altyapı: sağlayıcıdan bağımsız yol olayları modeli eklendi (tünel, köprü, alt/üst geçit, gişe, çıkış, tabela; BL-P2-03 F1). Olay yalnızca rotayı veren sağlayıcıdan kabul edilir; GPS, hız, kamera ya da OCR\'dan çıkarım yapılmaz. Henüz hiçbir sağlayıcı bu veriyi sağlamıyor; uygulamada görünür bir değişiklik yok, yol uyarısı gösterilmez.',
+    ],
+  },
   {
     v: '0.99.70', date: '2026-11-14',
     notes: [

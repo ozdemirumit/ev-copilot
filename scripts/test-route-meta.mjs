@@ -175,8 +175,12 @@ ok('sw.js SHELL routeMeta içerir (çevrimdışı kabuk)', read('sw.js').include
 // Bugün tünel/köprü veri kaynağı yok: yorumlar ve i18n metinleri dışındaki kodda tunnel/bridge/brunnel/underpass alanı okunmaz/istenmez.
 // ('overpass' aranmaz: Overpass API, istasyon/kamera sorgularının adıdır, üst geçit verisi değildir.)
 const srcFiles = runtime.filter((p) => /\.m?js$/.test(p) && !p.startsWith('js/i18n/lang/'));
+// BL-P2-03: DAR muafiyet — yalnızca saf, bağlanmamış yol olayları modeli (tür adları sabit olarak geçer, veri kaynağı değildir).
+// Hiçbir çalışma zamanı dosyasının onu içe aktarmadığı scripts/test-road-events.mjs'te denetlenir; diğer tüm dosyalar taranmaya devam eder.
+const ROAD_EVENTS_EXEMPT = 'js/nav/roadEvents.js';
 const hits = [];
 for (const p of srcFiles) {
+  if (p === ROAD_EVENTS_EXEMPT) continue;
   const c = read(p).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1');
   if (/\b(tunnels?|bridges?|brunnel|underpass)\b/i.test(c)) hits.push(p);
 }
