@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.72';
+self.APP_VERSION = '0.99.73';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.73', date: '2026-11-15',
+    notes: [
+      'Tanılama: pil okuma (OCR) döngüsünün ritmi ölçülüyor (RM-05). Son 120 çevrimin başlangıç zamanı, süresi ve zaman aşımı kaydedilir; tarayıcı konsolunda window.__ocrCadence() ile medyan, p95, en uzun aralık ve 5±1 sn oranı görülebilir. Pil kararı, süzgeç, 5 sn zamanlayıcı, kamera seçimi ve navigasyon ekranı değişmedi.',
+    ],
+  },
   {
     v: '0.99.72', date: '2026-11-14',
     notes: [

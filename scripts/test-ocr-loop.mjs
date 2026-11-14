@@ -1,6 +1,6 @@
 // OCR döngüsü (ocrLoop.js): sabit 5 sn, tek çalışan döngü, durdur/başlat yarışları, zaman aşımı, kare örnekleme.
 // Kullanım: node scripts/test-ocr-loop.mjs
-import { createOcrLoop, collectSamples } from '../js/sensors/ocrLoop.js';
+import { createOcrLoop, collectSamples, createCadenceLog, cadenceStats } from '../js/sensors/ocrLoop.js';
 
 let pass = 0, fail = 0;
 const ok = (name, cond) => { cond ? pass++ : fail++; console.log(cond ? 'ok  ' : 'FAIL', name); };
@@ -159,6 +159,92 @@ const opts = (c, extra) => ({ now: c.now, sleep: (ms) => new Promise((r) => c.se
   await c.advance(5000);
   await p;
   ok('iptal edilen çevrim kare almayı bırakır', n === 1);
+}
+
+// --- RM-05 çevrim ritmi tanılaması: onCycle, halka tampon, cadenceStats ---
+{
+  const c = fakeClock();
+  const rec = [];
+  const loop = createOcrLoop({ intervalMs: 5000, ...timers(c), onCycle: (...a) => rec.push(a),
+    runCycle: async () => { await new Promise((r) => c.setTimer(r, 1200)); } });
+  loop.start();
+  await c.advance(15000);
+  loop.stop();
+  ok('onCycle her çevrimde (başlangıç, süre, zaman aşımı yok) çağrılır',
+    rec.length === 3 && rec.map((a) => a[0]).join() === '0,5000,10000' && rec.every((a) => a[1] === 1200 && a[2] === false));
+  ok('onCycle 4. bağımsız değişkende oturum verir', rec.every((a) => a[3] && a[3].session === rec[0][3].session));
+}
+{
+  const c = fakeClock();
+  const rec = [];
+  let n = 0;
+  const loop = createOcrLoop({ intervalMs: 5000, cycleTimeoutMs: 12000, ...timers(c), onCycle: (...a) => rec.push(a),
+    runCycle: async () => { n++; if (n === 1) await new Promise(() => {}); } });
+  loop.start();
+  await c.advance(12000);
+  loop.stop();
+  ok('zaman aşımına uğrayan çevrim timedOut=true ve süre 12000 ile kaydedilir', rec.length === 1 && rec[0][0] === 0 && rec[0][1] === 12000 && rec[0][2] === true);
+}
+{
+  const c = fakeClock();
+  const rec = [];
+  const gates = [];
+  const loop = createOcrLoop({ intervalMs: 5000, cycleTimeoutMs: 60000, ...timers(c), onCycle: (...a) => rec.push(a),
+    runCycle: async () => { const g = deferred(); gates.push(g); await g.p; } });
+  loop.start();
+  await c.advance(100);
+  loop.stop();
+  loop.start();
+  await c.advance(100);
+  gates[0].resolve(); // eski oturumun çevrimi yeni oturum başladıktan sonra biter
+  await c.advance(100);
+  ok('stop/start yarışında eski oturum çevrimi onCycle yazmaz', rec.length === 0);
+  gates[1].resolve();
+  await c.advance(100);
+  ok('yeni oturum çevrimi yazılır', rec.length === 1 && rec[0][0] === 200);
+  loop.stop();
+  gates.forEach((g) => g.resolve());
+  await c.advance(100);
+  ok('stop sonrası biten çevrim yazılmaz', rec.length === 1);
+}
+{
+  const c = fakeClock();
+  let n = 0;
+  const loop = createOcrLoop({ intervalMs: 5000, ...timers(c), onCycle: () => { throw new Error('tanı'); }, runCycle: async () => { n++; } });
+  loop.start();
+  await c.advance(10000);
+  loop.stop();
+  ok('onCycle hatası döngüyü kırmaz', n === 3);
+}
+{
+  const log = createCadenceLog();
+  for (let i = 0; i < 130; i++) log.push({ startedAt: i * 5000, durationMs: 1000, timedOut: false, session: 1 });
+  const snap = log.snapshot();
+  ok('halka tampon son 120 çevrimi tutar', snap.length === 120 && snap[0].startedAt === 10 * 5000 && snap[119].startedAt === 129 * 5000);
+  snap.pop();
+  let frozen = false;
+  try { snap[0].startedAt = -1; } catch { frozen = true; }
+  ok('snapshot kopyadır, kayıtlar değiştirilemez', log.snapshot().length === 120 && log.snapshot()[0].startedAt === 50000 && (frozen || Object.isFrozen(snap[0])));
+  const small = createCadenceLog(3);
+  [1, 2, 3, 4].forEach((s) => small.push({ startedAt: s, durationMs: 0, timedOut: false }));
+  ok('kapasite ayarlanabilir', small.snapshot().map((e) => e.startedAt).join() === '2,3,4');
+}
+{
+  const e = (startedAt, session = 1, timedOut = false, durationMs = 1000) => ({ startedAt, durationMs, timedOut, session });
+  const input = [e(0), e(5000), e(10000), e(16000), e(21000), e(30000, 1, true, 12000)];
+  const copy = JSON.stringify(input);
+  const s = cadenceStats(input);
+  ok('cadenceStats medyan/p95/max', s.cycles === 6 && s.intervals === 5 && s.medianMs === 5000 && s.p95Ms === 9000 && s.maxMs === 9000);
+  ok('cadenceStats 5±1 sn oranı ve zaman aşımı sayısı', s.within5s1Ratio === 0.8 && s.timeouts === 1);
+  ok('cadenceStats girdiyi değiştirmez', JSON.stringify(input) === copy);
+  const seg = cadenceStats([e(0, 1), e(5000, 1), e(60000, 2), e(65000, 2)]);
+  ok('oturumlar arası boşluk aralık sayılmaz', seg.intervals === 2 && seg.maxMs === 5000 && seg.within5s1Ratio === 1);
+  const empty = cadenceStats([]);
+  ok('boş girdi: değerler null', empty.cycles === 0 && empty.intervals === 0 && empty.medianMs === null && empty.p95Ms === null && empty.maxMs === null && empty.within5s1Ratio === null);
+  const even = cadenceStats([e(0), e(4000), e(10500)]);
+  ok('çift sayıda aralıkta medyan ortalamadır', even.medianMs === 5250 && even.within5s1Ratio === 0.5);
+  const bad = cadenceStats([e(0), { startedAt: NaN }, null, e(5000)]);
+  ok('geçersiz kayıtlar yok sayılır', bad.cycles === 2 && bad.intervals === 1 && bad.medianMs === 5000);
 }
 
 console.log(`\n${pass} geçti, ${fail} kaldı`);

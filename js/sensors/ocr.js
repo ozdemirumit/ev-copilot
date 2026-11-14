@@ -4,7 +4,7 @@ import { preprocess, measureRoi, VARIANTS, PAD } from './preprocess.js';
 import { readCanvasDigits, digitMismatch } from './digitRecognizer.js';
 import { createSocFilter, createSpeedFilter } from './outlierFilter.js';
 import { consensus, windowConsensus } from './ocrConsensus.js';
-import { createOcrLoop, collectSamples } from './ocrLoop.js';
+import { createOcrLoop, collectSamples, createCadenceLog, cadenceStats } from './ocrLoop.js';
 import { variantOrder, exposureSignal } from './frameQuality.js';
 import { isCameraLive, nudgeExposure } from './camera.js';
 import { countOcrEngineOnce } from '../net/meter.js';
@@ -190,6 +190,12 @@ function trace(entry) {
 }
 if (typeof window !== 'undefined') window.__ocrTrace = () => getState('ocr').trace || [];
 
+/** RM-05 ritim tanılaması (salt okunur): son 120 çevrim + özet; tarayıcıdan window.__ocrCadence(). Karar akışını etkilemez. */
+const cadenceLog = createCadenceLog(120);
+if (typeof window !== 'undefined') {
+  window.__ocrCadence = () => { const cycles = cadenceLog.snapshot(); return Object.freeze({ cycles, stats: Object.freeze(cadenceStats(cycles)) }); };
+}
+
 const framesOf = (samples) => samples.map((s) => s.value ?? (s.raw != null ? `(${s.raw})` : '-'));
 
 /**
@@ -314,6 +320,7 @@ function dropWorker() {
 function ensureLoop() {
   loop ||= createOcrLoop({
     runCycle, intervalMs: OCR.intervalMs, cycleTimeoutMs: OCR.cycleTimeoutMs, onError: failCycle,
+    onCycle: (startedAt, durationMs, timedOut, { session } = {}) => cadenceLog.push({ startedAt, durationMs, timedOut, session }),
     // Arka planda donan çevrim dönüşte zaman aşımına düşebilir: işçi yine yenilenir ama eski oturum hata yazmaz
     onTimeout: ({ current = true } = {}) => { dropWorker(); if (current) failCycle(new Error('OCR zaman aşımı')); },
   });
