@@ -106,5 +106,65 @@ const tr = (o = {}) => anchorTraffic({ jam: { from: 3, to: 4, jam: true }, fetch
   ok('yağış noktasında bölge metni', seq[5][1].startsWith('🌧️ Bu bölgede'));
 }
 
+// BL-P2-01: uyarı metinleri 11 dilde çevrilir (gerçek i18n tr() yolu). Genel "🚦 {0} {1} ({2} km)" deseni özel desenlerden
+// önce eşleşip yarım çeviri ("… yoğun trafik (1.0 км)") üretmemeli; sayılar/yer tutucular korunur, Türkçe kalıntı kalmaz.
+{
+  const { readFileSync } = await import('node:fs');
+  const { join, dirname } = await import('node:path');
+  const { fileURLToPath, pathToFileURL } = await import('node:url');
+  const { trafficText, rainText } = await import('../js/nav/aheadEvents.js');
+  const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+  const keys = JSON.parse(readFileSync(join(root, 'i18n', 'keys.json'), 'utf8'));
+  const { LANGS } = await import(pathToFileURL(join(root, 'js/i18n/index.js')).href);
+  const K = {
+    tAhead: '🚦 ~{0} km ileride {1} ({2} km){3}',
+    tInside: '🚦 Şu an {0} ({1} km){2}',
+    tUnknown: '🚦 İleride {0} ({1} km), mesafe belirsiz{2}',
+    rAhead: '🌧️ İleride yağmur: ~{0} km sonra ({1} mm/sa, {2}°C{3})',
+    rInside: '🌧️ Bu bölgede yağmur bekleniyor ({0} mm/sa, {1}°C{2})',
+    rUnknown: '🌧️ İleride yağmur bekleniyor, mesafe belirsiz ({0} mm/sa, {1}°C{2})',
+    delay: ', rotada ≈ {0} dk gecikme', heavy: 'yoğun trafik', slow: 'yavaş trafik', ice: ', buzlanma riski', limit: 'Limit',
+  };
+  for (const [n, k] of Object.entries(K)) ok(`keys.json "${n}" anahtarını içerir`, keys.includes(k), k);
+  const heavy = { lenKm: 1, heavy: true, delayMin: 0 }, heavyD = { ...heavy, delayMin: 12 }, slowD = { lenKm: 2.5, heavy: false, delayMin: 4 };
+  const icy = { mm: 1.2, temp: 1 }, mild = { mm: 0.5, temp: 12 };
+  const fill = (tpl, ...a) => a.reduce((s, v, i) => s.split(`{${i}}`).join(v), tpl);
+  const ph = (s) => [...s.matchAll(/\{(\d+)\}/g)].map((m) => m[1]).sort().join(',');
+  const TURKISH = /ileride|İleride|Şu an|trafik|yağmur|mesafe|belirsiz|bekleniyor|bölge|gecikme|rotada|buzlanma|mm\/sa|\bdk\b/;
+  for (const { code, locale } of LANGS.filter((l) => l.code !== 'tr')) {
+    const i18n = await import(pathToFileURL(join(root, 'js/i18n/index.js')).href + '?ahead=' + code);
+    const base = (await import(pathToFileURL(join(root, `js/i18n/lang/${code}.js`)).href)).default;
+    const extra = (await import(pathToFileURL(join(root, `js/i18n/lang/${code}.extra.js`)).href)).default;
+    const d = { ...base, ...extra };
+    i18n.__test.compile(d);
+    const miss = Object.values(K).filter((k) => typeof d[k] !== 'string' || !d[k].trim());
+    ok(`${code}: uyarı anahtarlarının hepsi çevrili`, !miss.length, miss.join(' | '));
+    const bad = Object.values(K).filter((k) => typeof d[k] === 'string' && ph(k) !== ph(d[k]));
+    ok(`${code}: yer tutucular kaynakla aynı`, !bad.length, bad.join(' | '));
+    const low = (s) => (s ? s.charAt(0).toLocaleLowerCase(locale) + s.slice(1) : s);
+    const H = low(d[K.heavy]), S = low(d[K.slow]);
+    const tp = (k) => d[k] ?? '\u0000eksik:' + k; // eksik anahtar: beklenen değer asla tutmaz (denetim sayısı sabit kalır)
+    const cases = [
+      ['trafik ileride', trafficText(heavy, { status: 'ahead' }, 3), fill(tp(K.tAhead), '3.0', H, '1.0', '')],
+      ['trafik ileride + gecikme', trafficText(heavyD, { status: 'ahead' }, 3), fill(tp(K.tAhead), '3.0', H, '1.0', fill(tp(K.delay), '12'))],
+      ['trafik ileride (yavaş, ≥10 km) + gecikme', trafficText(slowD, { status: 'ahead' }, 12), fill(tp(K.tAhead), '12', S, '2.5', fill(tp(K.delay), '4'))],
+      ['trafik şu an', trafficText(heavy, { status: 'inside' }), fill(tp(K.tInside), H, '1.0', '')],
+      ['trafik şu an + gecikme', trafficText(heavyD, { status: 'inside' }), fill(tp(K.tInside), H, '1.0', fill(tp(K.delay), '12'))],
+      ['trafik mesafe belirsiz', trafficText(heavy, { status: 'unknown' }), fill(tp(K.tUnknown), H, '1.0', '')],
+      ['trafik mesafe belirsiz + gecikme', trafficText(slowD, { status: 'unknown' }), fill(tp(K.tUnknown), S, '2.5', fill(tp(K.delay), '4'))],
+      ['yağmur ileride + buzlanma', rainText(icy, { status: 'ahead' }, 7), fill(tp(K.rAhead), '7', '1.2', '1', tp(K.ice))],
+      ['yağmur ileride', rainText(mild, { status: 'ahead' }, 7), fill(tp(K.rAhead), '7', '0.5', '12', '')],
+      ['yağmur bu bölgede + buzlanma', rainText(icy, { status: 'inside' }), fill(tp(K.rInside), '1.2', '1', tp(K.ice))],
+      ['yağmur mesafe belirsiz', rainText(mild, { status: 'unknown' }), fill(tp(K.rUnknown), '0.5', '12', '')],
+    ];
+    for (const [name, src, want] of cases) {
+      const got = i18n.tr(src);
+      ok(`${code}: ${name} tam çeviri`, got === want, `\n   kaynak: ${src}\n   çıktı : ${got}\n   beklen: ${want}`);
+      ok(`${code}: ${name} Türkçe kalıntı yok`, !TURKISH.test(got), got);
+    }
+    ok(`${code}: üst panel "Limit" çevrilir`, d[K.limit] != null && i18n.tr('Limit') === d[K.limit], i18n.tr('Limit'));
+  }
+}
+
 console.log(`\n${pass} geçti, ${fail} başarısız`);
 if (fail) process.exit(1);

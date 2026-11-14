@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.68';
+self.APP_VERSION = '0.99.69';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.69', date: '2026-11-14',
+    notes: [
+      'Yol önü trafik ve yağmur uyarıları 11 dilde tam çevrilir: trafik (ileride, ileride + gecikme, şu an, mesafe belirsiz) ve yağmur (ileride, bu bölgede, mesafe belirsiz) metinleri artık Türkçe kalmaz; genel "🚦 {0} {1} ({2} km)" deseninin önce eşleşip yarım çeviri üretmesi önlendi (BL-P2-01)',
+      'Navigasyon üst panelindeki "Limit" etiketi de çevrilir',
+    ],
+  },
   {
     v: '0.99.68', date: '2026-11-14',
     notes: [
