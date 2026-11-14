@@ -261,6 +261,107 @@ ok('depoda gerçek sanitize çıktısı yok', !readdirSync(FIX_DIR).some((n) => 
   ok('göç korkuluğu: _sanitizerVersion=1, _source=mapbox-directions', (() => { const m = sanitizeMapbox({ routes: [] }); return m._sanitizerVersion === 1 && m._source === 'mapbox-directions'; })());
 }
 
+// ---- BL-P2-05c-2c T0: altın (golden) davranış tabloları — sentetik, beklenen değerler ELLE yazılmıştır ----
+// Beklenen çıktılar/iletiler/sıralar hiçbir yerde sanitizeMapbox/leakScan çağrılarak üretilmez; birebir dize karşılaştırması yapılır.
+{
+  const C = await import('./sanitize-core.mjs');
+  const MR = '{"_sanitized":true,"_recorded":true,"_synthetic":false,"_verified":false,"_evidence":"unverified","_source":"mapbox-directions","_sanitizerVersion":1';
+  const MS = '{"_sanitized":true,"_recorded":false,"_synthetic":true,"_verified":false,"_evidence":"unverified","_source":"mapbox-directions","_sanitizerVersion":1';
+  const st1 = (...steps) => ({ routes: [{ legs: [{ steps }] }] });
+  const st1J = (stepsJ) => `${MR},"routes":[{"legs":[{"steps":[${stepsJ}]}]}]}`;
+  const P = 'routes[0].legs[0].steps[0]';
+  const errOf = (fn) => { try { fn(); return null; } catch (e) { return e instanceof Error ? e.message : '<hata değil>'; } };
+  const nest = (n) => { const r = { routes: [] }; let c = r; for (let i = 0; i < n; i++) { c.x = {}; c = c.x; } return r; };
+  const ENUM_ERR = 'izin listesi dışı enum değeri; reddedildi';
+  const NUM_ERR = 'geçersiz sayı (number; 0..10000000)';
+
+  // Kabul: birebir çıktı JSON'u (işaretler + anahtar sırası dahil)
+  const ACCEPT = [
+    ['boş routes, sentetik değil', { routes: [] }, `${MR},"routes":[]}`],
+    ['sentetik + code', { _synthetic: true, code: 'Ok', routes: [] }, `${MS},"code":"Ok","routes":[]}`],
+    ['kök anahtar sırası sabit, girdi meta iddiası yok sayılır', { routes: [], _verified: true, _evidence: 'verified', code: 'NoSegment' }, `${MR},"code":"NoSegment","routes":[]}`],
+    ['rota sayıları yuvarlanır, sıra distance/duration/legs, bilinmeyenler atılır', { routes: [{ legs: [], weight: 5, geometry: 'abc', duration: 2.5, distance: 10.4 }] }, `${MR},"routes":[{"distance":10,"duration":3,"legs":[]}]}`],
+    ['sayı sınırları 0 ve 10000000, yuvarlama sınırı', { routes: [{ duration: 10000000, distance: 0 }, { distance: 9999999.5, duration: 0.49 }] }, `${MR},"routes":[{"distance":0,"duration":10000000},{"distance":10000000,"duration":0}]}`],
+    ['en çok 5 rota kabul', { routes: [{}, {}, {}, {}, {}] }, `${MR},"routes":[{},{},{},{},{}]}`],
+    ['adım anahtar sırası girdiden bağımsız', st1({ bannerInstructions: [{}], intersections: [{}], exits: 5, driving_side: 'left', mode: 'ferry', maneuver: { modifier: 'left', type: 'turn' }, duration: 1, distance: 2 }),
+      st1J('{"distance":2,"duration":1,"maneuver":{"type":"turn","modifier":"left"},"mode":"ferry","driving_side":"left","exits_present":true,"intersections":[{}],"bannerInstructions":[{}]}')],
+    ['exits yalnızca varlık: boş dize/0/metin → exits_present', st1({ exits: '' }, { exits: 0 }, { exits: '73B' }), st1J('{"exits_present":true},{"exits_present":true},{"exits_present":true}')],
+    ['boş alt nesneler korunur', st1({ maneuver: {}, intersections: [{}, { classes: [] }, { toll_collection: {} }], bannerInstructions: [{}, { primary: {} }, { primary: { components: [{}] } }] }),
+      st1J('{"maneuver":{},"intersections":[{},{"classes":[]},{"toll_collection":{}}],"bannerInstructions":[{},{"primary":{}},{"primary":{"components":[{}]}}]}')],
+    ['kavşak: sınıf sırası/tekrarı korunur, konum/ad/bearing atılır', st1({ intersections: [{ toll_collection: { name: 'G', type: 'toll_gantry' }, bearings: [90], location: [28.9, 41.0], classes: ['toll', 'toll', 'ferry'] }] }),
+      st1J('{"intersections":[{"classes":["toll","toll","ferry"],"toll_collection":{"type":"toll_gantry"}}]}')],
+    ['her düzeyde bilinmeyen alan atılır', { uuid: 'u-1', waypoints: [{ name: 'W', location: [1.5, 2.5] }], routes: [{ weight_name: 'auto', legs: [{ summary: 'S', annotation: { speed: [1] }, steps: [{ name: 'Cadde', geometry: 'poly', ref: 'D100', destinations: 'X', voiceInstructions: [{ announcement: 'a' }] }] }] }] },
+      `${MR},"routes":[{"legs":[{"steps":[{}]}]}]}`],
+    ['derinlik 64 kabul (atılan alanda)', nest(64), `${MR},"routes":[]}`],
+  ];
+  for (const [name, input, want] of ACCEPT) {
+    let got; const e = errOf(() => { got = J(sanitizeMapbox(input)); });
+    ok(`altın kabul: ${name}`, e === null && got === want, e ?? got);
+  }
+
+  // Ret: birebir hata iletisi ve hata sırası (ilk bulunan hata)
+  const REJECT = [
+    ['routes yok', { code: 'Ok' }, 'routes yok; reddedildi'],
+    ['code, routes denetiminden önce', { code: 'ok' }, `code: ${ENUM_ERR}`],
+    ['routes nesne', { routes: {} }, 'routes: dizi (array) bekleniyor'],
+    ['6 rota', { routes: [{}, {}, {}, {}, {}, {}] }, 'routes: eleman sınırı (limit 5) aşıldı'],
+    ['preScan yapı denetiminden önce (Bearer)', { routes: 'x', note: 'bearer abc' }, 'girdide sır (secret) benzeri değer var; tüm girdi reddedildi'],
+    ['atılan alanda prototype anahtarı', { routes: [], meta: { prototype: 1 } }, 'girdide yasak nesne anahtarı var; reddedildi'],
+    ['büyük/küçük harf duyarsız sır anahtarı', { routes: [], headers: { 'X-Api-Key': 'v' } }, 'girdide sır (secret) taşıyan anahtar var (Authorization/token…); tüm girdi reddedildi'],
+    ['dizi içinde AIza değeri', { routes: [], list: [['AI' + 'za' + '0123456789AB']] }, 'girdide sır (secret) benzeri değer var; tüm girdi reddedildi'],
+    ['adımda distance, manevradan önce', st1({ maneuver: { type: 'bad' }, distance: -1 }), `${P}.distance: ${NUM_ERR}`],
+    ['manevra type, modifier’dan önce', st1({ maneuver: { modifier: 'Bad', type: 'Bad' } }), `${P}.maneuver.type: ${ENUM_ERR}`],
+    ['exits null, intersections’tan önce', st1({ intersections: 'x', exits: null }), `${P}.exits: beklenmeyen tür`],
+    ['exits boolean', st1({ exits: true }), `${P}.exits: beklenmeyen tür`],
+    ['kavşak sınıf yolu indeksli (büyük harf enum)', st1({ intersections: [{}, { classes: ['toll', 'Toll'] }] }), `${P}.intersections[1].classes[1]: ${ENUM_ERR}`],
+    ['banner bileşen yolu indeksli', st1({ bannerInstructions: [{ primary: { components: [{ type: 'text' }, { type: 'html' }] } }] }), `${P}.bannerInstructions[0].primary.components[1].type: ${ENUM_ERR}`],
+    ['ikinci rota bacağı null', { routes: [{}, { legs: [null] }] }, 'routes[1].legs[0]: nesne (object) bekleniyor'],
+    ['üst sınır üstü sayı', { routes: [{ distance: 10000000.4 }] }, `routes[0].distance: ${NUM_ERR}`],
+    ['derinlik 65', nest(65), 'girdi aşırı derin (depth sınırı); reddedildi'],
+  ];
+  for (const [name, input, want] of REJECT) {
+    const e = errOf(() => sanitizeMapbox(input));
+    ok(`altın ret: ${name}`, e === want, String(e));
+  }
+
+  // leakScan: birebir bulgu dizisi ve sırası
+  const base = (inp) => sanitizeMapbox(inp); // yalnızca girdi üretir; beklenen bulgular aşağıda elle yazılı
+  const HAM = 'ham girdi dizesi çıktıda';
+  const LEAK = [
+    ['anahtar adına eşit ham dize (8 krk)', { routes: [{ duration: 1 }], s: 'duration' }, null, [HAM]],
+    ['anahtar adına eşit 5 krk ham dize alt dize sayılmaz', { routes: [{ legs: [{ steps: [] }] }], s: 'steps' }, null, []],
+    ['anahtar adına eşit 6 krk ham dize bulgu (tek kez)', { routes: [], s: 'routes', t: 'mapbox' }, null, [HAM]],
+    ['meta değer alt dizesi 6 krk bulgu', { routes: [], s: 'direct' }, null, [HAM]],
+    ['meta değer alt dizesi 5 krk temiz', { routes: [], s: 'irect' }, null, []],
+    ['kısa ham dize çıktı değerine birebir eşit', { routes: [], s: 'ab' }, { code: 'ab' }, ['$.code: izin listesi dışı dize', HAM]],
+    ['işaret bulguları sabit sırada', { routes: [] }, { _sanitized: false, _recorded: false, _synthetic: true, _verified: true, _evidence: 'x' },
+      ['_sanitized true değil', '_verified false değil', '_evidence unverified değil', '_synthetic girdiyle uyumsuz', '_recorded girdiyle uyumsuz', '$._evidence: izin listesi dışı dize']],
+    ['ek anahtar + zaman damgası dizesi + ondalık', { routes: [] }, { extra: 'Sentetik', code: '2026-01-01T10', routes: [{ distance: 28.9784 }] },
+      ['$.routes[0].distance: izin dışı sayı', '$: izin listesi dışı anahtar', '$.code: izin listesi dışı dize', 'çıktıda zaman damgası', 'çıktıda ondalık koordinat benzeri sayı']],
+  ];
+  for (const [name, input, patch, want] of LEAK) {
+    const outp = patch ? { ...base({ routes: [] }), ...patch } : base(input);
+    const got = leakScan(input, outp);
+    ok(`altın leakScan: ${name}`, J(got) === J(want), J(got));
+  }
+
+  // GELECEK SIKILAŞTIRMA (kasıtlı): çekirdek (sanitize-core) bunları reddeder. Mapbox'ın bugünkü kabulü KİLİTLENMEZ;
+  // yalnızca kabul edilirse ham değerin çıktıya geçmediği denetlenir. Göç sonrası reddedilmeleri beklenen iyileşmedir.
+  const FUT = [
+    ['Basic yetki değeri', { routes: [], h: 'Basic QUJDREVGR0hJ' }, 'QUJDREVGR0hJ'],
+    ['key= değeri', { routes: [], q: 'key=abc123' }, 'abc123'],
+    ['session anahtarı', { routes: [], session: 'sess-value-1' }, 'sess-value-1'],
+    ['atılan alanda sonsuz sayı', { routes: [], n: Infinity }, null],
+    ['atılan alanda Date nesnesi', { routes: [], d: new Date(0) }, null],
+  ];
+  for (const [name, input, raw] of FUT) {
+    const coreRejects = errOf(() => C.preScan(input)) !== null;
+    let o = null; errOf(() => { o = sanitizeMapbox(input); });
+    ok(`gelecek sıkılaştırma (kasıtlı, kilitlenmez): ${name} — çekirdek reddeder, Mapbox çıktısına ham değer geçmez`,
+      coreRejects && (o === null || (raw === null || !J(o).includes(raw))), `core=${coreRejects}`);
+  }
+}
+
 ok('ağ çağrısı yapılmadı', netCalls === 0);
 console.log(`\n${pass} geçti, ${fail} başarısız`);
 process.exit(fail ? 1 : 0);
