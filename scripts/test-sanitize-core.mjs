@@ -201,6 +201,44 @@ const good = () => ({
   ok('Object.prototype kirlenmedi', ({}).polluted === undefined && Object.prototype.polluted === undefined);
 }
 
+// --- BL-P2-05c-2k (T4b): "key:" fail-closed; yalnızca tam iyi huylu yol/yön belirteci istisna, "key=" her zaman sır
+{
+  const pre = (v) => () => preScan(v);
+  const RAWV = 'GIZLI-T4B-RAW';
+  const BENIGN_KEY = ['Turkey: E80', 'Monkey Key: left', 'Key: left', 'Hockey: 3', 'Keyboard: tr', 'Key West'];
+  for (const s of BENIGN_KEY) {
+    ok(`T4b iyi huylu kabul (kök + iç içe): "${s}"`, !throws(pre({ note: s })) && !throws(pre({ a: { b: [{ name: s }] } })));
+  }
+  const EVIL_KEY = ['key: abc123', 'Key: abc123', 'KEY:abc123', 'mykey=abc', 'mykey:abc', 'licensekey=abc', 'licenseKey:abc',
+    'license_key:abc', 'subscription_key:abc', 'Ocp-Apim-Subscription-Key:abc', 'productKey:abc', 'Monkey Key:abc123',
+    'Turkey: E80 key:zz9', 'note key:sk_live_abc', 'Whiskey = 2', 'key=left', 'Turkey=E80', 'Monkey Key=left',
+    'Key: left key: abc123', 'Key: left key=1', 'api key: left', 'Private Key: E80', 'licenseKey: left', 'license_key: E80',
+    'mykey: left', 'Key: lefty', 'Key: left abc123', 'Key: e80', 'Key: E80X9', 'Key: 1234', 'Turkey: E80; key: zz9',
+    'key = abc', 'x&key=abc', 'token: abc', 'secret: abc', 'password=abc', 'access_token=abc', 'api_key=abc', 'apikey: abc',
+    'client_secret=abc', 'refresh_token: abc', 'pk.FAKEFAKEFAKEFAKE', 'sk.FAKEFAKEFAKE123', 'eyJhbGciOiJIUzI1NiJ9.FAKE.FAKE',
+    'Bearer FAKE', 'Basic RkFLRUZBS0VGQUtF', 'AIzaFAKEFAKEFAKEFAKE', '-----BEGIN PRIVATE KEY-----', '-----BEGIN RSA PRIVATE KEY-----'];
+  for (const s of EVIL_KEY) {
+    ok(`T4b sır benzeri ret (kök + iç içe): "${s}"`, throws(pre({ note: s }), /sır|secret/i) && throws(pre({ a: { b: [{ c: [s] }] } }), /sır|secret/i));
+  }
+  ok('T4b ret iletisi ham değeri içermez (key:)', !errMsg(pre({ a: { note: `key: ${RAWV}` } })).includes(RAWV) && errMsg(pre({ a: { note: `key: ${RAWV}` } })) !== '');
+  ok('T4b ret iletisi ham değeri içermez (key=)', !errMsg(pre({ a: [{ note: `Turkey: E80 key=${RAWV}` }] })).includes(RAWV) && errMsg(pre({ a: [{ note: `Turkey: E80 key=${RAWV}` }] })) !== '');
+  ok('T4b sır benzeri anahtar adı ("Key: abc123") reddedilir', throws(pre(JSON.parse('{"a":{"Key: abc123":1}}')), /sır|secret/i));
+  ok('T4b enum değeri "key: abc123" şemada reddedilir', throws(() => validateSpec({ type: 'object', fields: { s: { type: 'enum', values: ['key: abc123'] } } })));
+  ok('T4b enum değeri "key=abc" şemada reddedilir', throws(() => validateSpec({ type: 'object', fields: { s: { type: 'enum', values: ['key=abc'] } } })));
+  // leakScan: çıktı JSON'unda iyi huylu metin sır sayılmaz; kötü niyetli "key:"/"key=" hâlâ bulunur (ham değer bulguya geçmez).
+  const input = good();
+  const out = sanitize(input, SPEC, { source: 'synthetic-test', unknown: 'drop' });
+  const mut = (f) => { const o = JSON.parse(JSON.stringify(out)); f(o); return leakScan(input, o, SPEC); };
+  ok('T4b leakScan sır bulur: "key: abc123"', mut((o) => { o.status = 'key: abc123'; }).some((p) => /sır/.test(p)));
+  ok('T4b leakScan sır bulur: "Turkey: E80 key:zz9"', mut((o) => { o.status = 'Turkey: E80 key:zz9'; }).some((p) => /sır/.test(p)));
+  ok('T4b leakScan sır bulur: "Whiskey = 2"', mut((o) => { o.status = 'Whiskey = 2'; }).some((p) => /sır/.test(p)));
+  ok('T4b leakScan iyi huylu "Turkey: E80" için sır demez', !mut((o) => { o.status = 'Turkey: E80'; }).some((p) => /sır/.test(p)));
+  { const t0 = Date.now(); const many = {}; for (let i = 0; i < 2000; i++) many[`f${i}`] = 'Monkey Key: left';
+    const r1 = !throws(pre(many)); const r2 = throws(pre({ v: 'b'.repeat(200000) + ' Key: ' + 'c'.repeat(200000) }), /sır|secret/i);
+    ok('T4b uzun/çok geçişli girdide sınırlı süre (doğrusal tarama)', r1 && r2 && Date.now() - t0 < 2000, `${Date.now() - t0} ms`); }
+  ok('T4b leakScan bulgusu ham değer içermez',!mut((o) => { o.status = `key: ${RAWV}`; }).join(' ').includes(RAWV));
+}
+
 // --- leakScan bağımsız savunma
 {
   const input = good();

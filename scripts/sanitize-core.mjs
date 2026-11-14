@@ -64,11 +64,39 @@ export const SECRET_VALUE_RES = Object.freeze([
   /(^|[^A-Za-z0-9])eyJ[A-Za-z0-9_-]{8,}/,
   /\bBearer\s+\S/i,
   /\bBasic\s+[A-Za-z0-9+/=]{8,}/,
-  /(access_token|refresh_token|api[_-]?key|apikey|client_secret|password|secret|token|key)\s*[=:]/i,
+  /(access_token|refresh_token|api[_-]?key|apikey|client_secret|password|secret|token)\s*[=:]/i,
+  // "key=" her önekle (Whiskey = 2, mykey=…) koşulsuz sır.
+  /key\s*=/i,
   /\bAIza[0-9A-Za-z_-]{10,}/,
   /-----BEGIN [A-Z ]*PRIVATE KEY-----/,
 ]);
-const isSecretLike = (s) => SECRET_VALUE_RES.some((re) => re.test(s));
+// "key:" (BL-P2-05c-2k T4b) varsayılan olarak sır; fail-closed dar istisna: HER "key:" geçişi tek tek iyi huylu olmalı —
+// sözcük tam olarak key/turkey/monkey/hockey (bitişik _/- öneki yok), çıplak "key" hassas bir sözcükten sonra gelmez ve
+// değer tam bir yol kimliği (E80, D-100, 3) ya da yön sözcüğüdür; ardından yalnızca dize sonu ya da JSON tırnağı gelir.
+const KEY_COLON_RE = /key\s*:/gi;
+const KEY_WORD_OK = new Set(['key', 'turkey', 'monkey', 'hockey']);
+const KEY_PREV_SENSITIVE_RE = /(api|access|secret|private|public|auth|client|session|sign|encrypt|master|licen[cs]e|subscription|product|app|service|account|token|passw|credential|ssh|gpg|pgp|rsa|aes|hmac|crypt|my)/i;
+const KEY_VALUE_OK_RE = /[ \t]*(?:[A-Z]{1,2}-?\d{1,3}|\d{1,3}|(?:[Ll]eft|LEFT|[Rr]ight|RIGHT|[Ss]traight|STRAIGHT|[Nn]orth|[Ss]outh|[Ee]ast|[Ww]est))(?=$|")/y;
+const isWordCh = (c) => /[A-Za-z0-9_-]/.test(c);
+function keyColonBenign(s, at, len) {
+  // Doğrusal, sınırlı geri tarama (izinli sözcük en çok 6 karakter): bitişik sözcük öneki.
+  let i = at; while (i > 0 && at - i <= 3 && isWordCh(s[i - 1])) i--;
+  if (i > 0 && isWordCh(s[i - 1])) return false;
+  if (!KEY_WORD_OK.has(s.slice(i, at + 3).toLowerCase())) return false;
+  if (i === at) {
+    let j = i; while (j > 0 && (s[j - 1] === ' ' || s[j - 1] === '\t')) j--;
+    let k = j; while (k > 0 && j - k < 64 && isWordCh(s[k - 1])) k--;
+    if (k > 0 && isWordCh(s[k - 1])) return false; // önceki sözcük aşırı uzun → fail-closed
+    if (j < i && KEY_PREV_SENSITIVE_RE.test(s.slice(k, j))) return false;
+  }
+  KEY_VALUE_OK_RE.lastIndex = at + len;
+  return KEY_VALUE_OK_RE.test(s);
+}
+const hasSecretKeyColon = (s) => {
+  for (const m of s.matchAll(KEY_COLON_RE)) if (!keyColonBenign(s, m.index, m[0].length)) return true;
+  return false;
+};
+const isSecretLike = (s) => SECRET_VALUE_RES.some((re) => re.test(s)) || hasSecretKeyColon(s);
 const URL_RE = /[a-z][a-z0-9+.-]*:\/\//i;
 const TIMESTAMP_RE = /\d{4}-\d{2}-\d{2}([T ]\d{2})?/;
 const DECIMAL_RE = /\d\.\d/;

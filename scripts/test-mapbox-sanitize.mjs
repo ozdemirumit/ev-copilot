@@ -525,12 +525,8 @@ ok('depoda gerçek sanitize çıktısı yok', !readdirSync(FIX_DIR).some((n) => 
     rmSync(t, { recursive: true, force: true });
   }
 
-  // 5) TANI (beklenen başarısızlık; paketi düşürmez): iyi huylu metin değerinde "key:" yanlış pozitifi.
-  // Kök neden: scripts/sanitize-core.mjs SECRET_VALUE_RES içindeki /(…|token|key)\s*[=:]/i sözcük sınırı içermiyor →
-  // "Turkey: E80" ("…key:") ve "Monkey Key: left" ("Key:") sır benzeri değer sayılıyor. 111028c bunları kabul ediyordu.
-  // Düzeltilene kadar: kabul EDİLMEMESİ "XFAIL (BLOCKER)" olarak yazılır, sayılmaz; düzeltilince "XPASS" yazar → bu bloğu
-  // olağan altın kabul testine çevirin. Her iki durumda da ham metnin çıktıya sızmadığı (sert) denetlenir.
-  let xfail = 0, xpass = 0;
+  // 5) İyi huylu "key:" metni (BL-P2-05c-2k T4b): "Turkey: E80" / "Monkey Key: left" yalnızca tam yol/yön belirteci istisnasıyla
+  // sır sayılmaz; olağan altın kabul — çıktı beklenen dizeyle bayt bayt aynı, ham metin çıktıya geçmez (izin listesi dışı alan atılır).
   const BENIGN = [
     ['kök not "Turkey: E80"', { routes: [], note: 'Turkey: E80' }, `${MR},"routes":[]}`],
     ['bacak summary "Turkey: E80"', { routes: [{ legs: [{ summary: 'Turkey: E80', steps: [] }] }] }, `${MR},"routes":[{"legs":[{"steps":[]}]}]}`],
@@ -539,11 +535,18 @@ ok('depoda gerçek sanitize çıktısı yok', !readdirSync(FIX_DIR).some((n) => 
   ];
   for (const [name, input, want] of BENIGN) {
     let got = null; const e = errOf(() => { got = J(sanitizeMapbox(input)); });
-    ok(`T4 tanı (sert): ${name} — ham metin çıktıya geçmez`, got === null || (!got.includes('E80') && !got.includes('Monkey')));
-    if (e === null && got === want) { xpass++; console.log(`XPASS ${name} — yanlış pozitif giderilmiş; bu tanıyı olağan altın kabul testine çevirin`); }
-    else { xfail++; console.log(`XFAIL (BLOCKER) iyi huylu metin reddediliyor: ${name} — ${e ?? got}`); }
+    ok(`T4b altın kabul: ${name} — bayt bayt beklenen çıktı`, e === null && got === want && Buffer.from(got, 'utf8').equals(Buffer.from(want, 'utf8')), e ?? got);
+    ok(`T4b altın kabul: ${name} — ham metin çıktıya geçmez`, got !== null && !got.includes('E80') && !got.includes('Monkey'));
   }
-  console.log(`T4 tanı özeti: ${xfail} XFAIL (BLOCKER: yanlış pozitif), ${xpass} XPASS`);
+  // Kötü niyetli benzerleri (kök + iç içe) hâlâ sır olarak reddedilir; ham değer iletiye geçmez.
+  for (const v of ['key: ' + RAW, 'Key: ' + RAW, 'KEY:' + RAW, 'key=' + RAW, 'mykey=' + RAW, 'licenseKey:' + RAW, 'license_key:' + RAW,
+    'Ocp-Apim-Subscription-Key:' + RAW, 'Monkey Key:' + RAW, 'Turkey: E80 key:' + RAW, 'Turkey: E80 key=' + RAW, 'note key:sk_live_' + RAW,
+    'Whiskey = ' + RAW, 'api_key=' + RAW, 'token: ' + RAW, 'Private Key: ' + RAW]) {
+    const eL = errOf(() => sanitizeMapbox({ routes: [{ legs: [{ summary: v, steps: [] }] }] }));
+    const eR = errOf(() => sanitizeMapbox({ routes: [], note: v }));
+    ok(`T4b sır benzeri metin reddedilir (iç içe + kök): ${v.replace(RAW, '<RAW>')}`,
+      eL !== null && eR !== null && /sır \(secret\)/.test(eL) && /sır \(secret\)/.test(eR) && !eL.includes(RAW) && !eR.includes(RAW), `${eL} | ${eR}`);
+  }
 }
 
 ok('ağ çağrısı yapılmadı', netCalls === 0);
