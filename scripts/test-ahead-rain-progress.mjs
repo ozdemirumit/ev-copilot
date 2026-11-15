@@ -1,7 +1,7 @@
 // Yol önü YAĞIŞ uyarısı kalan mesafesi, ahead.js üzerinden uçtan uca: node scripts/test-ahead-rain-progress.mjs
 // v0.99.56 (99e8d77) "~3 km sonra" metninin donma hatasını düzeltti; saf hesap test-ahead-events.mjs'de, trafik uçtan uca
 // test-traffic-guard.mjs'de sınanıyor. Bu dosya eksik kalan yolu sınar: refreshRain → anchorRain → check()/paintEvents geri sayımı,
-// istek sürerken konum ilerlemesi, rota dışı, ve 10 dk'lık yağış yenilemesinin mevcut davranışı (GAP olarak sabitlenir, düzeltilmez).
+// istek sürerken konum ilerlemesi, rota dışı, ve 10 dk'lık yağış yenilemesinde D1 davranışı (GAP-1/2/3, v0.99.77 düzeltmesi).
 // ahead.js'in içe aktardığı her şey (saf aheadEvents.js/trafficGuard.js hariç) bellek içi sahtedir. Ağ engellidir; anahtar/sır yoktur.
 import { registerHooks } from 'node:module';
 import { readFileSync } from 'node:fs';
@@ -133,11 +133,14 @@ const answer = (req, wetKm) => req.res(req.pts.map((p) => {
   ok('yeni planda yağış yoksa metin boş kalır', rain() === null);
 }
 
-// ---------------------------------------------------------------- 4) GAP (mevcut davranış sabitlenir, düzeltme DEĞİL)
-// Kök: refreshRain her 10 dk'da örnekleri YALNIZCA güncel km + [10, 25, ...] noktalarında alır ve bağlı olayı
-// yenisiyle değiştirir (mergeEvent yalnızca ±1 km'de birleştirir). Hâlâ geçerli ve daha yakın olay dikkate alınmaz.
+// ---------------------------------------------------------------- 4) GAP-1/2 — D1 (v0.99.77) düzeltildi; davranış burada sabitlenir
+// Yenileme örnekleri yalnızca güncel km + [10, 25, ...] noktalarında (ek/yakın örnek yok, istek sıklığı aynı). Önceki olay bu
+// yenilemenin örneklemediği yakın bantta (alınma km'si .. ilk örnek) ve hâlâ öndeyse: ilk örnek de yağışlıysa (alan banda uzanıyor)
+// olay konumu korunur, veri tazelenir, mesafe güncel konumdan yeniden hesaplanır (10 km'ye sıçrama yok, yeni ses yok); değilse
+// veri onu ne doğrular ne yalanlar → mesafesiz "belirsiz", ses yok. Örneklenen bölgedeki olay için yeni veri esastır (körlemesine koruma yok).
+const vague = (t) => typeof t === 'string' && /mesafe belirsiz/.test(t) && kmOf(t) === null;
 {
-  // GAP-1: geniş yağış alanı → 10 dk'lık yenilemede "~3 km sonra" tekrar "~10 km sonra"ya sıçrar (geri sayım sıfırlanır)
+  // GAP-1: geniş yağış alanı → 17. km'de yenileme (örnekler 27, 42, ... yağışlı) "~3 km sonra" kalır
   freshPlan(10);
   clock += 11 * 60e3;
   check();
@@ -149,14 +152,27 @@ const answer = (req, wetKm) => req.res(req.pts.map((p) => {
   H.state.engine = { routeKm: 17, offRouteKm: 0 };
   clock += 10 * 60e3 + 1; check(); // 10 dk doldu → refreshRain(17): örnekler 27, 42, ...
   ok('GAP-1 ön koşul: yenilemeden önce ~3 km sonra', before === 3);
-  ok('GAP-1 ön koşul: 10 dk sonunda yeni yağış isteği, ilk örnek 27. km', H.wx.length === 2 && H.wx[1].pts[0].d === 10 && Math.round((H.wx[1].pts[0].lat - 40) * 1000) === 27);
+  ok('GAP-1 ön koşul: 10 dk sonunda tek yeni yağış isteği, aynı 7 nokta, ilk örnek 27. km', H.wx.length === 2 && H.wx[1].pts.length === 7 && H.wx[1].pts[0].d === 10 && Math.round((H.wx[1].pts[0].lat - 40) * 1000) === 27);
   answer(H.wx[1], wide);
   await flush();
   const after = kmOf(rain());
-  ok('GAP-1 (mevcut): yenilemeden sonra ~10 km sonra (3 → 10 sıçrama)', after === 10, rain());
-  console.log(`GAP-1 gözlem: yenileme öncesi ~${before} km, sonrası ~${after} km; ses kaydı ${H.speak.length}`);
+  ok('GAP-1 (D1): yenilemeden sonra hâlâ ~3 km sonra (10\'a sıçramaz)', after === 3, rain());
+  ok('GAP-1 (D1): yenileme yeni sesli uyarı istemez (yalnızca ilk duyuru)', H.speak.length === 1, String(H.speak.length));
+  ok('GAP-1 (D1): geri sayım güncel konumdan sürer (18 → ~2, 18,6 → ~1)', kmOf(at(18)) === 2 && kmOf(at(18.6)) === 1, rain());
+  ok('GAP-1 (D1): noktaya varınca "Bu bölgede"', /^🌧️ Bu bölgede yağmur/.test(at(19.5)));
+  // Tazelenen olay yenileme anından eskir (ilk alınmadan değil): ilk veriden 35+ dk sonra hâlâ gösterilir
+  // (25 dk ileri sarınca plan hava yenilemesi de [refreshProfileWx, 20 dk; sahte wxQueryKms → boş nokta] aynı fetchWeather'a düşer: ayrı sayılır)
+  const isRainReq = (q) => q.pts.length > 0 && q.pts[0].d != null;
+  const t2 = H.wx.filter(isRainReq).length, n2 = H.wx.length;
+  ok('GAP-1 (D1): veri yenileme anıyla tazelenir (ilk alınmadan 35 dk sonra bile eskimiş sayılmaz)', /^🌧️ Bu bölgede yağmur/.test(at(19.8, { dtMs: 25 * 60e3 })), String(rain()));
+  const newReq = H.wx.slice(n2);
+  ok('GAP-1 (D1): 10 dk dolunca tek normal yağış isteği, aynı 7 nokta (sıklık/boyut değişmedi)', H.wx.filter(isRainReq).length === t2 + 1 && newReq.filter(isRainReq).length === 1 && newReq.find(isRainReq).pts.length === 7, String(newReq.length));
+  ok('GAP-1 (D1): yağış dışındaki tek istek plan hava yenilemesi (boş nokta, sahte)', newReq.filter((q) => !isRainReq(q)).every((q) => q.pts.length === 0));
+  for (const q of newReq) answer(q, () => false);
+  await flush();
+  console.log(`GAP-1 gözlem: yenileme öncesi ~${before} km, sonrası ~${after} km; ses isteği ${H.speak.length}`);
 
-  // GAP-2: yağış yalnızca 20. km'de; 17. km'de yenileme 27+ örnekler kuru → hâlâ 3 km ilerideki uyarı silinir
+  // GAP-2: yağış yalnızca 20. km'de; 17. km'de yenileme 27+ örnekler kuru → silinmez, mesafesiz "belirsiz"
   freshPlan(10);
   clock += 11 * 60e3;
   check();
@@ -169,14 +185,55 @@ const answer = (req, wetKm) => req.res(req.pts.map((p) => {
   answer(H.wx[H.wx.length - 1], narrow);
   await flush();
   ok('GAP-2 ön koşul: yenilemeden önce ~3 km sonra', before2 === 3);
-  ok('GAP-2 (mevcut): 3 km ilerideki yağış uyarısı yenilemede silinir (rain=null)', rain() === null, String(rain()));
-  console.log(`GAP-2 gözlem: yenileme öncesi ~${before2} km, sonrası ${JSON.stringify(rain())}`);
+  ok('GAP-2 (D1): 3 km ilerideki uyarı yenilemede silinmez, "mesafe belirsiz" olur (eski mesafe gösterilmez)', vague(rain()), String(rain()));
+  ok('GAP-2 (D1): belirsiz durum seslendirilmez', H.speak.length === 1, String(H.speak.length));
+  ok('GAP-2 (D1): sonraki check() eski mesafeyi geri getirmez', vague(at(18)) && vague(at(19)), String(rain()));
+  ok('GAP-2 (D1): olay noktası geçilince (20 + 10 km) belirsiz uyarı kalkar', at(30.5) === null, String(rain()));
+  ok('GAP-2 (D1): ek yağış isteği yok', H.wx.length === 2, String(H.wx.length));
+  console.log(`GAP-2 gözlem: yenileme öncesi ~${before2} km, sonrası "mesafe belirsiz"`);
+
+  // GAP-2b: önceki olay yakın bantta, ilk örnek kuru ama daha ileride yağış var → yine belirsiz (uzak olayın mesafesi yakını gizlemez)
+  freshPlan(10);
+  clock += 11 * 60e3;
+  check();
+  answer(H.wx[0], (k) => k === 20 || k >= 42);
+  await flush();
+  at(17);
+  clock += 10 * 60e3 + 1; check(); // örnekler 27 (kuru), 42 (yağışlı)
+  answer(H.wx[H.wx.length - 1], (k) => k === 20 || k >= 42);
+  await flush();
+  ok('GAP-2b (D1): yakın olay doğrulanmazsa "belirsiz"; 42. km\'nin ~25 km\'si gösterilmez', vague(rain()), String(rain()));
+  ok('GAP-2b (D1): ses yok', H.speak.length === 1, String(H.speak.length));
+
+  // Karşı örnek (körlemesine koruma yok): önceki olay örneklenen bölgede (35. km, 15. km'de yenileme: örnekler 25, 40, ...) ve yeni veri kuru → kalkar
+  freshPlan(10);
+  clock += 11 * 60e3;
+  check();
+  answer(H.wx[0], (k) => k === 35);
+  await flush();
+  at(15);
+  clock += 10 * 60e3 + 1; check();
+  answer(H.wx[H.wx.length - 1], () => false);
+  await flush();
+  ok('karşı örnek (D1): örneklenen bölgede yeni veri kuruysa eski uyarı korunmaz (rain=null)', rain() === null, String(rain()));
+  ok('karşı örnek (D1): sonraki check() eski olayı geri getirmez', at(16) === null, String(rain()));
+
+  // Örneklenen bölgede yeni veri başka yerde yağış bulursa mesafe güncel konum + güncel olay konumundan yeniden hesaplanır
+  freshPlan(10);
+  clock += 11 * 60e3;
+  check();
+  answer(H.wx[0], (k) => k === 35);
+  await flush();
+  at(15);
+  clock += 10 * 60e3 + 1; check(); // örnekler 25, 40, 65, ...
+  answer(H.wx[H.wx.length - 1], (k) => k === 65);
+  await flush();
+  ok('yeniden hesap (D1): yeni olay 65. km → 15. km\'den ~50 km sonra', kmOf(rain()) === 50, rain());
 }
 
-// ---------------------------------------------------------------- 4b) GAP-3 (mevcut davranış sabitlenir, düzeltme DEĞİL)
-// Yağış sesi ahead.js'te her başarılı yenilemede speak(..., { key: 'rain@' + round(alongKm/50), cooldownMs: 30 dk }) ile istenir;
-// tekrar süzgeci yalnızca voice.js'teki anahtar+bekleme kapısıdır. Yenileme olayı yeniden bağlayınca 50 km'lik anahtar dilimi
-// değişirse 30 dk dolmadan ikinci sesli uyarı çıkar; aynı dilimde kalırsa çıkmaz. Hava isteği reddedilirse rainEv=null olur.
+// ---------------------------------------------------------------- 4b) GAP-3 — D1 (v0.99.77) düzeltildi
+// Yağış sesi yalnızca YENİ olayda istenir (mergeEvent ya da yakın bant tazelemesiyle süren olay yeniden seslendirilmez); anahtar+bekleme
+// kapısı voice.js'te kalır. Hava isteği reddedilirse hâlâ geçerli olay mesafesiz "belirsiz"e döner (silinmez, eski mesafe gösterilmez/seslendirilmez).
 {
   const vsrc = readFileSync(new URL('../js/advisor/voice.js', import.meta.url), 'utf8');
   ok('statik: voice.js speak kapısı anahtar + bekleme süresi', /if \(now - \(lastSpoken\.get\(key\) \|\| 0\) < cooldownMs\) return false;\s*lastSpoken\.set\(key, now\);/.test(vsrc));
@@ -192,7 +249,7 @@ const answer = (req, wetKm) => req.res(req.pts.map((p) => {
     });
   };
 
-  // (1) Dilim değişir → ikinci uyarı: 20. km (rain@0) → 17. km'de yenileme, geniş alan 27. km'ye bağlanır (rain@1)
+  // (1) Eskiden dilim değişince ikinci uyarı: 20. km (rain@0) → 17. km'de yenileme (geniş alan). Artık olay sürer, ikinci istek yok
   freshPlan(10);
   clock += 11 * 60e3;
   check();
@@ -204,13 +261,12 @@ const answer = (req, wetKm) => req.res(req.pts.map((p) => {
   answer(H.wx[H.wx.length - 1], wide);
   await flush();
   const k1 = H.speak.map((c) => c[1].key);
-  ok('GAP-3 (1) ön koşul: iki yağış sesi isteği, anahtarlar rain@0 → rain@1', JSON.stringify(k1) === '["rain@0","rain@1"]', JSON.stringify(k1));
-  ok('GAP-3 (1) ön koşul: iki istek arası 30 dk bekleme süresinden kısa', H.speak[1].t - H.speak[0].t < 30 * 60e3);
-  const v1 = voiced(H.speak);
-  ok('GAP-3 (1) (mevcut): dilim değişince 30 dk dolmadan ikinci sesli uyarı verilir', v1.length === 2, String(v1.length));
-  ok('GAP-3 (1) (mevcut): ikinci uyarı "10 kilometre sonra" der (geri sayım sıfırlanmış)', /10 kilometre sonra yağmur/.test(H.speak[1][0]), H.speak[1][0]);
+  ok('GAP-3 (1) (D1): tek yağış sesi isteği (rain@0), dilim değişimi yok', JSON.stringify(k1) === '["rain@0"]', JSON.stringify(k1));
+  ok('GAP-3 (1) (D1): 30 dk içinde ikinci sesli uyarı yok', voiced(H.speak).length === 1, String(voiced(H.speak).length));
+  ok('GAP-3 (1) (D1): sıfırlanmış "10 kilometre sonra" ikinci duyurusu yok', H.speak.every((c, j) => j === 0 || !/10 kilometre sonra/.test(c[0])));
+  ok('GAP-3 (1) (D1): metin ~3 km sonra', kmOf(rain()) === 3, rain());
 
-  // (2) Karşı örnek, aynı dilim → yeniden uyarı yok: 90. km (round(1.8)=2) → 87. km'de yenileme 97. km (round(1.94)=2)
+  // (2) Aynı dilim: 90. km → 87. km'de yenileme. Olay sürer (~3 km), ahead.js ikinci kez speak istemez
   freshPlan(80);
   clock += 11 * 60e3;
   check();
@@ -222,12 +278,12 @@ const answer = (req, wetKm) => req.res(req.pts.map((p) => {
   clock += 10 * 60e3 + 1; check();
   answer(H.wx[H.wx.length - 1], wide2);
   await flush();
-  ok('GAP-3 (2) ön koşul: yenileme 97. km\'ye bağlandı (~10 km sonra)', kmOf(rain()) === 10, rain());
+  ok('GAP-3 (2) (D1): yenilemeden sonra ~3 km sonra (97. km\'ye yeniden bağlanmaz)', kmOf(rain()) === 3, rain());
   const k2 = H.speak.map((c) => c[1].key);
-  ok('GAP-3 (2) ön koşul: ahead.js iki kez speak ister, ikisi de rain@2', JSON.stringify(k2) === '["rain@2","rain@2"]', JSON.stringify(k2));
-  ok('GAP-3 (2) (mevcut): aynı dilimde 30 dk içinde yeniden sesli uyarı verilmez (yalnızca ilk)', voiced(H.speak).length === 1, String(voiced(H.speak).length));
+  ok('GAP-3 (2) (D1): ahead.js yalnızca bir kez speak ister (rain@2)', JSON.stringify(k2) === '["rain@2"]', JSON.stringify(k2));
+  ok('GAP-3 (2) (D1): 30 dk içinde yeniden sesli uyarı yok', voiced(H.speak).length === 1, String(voiced(H.speak).length));
 
-  // (3) Hava isteği reddedilir → rainEv=null (mevcut): önceki geçerli uyarı silinir, olay boyamadan da kalkar, hemen yeniden denenmez
+  // (3) Hava isteği reddedilir → hâlâ ileride olan uyarı mesafesiz "belirsiz"; ses yok; istek sıklığı aynı; veri gelince yeniden hesap
   freshPlan(10);
   clock += 11 * 60e3;
   check();
@@ -242,12 +298,42 @@ const answer = (req, wetKm) => req.res(req.pts.map((p) => {
   H.wx[nReq - 1].rej(new Error('sahte ağ hatası'));
   await flush();
   console.warn = warn;
-  ok('GAP-3 (3) (mevcut): ret sonrası rain=null (hâlâ ileride olan uyarı silinir)', rain() === null, String(rain()));
+  ok('GAP-3 (3) (D1): ret sonrası uyarı silinmez, "mesafe belirsiz" (eski ~20 km gösterilmez)', vague(rain()), String(rain()));
   ok('GAP-3 (3): ret uyarı günlüğüne yazılır, ses yok', warned === 1 && H.speak.length === 1, `warn=${warned} speak=${H.speak.length}`);
   H.state.nav = { ...H.state.nav, ahead: { ...H.state.nav.ahead, rain: 'SENTINEL' } };
-  at(16);
-  ok('GAP-3 (3) (mevcut): rainEv=null — sonraki check() metni yeniden yazmaz (olay yok)', rain() === 'SENTINEL', String(rain()));
-  ok('GAP-3 (3) (mevcut): ret sonrası 10 dk dolmadan yeni yağış isteği yok', H.wx.length === nReq, String(H.wx.length));
+  ok('GAP-3 (3) (D1): sonraki check() belirsiz metni yeniden yazar, mesafe uydurmaz', vague(at(16)), String(rain()));
+  ok('GAP-3 (3): ret sonrası 10 dk dolmadan yeni yağış isteği yok', H.wx.length === nReq, String(H.wx.length));
+  clock += 10 * 60e3; check(); // 16. km: örnekler 26, 41, 66, ...
+  const isRainReq = (q) => q.pts.length > 0 && q.pts[0].d != null; // plan hava yenilemesi (20 dk, sahte boş nokta) ayrı sayılır
+  const newReq = H.wx.slice(nReq);
+  ok('GAP-3 (3): 10 dk sonra tek yeni yağış isteği, aynı 7 nokta (sıklık değişmedi)', newReq.filter(isRainReq).length === 1 && newReq.find(isRainReq).pts.length === 7, String(newReq.length));
+  for (const q of newReq) answer(q, (k) => k >= 35 && k <= 100);
+  await flush();
+  ok('GAP-3 (3) (D1): veri gelince mesafe güncel konum + güncel olaydan (41. km → ~25 km)', kmOf(rain()) === 25, rain());
+
+  // (4) Ret, önceki olay yokken: metin boş kalır (uydurma uyarı yok)
+  freshPlan(10);
+  clock += 11 * 60e3;
+  check();
+  console.warn = () => {};
+  H.wx[0].rej(new Error('sahte ağ hatası'));
+  await flush();
+  console.warn = warn;
+  ok('GAP-3 (4): önceki olay yokken ret → rain=null, ses yok', rain() === null && H.speak.length === 0, String(rain()));
+
+  // (5) Ret, önceki olay geçilmişken: belirsiz uyarı üretilmez
+  freshPlan(10);
+  clock += 11 * 60e3;
+  check();
+  answer(H.wx[0], (k) => k === 20);
+  await flush();
+  at(31);
+  clock += 10 * 60e3 + 1; check();
+  console.warn = () => {};
+  H.wx[H.wx.length - 1].rej(new Error('sahte ağ hatası'));
+  await flush();
+  console.warn = warn;
+  ok('GAP-3 (5): geçilmiş olay retle geri gelmez (rain=null)', rain() === null, String(rain()));
 }
 
 // ---------------------------------------------------------------- 5) Görüntü yolu (statik): navigator.js uyarı satırı nav.ahead.rain'i her boyamada okur

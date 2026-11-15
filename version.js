@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.76';
+self.APP_VERSION = '0.99.77';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.77', date: '2026-11-16',
+    notes: [
+      'Yol önü yağış uyarısı (D1): 10 dakikalık hava yenilemesinde kalan mesafe artık "~3 km"den "~10 km"ye sıçramıyor; yağış alanı sürüyorsa geri sayım güncel konumdan devam eder ve aynı yağış yeniden seslendirilmez. Yenileme yakındaki yağışı ne doğrular ne yalanlarsa ya da hava isteği başarısız olursa uyarı silinmez, "mesafe belirsiz" yazılır; eski mesafe gösterilmez, seslendirilmez. Ek hava isteği yok, istek sıklığı değişmedi; trafik uyarısı değişmedi. Gerçek cihazda doğrulanmadı.',
+    ],
+  },
   {
     v: '0.99.76', date: '2026-11-15',
     notes: [
