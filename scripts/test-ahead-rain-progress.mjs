@@ -25,7 +25,8 @@ const STUBS = {
   '../providers/index.js': `const H = globalThis.__ar;
     export const fetchWeather = (pts) => new Promise((res, rej) => H.wx.push({ pts, res, rej }));
     export const fetchTrafficAhead = () => { H.traffic++; return new Promise(() => {}); };`,
-  '../advisor/voice.js': 'export const speak = (...a) => globalThis.__ar.speak.push(a);',
+  // Çağrı anı (sahte saat) diziye .t olarak eklenir; voice.js'in anahtar+bekleme kapısı aşağıda (GAP-3) bununla taklit edilir
+  '../advisor/voice.js': 'export const speak = (...a) => globalThis.__ar.speak.push(Object.assign(a, { t: Date.now() }));',
   './speedLimit.js': 'export const currentLimit = () => null;',
   '../routing/controller.js': 'export const updateAhead = () => {};',
   '../routing/aheadUpdate.js': 'export const wxQueryKms = () => [];',
@@ -170,6 +171,83 @@ const answer = (req, wetKm) => req.res(req.pts.map((p) => {
   ok('GAP-2 ön koşul: yenilemeden önce ~3 km sonra', before2 === 3);
   ok('GAP-2 (mevcut): 3 km ilerideki yağış uyarısı yenilemede silinir (rain=null)', rain() === null, String(rain()));
   console.log(`GAP-2 gözlem: yenileme öncesi ~${before2} km, sonrası ${JSON.stringify(rain())}`);
+}
+
+// ---------------------------------------------------------------- 4b) GAP-3 (mevcut davranış sabitlenir, düzeltme DEĞİL)
+// Yağış sesi ahead.js'te her başarılı yenilemede speak(..., { key: 'rain@' + round(alongKm/50), cooldownMs: 30 dk }) ile istenir;
+// tekrar süzgeci yalnızca voice.js'teki anahtar+bekleme kapısıdır. Yenileme olayı yeniden bağlayınca 50 km'lik anahtar dilimi
+// değişirse 30 dk dolmadan ikinci sesli uyarı çıkar; aynı dilimde kalırsa çıkmaz. Hava isteği reddedilirse rainEv=null olur.
+{
+  const vsrc = readFileSync(new URL('../js/advisor/voice.js', import.meta.url), 'utf8');
+  ok('statik: voice.js speak kapısı anahtar + bekleme süresi', /if \(now - \(lastSpoken\.get\(key\) \|\| 0\) < cooldownMs\) return false;\s*lastSpoken\.set\(key, now\);/.test(vsrc));
+  ok('statik: yağış ses anahtarı 50 km dilimi, 30 dk bekleme', /key: 'rain@' \+ Math\.round\(rainEv\.alongKm \/ 50\), cooldownMs: 30 \* 60e3/.test(asrc));
+  /** voice.js kapısının taklidi (yalnızca anahtar+bekleme; ses motoru/ayar yok sayılır): gerçekten seslendirilecek çağrılar. */
+  const voiced = (calls) => {
+    const last = new Map();
+    return calls.filter((c) => {
+      const { key, cooldownMs } = c[1];
+      if (c.t - (last.get(key) || 0) < cooldownMs) return false;
+      last.set(key, c.t);
+      return true;
+    });
+  };
+
+  // (1) Dilim değişir → ikinci uyarı: 20. km (rain@0) → 17. km'de yenileme, geniş alan 27. km'ye bağlanır (rain@1)
+  freshPlan(10);
+  clock += 11 * 60e3;
+  check();
+  const wide = (k) => k >= 20 && k <= 200;
+  answer(H.wx[0], wide);
+  await flush();
+  at(13); at(15); at(17);
+  clock += 10 * 60e3 + 1; check();
+  answer(H.wx[H.wx.length - 1], wide);
+  await flush();
+  const k1 = H.speak.map((c) => c[1].key);
+  ok('GAP-3 (1) ön koşul: iki yağış sesi isteği, anahtarlar rain@0 → rain@1', JSON.stringify(k1) === '["rain@0","rain@1"]', JSON.stringify(k1));
+  ok('GAP-3 (1) ön koşul: iki istek arası 30 dk bekleme süresinden kısa', H.speak[1].t - H.speak[0].t < 30 * 60e3);
+  const v1 = voiced(H.speak);
+  ok('GAP-3 (1) (mevcut): dilim değişince 30 dk dolmadan ikinci sesli uyarı verilir', v1.length === 2, String(v1.length));
+  ok('GAP-3 (1) (mevcut): ikinci uyarı "10 kilometre sonra" der (geri sayım sıfırlanmış)', /10 kilometre sonra yağmur/.test(H.speak[1][0]), H.speak[1][0]);
+
+  // (2) Karşı örnek, aynı dilim → yeniden uyarı yok: 90. km (round(1.8)=2) → 87. km'de yenileme 97. km (round(1.94)=2)
+  freshPlan(80);
+  clock += 11 * 60e3;
+  check();
+  const wide2 = (k) => k >= 90 && k <= 250;
+  answer(H.wx[0], wide2);
+  await flush();
+  ok('GAP-3 (2) ön koşul: ilk metin ~10 km sonra', kmOf(rain()) === 10, rain());
+  at(83); at(85); at(87);
+  clock += 10 * 60e3 + 1; check();
+  answer(H.wx[H.wx.length - 1], wide2);
+  await flush();
+  ok('GAP-3 (2) ön koşul: yenileme 97. km\'ye bağlandı (~10 km sonra)', kmOf(rain()) === 10, rain());
+  const k2 = H.speak.map((c) => c[1].key);
+  ok('GAP-3 (2) ön koşul: ahead.js iki kez speak ister, ikisi de rain@2', JSON.stringify(k2) === '["rain@2","rain@2"]', JSON.stringify(k2));
+  ok('GAP-3 (2) (mevcut): aynı dilimde 30 dk içinde yeniden sesli uyarı verilmez (yalnızca ilk)', voiced(H.speak).length === 1, String(voiced(H.speak).length));
+
+  // (3) Hava isteği reddedilir → rainEv=null (mevcut): önceki geçerli uyarı silinir, olay boyamadan da kalkar, hemen yeniden denenmez
+  freshPlan(10);
+  clock += 11 * 60e3;
+  check();
+  answer(H.wx[0], (k) => k === 35);
+  await flush();
+  at(15);
+  ok('GAP-3 (3) ön koşul: ret öncesi ~20 km sonra', kmOf(rain()) === 20, rain());
+  const warn = console.warn; let warned = 0;
+  console.warn = () => { warned++; };
+  clock += 10 * 60e3 + 1; check();
+  const nReq = H.wx.length;
+  H.wx[nReq - 1].rej(new Error('sahte ağ hatası'));
+  await flush();
+  console.warn = warn;
+  ok('GAP-3 (3) (mevcut): ret sonrası rain=null (hâlâ ileride olan uyarı silinir)', rain() === null, String(rain()));
+  ok('GAP-3 (3): ret uyarı günlüğüne yazılır, ses yok', warned === 1 && H.speak.length === 1, `warn=${warned} speak=${H.speak.length}`);
+  H.state.nav = { ...H.state.nav, ahead: { ...H.state.nav.ahead, rain: 'SENTINEL' } };
+  at(16);
+  ok('GAP-3 (3) (mevcut): rainEv=null — sonraki check() metni yeniden yazmaz (olay yok)', rain() === 'SENTINEL', String(rain()));
+  ok('GAP-3 (3) (mevcut): ret sonrası 10 dk dolmadan yeni yağış isteği yok', H.wx.length === nReq, String(H.wx.length));
 }
 
 // ---------------------------------------------------------------- 5) Görüntü yolu (statik): navigator.js uyarı satırı nav.ahead.rain'i her boyamada okur
