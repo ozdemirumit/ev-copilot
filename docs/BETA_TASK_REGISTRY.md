@@ -45,7 +45,7 @@
 | `670880fb-b286-4dd8-ae57-f1fc59a5c15c` | `completed` (köprü; önceki: `queued` operatör) | Rota ara nokta hatası: şarj durağı mavi rotanın dışında | **RM-03.** Köprü `tasks.json` (2026-11-14 okundu): completed, çıkış 0, başlangıç 2026-11-13 05:35:03Z, bitiş 05:43:45Z; sonuç v0.99.52'yi bildiriyor. Başlangıç yerel oturum `bae8d633` (`44308a4`) ile aynı → eşleşme güveni yüksek. |
 | `18bfd92d-fc90-480a-95e6-b6f3dfe071a6` | `failed` (operatör / kurtarma denetimi `9dde68df-770e-414f-b6c8-3e7e44cc2261`) | RM-04 karşı yöndeki şarj tesisine erişim (O-7 Çatalca Opet/Trugo) | **RM-04.** Yerel oturum `71ea067c` ile eşleşme (güven: yüksek, operatör istemine dayanır). Commit edilmemiş ve testleri geçen WIP, `7a801c5b-364e-43fc-8736-95d3fd2ab79a` tarafından değiştirilmeden `bb2f676` (v0.99.53) ile tamamlandı. |
 | `7a801c5b-364e-43fc-8736-95d3fd2ab79a` (yerel) | `completed` | RM-04 Beta tamamlama: sw.js önbelleği, 11 dilde iki uyarı, v0.99.53, commit/push, Beta önizleme | **RM-04.** `bb2f676` push edildi; Beta `8e62927`. Gerçek cihazda doğrulanmadı. |
-| `4843e080-f516-461f-8cd3-3393f5503689` (yerel) | `running` | Bu kayıt dosyasını oluşturma | RM-13. Yalnızca `docs/` altındaki iki dosya. |
+| `4843e080-f516-461f-8cd3-3393f5503689` (yerel) | `completed` (önceki: `running`) | Bu kayıt dosyasını oluşturma | RM-13. Yalnızca `docs/` altındaki iki dosya. Kayıt `eac142a` ile oluşturuldu (sonra `a4fff42`); JSON zaten `completed` diyordu, MD 2026-11-15 regrec5 (`a4161182`) ile eşitlendi. |
 
 ## 3. Claude Code teknik görevleri (son 30 + tarihsel)
 
@@ -109,7 +109,7 @@ Daha eski sürümler (v0.40–v0.99.38) için tek kaynak `git log` ve `js/versio
 |---|---|---|---|---|---|
 | `e1168bd5-066e-4290-84ef-4b079f7a841e` | `failed` | Yakın istasyon sıralaması + rota seçenekleri + fiyat | 40 tur sınırı; v0.100.0 yarım iş | `78ea04ca` (10f5ad1), `e1ff80e6` (181da91), `977928af` (740627e); uzlaştırma `55701559`, `330bdbd7` | Yarım iş yerel `wip/v0.100.0-price-route-failed-20261110` (`48f4d5e`) dalında, push edilmedi → RM-11 |
 | `59d19e98-b494-42b7-aae7-165fa95bde86` | `failed` | Rota seçenekleri Faz B | 40 tur sınırı | `e1ff80e6`, `977928af`; kurtarma `feb88192` | — |
-| `ff92aaa1-c1e8-4de4-9ec3-96b839af50e1` | `failed` | **Bilinmiyor** | Bilinmiyor | — | Operatörden kapsam gerekli |
+| `ff92aaa1-c1e8-4de4-9ec3-96b839af50e1` | `failed` (köprü: permanent, çıkış 1) | Salt okunur UX/tasarım denetimi: aktif navigasyon, rota planlama, acil şarj/istasyon ekranları (önceki: bilinmiyor) | 40 tur sınırı (köprü `tasks.json`, 2026-11-12 21:22:47Z–21:30:09Z; 2026-11-15 okundu) | `e3c9d97d` (navigasyon ekranı), `f8fadd86` (rota planlama), `368e874a` (şarj istasyonları) — üçü de salt okunur, köprü completed, çıkış 0, commit yok | — |
 | `29b9e9a5-cda5-47aa-a38f-a8cb9738462b` | `failed` | İnce varış çubuğu/hız kaydırıcısı/sarı şerit kaldır, büyük hız levhası | Kayıt yok | `f44cc1d`, `32952c0` (büyük olasılıkla) | Görsel doğrulama yok |
 | `56b5d6af-ca62-4f92-acff-4c0d08760bcc` | `failed` | Birleşik nav üst panel / course-up / ortalama hız / sabit kamera / 5 sn OCR | 40 tur sınırı | `1c0c1d1`, `4eed4a5`, `6f57319`, `f44cc1d`, `e191865` | Navigasyon bitince konuma yakınlaşma doğrulanmadı → RM-12 |
 | `5ad94fd2-980c-42b3-a59e-ed77b98af669` | `failed` | Ortalama hız | 40 tur sınırı | `6f57319` | Dar ekran taşması, gerçek iPhone |
@@ -300,6 +300,9 @@ SOC A, v0.99.69–72 ve BL-P2-05b/05c görevleri (yalnız yerel, push yok):
 | `bfa7c275-c515-4a01-9597-3c8dd1cc67ff` | `33b38bb8` (yüksek) | 11-14 17:52 | BL-P2-09 aşama 2 arayüz bağlama tasarımı + risk incelemesi (K1/R2/R3) | `completed` (salt okunur, dosya değişmedi) | — |
 | `31b94b7b-46c3-4986-bf2b-796c0b547a23` | `320715fa` (yüksek) | 11-14 18:20 | BL-P2-09 aşama 2A: yalıtılmış doluluk görüntü bileşeni (bağlanmamış, 101 denetim) | `isolated` — integ'e alınmadı | `f9342dd` @`feat/occupancy-view-bl-p2-09-2a` |
 | `8315e5f7-ed19-4d3b-b33e-5c2c7d233a2f` | `daace8e2` (yüksek) | 11-14 18:29 | Bu kayıt güncellemesi @57058de (yalnız belge) | `isolated` — integ'e alınmadı (ayrı FF görevi) | bu commit @`docs/registry-reconcile-57058de` |
+| `fb043265-ad04-4447-81c7-796eafbe8663` | `8428313a` (yüksek) | 11-14 22:54 | Eski `running` 44 BL aktarım kaydı (01d65a9e) köprü `663ecbf5` ile eşlendi → failed (yalnız belge) | `completed` (köprü completed, çıkış 0; yalnız yerel, push yok) | `64d4d99` @integ |
+| `a819b027-40f3-4f2c-bfbe-9472e29daa0f` | `797f670f` (yüksek) | 11-15 00:15 | Salt okunur Beta denetimi @64d4d99 (bu regrec5 alt görevini önerdi; Beta yayını NO-GO) | `completed` (salt okunur, köprü completed, çıkış 0) | — |
+| `cf0d9e85-10bc-4d85-b808-7c656c83e243` | `a4161182` (yüksek) | 11-15 01:00 | regrec5: 4843e080 MD, ff92aaa1 yerini alanlar, 8428313a/797f670f kaydı (yalnız belge) | `isolated` — integ'e alınmadı (ayrı FF görevi) | bu commit @`docs/registry-reconcile-64d4d99` |
 
 ## 8. Açık hatalar
 
