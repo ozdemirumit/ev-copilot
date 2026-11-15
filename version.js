@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.75';
+self.APP_VERSION = '0.99.76';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.76', date: '2026-11-15',
+    notes: [
+      'Tanılama: navigasyon üst paneli yerleşimi ölçülebiliyor (RM-07 A3). Tarayıcı konsolunda window.__navLayout() ekran genişliğini, metrik hücrelerinde taşma/kesilmeyi, üst uyarı alanının kayıp kaymadığını, kapat (X) düğmesinin etkin dokunma kutusunu (44 px denetimi), Liste düğmesiyle arasındaki boşluğu ve sağ kontrol sütununun yana geçip geçmediğini raporlar. Yalnızca çağrılınca okur; ekran, düğmeler ve navigasyon davranışı değişmedi. Gerçek cihazda doğrulanmadı.',
+    ],
+  },
   {
     v: '0.99.75', date: '2026-11-15',
     notes: [

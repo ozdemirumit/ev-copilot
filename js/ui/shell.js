@@ -8,6 +8,7 @@ import { toast } from './toast.js';
 import { save } from '../utils/storage.js';
 import { startGps, stopGps, locateOnce } from '../sensors/gps.js';
 import { RAIL_PITCH, railLimitTop, railFit } from './railFit.js';
+import { navLayoutReport } from './navLayoutProbe.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -134,6 +135,33 @@ export function initShell() {
   for (const el of [hud, pickBox, fabsBox, $('mapstack')]) railObserver.observe(el);
   window.addEventListener('resize', fitMore);
   fitMore();
+  // RM-07 A3 tanılama (salt okunur): tarayıcı konsolunda window.__navLayout(). Yalnızca çağrılınca ölçer; DOM'a yazmaz, dinleyici/ağ yok.
+  // NAVLAYOUT-READ-BEGIN
+  window.__navLayout = () => {
+    const rectOf = (el) => { const r = el.getBoundingClientRect(); return { left: r.left, top: r.top, width: r.width, height: r.height }; };
+    const dims = (el) => ({ clientWidth: el.clientWidth, scrollWidth: el.scrollWidth, clientHeight: el.clientHeight, scrollHeight: el.scrollHeight });
+    const cells = [...document.querySelectorAll('#nb-metrics > .nb-cell')].filter((el) => el.offsetParent).map((el) => ({
+      id: el.id, width: el.getBoundingClientRect().width, ...dims(el),
+      parts: [...el.querySelectorAll('small, b, .ne-sub, .nh-avg')].filter((p) => p.offsetParent).map((p) => ({ sel: (p.id ? '#' + p.id : p.tagName.toLowerCase() + (p.className ? '.' + String(p.className).split(' ')[0] : '')), ...dims(p) })),
+    }));
+    const close = $('near-alert-close'), list = $('near-alert-toggle');
+    const closeSnap = close && close.offsetParent ? (() => {
+      const cs = getComputedStyle(close), ca = getComputedStyle(close, '::after');
+      const px = (v) => parseFloat(v) || 0;
+      return { rect: rectOf(close), border: { left: px(cs.borderLeftWidth), top: px(cs.borderTopWidth), right: px(cs.borderRightWidth), bottom: px(cs.borderBottomWidth) },
+        after: ca.content && ca.content !== 'none' && ca.position === 'absolute' ? { left: px(ca.left), top: px(ca.top), right: px(ca.right), bottom: px(ca.bottom) } : null };
+    })() : null;
+    return navLayoutReport({
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+      navActive: !!getState('nav').active,
+      cells,
+      banners: { clientHeight: banners.clientHeight, scrollHeight: banners.scrollHeight, scrollTop: banners.scrollTop },
+      close: closeSnap,
+      list: list && list.offsetParent ? { rect: rectOf(list) } : null,
+      rail: { side: fabsBox.classList.contains('side'), maxHeight: parseFloat(more.style.maxHeight) || null },
+    });
+  };
+  // NAVLAYOUT-READ-END
   // Navigasyonu durdur: sağdaki kırmızı düğme, onay ister (yanlışlıkla dokunuşta navigasyon kesilmesin). Varsayılan odak "Devam et"te.
   const stopDlg = $('stop-nav-dialog');
   $('fab-stopnav').addEventListener('click', () => stopDlg.showModal());
