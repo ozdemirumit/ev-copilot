@@ -347,6 +347,103 @@ for (const [name, settle] of [
   ok('uçtan uca: yeniden rotada eski trafik metni kalmaz', ahead().traffic === null);
 }
 
+// ---------------------------------------------------------------- 4) D1-T2: trafik sağlayıcı hatası / doğrulanamayan olay konumu
+// Kullanıcı kararı D1 (2026-11-15): her başarılı yenilemede mesafe güncel konum + güncel olay verisinden yeniden hesaplanır;
+// istek başarısızsa ya da olay konumu doğrulanamıyorsa eski sayısal mesafe kesinmiş gibi gösterilmez ("mesafe belirsiz"), ses yok;
+// olay en fazla son başarılı alınmadan 20 dk (TRAFFIC_STALE_MS) izlenir. Sahte sağlayıcı, ağ engelli.
+{
+  const num = (t) => (t && /~(\d+(?:\.\d)?) km ileride/.exec(t) ? Number(/~(\d+(?:\.\d)?) km ileride/.exec(t)[1]) : null);
+  const step = (km, dtMs = 5000, off = 0) => { H.state.engine = { routeKm: km, offRouteKm: off }; clock += dtMs; check(); return ahead().traffic; };
+  const jamAt = (from, to = from + 1.2) => ({ ...trafficResult('mapbox'), jam: { from, to, jam: true }, delayMin: 4 });
+  H.traffic.forEach((r) => r.rej(new Error('kapat'))); await flush(); reset(); // önceki bölümün yeniden rota isteği açık kalmasın
+  /** Yeni plan, 10. km'de başarılı alınma (sıkışıklık 10+from); sonra 10 dk + 1 ms ilerleyip ikinci isteği açar ve onu döndürür. */
+  async function failSetup(from = 3, kmAtRefresh = 10.5) {
+    H.map = 'osm'; H.sameRoad = true;
+    const q = await start({ provider: 'mapbox' });
+    q[0].res(jamAt(from)); await flush();
+    const at0 = clock;
+    step(kmAtRefresh, 10 * 60e3 + 1);
+    const req = H.traffic[H.traffic.length - 1];
+    reset();
+    return { req, at0 };
+  }
+  // 4a) Hata yolu: eski sayısal mesafe gösterilmez, ses yok, olay 20 dk sınırında düşer
+  {
+    const { req, at0 } = await failSetup(3, 10.5);
+    ok('D1-T2 hata: istek sürerken (henüz hata yok) güncel konumdan ~2.5 km', num(ahead().traffic) === 2.5, ahead().traffic);
+    req.rej(new Error('Mapbox 503')); await flush();
+    ok('D1-T2 hata: "mesafe belirsiz", sayısal mesafe yok', /mesafe belirsiz/.test(ahead().traffic) && num(ahead().traffic) === null, ahead().traffic);
+    ok('D1-T2 hata: hata anında ses yok', H.speak.length === 0);
+    const t1 = step(11.2); // eski olaya göre 1,8 km: 2 km eşiği geçilirdi
+    ok('D1-T2 hata: ilerleyince de sayı yok (eski olay konumundan geri sayım yok)', /mesafe belirsiz/.test(t1) && num(t1) === null, t1);
+    ok('D1-T2 hata: eşik geçilse de ses yok', H.speak.length === 0);
+    step(12.6);
+    ok('D1-T2 hata: "Şu an" (eski konuma göre içinde) iddiası da yok', /mesafe belirsiz/.test(ahead().traffic) && !/Şu an/.test(ahead().traffic) && H.speak.length === 0, ahead().traffic);
+    clock = at0 + 20 * 60e3 - 5000; step(12.7, 0);
+    ok('D1-T2 hata: son başarılı alınmadan <20 dk: hâlâ "mesafe belirsiz"', /mesafe belirsiz/.test(ahead().traffic));
+    clock = at0 + 20 * 60e3 + 1; step(12.8, 0);
+    ok('D1-T2 hata: 20 dk dolunca sıkışıklık metni kalkar (gecikme < 10 dk)', ahead().traffic === null, ahead().traffic);
+    ok('D1-T2 hata: tüm süreçte ses yok', H.speak.length === 0);
+  }
+  // 4b) Hata → sonraki başarılı yenileme: mesafe güncel konum + güncel olay verisinden. Yenileme hatadan ≥10 dk sonra, yani son
+  // başarılı alınmadan ≥20 dk sonra gelir: eski olay o an süresi dolmuş (stale) ve düşmüştür; güncel olay yeni olarak bir kez duyurulur.
+  {
+    const { req } = await failSetup(3, 10.5); // olay 13. km
+    req.rej(new Error('zaman aşımı')); await flush();
+    step(11, 10 * 60e3 + 1); // hatadan 10 dk sonra yeni istek (son başarılıdan ~20 dk önce)
+    ok('D1-T2 kurtarma: hatadan sonra 10 dk kısıtı ile tek istek', H.traffic.length === 1, String(H.traffic.length));
+    H.traffic[0].res(jamAt(2.4)); await flush(); // güncel veri: sıkışıklık 11 + 2,4 = 13,4. km
+    ok('D1-T2 kurtarma: mesafe güncel konum + güncel olaydan (~2.4 km)', num(ahead().traffic) === 2.4, ahead().traffic);
+    ok('D1-T2 kurtarma: güncel olay bir kez, güncel mesafeyle duyurulur', H.speak.length === 1 && /^2\.4 kilometre ileride yoğun trafik/.test(H.speak[0][0]) && H.speak[0][1].key === 'traffic@13', JSON.stringify(H.speak));
+    reset();
+    ok('D1-T2 kurtarma: ilerleyince geri sayım sürer (~1.4 km)', num(step(12)) === 1.4, ahead().traffic);
+    // Kurtarma sonrası olay yeni "at" taşır: 20 dk sayacı yeniden başlar
+    ok('D1-T2 kurtarma: geri sayımda 2 km eşiği bir kez sesli', H.speak.length === 1 && H.speak[0][1].key === 'traffic@13:2', JSON.stringify(H.speak));
+    reset();
+    H.traffic.length = 0;
+  }
+  // 4c) Hata → başarılı yenileme başka yerde sıkışıklık: yeni olay, yeni mesafe ve tek duyuru
+  {
+    const { req } = await failSetup(3, 10.5);
+    req.rej(new Error('x')); await flush();
+    step(11, 10 * 60e3 + 1);
+    H.traffic[0].res(jamAt(8)); await flush(); // 19. km: eski 13. km değil
+    ok('D1-T2 yeni olay: ~8.0 km (eski olaydan bağımsız)', num(ahead().traffic) === 8, ahead().traffic);
+    ok('D1-T2 yeni olay: bir kez duyurulur', H.speak.length === 1 && H.speak[0][1].key === 'traffic@19', JSON.stringify(H.speak));
+    reset();
+  }
+  // 4d) Başarılı ama olay konumu doğrulanamıyor (trafik rotası plan yoluyla aynı değil / araç rota dışında): "belirsiz", ses yok
+  for (const [name, setup] of [
+    ['farklı yol', () => { H.sameRoad = false; }],
+    ['rota dışı', () => { H.state.engine = { routeKm: 10, offRouteKm: 2 }; }],
+  ]) {
+    H.map = 'osm'; H.sameRoad = true;
+    const q = await start({ provider: 'mapbox' });
+    setup();
+    q[0].res(jamAt(3)); await flush();
+    ok(`D1-T2 doğrulanamayan konum (${name}): "mesafe belirsiz", sayı yok`, /mesafe belirsiz/.test(ahead().traffic) && num(ahead().traffic) === null, ahead().traffic);
+    ok(`D1-T2 doğrulanamayan konum (${name}): seslendirme yok`, H.speak.length === 0, JSON.stringify(H.speak));
+    H.sameRoad = true;
+  }
+  // 4e) Hata, önceki olay yokken: metin uydurulmaz
+  {
+    H.map = 'osm'; H.sameRoad = true;
+    const q = await start({ provider: 'mapbox' });
+    q[0].rej(new Error('Mapbox 503')); await flush();
+    ok('D1-T2 hata (önceki olay yok): trafik metni yok, ses yok', ahead().traffic == null && H.speak.length === 0, String(ahead().traffic));
+  }
+  // 4f) Hata, önceki olay başka plana ait: taşınmaz
+  {
+    const { req } = await failSetup(3, 10.5);
+    H.state.plan = { ...H.state.plan, planId: 'D1T2-yeni' }; clock += 5000; check(); // check() eski olayı temizler, yeni plan isteği A sürerken açılmaz
+    req.rej(new Error('x')); await flush();
+    ok('D1-T2 hata (plan değişti): eski olay geri gelmez', ahead().traffic === null && H.speak.length === 0, String(ahead().traffic));
+    H.traffic.forEach((r) => r.rej(new Error('kapat'))); await flush(); reset();
+  }
+  const body = asrc.slice(asrc.indexOf('async function refreshTraffic'), asrc.indexOf('function check()'));
+  ok('statik D1-T2: hata yolunda ses ve yeni sağlayıcı isteği yok', !/catch \(err\) \{[^}]*(speak|fetchTrafficAhead)\(/.test(body));
+}
+
 // Günlüklerde ham veri / sahte anahtar yok
 const allLogs = JSON.stringify(logs.map(([k, a]) => [k, a.map(String)]));
 ok('günlüklerde ham sağlayıcı verisi ve anahtar yok', !allLogs.includes(SENTINEL) && !allLogs.includes(FAKE_KEY));

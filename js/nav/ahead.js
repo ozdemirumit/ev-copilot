@@ -193,9 +193,14 @@ async function refreshTraffic(km) {
     const what = trEv.heavy ? 'yoğun trafik' : 'yavaş trafik';
     const where = r.st.status === 'inside' ? 'Şu an' : r.st.status === 'ahead' ? `${fmtTrafficKm(r.shownKm)} kilometre ileride` : 'İleride';
     if (trEv.anchored) primeThresholds(trEv, r.st.status === 'inside' ? 0 : r.shownKm);
-    if (!trEv.known) speak(`${where} ${what}, yaklaşık ${trEv.lenKm.toFixed(0)} kilometre.${delayMin >= 5 ? ` Tahmini gecikme ${delayMin} dakika.` : ''}`, { key: trEv.anchored ? `traffic@${Math.round(trEv.alongKm)}` : 'traffic?', cooldownMs: 15 * 60e3 });
+    // D1-T2: olay konumu doğrulanamadıysa (farklı yol / rota dışı) yalnızca "mesafe belirsiz" metni, ses yok
+    if (trEv.anchored && !trEv.known) speak(`${where} ${what}, yaklaşık ${trEv.lenKm.toFixed(0)} kilometre.${delayMin >= 5 ? ` Tahmini gecikme ${delayMin} dakika.` : ''}`, { key: trEv.anchored ? `traffic@${Math.round(trEv.alongKm)}` : 'traffic?', cooldownMs: 15 * 60e3 });
   } catch (err) {
     console.warn('Trafik bilgisi alınamadı:', err.message);
+    // D1-T2: istek başarısız → aynı planın son başarılı olayı silinmez ama eski konumdan geri sayım/eşik sesi yapılmaz: mesafesiz
+    // "mesafe belirsiz" (eventState 'unknown'). Olayın `at`'i korunur: son başarılı alınmadan TRAFFIC_STALE_MS (20 dk) sonra düşer.
+    if (trEv && trEv.planId === getState('plan').planId) { trEv = { ...trEv, anchored: false, shownKm: null }; paintEvents(); }
+    else trEv = null;
   } finally {
     if (getState('plan').planId === id) trAt = Date.now(); // plan değiştiyse yeni planın ilk yenilemesi ertelenmez (check() trAt=0 yaptı)
     busyTr = false;

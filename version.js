@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.78';
+self.APP_VERSION = '0.99.79';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.79', date: '2026-11-16',
+    notes: [
+      'Yol önü trafik uyarısı: trafik bilgisi alınamazsa eski sıkışıklığın kalan mesafesi artık kesinmiş gibi gösterilmez ve seslendirilmez; uyarı "mesafe belirsiz" olarak kalır, son başarılı alınmadan 20 dk sonra kalkar.',
+      'Sıkışıklığın yeri plan rotasına bağlanamadığında (farklı yol ya da rota dışı) yalnızca "mesafe belirsiz" yazılır, sesli uyarı yapılmaz. Başarılı her yenilemede mesafe güncel konum ve güncel trafik verisinden hesaplanır.',
+    ],
+  },
   {
     v: '0.99.78', date: '2026-11-16',
     notes: [
