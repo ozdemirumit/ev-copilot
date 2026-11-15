@@ -27,6 +27,8 @@ Not: A2 yeni çalışma zamanı dosyası eklediği için "yalnız test" değildi
 
 ## 2. Kullanıcı kararı bekleyenler (G-USER) — karar verilmeden kod yazılmaz
 
+Güncel bağımlılık/karar matrisi (D1–D7, tümü AÇIK, seçenek + kabul ölçütü): [`docs/beta-decision-matrix.md`](beta-decision-matrix.md).
+
 | Karar | Açtığı işler | Seçenekler / not |
 |---|---|---|
 | BL-P3-01: Free kullanıcı Mapbox rotası alsın mı? | proxy `mapbox()` Premium kapısı (M1/M1b) ve rota için aylık üst sınır (M2/M2b) | (a) Premium'a kapat (Free → Valhalla); (b) açık kalsın ama aylık rota sınırı; (c) olduğu gibi. Düzeltme `test-mapbox-route-gate` KNOWN-GAP → ok; **sunucu yeniden başlatma = onay** |
