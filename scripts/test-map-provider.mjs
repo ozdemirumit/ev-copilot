@@ -135,7 +135,7 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
     // Gerçek server/.env anahtarları sızmasın: tanımlı (boş) değerler .env'nin üstüne yazılmaz.
     const blank = Object.fromEntries(['MAPBOX_TOKEN', 'TOMTOM_KEY', 'TOMTOM_MAP_KEY', 'OCM_KEY', 'HERE_API_KEY', 'GOOGLE_PLACES_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SMTP_USER', 'SMTP_PASS', 'PUBLIC_URL', 'ADMIN_EMAILS', 'GOOGLE_MAPS_BROWSER_KEY', 'GOOGLE_MAP_ID', 'MAP_DAILY_PER_USER', 'MAP_DAILY_TOTAL', 'TRUST_PROXY', 'PREMIUM_REQUIRED'].map((k) => [k, '']));
     // Premium/premium-olmayan testleri sahibinin .env/ortamına bağlı olmasın: PREMIUM_REQUIRED açıkça '1'
-    const child = spawn(process.execPath, ['server/proxy.mjs'], { cwd: ROOT, env: { ...process.env, ...blank, PREMIUM_REQUIRED: '1', PORT: String(port), HOST: '127.0.0.1', DATA_DIR: dir, ACCESS_CODES: CODE, MAPBOX_MAP_TOKEN: 'pk.test-dummy', ...extra }, stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(process.execPath, ['server/proxy.mjs'], { cwd: ROOT, env: { ...process.env, ...blank, PROVIDER_REQUESTS_PAUSED: '0', PREMIUM_REQUIRED: '1', PORT: String(port), HOST: '127.0.0.1', DATA_DIR: dir, ACCESS_CODES: CODE, MAPBOX_MAP_TOKEN: 'pk.test-dummy', ...extra }, stdio: ['ignore', 'pipe', 'pipe'] });
     children.push(child);
     let out = ''; logs.push(() => out);
     child.stdout.on('data', (d) => { out += d; });
@@ -907,7 +907,7 @@ function fakeGm(cfg = { autoIdle: true }) {
     // (a) OpenFreeMap: openmaptiles/building üzerinde fill-extrusion, rota çizgisinin altında; kapatınca kalkar; tekrar açınca çoğalmaz
     let lib = fakeLib({ base: ['openmaptiles'], baseLayers: ['building'] });
     window.maplibregl = lib;
-    const osm = await ML.createMapLibreMap(container());
+    const osm = await ML.createMapLibreMap(container(), { paused: false });
     let m = lib.maps.at(-1);
     ok('(a) OpenFreeMap: başlangıçta 3B bina katmanı yok (navigasyon dışı harita düz)', ext(m).length === 0);
     osm.setBuildings3d(true);
@@ -932,7 +932,7 @@ function fakeGm(cfg = { autoIdle: true }) {
     // Ters sıra: önce 3B, sonra uydu İLK kez açılır → Esri katmanları binaların altına girmeli (binaları örtmemeli)
     lib = fakeLib({ base: ['openmaptiles'], baseLayers: ['building'] });
     window.maplibregl = lib;
-    const osm2 = await ML.createMapLibreMap(container());
+    const osm2 = await ML.createMapLibreMap(container(), { paused: false });
     const m2 = lib.maps.at(-1);
     osm2.setBuildings3d(true); osm2.setSatellite(true);
     const bi = m2.layers.indexOf(ext(m2)[0]);
@@ -942,7 +942,7 @@ function fakeGm(cfg = { autoIdle: true }) {
     ok('(a) uydu açıkken 3B kapat/aç: binalar yine Esri üstünde, rota altında', bi2 > m2.layers.indexOf('sat-places') && bi2 < m2.layers.indexOf('route-casing'));
     // Stilde kaynak yoksa (beklenmedik stil) katman eklenmez, çökmez
     lib = fakeLib(); window.maplibregl = lib;
-    const bare = await ML.createMapLibreMap(container());
+    const bare = await ML.createMapLibreMap(container(), { paused: false });
     threw = false; try { bare.setBuildings3d(true); } catch { threw = true; }
     ok('(a) stilde openmaptiles kaynağı yoksa setBuildings3d(true) çökmez, katman eklenmez', !threw && ext(lib.maps.at(-1)).length === 0);
     delete window.maplibregl;
@@ -1163,7 +1163,7 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
     const dir = mkdtempSync(join(tmpdir(), 'sl-test-')); dirs.push(dir);
     writeFileSync(join(dir, 'db.json'), JSON.stringify(seed()));
     const blank = Object.fromEntries(['MAPBOX_TOKEN', 'TOMTOM_KEY', 'TOMTOM_MAP_KEY', 'OCM_KEY', 'HERE_API_KEY', 'GOOGLE_PLACES_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SMTP_USER', 'SMTP_PASS', 'PUBLIC_URL', 'ADMIN_EMAILS', 'GOOGLE_MAPS_BROWSER_KEY', 'GOOGLE_MAP_ID', 'MAPBOX_MAP_TOKEN', 'TRUST_PROXY', 'PREMIUM_REQUIRED', 'HERE_MONTHLY_CAP', 'SPEEDLIMIT_DAILY_PER_USER', 'HERE_ROUTER_BASE', 'HERE_BASE'].map((k) => [k, '']));
-    const child = spawn(process.execPath, ['server/proxy.mjs'], { cwd: ROOT, env: { ...process.env, ...blank, PREMIUM_REQUIRED: '1', PORT: String(port), HOST: '127.0.0.1', DATA_DIR: dir, ACCESS_CODES: CODE, HERE_ROUTER_BASE: 'http://127.0.0.1:18799', ...extra }, stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(process.execPath, ['server/proxy.mjs'], { cwd: ROOT, env: { ...process.env, ...blank, PROVIDER_REQUESTS_PAUSED: '0', PREMIUM_REQUIRED: '1', PORT: String(port), HOST: '127.0.0.1', DATA_DIR: dir, ACCESS_CODES: CODE, HERE_ROUTER_BASE: 'http://127.0.0.1:18799', ...extra }, stdio: ['ignore', 'pipe', 'pipe'] });
     children.push(child);
     let out = ''; logs.push(() => out);
     child.stdout.on('data', (d) => { out += d; });
@@ -1610,7 +1610,7 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
     const dir = reuseDir || mkdtempSync(join(tmpdir(), 'totp-test-'));
     if (!reuseDir) { dirs.push(dir); writeFileSync(join(dir, 'db.json'), JSON.stringify({ users: {}, invites: {}, docs: {}, sessions: {} })); }
     const blank = Object.fromEntries(['MAPBOX_TOKEN', 'TOMTOM_KEY', 'TOMTOM_MAP_KEY', 'OCM_KEY', 'HERE_API_KEY', 'GOOGLE_PLACES_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SMTP_USER', 'SMTP_PASS', 'PUBLIC_URL', 'ADMIN_EMAILS', 'GOOGLE_MAPS_BROWSER_KEY', 'MAPBOX_MAP_TOKEN', 'GOOGLE_MAP_ID', 'MAP_DAILY_PER_USER', 'MAP_DAILY_TOTAL', 'TRUST_PROXY', 'TRUST_CF_HEADER', 'PREMIUM_REQUIRED', 'ADMIN_TOTP_SECRET', 'ADMIN_TOKEN_TTL_SEC'].map((k) => [k, '']));
-    const child = spawn(process.execPath, ['server/proxy.mjs'], { cwd: ROOT, env: { ...process.env, ...blank, PREMIUM_REQUIRED: '1', PORT: String(port), HOST: '127.0.0.1', DATA_DIR: dir, ACCESS_CODES: CODE, ...extra }, stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(process.execPath, ['server/proxy.mjs'], { cwd: ROOT, env: { ...process.env, ...blank, PROVIDER_REQUESTS_PAUSED: '0', PREMIUM_REQUIRED: '1', PORT: String(port), HOST: '127.0.0.1', DATA_DIR: dir, ACCESS_CODES: CODE, ...extra }, stdio: ['ignore', 'pipe', 'pipe'] });
     children.push(child);
     let out = ''; logs.push(() => out);
     child.stdout.on('data', (d) => { out += d; });
@@ -1991,7 +1991,7 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
     writeFileSync(join(dir, 'db.json'), JSON.stringify(seed()));
     const blank = Object.fromEntries(['MAPBOX_TOKEN', 'TOMTOM_KEY', 'TOMTOM_MAP_KEY', 'OCM_KEY', 'HERE_API_KEY', 'GOOGLE_PLACES_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SMTP_USER', 'SMTP_PASS', 'PUBLIC_URL', 'ADMIN_EMAILS', 'GOOGLE_MAPS_BROWSER_KEY', 'MAPBOX_MAP_TOKEN', 'GOOGLE_MAP_ID', 'TRUST_PROXY', 'TRUST_CF_HEADER', 'PREMIUM_REQUIRED', 'ADMIN_TOTP_SECRET', 'ADMIN_TOKEN_TTL_SEC',
       'MAPBOX_DAILY_PER_USER', 'OCM_DAILY_PER_USER', 'OVERPASS_DAILY_PER_USER', 'OCCUPANCY_DAILY_PER_USER', 'GOOGLE_DAILY_PER_USER', 'HERE_DAILY_PER_USER', 'MAP_DAILY_PER_USER', 'MAP_DAILY_TOTAL', 'SPEEDLIMIT_DAILY_PER_USER', 'GOOGLE_DAILY_TOTAL', 'MAPBOX_MONTHLY_CAP', 'MAPBOX_MONTH_USED_SEED', 'HERE_MONTHLY_CAP', 'GOOGLE_COST_PER_CALL_USD', 'RATE_PER_MIN'].map((k) => [k, '']));
-    const child = spawn(process.execPath, ['server/proxy.mjs'], { cwd: ROOT, env: { ...process.env, ...blank, ...SECRETS, PREMIUM_REQUIRED: '1', PORT: String(port), HOST: '127.0.0.1', DATA_DIR: dir, ACCESS_CODES: CODE,
+    const child = spawn(process.execPath, ['server/proxy.mjs'], { cwd: ROOT, env: { ...process.env, ...blank, ...SECRETS, PROVIDER_REQUESTS_PAUSED: '0', PREMIUM_REQUIRED: '1', PORT: String(port), HOST: '127.0.0.1', DATA_DIR: dir, ACCESS_CODES: CODE,
       MAPBOX_BASE: MOCK, OCM_BASE: MOCK, HERE_BASE: MOCK, HERE_ROUTER_BASE: MOCK, OVERPASS_URLS: MOCK + '/api/interpreter', OVERPASS_GAP_MS: '0', ...extra }, stdio: ['ignore', 'pipe', 'pipe'] });
     children.push(child);
     let out = ''; logs.push(() => out);

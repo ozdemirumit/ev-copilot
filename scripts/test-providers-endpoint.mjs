@@ -56,7 +56,7 @@ async function start(port, extra = {}) {
   writeFileSync(join(dir, 'db.json'), JSON.stringify(seed()));
   const child = spawn(process.execPath, ['server/proxy.mjs'], {
     cwd: ROOT,
-    env: { ...process.env, ...BLANK, PREMIUM_REQUIRED: '1', PORT: String(port), HOST: '127.0.0.1', DATA_DIR: dir, ACCESS_CODES: CODE,
+    env: { ...process.env, ...BLANK, PROVIDER_REQUESTS_PAUSED: '0', PREMIUM_REQUIRED: '1', PORT: String(port), HOST: '127.0.0.1', DATA_DIR: dir, ACCESS_CODES: CODE,
       MAPBOX_BASE: UP, OCM_BASE: UP, TOMTOM_BASE: UP, HERE_BASE: UP, HERE_ROUTER_BASE: UP, OVERPASS_URLS: UP, ...extra },
     stdio: ['ignore', 'pipe', 'pipe'],
   });

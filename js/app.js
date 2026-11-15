@@ -11,6 +11,7 @@
   window.visualViewport?.addEventListener('resize', fit);
 })();
 
+import './net/providerGateInstall.js'; // İLK import: sağlayıcı istekleri duraklatıldı (kota koruması), başka modül korumasız fetch çağıramaz
 import { installMeter } from './net/meter.js';
 import { initI18n } from './i18n/index.js';
 import { initLangSelect } from './ui/langSelect.js';

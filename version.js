@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.77';
+self.APP_VERSION = '0.99.78';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.78', date: '2026-11-16',
+    notes: [
+      'Kota koruması: tüm harici sağlayıcı istekleri varsayılan olarak DURAKLATILDI (ücretsiz kotalar doldu). Rota, trafik, hava, adres arama, şarj istasyonu/doluluk, hız limiti, Tesla listesi ve ABRP telemetri istekleri gönderilmez; uygulama bu verileri bilinmiyor/veri yok olarak gösterir.',
+      'Harita altlığı (karo) yüklenmez: harita düz arka planla açılır; rota çizgisi ve işaretçiler çizilir. Uygulamanın yerel işlevleri (pil/OCR, araç ayarları, kayıtlı yerler, geçmiş) çalışır.',
+      'Ara sunucuda da sağlayıcıya giden yollar duraklatıldı (503 provider_paused); geri açma yalnızca yönetici kararıyla.',
+    ],
+  },
   {
     v: '0.99.77', date: '2026-11-16',
     notes: [

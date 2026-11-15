@@ -28,6 +28,7 @@ import { createTesla } from './tesla.mjs';
 import { createMaps } from './maps.mjs';
 import { buildCatalog } from './providerCatalog.mjs';
 import { makeScrub } from './scrub.mjs';
+import { providerPaused, installServerFetchGuard, pausedRoute } from './providerGate.mjs';
 import { parsePoints, pointsKey, hereSpeedLimits, createLru, MAX_CACHE_ITEM } from './speedlimits.mjs';
 import { createAdminAuth } from './totp.mjs';
 
@@ -46,6 +47,10 @@ function loadEnv(file) {
 loadEnv(join(here, '.env'));
 
 const env = process.env;
+// Kota koruması (server/providerGate.mjs): varsayılan DURAKLATILMIŞ. Korumacı, hiçbir modül üst sunucuya istek yapmadan önce kurulur.
+const PROVIDERS_PAUSED = providerPaused(env);
+installServerFetchGuard(globalThis, { paused: PROVIDERS_PAUSED, onBlock: (host) => console.log(`kota koruması: üst sunucu isteği gönderilmedi (${host})`) });
+if (PROVIDERS_PAUSED) console.log('Sağlayıcı istekleri DURAKLATILDI (kota koruması). Geri açmak için: PROVIDER_REQUESTS_PAUSED=0');
 const list = (s) => String(s || '').split(',').map((x) => x.trim()).filter(Boolean);
 const PORT = Number(env.PORT || 8787);
 const HOST = env.HOST || '127.0.0.1';
@@ -693,6 +698,7 @@ const server = http.createServer(async (req, res) => {
     if (adminAuth && id.kind === 'legacy' && pp.startsWith('/admin') && !adminTok && !isLocal(req)) return json(res, 401, { error: 'totp_required' }); // dışarıdan yalnızca erişim koduyla yönetim yok
     if (dev && id.kind === 'user') devices.link(dev, id.user.id, ip); // oturumlu istek: cihaz hesaba bağlanır (giriş öncesi anonim kayıt birleşir)
     const p = url.pathname;
+    if (PROVIDERS_PAUSED && pausedRoute(p)) return json(res, 503, { error: 'provider_paused' }); // kota koruması: üst sağlayıcıya gidilmez, sayaç/maliyet artmaz, önbellek canlı gibi sunulmaz
     if (p === '/health') return json(res, 200, { ok: true, mapbox: !!MAPBOX, here: !!HERE, ocm: !!OCM, tomtom: !!TOMTOM, googleStations: !!GOOGLE_PLACES, overpass: true, occupancy: true, v: 3 });
     if (p.startsWith('/mapbox/')) return await mapbox(req, res, url, id);
     if (p.startsWith('/here/')) return await hereStations(req, res, url, id);
