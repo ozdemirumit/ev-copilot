@@ -302,7 +302,9 @@ SOC A, v0.99.69–72 ve BL-P2-05b/05c görevleri (yalnız yerel, push yok):
 | `8315e5f7-ed19-4d3b-b33e-5c2c7d233a2f` | `daace8e2` (yüksek) | 11-14 18:29 | Bu kayıt güncellemesi @57058de (yalnız belge) | `isolated` — integ'e alınmadı (ayrı FF görevi) | bu commit @`docs/registry-reconcile-57058de` |
 | `fb043265-ad04-4447-81c7-796eafbe8663` | `8428313a` (yüksek) | 11-14 22:54 | Eski `running` 44 BL aktarım kaydı (01d65a9e) köprü `663ecbf5` ile eşlendi → failed (yalnız belge) | `completed` (köprü completed, çıkış 0; yalnız yerel, push yok) | `64d4d99` @integ |
 | `a819b027-40f3-4f2c-bfbe-9472e29daa0f` | `797f670f` (yüksek) | 11-15 00:15 | Salt okunur Beta denetimi @64d4d99 (bu regrec5 alt görevini önerdi; Beta yayını NO-GO) | `completed` (salt okunur, köprü completed, çıkış 0) | — |
-| `cf0d9e85-10bc-4d85-b808-7c656c83e243` | `a4161182` (yüksek) | 11-15 01:00 | regrec5: 4843e080 MD, ff92aaa1 yerini alanlar, 8428313a/797f670f kaydı (yalnız belge) | `isolated` — integ'e alınmadı (ayrı FF görevi) | bu commit @`docs/registry-reconcile-64d4d99` |
+| `cf0d9e85-10bc-4d85-b808-7c656c83e243` | `a4161182` (yüksek) | 11-15 01:00 | regrec5: 4843e080 MD, ff92aaa1 yerini alanlar, 8428313a/797f670f kaydı (yalnız belge) | `completed`, yerel entegre (önceki: `isolated` — integ'e alınmadı; `363779c` integ'e `789be002` ile ff, 11-15 ~02:15 UTC; düzeltme regrec6) | `363779c` @`docs/registry-reconcile-64d4d99` → integ |
+| `d5c0541b-9fc8-4c37-8645-015ed9a6ad3f` | `789be002` (yüksek) | 11-15 02:10 | `363779c`'yi integ'e ff (`64d4d99..363779c`, yeni commit yok; test-beta-tracker 65/0, check.mjs v0.99.73 181 dosya, scripts/test-*.mjs 85/0) | `completed` (köprü completed, çıkış 0; yerel entegre, push yok) | `363779c` @integ |
+| `77006ffc-c298-49ed-ae0b-368ce57aca97` | `b05ce195` (yüksek) | 11-15 03:26 | regrec6: cf0d9e85/a4161182 ve 789be002 JSON'a eklendi, regrec5 satırı düzeltildi, `source_head_at_update` → `363779c` (yalnız belge) | `running` — `isolated`, integ'e alınmadı (ayrı FF görevi) | bu commit @`docs/registry-reconcile-363779c` |
 
 ## 8. Açık hatalar
 
