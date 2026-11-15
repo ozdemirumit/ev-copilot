@@ -941,6 +941,9 @@ body.navmode .mapsoc, body.sheet-open .mapsoc { display: none; }
 /* Acil şarj önerisi: varsayılan tek kart; "Liste" diğer istasyonları aynı üst panelde açar, başlık kayarken görünür kalır */
 .tp-charge .tp-head { position: sticky; top: 0; z-index: 1; background: var(--card); }
 .tp-head .tog-list { display: inline-flex; align-items: center; justify-content: center; gap: 2px; width: auto; min-width: 66px; height: 40px; padding: 0 6px 0 10px; border-radius: 12px; color: var(--accent); font-size: 13px; font-weight: 700; white-space: nowrap; }
+/* Kapat X: görünür 36 px değişmez; görünmez dokunma alanı 34 (dolgu kutusu) + 2x5 = 44 px. Kenarlıktan 4 px taşar: "Liste" ile 6 px boşluk, .tp-charge dolgusu ≥ 6 px → çakışmaz, kırpılmaz */
+#near-alert-close { position: relative; }
+#near-alert-close::after { content: ""; position: absolute; inset: -5px; }
 .near-name { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .near-info[aria-expanded="true"] .near-name { white-space: normal; }
 .tog-list .tog-count { margin-left: 2px; font-variant-numeric: tabular-nums; opacity: .8; }

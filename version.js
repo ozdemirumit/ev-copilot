@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.73';
+self.APP_VERSION = '0.99.74';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.74', date: '2026-11-15',
+    notes: [
+      'Erişilebilirlik: yakındaki şarj uyarısındaki kapat (X) düğmesinin dokunma alanı 36 px\'ten 44 px\'e büyütüldü (RM-07 A1). Düğmenin görünür boyutu ve yeri değişmedi; büyütme görünmezdir, komşu "Liste" düğmesine binmez. Gerçek cihazda doğrulanmadı.',
+    ],
+  },
   {
     v: '0.99.73', date: '2026-11-15',
     notes: [

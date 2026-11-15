@@ -53,6 +53,14 @@ const CSS_RULES = {
   body: 'font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;',
   tog: '.tog { flex: none; width: 30px; height: 30px; padding: 0; border-radius: 8px;',
   tpTog: '.tp-head .tog { width: 36px; height: 36px; }',
+  closePos: '#near-alert-close { position: relative; }',
+  closeHit: '#near-alert-close::after { content: ""; position: absolute; inset: -5px; }',
+  boxSizing: '* { box-sizing: border-box;',
+  togBorder: 'border: 1px solid var(--line); background: var(--card-2); color: var(--muted); font-size: 18px; line-height: 1; }',
+  tpHead: '.tp-head { display: flex; align-items: center; gap: 6px; }',
+  tpList: '.tp-head .tog-list { display: inline-flex; align-items: center; justify-content: center; gap: 2px; width: auto; min-width: 66px; height: 40px;',
+  nearBodyGap: '.tp-charge .near-body { margin-top: 4px; }',
+  toppanel: '.toppanel { background: rgba(22, 27, 35, .97); overflow: hidden; }',
 };
 for (const [k, s] of Object.entries(CSS_RULES)) ok(`kaynak: css ${k} kuralı birebir yerinde`, css.includes(s), REVIEW);
 
@@ -65,7 +73,7 @@ ok('kaynak: .nb-alert 15px kuralı ≤380 px 14px kuralından önce (dar ekranda
 const count = (re) => (css.match(re) || []).length;
 ok('kaynak: "#ne-soc" css geçişi sayısı 1 (renk)', count(/#ne-soc\b/g) === 1, `${count(/#ne-soc\b/g)}${REVIEW}`);
 ok('kaynak: "#ne-next" (.none) ve "#ne-next-t" css\'te birer kez', count(/#ne-next(?![-\w])/g) === 1 && count(/#ne-next-t(?![-\w])/g) === 1, REVIEW);
-ok('kaynak: "#near-alert-close" css\'te ayrıca boyutlanmıyor', count(/#near-alert-close/g) === 0, REVIEW);
+ok('kaynak: "#near-alert-close" css\'te yalnızca dokunma alanı için 2 kez (position + ::after; görünür boyut .tp-head .tog)', count(/#near-alert-close/g) === 2, `${count(/#near-alert-close/g)}${REVIEW}`);
 ok('kaynak: "nb-alert" css geçişi sayısı 8', count(/nb-alert/g) === 8, `${count(/nb-alert/g)}${REVIEW}`);
 ok('kaynak: "nb-metrics" css geçişi sayısı 16', count(/nb-metrics/g) === 16, `${count(/nb-metrics/g)}${REVIEW}`);
 
@@ -174,13 +182,42 @@ ok('taşma koruması: .ne-v b overflow:hidden + ellipsis, .ne-v nowrap, hücre m
 }
 
 // ---------------------------------------------------------------------------------------------------------------------------
-// 4) Kapat (X) 36px: near-alert-close .tog → .tp-head .tog 36×36 (statik). 44px dokunma önerisinin altında: bilinen boşluk.
+// 4) Kapat (X): görünür 36×36 (.tp-head .tog) DEĞİŞMEZ; görünmez ::after dokunma alanı ≥ 44×44 (RM-07 A1).
+//    Hesap kaynaktan okunur: border-box → dolgu kutusu = 36 − 2×kenarlık; ::after inset −N → etkin = dolgu kutusu + 2N.
+//    Komşu "Liste" (.tog-list) ile çakışma ve üst kutu dolgusunda kırpılma da denetlenir. Gerçek cihazda doğrulanmadı.
 // ---------------------------------------------------------------------------------------------------------------------------
 {
   const tp = css.indexOf(CSS_RULES.tpTog), base = css.indexOf(CSS_RULES.tog);
   ok('kapat X: .tp-head .tog (36px) temel .tog (30px) kuralından sonra', tp > base && base >= 0, REVIEW);
-  ok('kapat X: tahmini dokunma alanı 36×36 ≥ WCAG 2.5.8 en az 24×24', 36 >= 24);
-  ok('BİLİNEN BOŞLUK sabit: kapat X 36px < 44px (Apple HIG / Material 48dp önerisi) — düzeltilmedi', 36 < 44);
+  const num = (re) => { const m = css.match(re); return m ? Number(m[1]) : NaN; };
+  const visW = num(/\.tp-head \.tog \{ width: (\d+)px; height: \d+px; \}/), visH = num(/\.tp-head \.tog \{ width: \d+px; height: (\d+)px; \}/);
+  const border = num(/\.tog \{ flex: none;[^}]*border: (\d+)px solid/);
+  const inset = num(/#near-alert-close::after \{[^}]*inset: -(\d+)px;/);
+  ok('kapat X: görünür boyut 36×36 korunuyor (görsel geometri değişmedi)', visW === 36 && visH === 36, `${visW}×${visH}`);
+  ok('kapat X: kenarlık 1px ve box-sizing border-box (dolgu kutusu 34px)', border === 1 && css.includes(CSS_RULES.boxSizing) && css.includes(CSS_RULES.togBorder), REVIEW);
+  ok('kapat X: görünür boyut ≥ WCAG 2.5.8 en az 24×24', visW >= 24 && visH >= 24);
+  const effW = visW - 2 * border + 2 * inset, effH = visH - 2 * border + 2 * inset;
+  table.push(`kapat X: görünür ${visW}×${visH}, kenarlık ${border}px, ::after inset −${inset}px → etkin dokunma alanı ${effW}×${effH}`);
+  ok('KABUL: kapat X etkin dokunma alanı ≥ 44×44 (Apple HIG 44pt)', effW >= 44 && effH >= 44, `etkin ${effW}×${effH}`);
+  ok('kapat X: ::after görünmez (yalnız content/position/inset; arka plan/kenarlık yok), kapsayıcı butonun kendisi (position: relative önce)',
+    css.includes(CSS_RULES.closeHit) && css.includes(CSS_RULES.closePos) && css.indexOf(CSS_RULES.closeHit) > css.indexOf(CSS_RULES.closePos), REVIEW);
+  const spill = inset - border; // görünür kenarlık kutusunun dışına her yönde taşma
+  const headGap = num(/\.tp-head \{ display: flex; align-items: center; gap: (\d+)px; \}/);
+  const iToggle = html.indexOf('id="near-alert-toggle"'), iClose = html.indexOf('id="near-alert-close"');
+  ok('kapat X: komşu "Liste" ile çakışma yok (taşma 4px < .tp-head gap 6px; Liste kapat\'tan önce)',
+    css.includes(CSS_RULES.tpHead) && css.includes(CSS_RULES.tpList) && spill === 4 && spill < headGap && iToggle > 0 && iToggle < iClose, `taşma ${spill}, gap ${headGap}${REVIEW}`);
+  // Kırpılma: .toppanel overflow:hidden → taşma .tp-charge dolgusu içinde kalmalı (tüm .tp-charge dolgu kuralları)
+  const pads = [...css.matchAll(/\.tp-charge \{ padding: ([\d px]+);/g)].map((m) => {
+    const [t, r = t, b = t] = m[1].trim().split(/\s+/).map((x) => parseFloat(x));
+    return { t, r, b };
+  });
+  ok('kaynak: .tp-charge dolgu kuralı sayısı 3 (6/12/8, 10/12, 6/10)', pads.length === 3, `${pads.length}${REVIEW}`);
+  const minTB = Math.min(...pads.map((p) => Math.min(p.t, p.b))), minR = Math.min(...pads.map((p) => p.r));
+  ok('kapat X: taşma .tp-charge dolgusu içinde (üst/alt ≥6px, sağ ≥10px) → .toppanel overflow:hidden kırpmaz',
+    minTB === 6 && minR === 10 && spill <= minTB && spill <= minR, `taşma ${spill}, üst/alt ${minTB}, sağ ${minR}${REVIEW}`);
+  ok('kapat X: .toppanel yükseklik sınırı yok (kaymaz → yapışkan başlık üstten kırpılmaz)', css.includes(CSS_RULES.toppanel) && !/\.toppanel[^{]*\{[^}]*max-height/.test(css), REVIEW);
+  ok('kapat X: alt taşma liste gövdesine binmez (≤ .near-body margin-top 4px)', css.includes(CSS_RULES.nearBodyGap) && spill <= 4, REVIEW);
+  ok('kapat X: tıklama işleyicisi butonda (::after dokunuşu butona gider)', read('js/nav/nearby.js').includes("$('near-alert-close').addEventListener('click',"), REVIEW);
 }
 
 console.log('\n— Yaklaşık model tablosu (TAHMİN, tarayıcı ölçümü değil) —');

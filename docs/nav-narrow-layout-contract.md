@@ -1,6 +1,6 @@
 # RM-07 — Dar ekran navigasyon üst barı: çevrimdışı yerleşim risk sözleşmesi
 
-Durum: **yalnızca test + belge**. Uygulama kodu, CSS, i18n, sürüm, SW değişmedi. Hiçbir hata "düzeltildi" sayılmaz.
+Durum: **test + belge**; tek uygulama değişikliği RM-07 A1 (v0.99.74): `#near-alert-close` görünmez dokunma alanı 36→44px (yalnız CSS `::after`). Diğer boşluklar açık; hiçbiri cihazda "düzeltildi" sayılmaz.
 Taban: `e08b265` (v0.99.73). Test: `scripts/test-nav-narrow-layout-contract.mjs` (düz Node, bağımlılık yok, ağ yok).
 
 ## 1. Ne ölçülüyor, ne ölçülmüyor
@@ -47,15 +47,21 @@ Yükseklik, 360×640 (`@media (min-height: 521px) and (max-height: 640px) { #ban
 
 Uyarı (`.nb-alert`): `-webkit-line-clamp: 3`, dar ekranda 14px/1.2 → 1→3 satır büyümesi ≈33.6px; 4. satır kırpılır.
 
-Kapat X (`#near-alert-close`, `.tp-head .tog`): statik 36×36px. WCAG 2.5.8 (24px) üstünde; Apple HIG 44pt / Material 48dp önerisinin altında.
+Kapat X (`#near-alert-close`, `.tp-head .tog`): görünür boyut 36×36px (değişmedi). RM-07 A1 (v0.99.74) ile görünmez dokunma alanı
+`#near-alert-close { position: relative; }` + `#near-alert-close::after { content: ""; position: absolute; inset: -5px; }` (mevcut `.fabs-more button::after` deseni):
+border-box, 1px kenarlık → dolgu kutusu 34px + 2×5 = **etkin 44×44px** (≥ Apple HIG 44pt; Material 48dp altında). Kenarlık kutusundan her yönde 4px taşar:
+- Komşu "Liste" (`.tog-list`, kapat'tan önce): `.tp-head` gap 6px > 4px → çakışma yok (2px boşluk kalır).
+- Kırpılma: `.toppanel` overflow:hidden, ama `.tp-charge` dolgusu tüm kurallarda üst/alt ≥6px, sağ ≥10px → 4px taşma kırpılmaz; `.toppanel` yükseklik sınırı yok, yapışkan başlık kaymaz.
+- Alt: `.tp-charge .near-body` margin-top 4px → liste gövdesine binmez.
+Test bu hesabı kaynaktan okur ve **etkin ≥44×44**'ü kabul ölçütü olarak denetler (tahmini; tarayıcı/cihaz ölçümü değil).
 
-## 4. Bilinen boşluklar (açık; düzeltilmedi)
+## 4. Bilinen boşluklar (5. hariç açık; düzeltilmedi)
 
 1. **Pil `≈%100`** dar hücrede (1.15fr) model tüm genişliklerde kırpılma öngörüyor → `≈%10…` görünebilir. Gerçek cihazda doğrulanmadı.
 2. **Sonraki şarj alt satırı** (`%100 · 1 sa 59 dk`) tüm genişliklerde … ile kırpılır (tasarım gereği ellipsis; bilgi kaybı riski).
 3. **Sonraki şarj `1234 km`** sınırda; 3–4 haneli km değerleri yazı tipine göre kırpılabilir.
 4. **360×640'ta 3 satır uyarı** veya uzun manevra/yol adı + şerit ile üst bar `#banners` içinde kayar; metrik/uyarı satırı ilk bakışta görünmeyebilir. `#near-alert` (şarj uyarısı) aynı kutuda ayrıca yer kaplar — modele katılmadı.
-5. **Kapat X 36px** < 44px dokunma önerisi.
+5. ~~**Kapat X 36px** < 44px dokunma önerisi.~~ **Kaynak modelinde kapandı** (RM-07 A1, v0.99.74): etkin dokunma alanı 44×44px, görünür 36px. Gerçek cihazda doğrulanmadı (§6 madde 6).
 6. Model dışı: kullanıcı yazı tipi ölçeklemesi (Android "Yazı tipi boyutu", iOS Safari metin boyutu / sayfa yakınlaştırma), 11 dil etiketleri (yalnız Türkçe metin modellendi), `Limit` hücresi, `Varışta`/`Menzil` değerleri, yatay yönlendirme (≤520px yükseklik), güvenli alan girintileri.
 
 ## 5. Kaynak kayması koruması
