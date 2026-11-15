@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.79';
+self.APP_VERSION = '0.99.80';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.80', date: '2026-11-16',
+    notes: [
+      'Trafik bilgisi alınamazsa son başarılı canlı varış süresi artık güncelmiş gibi kullanılmaz; varış süresi planlanan süreye döner. Eski "≈ X dk gecikme" tahmini de gösterilmez; süren sıkışıklık uyarısı gecikme dakikası olmadan "mesafe belirsiz" kalır. Başarılı her yenilemede canlı varış ve gecikme eskisi gibi gösterilir. Yeni sağlayıcı isteği yok.',
+    ],
+  },
   {
     v: '0.99.79', date: '2026-11-16',
     notes: [

@@ -212,7 +212,10 @@ await run('trafik kaynağı yok (null)', { provider: 'mapbox', map: 'osm', res: 
   q[0].rej(new Error('Mapbox 429'));
   await flush();
   const w = logs.slice(n0);
-  ok('hata: etki yok, metin dokunulmaz (eski davranış)', noEffects() && H.patches.length === 0 && ahead().traffic === 'önceki');
+  // D1-T3 (v0.99.80): hata yolunda tek etki aynı planın eski canlı varışını ve eski trafik/gecikme metnini kaldırmaktır (önceden dokunulmazdı)
+  ok('hata: hız/enerji/renk/ses etkisi yok; yalnızca liveRemain null ve eski trafik metni kalkar (D1-T3)', noEffects() && H.patches.length === 2 &&
+    H.patches[0][0] === 'nav' && H.patches[0][1].liveRemain === null && Object.keys(H.patches[0][1]).length === 1 &&
+    H.patches[1][0] === 'nav' && H.patches[1][1].ahead?.traffic === null && ahead().traffic === null && unrelatedKept());
   ok('hata: tek uyarı, yalnızca mesaj', w.length === 1 && w[0][0] === 'warn' && w[0][1][1] === 'Mapbox 429');
 }
 
@@ -442,6 +445,77 @@ for (const [name, settle] of [
   }
   const body = asrc.slice(asrc.indexOf('async function refreshTraffic'), asrc.indexOf('function check()'));
   ok('statik D1-T2: hata yolunda ses ve yeni sağlayıcı isteği yok', !/catch \(err\) \{[^}]*(speak|fetchTrafficAhead)\(/.test(body));
+}
+
+// ---------------------------------------------------------------- 5) D1-T3: sağlayıcı hatasında eski canlı varış (liveRemain) ve "≈ X dk gecikme"
+// İstek başarısızsa son başarılı canlı varış süresi ve gecikme tahmini güncelmiş gibi kullanılmaz/gösterilmez (navigator plan süresine döner);
+// başarılı yenilemede eski davranış aynen sürer. Sahte sağlayıcı, ağ engelli.
+{
+  const G = await import('../js/nav/trafficGuard.js');
+  const step = (km, dtMs = 5000) => { H.state.engine = { routeKm: km, offRouteKm: 0 }; clock += dtMs; check(); return ahead().traffic; };
+  const res = (jam, delayMin) => ({ ...trafficResult('mapbox', { jam: !!jam, delayMin }), ...(jam ? { jam: { from: jam, to: jam + 1.2, jam: true } } : {}) });
+  H.traffic.forEach((r) => r.rej(new Error('kapat'))); await flush(); reset();
+  /** Yeni plan + başarılı ilk alınma (r); 10 dk + 1 ms sonra ikinci isteği açar ve döndürür. */
+  async function setup(r) {
+    H.map = 'osm'; H.sameRoad = true;
+    const q = await start({ provider: 'mapbox' });
+    q[0].res(r); await flush();
+    const okLive = H.state.nav.liveRemain?.h === 1.25;
+    const text0 = ahead().traffic;
+    step(10.5, 10 * 60e3 + 1);
+    const req = H.traffic[H.traffic.length - 1];
+    reset();
+    return { req, okLive, text0 };
+  }
+  // 5a) Sıkışıklıksız büyük gecikme: hata sonrası "≈ 15 dk gecikme" ve canlı varış kalmaz
+  {
+    const { req, okLive, text0 } = await setup(res(0, 15));
+    ok('D1-T3 başarılı (gecikme): canlı varış yazılır ve "≈ 15 dk gecikme" gösterilir', okLive && /≈ 15 dk gecikme/.test(text0), text0);
+    req.rej(new Error('Mapbox 503')); await flush();
+    ok('D1-T3 hata (gecikme): eski canlı varış silinir', H.state.nav.liveRemain === null, JSON.stringify(H.state.nav.liveRemain));
+    ok('D1-T3 hata (gecikme): navigator canlı süre bulamaz (plan süresine döner)', G.liveRemainH(H.state.nav.liveRemain, H.state.plan.planId, clock) === null);
+    ok('D1-T3 hata (gecikme): eski "≈ X dk gecikme" iddiası kalkar', !/dk gecikme/.test(ahead().traffic ?? ''), String(ahead().traffic));
+    step(11, 5 * 60e3);
+    ok('D1-T3 hata (gecikme): sonraki kontrollerde de geri gelmez', !/dk gecikme/.test(ahead().traffic ?? ''), String(ahead().traffic));
+    ok('D1-T3 hata (gecikme): ilgisiz uyarılar korunur, ses yok', unrelatedKept() && H.speak.length === 0);
+    H.traffic.forEach((r) => r.rej(new Error('kapat'))); await flush(); reset();
+  }
+  // 5b) Sıkışıklık + gecikme: hata sonrası "mesafe belirsiz" kalır ama gecikme dakikası iddia edilmez; 20 dk sonra eski gecikme dönmez
+  {
+    const { req, okLive, text0 } = await setup(res(3, 12));
+    ok('D1-T3 başarılı (sıkışıklık): metinde "≈ 12 dk gecikme"', okLive && /≈ 12 dk gecikme/.test(text0), text0);
+    req.rej(new Error('zaman aşımı')); await flush();
+    ok('D1-T3 hata (sıkışıklık): canlı varış silinir', H.state.nav.liveRemain === null);
+    ok('D1-T3 hata (sıkışıklık): "mesafe belirsiz", gecikme dakikası yok', /mesafe belirsiz/.test(ahead().traffic) && !/dk gecikme/.test(ahead().traffic), ahead().traffic);
+    step(12.9, 10 * 60e3); // son başarılıdan 20 dk + 1 ms sonra: olay eskir (TRAFFIC_STALE_MS)
+    ok('D1-T3 hata (sıkışıklık): olay eskiyince eski "≈ 12 dk gecikme" geri gelmez', !/dk gecikme/.test(ahead().traffic ?? ''), String(ahead().traffic));
+    ok('D1-T3 hata (sıkışıklık): ses yok', H.speak.filter((s) => /gecikme/.test(s[0])).length === 0, JSON.stringify(H.speak));
+    H.traffic.forEach((r) => r.rej(new Error('kapat'))); await flush(); reset();
+  }
+  // 5c) Hata → sonraki başarılı yenileme: canlı varış ve gecikme normal biçimde geri gelir
+  {
+    const { req } = await setup(res(0, 15));
+    req.rej(new Error('x')); await flush();
+    step(11, 10 * 60e3 + 1);
+    ok('D1-T3 kurtarma: tek yeni istek', H.traffic.length === 1, String(H.traffic.length));
+    H.traffic[0].res(res(0, 18)); await flush();
+    ok('D1-T3 kurtarma: canlı varış yeniden yazılır (plana bağlı)', H.state.nav.liveRemain?.h === 1.25 && H.state.nav.liveRemain.planId === H.state.plan.planId && H.state.nav.liveRemain.at === clock);
+    ok('D1-T3 kurtarma: güncel "≈ 18 dk gecikme" gösterilir', /≈ 18 dk gecikme/.test(ahead().traffic), String(ahead().traffic));
+    reset();
+  }
+  // 5d) Hata geldiğinde plan değişmişse: yeni planın canlı varışı ve trafik metni silinmez
+  {
+    const { req } = await setup(res(0, 15));
+    H.state.plan = { ...H.state.plan, planId: 'D1T3-yeni' }; clock += 5000; check();
+    const liveB = { h: 2, at: clock, planId: 'D1T3-yeni' };
+    H.state.nav = { ...H.state.nav, liveRemain: liveB, ahead: { ...H.state.nav.ahead, traffic: '🚦 B planı' } };
+    reset();
+    req.rej(new Error('x')); await flush();
+    ok('D1-T3 hata (plan değişti): yeni planın canlı varışı ve metni korunur', H.state.nav.liveRemain === liveB && ahead().traffic === '🚦 B planı' && H.patches.length === 0, JSON.stringify(H.patches));
+    H.traffic.forEach((r) => r.rej(new Error('kapat'))); await flush(); reset();
+  }
+  const body = asrc.slice(asrc.indexOf('async function refreshTraffic'), asrc.indexOf('function check()'));
+  ok('statik D1-T3: hata yolunda yeni canlı varış yazılmaz (yalnızca null)', !/catch \(err\) \{[^}]*liveRemain: \{/.test(body));
 }
 
 // Günlüklerde ham veri / sahte anahtar yok

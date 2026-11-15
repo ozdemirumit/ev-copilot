@@ -199,8 +199,13 @@ async function refreshTraffic(km) {
     console.warn('Trafik bilgisi alınamadı:', err.message);
     // D1-T2: istek başarısız → aynı planın son başarılı olayı silinmez ama eski konumdan geri sayım/eşik sesi yapılmaz: mesafesiz
     // "mesafe belirsiz" (eventState 'unknown'). Olayın `at`'i korunur: son başarılı alınmadan TRAFFIC_STALE_MS (20 dk) sonra düşer.
-    if (trEv && trEv.planId === getState('plan').planId) { trEv = { ...trEv, anchored: false, shownKm: null }; paintEvents(); }
-    else trEv = null;
+    // D1-T3: aynı planda son başarılı canlı varış süresi ve "≈ X dk gecikme" tahmini de güncelmiş gibi kullanılmaz:
+    // liveRemain silinir (navigator plan süresine döner), olaydan gecikme dakikası çıkarılır, olaysız gecikme metni kalkar.
+    if (getState('plan').planId === id) {
+      patch('nav', { liveRemain: null });
+      if (trEv && trEv.planId === id) { trEv = { ...trEv, anchored: false, shownKm: null, delayMin: 0 }; paintEvents(); }
+      else { trEv = null; if (getState('nav').ahead.traffic) setAhead({ traffic: null }); }
+    } else trEv = null;
   } finally {
     if (getState('plan').planId === id) trAt = Date.now(); // plan değiştiyse yeni planın ilk yenilemesi ertelenmez (check() trAt=0 yaptı)
     busyTr = false;
