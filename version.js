@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.74';
+self.APP_VERSION = '0.99.75';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.75', date: '2026-11-15',
+    notes: [
+      'Sağdaki harita kontrolleri: üst uyarı alanı kendi içinde kaydığında, sütun artık yalnızca uyarıların ekranda görünen kısmını sınır alır; gizli (kaydırılarak görülen) içerik yüzünden düğmeler gereksiz yere konum düğmelerinin soluna kaymaz (RM-07 A2a). Uyarı alanı taşmıyorsa davranış aynı. Gerçek cihazda doğrulanmadı.',
+    ],
+  },
   {
     v: '0.99.74', date: '2026-11-15',
     notes: [

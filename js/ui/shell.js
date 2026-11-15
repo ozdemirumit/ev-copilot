@@ -7,6 +7,7 @@ import { startNav, stopNav } from '../nav/navigator.js';
 import { toast } from './toast.js';
 import { save } from '../utils/storage.js';
 import { startGps, stopGps, locateOnce } from '../sensors/gps.js';
+import { RAIL_PITCH, railLimitTop, railFit } from './railFit.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -109,24 +110,25 @@ export function initShell() {
   // Sağ kenar sütunu: harita kontrolleri her zaman görünür, konum düğmelerinin üstünden yukarı dizilir.
   // Üst panele/haritadan seç çubuğuna taşmasın diye yükseklik ölçülür; yer yetmezse CSS sonraki sütunu sola açar.
   // İki sütuna da sığmıyorsa (küçük ekranda navigasyon) sütun konum düğmelerinin soluna geçer ve onların yüksekliğini de kullanır.
-  const RAIL_PITCH = 44; // 40 px düğme + 4 px aralık
   const RAIL_REACH = 8 + 3 * RAIL_PITCH; // konum düğmelerinin solunda en çok 3 sütun
   const more = $('fabs-more');
   const fabsBox = $('fabs');
   const pickBox = $('pickbar');
+  const banners = $('banners');
   const fitMore = () => {
     const anchor = [...fabsBox.children].find((el) => el !== more && el.offsetParent);
     if (!anchor) return; // sayfa açıkken harita arayüzü gizli
     fabsBox.style.setProperty('--ev-lift', '0px'); // pil şeridi artık üst panelde: düğme sütunu alt şeride göre kaldırılmaz
     const box = fabsBox.getBoundingClientRect();
     // Yatay ekranda uyarı panelleri solda durur: yalnızca sütunun ulaşabileceği bölgedekiler sınırdır
-    const limits = [...hud.children, ...$('banners').children, pickBox].filter((el) => el.id !== 'banners' && el.offsetParent && el.getBoundingClientRect().right > box.left - RAIL_REACH);
-    const top = Math.max(0, ...limits.map((el) => el.getBoundingClientRect().bottom));
-    const above = anchor.getBoundingClientRect().top - top - 16;
+    const limits = [...hud.children, ...banners.children, pickBox].filter((el) => el.id !== 'banners' && el.offsetParent && el.getBoundingClientRect().right > box.left - RAIL_REACH);
+    // #banners kendi içinde kayar (max-height + overflow-y:auto): çocukların altı kabın görünür altına kırpılır
+    const bannersBox = banners.getBoundingClientRect();
+    const top = railLimitTop(limits.map((el) => ({ bottom: el.getBoundingClientRect().bottom, clipBottom: el.parentElement === banners ? bannersBox.bottom : null })));
     const count = [...more.children].filter((el) => el.offsetParent).length;
-    const side = count > 2 * Math.floor((above + 4) / RAIL_PITCH);
+    const { side, maxHeight } = railFit({ anchorTop: anchor.getBoundingClientRect().top, boxBottom: box.bottom, count, top });
     fabsBox.classList.toggle('side', side);
-    more.style.maxHeight = Math.max(40, side ? box.bottom - top - 8 : above) + 'px';
+    more.style.maxHeight = maxHeight + 'px';
   };
   const railObserver = new ResizeObserver(fitMore);
   for (const el of [hud, pickBox, fabsBox, $('mapstack')]) railObserver.observe(el);
