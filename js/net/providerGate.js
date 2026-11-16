@@ -27,13 +27,21 @@
 //   - Yanıt tabanlı ana makine geri çekilmesi: 429 / 5xx / ağ hatası / zaman aşımı → o ana makine üstel bekler (15–30 sn → en çok 10 dk,
 //     Retry-After en çok 1 sa); bekleme süresince istek ağa çıkmaz ('backoff'). Başarı sıfırlar. Fırtınayı çağıran koddan bağımsız keser.
 // İstemci tavanları TOPLAM (tüm kullanıcılar) trafiği SINIRLAYAMAZ; bu yüzden yayın kapısı ayrıca belgelenir (docs/public-beta-release-gate.md).
+//
+// TAM BETA (v0.99.95, kullanıcı kararı 2026-11-16: public-free ile kapatılan mevcut özellikler Beta'da geri gelir): kaynakta yine 'paused'.
+// Yalnız `node scripts/build-beta.mjs --beta-full [klasör]` çıktısında 'beta-full' olur. Küresel duraklatma ve public-free kesme/gizleme YOK:
+// hesap, Premium, sağlayıcı bağdaştırıcıları, uydu, canlı trafik/doluluk/fiyat, eşitleme, telemetri ve kimlikli sunucu 0.99.61 Beta'daki gibi
+// çalışır; Free/Premium yetkisi, kullanıcı başı günlük hak ve aylık tavanlar paylaşılan sunucuda (server/proxy.mjs) kalır, anahtarlar sunucuda.
+// Korunan istemci koruması: topluluk servislerine (FREE_ENDPOINTS) cihaz başı jeton kovası + saatlik tavan + yanıt geri çekilmesi; sınırda
+// istek reddedilir (kuyruk yok). Ücretli/sunucu yolları bu kovaya girmez (karar sunucuda).
 export const PROVIDER_REQUESTS_PAUSED_DEFAULT = true;
 /** Derleme modu. KAYNAKTA DAİMA 'paused'. scripts/build-beta.mjs --free-only bu satırı (tam bir eşleşme) 'free-only' yapar. */
 export const PROVIDER_MODE_BUILD = 'paused';
 export const FREE_ONLY = 'free-only';
 export const PUBLIC_FREE = 'public-free';
-/** Yalnız tam 'free-only' / 'public-free' dizgesi o modu açar; başka her değer (boş, büyük harf, boşluklu, 'open'...) → 'paused'. */
-export const parseProviderMode = (v) => (v === FREE_ONLY || v === PUBLIC_FREE ? v : 'paused');
+export const BETA_FULL = 'beta-full';
+/** Yalnız tam 'free-only' / 'public-free' / 'beta-full' dizgesi o modu açar; başka her değer (boş, büyük harf, boşluklu, 'open'...) → 'paused'. */
+export const parseProviderMode = (v) => (v === FREE_ONLY || v === PUBLIC_FREE || v === BETA_FULL ? v : 'paused');
 
 let paused = PROVIDER_REQUESTS_PAUSED_DEFAULT;
 let mode = parseProviderMode(PROVIDER_MODE_BUILD);
@@ -41,10 +49,16 @@ let mode = parseProviderMode(PROVIDER_MODE_BUILD);
 export const freeOnlyMode = () => mode === FREE_ONLY || mode === PUBLIC_FREE;
 /** Herkese açık ücretsiz Beta mı (paylaşılan sunucuya sıfır istek, daraltılmış izin listesi, geri çekilme). */
 export const publicFreeMode = () => mode === PUBLIC_FREE;
+/** Tam Beta mı (duraklatma yok, tüm mevcut özellikler; topluluk servislerine cihaz başı tavan + geri çekilme korunur). */
+export const betaFullMode = () => mode === BETA_FULL;
+/** İstemci topluluk servisi kovası/geri çekilmesi etkin mi (yalnız ücretsiz modlar ve tam Beta). */
+const limitedMode = () => freeOnlyMode() || betaFullMode();
+/** Yanıt tabanlı ana makine geri çekilmesi etkin mi (herkese açık ücretsiz Beta ve tam Beta). */
+const backoffMode = () => publicFreeMode() || betaFullMode();
 /** Sağlayıcı istekleri (küresel olarak) duraklatılmış mı (kota koruması). Yalnız ücretsiz modda false: yerini izin listesi alır. */
-export const providerRequestsPaused = () => paused && !freeOnlyMode();
-/** 'paused' | 'free-only' | 'public-free' | 'open' (open yalnız testlerde). */
-export const providerMode = () => (freeOnlyMode() ? mode : paused ? 'paused' : 'open');
+export const providerRequestsPaused = () => paused && !freeOnlyMode() && !betaFullMode();
+/** 'paused' | 'free-only' | 'public-free' | 'beta-full' | 'open' (open yalnız testlerde). */
+export const providerMode = () => (freeOnlyMode() || betaFullMode() ? mode : paused ? 'paused' : 'open');
 /** Yalnızca testler içindir; uygulama kodu çağırmaz. */
 export function setProviderRequestsPaused(v) { paused = !!v; }
 /** Yalnızca testler içindir; uygulama kodu çağırmaz. */
@@ -152,7 +166,7 @@ function matchFree(u, method = 'GET') {
  */
 export function blockedReason(input, { origin = 'http://localhost', proxyBase = '', method = 'GET' } = {}) {
   const free = freeOnlyMode();
-  if (!paused && !free) return null;
+  if (betaFullMode() || (!paused && !free)) return null; // tam Beta: istemci hiçbir mevcut özelliği kesmez (kova/geri çekilme limiter'da)
   const u = toUrl(input, origin);
   if (!u) return 'invalid';
   if (u.protocol === 'data:' || u.protocol === 'blob:') return null;
@@ -202,13 +216,13 @@ export function createFreeLimiter({ now = () => Date.now(), store = globalThis.l
   const saveDay = () => { try { store?.setItem(DAY_KEY, JSON.stringify(day)); } catch { /* depolama yok: bellek içi sayar */ } };
   return {
     take(input, method = 'GET', origin = 'http://localhost') {
-      if (!freeOnlyMode()) return null;
+      if (!limitedMode()) return null;
       const u = toUrl(input, origin);
       const e = u && matchFree(u, method);
       if (!e) return null;
       const t = now();
       const c = cool.get(u.hostname);
-      if (publicFreeMode() && c && t < c.until) return 'backoff';
+      if (backoffMode() && c && t < c.until) return 'backoff';
       let b = buckets.get(u.hostname);
       if (!b) { b = { tokens: e.burst, at: t, hour: [] }; buckets.set(u.hostname, b); }
       b.tokens = Math.min(e.burst, b.tokens + Math.max(0, t - b.at) / e.gapMs);
@@ -227,7 +241,7 @@ export function createFreeLimiter({ now = () => Date.now(), store = globalThis.l
     },
     /** public-free: isteğin sonucu. ok: başarı (sayaç sıfır); değilse ana makine geri çekilir. Başka modda / listede olmayan uçta etkisiz. */
     result(input, method = 'GET', origin = 'http://localhost', { ok = true, http = false, retryAfterMs = 0 } = {}) {
-      if (!publicFreeMode()) return;
+      if (!backoffMode()) return;
       const u = toUrl(input, origin);
       if (!u || !matchFree(u, method)) return;
       if (ok) { cool.delete(u.hostname); return; }
@@ -271,7 +285,7 @@ export function installProviderGate(target = globalThis, { getOrigin = () => tar
   // Alttaki fetch + public-free yanıt gözlemcisi (çağıranın yeniden deneme mantığından bağımsız fırtına kesici). Yalnız İZİNLİ istek buraya gelir.
   const inner = function observedFetch(input, init) {
     const p = raw.call(this, input, init);
-    if (!publicFreeMode()) return p;
+    if (!backoffMode()) return p;
     const method = String(init?.method || input?.method || 'GET').toUpperCase();
     const origin = getOrigin();
     const clock = now || (() => Date.now());

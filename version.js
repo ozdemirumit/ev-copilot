@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.94';
+self.APP_VERSION = '0.99.95';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.95', date: '2026-11-16',
+    notes: [
+      'Beta\'da tüm özellikler geri geldi: hesap ve Google girişi, Ücretsiz/Premium planı, eşitleme, uydu görüntüsü, canlı trafik, istasyon doluluğu ve fiyat, istasyon puan/fotoğraf, hız limiti, ABRP telemetri ve Premium harita/rota sağlayıcıları (Mapbox, TomTom, Google, HERE) önceki Beta\'daki gibi çalışır. Premium yetkisi ve günlük/aylık kullanım sınırları sunucuda uygulanmaya devam eder; ücretsiz kullanıcıya ücretli servis açılmadı.',
+      'Topluluk servisleri (Nominatim, Overpass, Valhalla, Photon, Open-Meteo) için cihaz başına istek sınırı ve servis yanıt vermezse giderek artan bekleme (en çok 10 dakika) korunur.',
+    ],
+  },
   {
     v: '0.99.94', date: '2026-11-16',
     notes: [

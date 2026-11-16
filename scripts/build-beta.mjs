@@ -7,6 +7,9 @@
 // --public-free: PROVIDER_MODE_BUILD 'paused' → 'public-free' (paylaşılan sunucuya sıfır istek, daraltılmış ücretsiz izin listesi, geri çekilme).
 // YAYIN KAPISI (fail-closed): docs/public-beta-gate.json'daki HER koşul "met" değilse çıktı bir git deposuna (yayın deposu dahil) YAZILAMAZ;
 // yalnız depo dışı, git olmayan bir klasöre PUBLIC-BETA-GATE-BLOCKED.txt işaretiyle (yerel sınama) yazılır. Bu betik push/yayın YAPMAZ.
+//          node scripts/build-beta.mjs --beta-full [klasör]   (TAM Beta, varsayılan ../ev-copilot-beta; kullanıcı kararı 2026-11-16)
+// --beta-full: PROVIDER_MODE_BUILD 'paused' → 'beta-full' (duraklatma ve public-free kesme/gizleme yok; hesap, Premium, sağlayıcılar, uydu,
+// trafik, doluluk/fiyat, eşitleme, telemetri açık; Free/Premium ve kotalar sunucuda; topluluk servislerine istemci tavanı + geri çekilme kalır).
 // Neden: beta ve canlı uygulama aynı alan adında (ozdemirumit.github.io) çalışır; localStorage öneki, IndexedDB adı ve
 // servis çalışanı önbellek adları ortak olursa iki sürüm birbirinin verisini ve önbelleğini bozar.
 // Gizli bilgi içermez: yalnızca index.html, css, js, vendor, icons, sw.js, manifest, version.js kopyalanır (server/ ve .env asla).
@@ -18,11 +21,12 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const flags = args.filter((a) => a.startsWith('--'));
 const positional = args.filter((a) => !a.startsWith('--'));
-const unknown = flags.filter((a) => a !== '--free-only' && a !== '--public-free');
+const unknown = flags.filter((a) => a !== '--free-only' && a !== '--public-free' && a !== '--beta-full');
 if (unknown.length || positional.length > 1) throw new Error('Bilinmeyen bağımsız değişken: ' + [...unknown, ...positional.slice(1)].join(' '));
 const FREE_ONLY = flags.includes('--free-only');
 const PUBLIC_FREE = flags.includes('--public-free');
-if (FREE_ONLY && PUBLIC_FREE) throw new Error('--free-only ve --public-free birlikte kullanılamaz');
+const BETA_FULL = flags.includes('--beta-full');
+if ([FREE_ONLY, PUBLIC_FREE, BETA_FULL].filter(Boolean).length > 1) throw new Error('--free-only, --public-free ve --beta-full birlikte kullanılamaz');
 const PUBLIC_REPO = resolve(join(root, '..', 'ev-copilot-beta'));
 if (FREE_ONLY && !positional[0]) throw new Error('--free-only için çıktı klasörü açıkça verilmeli (varsayılan yayın deposu kullanılmaz)');
 if (PUBLIC_FREE && !positional[0]) throw new Error('--public-free için çıktı klasörü açıkça verilmeli');
@@ -131,6 +135,15 @@ if (PUBLIC_FREE) {
     'Bu klasoru YAYIMLAMAYIN. Acik kosullar: ' + GATE.open.join(', ') + '\nAyrinti: docs/public-beta-release-gate.md\n');
 }
 
+// Tam Beta: derleme modu satırı tam bir kez değiştirilir; bulunamazsa derleme durur (fail-closed).
+if (BETA_FULL) {
+  const p = join(out, 'js', 'net', 'providerGate.js');
+  const s = readFileSync(p, 'utf8');
+  const from = "export const PROVIDER_MODE_BUILD = 'paused';";
+  if (s.split(from).length !== 2) throw new Error('providerGate.js derleme modu satırı tam bir kez bulunamadı');
+  writeFileSync(p, s.replace(from, "export const PROVIDER_MODE_BUILD = 'beta-full';"));
+}
+
 // Doğrulama: çakışan adlar kalmadı mı?
 const leftovers = [];
 const scan = (dir) => {
@@ -144,5 +157,5 @@ const scan = (dir) => {
 };
 scan(out);
 if (leftovers.length) { console.error('Çakışan ad kaldı:', leftovers); process.exit(1); }
-console.log(FREE_ONLY ? 'Beta (YALNIZ ÜCRETSİZ, yerel test — yayımlamayın) hazır:' : PUBLIC_FREE ? (GATE.ok ? 'Beta (HERKESE AÇIK ÜCRETSİZ, kapı açık) hazır:' : 'Beta (HERKESE AÇIK ÜCRETSİZ — KAPI KAPALI, yayımlamayın) hazır:') : 'Beta hazır:', out);
+console.log(FREE_ONLY ? 'Beta (YALNIZ ÜCRETSİZ, yerel test — yayımlamayın) hazır:' : PUBLIC_FREE ? (GATE.ok ? 'Beta (HERKESE AÇIK ÜCRETSİZ, kapı açık) hazır:' : 'Beta (HERKESE AÇIK ÜCRETSİZ — KAPI KAPALI, yayımlamayın) hazır:') : BETA_FULL ? 'Beta (TAM: hesap, Premium, sağlayıcılar) hazır:' : 'Beta hazır:', out);
 console.log('Değişen ad sayıları:', counts);
