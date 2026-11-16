@@ -1,0 +1,104 @@
+# API çağrı grafiği ve istek yönetişimi — R5 G0
+
+Kapsam: istemcideki **her** ağ çağrı noktası, GPS / OCR-SOC (5 sn) / rota / trafik / hava / şarj tetikleyicileriyle bağı ve isteği
+sınırlayan koruma. Taban: `integ/beta-2026-11-14` @`cab7756` (v0.99.86, R4 D2-T1 sonrası). Kanıt: `scripts/test-api-call-graph.mjs`
+(çevrimdışı, sahte fetch, sanal saat) + D2-T0 envanteri `scripts/test-d2-quota-inventory.mjs` (koruma sabitleri, SOC güven kapısı,
+duraklatma kapıları, sunucu sayaçları — burada tekrarlanmaz). **Hiçbir API çağrısı varsayılmadı**: her satır kaynakta bulunan bir
+çağrı noktasına ya da testte sayılan bir isteğe dayanır. Gerçek ağ / gerçek anahtar / cihaz kullanılmadı; cihazda DOĞRULANMADI.
+
+Uygulama kodu bu adımda **değişmedi** (sürüm v0.99.86 kalır). Bulunan boşluk (W-1) KNOWN-GAP olarak sabitlendi; düzeltme G1.
+
+## 1. Özet bulgular
+
+| # | Bulgu | Kanıt |
+|---|---|---|
+| F1 | GPS konumu (`gps.js` `onPosition`) ve OCR kabulü hiçbir ağ çağrısı yapmaz; GPS/OCR/SOC çekirdek modüllerinin statik içe aktarma kapanışında ağ ilkeli yok. Tek köprü `ocr.js → meter.js` (`countOcrEngineOnce`, yerel sayaç) `→ proxy.js` (`proxyBase`, yalnız sınıflandırma). | test §B (14 kök) |
+| F2 | GPS/Test Modu/OCR durumunu dinleyen 16 dosyanın (21 kayıt) hiçbiri ağ ilkeli içermez; dolaylı yollar yerel: `defaultStart` 100 m eşiği + plan/nav'da donuk, `controller.refresh` plan yoksa döner, ters adres yalnız haritaya dokunuşta. | test §C |
+| F3 | 30 dk sanal sürüşte (1800 GPS konumu, 360 OCR kabulü, ~45 km, menzil motoru 1 sn) üretilen istek: **yalnız 2 Open-Meteo** (15 dk / 25 km koruması). | test §D1 |
+| F4 | ABRP telemetrisi açıkken (Premium + kullanıcı token'ı) 10 dk'da **10 istek** (60 sn); GPS 1 Hz / OCR 5 sn sıklığı artırmaz. | test §D2 |
+| F5 | Park (hız 0) 14 dk: en çok 1 hava isteği, başka istek yok. | test §D3 |
+| F6 | Hesap eşitlemesi (kendi sunucu `/v1/sync`, yalnız oturum açıkken, 4 sn gecikmeli) sürüşte yalnız `kCal` (SOC %1 düşüş kenarında, 30 dk'da 5) ve `hist` (≥ 5 km pencere, 2) ile tetiklenir; SOC tahmini ve son konum kayıtları sessizdir. Ücretli sağlayıcı değil. | test §D1, §B |
+| **W-1** | **Gereksiz istek:** `rangeEngine.maybeRefreshWeather` hiç başarı yokken hata alırsa `weather.at` 0 kalır (`js/physics/rangeEngine.js:59`), koruma (`w.at && …`, `:51`) atlanır ve 1 sn'lik her tick (`:177`, `:194`) yeni Open-Meteo isteği atar: **60 sn'de 60 istek**. Ağ yok / DNS / 429 / 5xx'te geçerli. Beta'da sağlayıcı duraklatması açıkken istek ağa çıkmaz ama her saniye denenir. | test §E `KNOWN-GAP W-1` |
+
+## 2. Ağ çağrı noktaları (sink manifestosu — test §A ile iki yönlü eşit)
+
+Sayım yorumlar çıkarılarak yapılır; `fetch(` = çıplak fetch, sarmalayıcı ataması (`window.fetch =`) yalnız `meter.js` (sayaç, isteği bir kez
+iletir) ve `providerGate.js` (duraklatmada isteği alttaki fetch'e hiç iletmez). XHR / WebSocket / EventSource / sendBeacon: **yok**.
+
+| Dosya | İlkel (sayı) | Hedef | Sınıf | Tetikleyici → koruma |
+|---|---|---|---|---|
+| `js/abrp/telemetry.js` | fetch 3 | api.iternio.com, kullanıcı webhook'u | harici (kullanıcı anahtarı) | 60 sn zamanlayıcı (`nextDelay`); Premium + açık + token; pil okuması > 5 dk eskiyse gönderilmez |
+| `js/account/auth.js` | fetch 1, proxyFetch 2 | kendi sunucu `/v1/auth/poll`, `/v1/auth/logout`, `/v1/me` | kendi | kullanıcı girişi |
+| `js/account/community.js` | proxyFetch 1 | kendi sunucu | kendi | kullanıcı bildirimi |
+| `js/account/historySync.js` | proxyFetch 1 | `/v1/history/…` | kendi | geçmiş eşitleme |
+| `js/account/stationInfo.js` | proxyFetch 6 | `/v1/station/info`, `/v1/station/photo` | kendi | istasyon kartı / kullanıcı |
+| `js/account/sync.js` | proxyFetch 2 | `/v1/sync` | kendi | `SYNC_KEYS` sessiz olmayan kayıt → 4 sn gecikme (birleştirir); görünür olunca 10 dk'da bir çekme |
+| `js/google/chargers.js` | proxyFetchRetry 1 | `/google/stations` | ücretli | rota planı / yakın arama; sunucuda `premiumOk` |
+| `js/here/chargers.js` | proxyFetchRetry 1 | `/here/stations` | ücretli | rota planı / yakın arama |
+| `js/mapbox/api.js` | fetch 1, proxyFetch 1, proxyFetchRetry 1 | api.mapbox.com (kişisel mbKey) ya da `/mapbox/` | ücretli | `mbfetch` tabanı; 429 iç döngüde tekrar yok (D2-T0 §E) |
+| `js/mapbox/chargers.js` | mbfetch 2 | Mapbox arama | ücretli | rota planı / yakın arama |
+| `js/mapbox/route.js` | mbfetch 1 | Mapbox rota | ücretli | plan / yeniden rota / yol önü trafik; R4 Premium + aylık sınır |
+| `js/mapbox/test.js` | mbfetch 2 | Mapbox | ücretli | ayarlarda anahtar sınama (kullanıcı) |
+| `js/nav/limitSpans.js` | proxyFetch 1 | `/v1/speedlimits` | sunucu→sağlayıcı | navigasyon; 401/402/403/429/501 sonrası 1 sa kesinti |
+| `js/net/mapConfig.js` | proxyFetch 1 | `/v1/map/config` | sunucu→sağlayıcı | harita açılışı |
+| `js/net/proxy.js` | fetch 2, proxyFetch 2 | ara sunucu tabanı, `/v1/config` | kendi | sarmalayıcı; sunucu kapalıysa 20 sn kesinti |
+| `js/osm/chargers.js` | fetch 2, proxyFetchRetry 2 | Overpass (3 ayna) / OCM, ya da `/overpass`, `/ocm/poi` | açık / anahtarlı | rota planı, yakın arama, hız kamerası (`roadWarnings`, rota başına 1 deneme) |
+| `js/osm/elevation.js` | fetch 1 | yükselti servisi | açık | rota planı / zenginleştirme |
+| `js/osm/search.js` | fetch 2 | photon.komoot.io, Nominatim | açık | kullanıcı yazınca; ters adres yalnız haritaya dokunuşta |
+| `js/osm/valhalla.js` | fetch 1 | valhalla1.openstreetmap.de | açık | rota, durak erişim sorgusu (tekilleştirilmiş, 120 sn tekrar), hız limiti (20 sn / 1 km, hata öncesi `lastQ`) |
+| `js/osm/weather.js` | fetch 1 | api.open-meteo.com | açık | `rangeEngine` (15 dk / 25 km; **W-1**), `ahead` (10/20 dk, hata dahil `wxAt`/`pwAt` güncellenir), plan; 11 km hücre 30 dk önbellek |
+| `js/routing/occupancyClient.js` | proxyFetch 1 | `/v1/occupancy` | sunucu→sağlayıcı | `livePlan` 30 sn zamanlayıcı (Free 5 dk / Premium 2 dk / kritik 1 dk; `lastAvail` istekten önce), `nearby` 60 sn, kart |
+| `js/routing/tariffs.js` | proxyFetch 1 | `/v1/tariffs` | kendi (önbellek) | açılış |
+| `js/routing/tesla.js` | proxyFetch 1 | `/v1/tesla` | sunucu→sağlayıcı | istasyon kaynağı |
+| `js/tomtom/route.js` | proxyFetch 1 | `/tomtom/route` | ücretli | plan / yol önü trafik (10 dk); sunucuda `premiumOk` |
+| `js/ui/historyPanel.js` | proxyFetch 1 | `/v1/price` | kendi | kullanıcı |
+| `js/ui/stationCard.js` | proxyFetch 1 | `/v1/price` | kendi | kullanıcı |
+| `js/ui/versionInfo.js` | fetch 1 | aynı köken `version.js` | uygulama | kullanıcı / güncelleme denetimi |
+| `sw.js` | fetch 2, importScripts 1 | aynı köken | uygulama | service worker önbellek |
+
+Toplam: 28 dosya, 51 çağrı noktası. Koddaki `https://` kökenleri (16, test §A tam eşitlik): api.iternio.com, api.mapbox.com,
+api.open-meteo.com, api.openchargemap.io, api.tomtom.com, evcopilot.duckdns.org, maps.googleapis.com, nominatim.openstreetmap.org,
+overpass-api.de, overpass.kumi.systems, overpass.private.coffee, photon.komoot.io, server.arcgisonline.com, tiles.openfreemap.org,
+valhalla1.openstreetmap.de, www.google.com. (Bazıları bağlantı/harita stili adresidir; istek atılıp atılmadığı yukarıdaki tabloya göre.)
+
+## 3. Tetikleyici → istek grafiği
+
+```
+GPS watchPosition ──► gps.onPosition ──► patch('live')  ── (ağ YOK) ──► 16 dinleyici dosyası (UI çizimi, yerel)
+                                                     └─► defaultStart ─► mapApi.setPoint(start) ─► controller.refresh (plan yoksa dön; yerel computePlan)
+OCR çevrimi (5 sn) ─► ocr.js kabul ─► patch('ocr') + patch('live'.soc) ── (ağ YOK) ──► socEstimate (sessiz kayıt)
+Zamanlayıcılar (konum/SOC'yi OKUR, olay başına istek atmaz):
+  rangeEngine 1 sn ─► maybeRefreshWeather ─► Open-Meteo   [15 dk / 25 km; W-1 hata yolu her sn]
+                   └► tracker SOC kenarı ─► save('kCal') ─► sync.js 4 sn ─► /v1/sync (oturum varsa)
+  telemetry 60 sn  ─► api.iternio.com (+ webhook)         [Premium + açık + token]
+  livePlan 5 sn    ─► replanFrom (yerel) ─► applyPlan ─► verifyStopAccess ─► Valhalla [tekil; 120 sn tekrar]
+  livePlan 30 sn   ─► /v1/occupancy                       [5 dk / 2 dk / 1 dk]
+  navigator        ─► rota dışı 6 sn ─► rerouteFromHere ─► rota + yükselti + hava + istasyon [45 sn soğuma, 12 sn tekrar]
+  ahead 5 sn       ─► Open-Meteo 10/20 dk, ücretli trafik rotası 10 dk
+  speedLimit       ─► Valhalla 20 sn / 1 km (hız > 5)
+  nearby           ─► istasyon araması 15 dk / 10 km (düşük pil 5 dk), /v1/occupancy 60 sn
+  roadWarnings 3 sn─► Overpass hız kamerası (rota başına 1)
+Kullanıcı eylemi: plan, arama, kart, giriş, ayar sınaması, fiyat bildirimi.
+Hepsi: Beta'da providerGate (istemci) + server/providerGate.mjs varsayılan DURAKLATILMIŞ (D2-T0 §D).
+```
+
+## 4. Bilinen boşluklar (açık) ve kapsam dışı gözlemler
+
+- **W-1 (yeni, G1):** yukarıda. Kabul ölçütü önerisi: hata sonrası en az 60 sn (ya da üstel) bekleme; test §E satırı `ok(...)`'a çevrilir.
+- D2-T0'dan açık: **Q-SOC-1** (`advisor/fallback.js` SOC tabanlı `replanFrom` güven denetimsiz), **Q-SOC-2** (`nearby.checkLow` kaynak
+  denetimsiz arama/doluluk), **Q-SRV-1/2/3** (sunucu sayacı reddedilende artar, aylık sınır NaN'da açık, günlük sayaç bellekte).
+- Harita karoları MapLibre Web Worker'ından yüklenir: `fetch` sarmalayıcısı ve bu manifest onları görmez (`providerGate.js:8`);
+  takip kamerası GPS ile kaydıkça karo isteği oluşabilir. Duraklatmada yerel boş stil kullanılır. Sayılmadı → G2.
+- `nearby.refreshNearby` hata (throw) yolunda `meta.at` güncellenmez; `autoSearch` 45 sn bekler. `fetchAround` sağlayıcı hatalarını
+  `errors` dizisine topladığı için throw yolu nadir; davranış testi yazılmadı (G2'de doğrulanmalı, iddia edilmez).
+
+## 5. Takip görevleri (YAPILMADI)
+
+- **G1 — istemci düzeltmeleri (uygulama kodu, sürüm artırımı):** W-1 geri çekilme; Q-SOC-1 / Q-SOC-2 `socTrusted` kapısı. Her biri
+  ilgili KNOWN-GAP satırını kabul denetimine çevirir; `test-api-call-graph` D1–D3 sınırları korunur.
+- **G2 — kapsam genişletme:** navigasyon açıkken tam simülasyon (navigator/ahead/speedLimit/nearby/livePlan/roadWarnings birlikte, plan
+  yüklü, ücretli sağlayıcı sahte) ile sağlayıcı başına saatlik istek bütçesi; harita karosu sayımı; `nearby` throw yolu; sunucu
+  Q-SRV-1/2/3.
+- **G3 — çalışma zamanı bütçesi ve saha doğrulaması:** istemcide merkezi istek yöneticisi (sağlayıcı başına belirteç kovası, providerGate
+  ile aynı yerde) + yönetici panelinde sayaç; gerçek cihazda ağ günlüğüyle istek sayısının doğrulanması (ücretli çağrı / kota onayı ve
+  cihaz gerektirir — kullanıcı kararı).
