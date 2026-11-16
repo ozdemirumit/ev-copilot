@@ -1,4 +1,4 @@
-# Beta — bağımlılık ve karar matrisi (D1–D7 ONAYLANDI 2026-11-15; D1 kısmen uygulandı 2026-11-16, D2–D7 uygulanmadı)
+# Beta — bağımlılık ve karar matrisi (D1–D7 ONAYLANDI 2026-11-15; D1 kısmen uygulandı 2026-11-16, D2–D7 uygulanmadı; D3 alt kararları ONAYLANDI 2026-11-16, §8)
 
 ## 0. Onaylı kararlar (2026-11-15)
 
@@ -19,6 +19,8 @@ Kayıt anında temel: `integ/beta-2026-11-14` @`f51e40a` (v0.99.76, yerel, push 
 | D5 | HERE / Maps.com **yalnız yazılı lisans ve gerçek sağlayıcı özelliği doğrulanırsa** eklenir; o zamana kadar HERE kapalı, Maps.com yok. | Doğrulama için ücretli örnek çağrı (G-PAID) ve lisans satın alma/kabulü (G-LEGAL) ayrı açık onay; `providerPolicy` değişmedi. |
 | D6 | İlk yayın **yalnız KAPALI Beta testi**; **"cihazda test edilmedi"** etiketi; **genel erişim yok**. | Kapalı erişim yöntemi ve etiketin yeri belirlenmedi. Bugünkü Beta önizlemesi herkese açık GitHub Pages (`ozdemirumit.github.io/EV-Route-Finder`) → yöntem belirlenmeden yayın D6'yı ihlal eder (BL-P0-08 ile ilişkili). |
 | D7 | **Zorunlu testler ve yayın kapıları yeşilse** Beta yayını (`build-beta.mjs`); **production yok**. | Bugün kapılar yeşil değil (integ yerel/push yok, D6 yöntemi yok, cihaz testi yok); her push/yayın yine görev isteminde açık izin ister. |
+
+**2026-11-16 (`0a591021`):** D3'ün açık bıraktığı K1/K2/K4 eşlemesi, yaşlanma kuralı ve K3/K5/K6 kullanıcı tarafından kesin onaylandı; D3-T1..T6 sırası PLANNED kaydedildi → §8. Uygulanmadı.
 
 Aşağıdaki §1–§3, kararlardan önceki (`0804d23`) seçenek/kabul metnidir; tarihçe için korunur, her alt bölüme karar satırı eklendi.
 
@@ -353,14 +355,16 @@ atlama onayı **değildir**. §7.2'deki STOP bu kararla kapandı; `83d3680e`'nin
   işletim sistemi güvenlik duvarı kuralı (seçenek c).
 - Ürün kodu (`js/`, `server/`, `css/`, `index.html`, `version.js`, `sw.js`) değişmedi; sürüm artmaz. Push/yayın/cihaz yok; **Beta NO-GO** sürer.
 
-### 7.3 BEKLEYEN kullanıcı kararları — onay verilmedi, doğrulanmış sayılmaz
+### 7.3 BEKLEYEN kullanıcı kararları — onay verilmedi, doğrulanmış sayılmaz — **2026-11-16: ONAYLANDI (§8)**
 
 | Karar | Soru | Durum | Bağladığı iş |
 |---|---|---|---|
-| K1 | NDW "AFIR ≤1 dk" tazelik varsayımı kabul mü? | **bekliyor** (§5'teki "hayır" yalnız öneri) | D3-T1 (R3-a) önkoşulu |
-| K2 | NDW 0/N (ayrıntısız) dolu mu, bilinmiyor mu? | **bekliyor** | D3-T1 |
-| K4 | TomTom `fetched` (sağlayıcı zamanı yok) için aynı kural mı? | **bekliyor** | D3-T1 |
-| Aging | 15 dk–2 sa yaşındaki doluluk karar katmanında `unknown` mu, yalnız görüntüde "X dk önce" mi? (§6.3-2) | **bekliyor** | D3-T1 `trusted` bayrağı; görüntü K5/R3-d |
+| K1 | NDW "AFIR ≤1 dk" tazelik varsayımı kabul mü? | ~~bekliyor~~ → **onaylandı 2026-11-16** (§8: zaman damgası zorunlu) | D3-T1 (R3-a) önkoşulu |
+| K2 | NDW 0/N (ayrıntısız) dolu mu, bilinmiyor mu? | ~~bekliyor~~ → **onaylandı 2026-11-16** (§8: NDW 0/N doğrulanmamışsa Bilinmiyor) | D3-T1 |
+| K4 | TomTom `fetched` (sağlayıcı zamanı yok) için aynı kural mı? | ~~bekliyor~~ → **onaylandı 2026-11-16** (§8: ingest, zaman damgası yoksa canlı değil) | D3-T1 |
+| Aging | 15 dk–2 sa yaşındaki doluluk karar katmanında `unknown` mu, yalnız görüntüde "X dk önce" mi? (§6.3-2) | ~~bekliyor~~ → **onaylandı 2026-11-16** (§8: 15 dk'dan eski → Bilinmiyor) | D3-T1 `trusted` bayrağı; görüntü K5/R3-d |
+
+> **2026-11-16 (`0a591021`) notu:** aşağıdaki paragraf yazıldığı anki (`6883b3a8`) durumu anlatır; dört alt karar ile K3/K5/K6 artık onaylıdır (§8). R3-e sunucu yeniden başlatma onayı hâlâ ayrıdır.
 
 D3 kararı (`approved`, 2026-11-15) yerinde; yukarıdaki dört alt karar **teyit edilmedi**. D3-T1 dahil hiçbir D3 kodu bu kararlar
 gelmeden başlatılmaz. K3, K5, K6 ve R3-e sunucu onayı da ayrıca açıktır (§6.3).
@@ -381,3 +385,49 @@ gerektirmeyen alt görev de yalnız ayrı, açık görev istemiyle başlatılır
 
 Önerilen sıra (karar değildir): K1/K2/K4 + aging gelirse **D3-T1**; gelmezse kullanıcı girdisi gerektirmeyen tek aday **D2-T1**
 (canlıya alma yine sunucu onayı ister). D4-T0 örnek cümle onayıyla başlar. Hiçbiri bu görevde başlatılmadı.
+
+## 8. D3 onaylı alt kararlar ve bağımlılık kuyruğu (2026-11-16, köprü `0a591021`; yalnız belge, uygulanmadı)
+
+Temel: `integ/beta-2026-11-14` @`4934476` (v0.99.80, yerel, temiz), yalıtılmış worktree `MBRP-d3dec`, dal `docs/d3-decisions-4934476`.
+Kullanıcı aşağıdaki D3 alt kararlarını görev isteminde **kesin onayladı**. Bunlar ürün kararıdır; ücretli/kotalı sağlayıcı çağrısı,
+sunucu yeniden başlatma, push/yayın ya da production izni **değildir** (CLAUDE.md §7). Kod, test, `version.js`, `sw.js`, sunucu değişmedi;
+harici API çağrısı, Playwright ve sunucu başlatma yapılmadı. Makine okunur kopya: JSON `decisions[D3].sub_decisions` ve `task_queue`.
+
+### 8.1 Onaylı kararlar
+
+| # | Karar (onaylı, 2026-11-16) | Yerini aldığı açık nokta | Uygulamada açık kalan ayrıntı |
+|---|---|---|---|
+| K1 | Sağlayıcı **zaman damgası zorunlu**; zaman damgası yoksa arayüz **"Bilinmiyor"**. | §6.3-1, §7.3 K1 (NDW "AFIR ≤1 dk" varsayımı doğrulama sayılmaz) | — |
+| K2 | NDW **0/N doğrulanmamışsa "Bilinmiyor"** (dolu sayılmaz). | §7.3 K2 | — |
+| K4 | TomTom dahil sağlayıcı doluluk verisi **ingest edilir** (alınır/normalize edilir), fakat zaman damgası yoksa K1 gereği **doğrulanmış canlı doluluk gösterilmez**. | §7.3 K4 | ingest kapsamı D3-T2'de |
+| AGE | **15 dakikadan eski** doluluk verisi **"Bilinmiyor"** sayılır. | §6.3-2, §7.3 aging | bugünkü biçimlendirici `OCC_THRESHOLDS` 15 dk–2 sa aralığını "aging" durumu ile gösterir; D3-T1/T4'te bu karara göre bilinçli uyarlanır (test gevşetilmez) |
+| K3 | **Topluluk bildirimi resmî doluluktan ayrı** veri; resmî doluluk durumunu belirlemez/üzerine yazmaz. | §6.3-3 | planlayıcıyı etkileyip etkilemeyeceği bu kararda ayrıca belirtilmedi → D3-T3'te teyit |
+| K5 | Arayüz **üç durum**: **Müsait / Dolu / Bilinmiyor**. | §6.3-4 | uygulama yolu (`slotEl` düzeltme / `occupancyView` bağlama + `sw.js` SHELL) D3-T4'te |
+| K6 | **"Canlı" etiketi yalnız doğrulanmış güncel fiyat** verisine. | §6.3-5 | "doğrulanmış güncel fiyat" ölçütü D3-T5'te testle sabitlenir (BL-P2-10 ile ilişkili) |
+
+Sonuç (bilinen ürün etkisi, §6.2): bugünkü kaynaklarla NDW ve TomTom kayıtları `fetched` (sağlayıcı zamanı yok) olduğundan K1/K4 gereği
+doğrulanmış canlı doluluk olarak gösterilmez; Türkiye'de güvenilir doluluk pratikte kalmaz, NL'de NDW'ye dayalı boş/dolu eleme kaybolur.
+Bu sonuç gerçek sağlayıcı yanıtıyla doğrulanmadı (yalnız ayrıştırıcı kaynağı; D5 fikstürü yok).
+
+### 8.2 Onaylı bağımlılık sırası — hepsi PLANNED (başlatılmadı, çalışmıyor, tamamlanmadı)
+
+| Sıra | Görev | Kapsam | Kararlar | Bağımlı | Durum |
+|---|---|---|---|---|---|
+| 1 | **D3-T1** | Saf `occupancyDecision` + zaman damgası / 15 dk testleri (eski R3-a; çağıran yok, sentetik fikstür, `now` parametresi, ağ yok; `test-occupancy-consistency-contract` 12/12 KNOWN-GAP değişmez; `js/` değişirse sürüm artışı) | K1, K2, K4, AGE | — | PLANNED |
+| 2 | **D3-T2** | NDW / TomTom bağdaştırıcısı: ingest, zaman damgası yoksa doğrulanmamış (sunucu değişirse canlıya alma = sunucu yeniden başlatma onayı, eski R3-e) | K1, K2, K4 | D3-T1 | PLANNED |
+| 3 | **D3-T3** | Topluluk bildirimi ayrı veri | K3 | D3-T1 | PLANNED |
+| 4 | **D3-T4** | Üç durum arayüz Müsait / Dolu / Bilinmiyor (eski R3-d; nav/planlayıcı hizalaması R3-b/R3-c ile ilişkili; i18n değişirse `i18n-validate`) | K5, AGE | D3-T1, D3-T2, D3-T3 | PLANNED |
+| 5 | **D3-T5** | Fiyat "Canlı" etiketi yalnız doğrulanmış güncel fiyata | K6 | D3-T1 | PLANNED |
+| 6 | **D3-T6** | Regresyon: `run-tests-guarded` tam paket + D3 sözleşme testleri | tümü | D3-T1..T5 | PLANNED |
+
+Kurallar: aynı anda tek kod görevi; her görev integ HEAD tabanlı yalıtılmış worktree, `scripts/run-tests-guarded.mjs` 0 FAIL / 0 BLOCK,
+yalnız `--ff-only`, push/yayın yok; gerçek sağlayıcı çağrısı yok; cihaz doğrulaması ayrı, `verified` yalnız kullanıcı yazar.
+Bu kuyruk §5/§6.5'teki R3-a…R3-e sırasının yerini alır (R3 kimlikleri yalnız geçmiş için korunur).
+
+**Sıradaki tek görev: D3-T1** (ayrı, açık görev istemiyle; bu görevde başlatılmadı).
+
+### 8.3 Uzlaştırma (bu görev)
+
+- `e62eea0a` (oturum `33c1f375`): D2 Premium/kota/Free yedek salt okunur envanteri **tamamlandı**, `no-change` (dosya değişmedi; rapor köprü sonucunda). D2 `approved`, uygulanmadı; D2-T1/T2 §7.4'teki gibi başlatılmadı.
+- `6883b3a8` (oturum `3760013d`): `running`/`isolated` → **completed / yerel entegre**; commit `4934476` = integ HEAD; `run-tests-guarded` **95/95 PASS**, 0 FAIL, 0 BLOCK (görevin kendi koşusu, §7.5).
+- D1 tamamlanan kayıtları (`405f628`, `e28ee47`, `8e2399f`) değişmedi.
