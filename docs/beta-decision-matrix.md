@@ -413,7 +413,7 @@ Bu sonuç gerçek sağlayıcı yanıtıyla doğrulanmadı (yalnız ayrıştırı
 
 | Sıra | Görev | Kapsam | Kararlar | Bağımlı | Durum |
 |---|---|---|---|---|---|
-| 1 | **D3-T1** | Saf `occupancyDecision` + zaman damgası / 15 dk testleri (eski R3-a; çağıran yok, sentetik fikstür, `now` parametresi, ağ yok; `test-occupancy-consistency-contract` 12/12 KNOWN-GAP değişmez; `js/` değişirse sürüm artışı) | K1, K2, K4, AGE | — | PLANNED |
+| 1 | **D3-T1** | Saf `occupancyDecision` + zaman damgası / 15 dk testleri (eski R3-a; çağıran yok, sentetik fikstür, `now` parametresi, ağ yok; `test-occupancy-consistency-contract` 12/12 KNOWN-GAP değişmez; `js/` değişirse sürüm artışı) | K1, K2, K4, AGE | — | RUNNING → yerel commit + `--ff-only` integ (`ec585e43`, v0.99.81; bağlı değil; §8.4) |
 | 2 | **D3-T2** | NDW / TomTom bağdaştırıcısı: ingest, zaman damgası yoksa doğrulanmamış (sunucu değişirse canlıya alma = sunucu yeniden başlatma onayı, eski R3-e) | K1, K2, K4 | D3-T1 | PLANNED |
 | 3 | **D3-T3** | Topluluk bildirimi ayrı veri | K3 | D3-T1 | PLANNED |
 | 4 | **D3-T4** | Üç durum arayüz Müsait / Dolu / Bilinmiyor (eski R3-d; nav/planlayıcı hizalaması R3-b/R3-c ile ilişkili; i18n değişirse `i18n-validate`) | K5, AGE | D3-T1, D3-T2, D3-T3 | PLANNED |
@@ -424,10 +424,26 @@ Kurallar: aynı anda tek kod görevi; her görev integ HEAD tabanlı yalıtılm�
 yalnız `--ff-only`, push/yayın yok; gerçek sağlayıcı çağrısı yok; cihaz doğrulaması ayrı, `verified` yalnız kullanıcı yazar.
 Bu kuyruk §5/§6.5'teki R3-a…R3-e sırasının yerini alır (R3 kimlikleri yalnız geçmiş için korunur).
 
-**Sıradaki tek görev: D3-T1** (ayrı, açık görev istemiyle; bu görevde başlatılmadı).
+**Sıradaki tek görev: D3-T1** (ayrı, açık görev istemiyle; bu görevde başlatılmadı). → 2026-11-16 `ec585e43` ile çalıştırıldı (§8.4); **sıradaki: D3-T2**.
 
 ### 8.3 Uzlaştırma (bu görev)
 
 - `e62eea0a` (oturum `33c1f375`): D2 Premium/kota/Free yedek salt okunur envanteri **tamamlandı**, `no-change` (dosya değişmedi; rapor köprü sonucunda). D2 `approved`, uygulanmadı; D2-T1/T2 §7.4'teki gibi başlatılmadı.
 - `6883b3a8` (oturum `3760013d`): `running`/`isolated` → **completed / yerel entegre**; commit `4934476` = integ HEAD; `run-tests-guarded` **95/95 PASS**, 0 FAIL, 0 BLOCK (görevin kendi koşusu, §7.5).
 - D1 tamamlanan kayıtları (`405f628`, `e28ee47`, `8e2399f`) değişmedi.
+
+### 8.4 D3-T1 uygulandı — saf `occupancyDecision` (2026-11-16, köprü `ec585e43`; bağlı değil, v0.99.81)
+
+Temel: `integ/beta-2026-11-14` @`f984e70` (görev başında temiz; `f984e70` integ atası doğrulandı), yalıtılmış worktree `MBRP-d3t1`, dal `feat/occupancy-decision-d3-t1`.
+
+- **Yeni:** `js/routing/occupancyDecision.js` — `occupancyDecision(input, { now })` → `{ trusted, state, reason, source, ageMin }`, `OCC_DECISION_MAX_AGE_MS` = 15 dk.
+  Saf (saat/ağ/DOM/depolama yok), yalnız `./occupancyLabel.js` içe aktarır; `trusted:false` ise `state` daima `unknown` ("Bilinmiyor").
+  - K1: `timestampKind:'provider'` + sonlu `at` yoksa `no-timestamp`; `now` yok/geçersizse `no-now` (saat okunmaz).
+  - K4: TomTom/NDW `fetched` (ingest edilmiş, `at` = okuma anı) → `unknown`; kaynak verisini almak gösterim doğrulaması değildir; `checked` tazelik sayılmaz.
+  - K2: NDW 0/N (hiç boş yok) → `ndw-zero-unverified`; bugün NDW doğrulama yolu yok, sağlayıcı zamanlı olsa bile 0/N `unknown`.
+  - AGE: `now - at` > 15 dk → `aged` (≤2 sa) / `stale` (>2 sa); tam 15 dk güncel sayılır; >2 dk gelecek zaman → `no-timestamp`.
+- **Test:** `scripts/test-occupancy-decision.mjs` 64/0 (sentetik, `server/availability.mjs` yardımcıları `now` parametresiyle; sunucu/fetch/harici API yok; modül yokken içe aktarma hatası; 3 mutasyon yakalandı).
+  Çağıran yok denetimi: `js/`, `server/`, `sw.js`, `index.html` modülü anmaz.
+- **Dokunulmadı:** `slots.js`, `occupancyLabel.js`, `occupancyView.js`, `occupancyClient.js`, sunucu bağdaştırıcıları, UI, i18n, `sw.js`. `test-occupancy-consistency-contract` 12/12 KNOWN-GAP değişmedi (bağlı olmadığı için hiçbir G kapanmaz).
+- **Doğrulama durumu:** yalnız çevrimdışı/sentetik; gerçek sağlayıcı yanıtıyla ve gerçek cihazda doğrulanmadı; push/yayın yok. Tarayıcı ağ riskinin sıfır olduğu iddia edilmez.
+- **Sıradaki:** D3-T2 (NDW/TomTom bağdaştırıcısı; sunucu değişirse canlıya alma = sunucu yeniden başlatma onayı).

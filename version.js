@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.80';
+self.APP_VERSION = '0.99.81';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.81', date: '2026-11-16',
+    notes: [
+      'Doluluk için iç karar kuralı eklendi (henüz ekrana bağlı değil, görünür değişiklik yok): sağlayıcı zaman damgası olmayan, 15 dakikadan eski ya da doğrulanmamış (ör. NDW 0/N) doluluk "Bilinmiyor" sayılacak. Yeni sağlayıcı isteği yok.',
+    ],
+  },
   {
     v: '0.99.80', date: '2026-11-16',
     notes: [
