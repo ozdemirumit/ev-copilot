@@ -54,6 +54,7 @@ const children = [], dirs = [];
 async function start(port, extra = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'providers-test-')); dirs.push(dir);
   writeFileSync(join(dir, 'db.json'), JSON.stringify(seed()));
+  writeFileSync(join(dir, 'tesla.json'), JSON.stringify({ at: Date.now(), sites: [] })); // T-SAFE-1: taze boş Tesla önbelleği → açılışta supercharge.info'ya istek gitmez
   const child = spawn(process.execPath, ['server/proxy.mjs'], {
     cwd: ROOT,
     env: { ...process.env, ...BLANK, PROVIDER_REQUESTS_PAUSED: '0', PREMIUM_REQUIRED: '1', PORT: String(port), HOST: '127.0.0.1', DATA_DIR: dir, ACCESS_CODES: CODE,

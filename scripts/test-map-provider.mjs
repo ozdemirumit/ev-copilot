@@ -132,6 +132,7 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
   async function start(port, extra = {}) {
     const dir = mkdtempSync(join(tmpdir(), 'map-test-')); dirs.push(dir);
     writeFileSync(join(dir, 'db.json'), JSON.stringify(seed()));
+    writeFileSync(join(dir, 'tesla.json'), JSON.stringify({ at: Date.now(), sites: [] })); // T-SAFE-1: taze boş Tesla önbelleği → açılışta supercharge.info'ya istek gitmez
     // Gerçek server/.env anahtarları sızmasın: tanımlı (boş) değerler .env'nin üstüne yazılmaz.
     const blank = Object.fromEntries(['MAPBOX_TOKEN', 'TOMTOM_KEY', 'TOMTOM_MAP_KEY', 'OCM_KEY', 'HERE_API_KEY', 'GOOGLE_PLACES_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SMTP_USER', 'SMTP_PASS', 'PUBLIC_URL', 'ADMIN_EMAILS', 'GOOGLE_MAPS_BROWSER_KEY', 'GOOGLE_MAP_ID', 'MAP_DAILY_PER_USER', 'MAP_DAILY_TOTAL', 'TRUST_PROXY', 'PREMIUM_REQUIRED'].map((k) => [k, '']));
     // Premium/premium-olmayan testleri sahibinin .env/ortamına bağlı olmasın: PREMIUM_REQUIRED açıkça '1'
@@ -1162,6 +1163,7 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
   async function start(port, extra = {}) {
     const dir = mkdtempSync(join(tmpdir(), 'sl-test-')); dirs.push(dir);
     writeFileSync(join(dir, 'db.json'), JSON.stringify(seed()));
+    writeFileSync(join(dir, 'tesla.json'), JSON.stringify({ at: Date.now(), sites: [] })); // T-SAFE-1: taze boş Tesla önbelleği → açılışta supercharge.info'ya istek gitmez
     const blank = Object.fromEntries(['MAPBOX_TOKEN', 'TOMTOM_KEY', 'TOMTOM_MAP_KEY', 'OCM_KEY', 'HERE_API_KEY', 'GOOGLE_PLACES_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SMTP_USER', 'SMTP_PASS', 'PUBLIC_URL', 'ADMIN_EMAILS', 'GOOGLE_MAPS_BROWSER_KEY', 'GOOGLE_MAP_ID', 'MAPBOX_MAP_TOKEN', 'TRUST_PROXY', 'PREMIUM_REQUIRED', 'HERE_MONTHLY_CAP', 'SPEEDLIMIT_DAILY_PER_USER', 'HERE_ROUTER_BASE', 'HERE_BASE'].map((k) => [k, '']));
     const child = spawn(process.execPath, ['server/proxy.mjs'], { cwd: ROOT, env: { ...process.env, ...blank, PROVIDER_REQUESTS_PAUSED: '0', PREMIUM_REQUIRED: '1', PORT: String(port), HOST: '127.0.0.1', DATA_DIR: dir, ACCESS_CODES: CODE, HERE_ROUTER_BASE: 'http://127.0.0.1:18799', ...extra }, stdio: ['ignore', 'pipe', 'pipe'] });
     children.push(child);
@@ -1609,6 +1611,7 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
   async function start(port, extra = {}, reuseDir = null) {
     const dir = reuseDir || mkdtempSync(join(tmpdir(), 'totp-test-'));
     if (!reuseDir) { dirs.push(dir); writeFileSync(join(dir, 'db.json'), JSON.stringify({ users: {}, invites: {}, docs: {}, sessions: {} })); }
+    writeFileSync(join(dir, 'tesla.json'), JSON.stringify({ at: Date.now(), sites: [] })); // T-SAFE-1: taze boş Tesla önbelleği → açılışta supercharge.info'ya istek gitmez
     const blank = Object.fromEntries(['MAPBOX_TOKEN', 'TOMTOM_KEY', 'TOMTOM_MAP_KEY', 'OCM_KEY', 'HERE_API_KEY', 'GOOGLE_PLACES_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SMTP_USER', 'SMTP_PASS', 'PUBLIC_URL', 'ADMIN_EMAILS', 'GOOGLE_MAPS_BROWSER_KEY', 'MAPBOX_MAP_TOKEN', 'GOOGLE_MAP_ID', 'MAP_DAILY_PER_USER', 'MAP_DAILY_TOTAL', 'TRUST_PROXY', 'TRUST_CF_HEADER', 'PREMIUM_REQUIRED', 'ADMIN_TOTP_SECRET', 'ADMIN_TOKEN_TTL_SEC'].map((k) => [k, '']));
     const child = spawn(process.execPath, ['server/proxy.mjs'], { cwd: ROOT, env: { ...process.env, ...blank, PROVIDER_REQUESTS_PAUSED: '0', PREMIUM_REQUIRED: '1', PORT: String(port), HOST: '127.0.0.1', DATA_DIR: dir, ACCESS_CODES: CODE, ...extra }, stdio: ['ignore', 'pipe', 'pipe'] });
     children.push(child);
@@ -1989,6 +1992,7 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
   async function start(port, extra = {}) {
     const dir = mkdtempSync(join(tmpdir(), 'usage-test-')); dirs.push(dir);
     writeFileSync(join(dir, 'db.json'), JSON.stringify(seed()));
+    writeFileSync(join(dir, 'tesla.json'), JSON.stringify({ at: Date.now(), sites: [] })); // T-SAFE-1: taze boş Tesla önbelleği → açılışta supercharge.info'ya istek gitmez
     const blank = Object.fromEntries(['MAPBOX_TOKEN', 'TOMTOM_KEY', 'TOMTOM_MAP_KEY', 'OCM_KEY', 'HERE_API_KEY', 'GOOGLE_PLACES_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SMTP_USER', 'SMTP_PASS', 'PUBLIC_URL', 'ADMIN_EMAILS', 'GOOGLE_MAPS_BROWSER_KEY', 'MAPBOX_MAP_TOKEN', 'GOOGLE_MAP_ID', 'TRUST_PROXY', 'TRUST_CF_HEADER', 'PREMIUM_REQUIRED', 'ADMIN_TOTP_SECRET', 'ADMIN_TOKEN_TTL_SEC',
       'MAPBOX_DAILY_PER_USER', 'OCM_DAILY_PER_USER', 'OVERPASS_DAILY_PER_USER', 'OCCUPANCY_DAILY_PER_USER', 'GOOGLE_DAILY_PER_USER', 'HERE_DAILY_PER_USER', 'MAP_DAILY_PER_USER', 'MAP_DAILY_TOTAL', 'SPEEDLIMIT_DAILY_PER_USER', 'GOOGLE_DAILY_TOTAL', 'MAPBOX_MONTHLY_CAP', 'MAPBOX_MONTH_USED_SEED', 'HERE_MONTHLY_CAP', 'GOOGLE_COST_PER_CALL_USD', 'RATE_PER_MIN'].map((k) => [k, '']));
     const child = spawn(process.execPath, ['server/proxy.mjs'], { cwd: ROOT, env: { ...process.env, ...blank, ...SECRETS, PROVIDER_REQUESTS_PAUSED: '0', PREMIUM_REQUIRED: '1', PORT: String(port), HOST: '127.0.0.1', DATA_DIR: dir, ACCESS_CODES: CODE,
