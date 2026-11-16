@@ -41,6 +41,13 @@ const RETRY_MIN_MS = 60e3;
 const RETRY_MAX_MS = 10 * 60e3;
 let failN = 0;
 let retryAt = 0;
+// S-1 (v0.99.93): arama hata DİZİSİYLE ve istasyonsuz döndüyse (kaynak ulaşılamadı, throw değil) otomatik yeniden arama da geri çekilir:
+// 45 sn → 90 → 180 → en çok 5 dk (düşük pil tazelemesiyle aynı tavan). Elle Yenile beklemez ve sayacı 1'den başlatır; istasyonlu sonuç sıfırlar.
+// S-1b: böyle bir hata son başarılı listeyi SİLMEZ; liste en çok 60 dk korunur (varış pili/uzaklık anlık konumdan yeniden hesaplanır).
+const S1_MIN_MS = 45e3;
+const S1_MAX_MS = 5 * 60e3;
+const LAST_GOOD_MAX_MS = 60 * 60e3;
+let goodAt = 0; // son istasyonlu sonucun zamanı
 
 let all = []; // son sorgu sonucu (fetchAround)
 let meta = { at: 0, lat: null, lon: null, errors: [], cached: false };
@@ -107,6 +114,7 @@ export async function refreshNearby({ force = false, silent = false } = {}) {
   paintStatus('Yakındaki istasyonlar aranıyor…');
   try {
     const old = new Map(all.map((x) => [x.id, x.slots]));
+    const prev = all;
     let res;
     const low = e.soc != null && inTrouble(e, getState('nav'));
     const steps = low ? RADIUS_STEPS.filter((r) => r >= EMERGENCY_KM) : RADIUS_STEPS;
@@ -118,9 +126,17 @@ export async function refreshNearby({ force = false, silent = false } = {}) {
       if (low && radiusSetting === 'auto' && !res.errors.length && r < RADIUS_STEPS.at(-1) && !visible({ power: false, brand: false }).some((s) => isFast(s) && s.reachable)) continue; // düşük pilde ulaşılabilir hızlı istasyon çıkana kadar genişle
       if (visible().length || res.errors.length) break; // hata varsa genişletmenin anlamı yok (aynı sunucu)
     }
+    const failedEmpty = res.errors.length > 0 && !res.stations.length;
+    if (failedEmpty && prev.length && Date.now() - goodAt <= LAST_GOOD_MAX_MS) all = prev; // S-1b: son iyi liste korunur
+    else if (res.stations.length) goodAt = Date.now();
     meta = { at: Date.now(), lat: e.lat, lon: e.lon, errors: res.errors, cached: res.cached };
-    failN = 0;
-    retryAt = 0;
+    if (failedEmpty) { // S-1: hata dizisi + boş sonuç → sınırlı üstel geri çekilme (elle Yenile 1'den başlatır)
+      failN = silent ? failN + 1 : 1;
+      retryAt = Date.now() + Math.min(S1_MAX_MS, S1_MIN_MS * 2 ** (failN - 1));
+    } else {
+      failN = 0;
+      retryAt = 0;
+    }
   } catch (err) {
     meta = { ...meta, errors: ['Arama başarısız: ' + err.message] };
     failN++;

@@ -396,6 +396,12 @@ body.sheet-open main { display: flex; flex-direction: column; }
 /* Gizli değer alanları: type="password" değil (tarayıcının "şifreyi kaydet" penceresi çıkmasın), yalnızca noktalı görünür */
 .masked { -webkit-text-security: disc; text-security: disc; }
 body:not(.is-premium) [data-premium-only] { display: none !important; } /* Kamera ve Test yalnızca Premium'da (js/ui/premiumGate.js) */
+/* Herkese açık ücretsiz Beta (build-beta --public-free; html.public-free js/net/providerGateInstall.js koyar): paylaşılan sunucu, ücretli
+   sağlayıcı ve uydu gerektiren özellikler gösterilmez (hesap, kendi anahtarlarım, uydu, ABRP/trafik rozeti, trafik kartı, Premium notu). */
+.public-free-only { display: none !important; }
+html.public-free .public-free-only { display: block !important; }
+html.public-free #fab-sat, html.public-free #account-card, html.public-free #own-keys, html.public-free #data-src-note,
+html.public-free #bd-abrp, html.public-free #bd-traffic, html.public-free #premium-hint, html.public-free .card:has(> dl #t-level) { display: none !important; }
 .menu-item { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 14px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); text-align: left; color: var(--text); }
 .menu-item span { font-size: 24px; line-height: 1; margin-bottom: 4px; }
 .menu-item b { font-size: 15px; }

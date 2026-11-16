@@ -70,7 +70,7 @@ const STUBS = {
     export const subscribe = () => () => {};
     export const effective = () => ${g}.eff;`,
   '/js/utils/storage.js': 'export const load = (k, d) => d; export const save = () => {}; export const remove = () => {}; export const onSave = () => {};',
-  '/js/advisor/voice.js': 'export const speak = () => {}; export const stopSpeech = () => {}; export const testVoice = () => {};',
+  '/js/advisor/voice.js': 'export const speak = (s, o) => { (globalThis.__spoken ||= []).push((o && o.key) || s); }; export const stopSpeech = () => {}; export const testVoice = () => {};',
   '/js/ui/mapView.js': 'export const mapApi = new Proxy({}, { get: () => () => {} });',
   '/js/ui/toast.js': 'export const toast = () => {};',
   '/js/i18n/index.js': 'export const t = (s, ...a) => String(s).replace(/\\{(\\d)\\}/g, (m, i) => a[i]); export const locale = () => "tr";',
@@ -211,9 +211,9 @@ const budget = {}; // rapor: senaryo → istek sayısı
 // =====================================================================================================================
 // A) İSTASYON HATA YOLLARI — js/nav/nearby.js (gerçek kod)
 // =====================================================================================================================
-async function nearbyRun({ mode, soc = 12, src = 'live', active = true, minutes = 60, stations = [] }) {
+async function nearbyRun({ mode, soc = 12, src = 'live', active = true, minutes = 60, stations = [], noPlan = false }) {
   resetWorld({ soc, src, active });
-  G.st.plan = { ...G.st.plan, stops: [] };
+  G.st.plan = noPlan ? { status: 'none' } : { ...G.st.plan, stops: [] };
   G.stations = stations;
   G.mode.around = mode;
   const N = await fresh('../js/nav/nearby.js');
@@ -262,7 +262,22 @@ async function nearbyRun({ mode, soc = 12, src = 'live', active = true, minutes 
   const r = await nearbyRun({ mode: 'errors' });
   budget['A4 nearby hata dizisi + düşük güvenilir pil'] = r.n;
   ok(`A4 nearby hata dizisi, güvenilir düşük pil: fırtına yok ve 60 dk'da ≤ 80 (45 sn autoSearch koruması): ${r.n}`, r.same <= 1 && r.n <= 80, `${r.n}/${r.same}`);
-  knownGap('S-1', 'hata DİZİSİYLE dönen arama (kaynak ulaşılamadı) güvenilir düşük pilde 45 sn\'de bir yeniden denenir (geri çekilme yok; acil durum araması — davranış kararı kullanıcıda)', r.n > 40, `${r.n}/saat`);
+  // S-1 (v0.99.93, eskiden KNOWN-GAP: 45 sn sabit ≈ 80/saat): hata dizisi + boş sonuçta otomatik arama 45 → 90 → 180 → en çok 300 sn geri çekilir
+  ok(`A4 S-1 hata dizisi: otomatik yeniden arama geri çekilir, 60 dk'da ≤ 15 (eskiden ≈ 80): ${r.n}`, r.n >= 2 && r.n <= 15, `${r.n}/saat`);
+  const g4 = G.calls.filter((c) => c.kind === 'around').map((c) => c.t).map((t, i, a) => (i ? t - a[i - 1] : null)).filter((x) => x != null);
+  ok('A4 S-1: ardışık aralıklar büyür (ilk ≥ 45 sn), en çok 5 dk + 30 sn, tavana ulaşır', g4.length >= 3 && g4.every((d, i) => d >= 45e3 && d <= 5.5 * 60e3 && (i === 0 || d >= g4[i - 1] - 30e3)) && Math.max(...g4) >= 4.5 * 60e3, JSON.stringify(g4.map((d) => Math.round(d / 1000))));
+  const b4 = count('around');
+  await listeners['near-refresh:click']?.(); await flush();
+  ok('A4b S-1: elle Yenile geri çekilme sırasında hemen bir arama yapar', count('around') === b4 + 1, `${b4} → ${count('around')}`);
+}
+{ // A4c S-1b: önce istasyonlu başarılı arama, sonra kaynak hata dizisiyle döner → son iyi liste SİLİNMEZ (uyarı aynı istasyonu gösterir)
+  const r = await nearbyRun({ mode: 'ok', stations: [station('n1', 9), station('n2', 14)], minutes: 2, noPlan: true });
+  const before = G.st.nav.alert;
+  G.mode.around = 'errors';
+  await listeners['near-refresh:click']?.(); await flush();
+  await advance(10e3);
+  const after = G.st.nav.alert;
+  ok(`A4c S-1b: hata dizisi son iyi listeyi silmez (uyarı istasyonu korunur: ${before?.id} → ${after?.id})`, !!before?.id && after?.id === before.id && r.n >= 1, JSON.stringify({ before, after }));
 }
 { // A5: başarılı arama, normal pil, navigasyon açık, 90 km/h: 15 dk / 10 km tazelemesi
   const r = await nearbyRun({ mode: 'ok', soc: 70, stations: [station('n1', 3), station('n2', 9)] });
@@ -347,6 +362,7 @@ for (const mode of ['ok', 'fail']) {
 
 { // B5: rotadan çıkınca yeniden rota, rota sağlayıcısı sürekli başarısız (internet yok / sağlayıcı hatası)
   resetWorld();
+  globalThis.__spoken = [];
   G.mode.reroute = 'ok'; // stub false döner: "alınamadı"
   const Nv = await fresh('../js/nav/navigator.js');
   let inited = true;
@@ -357,7 +373,12 @@ for (const mode of ['ok', 'fail']) {
   const n = count('reroute');
   budget['B5 yeniden rota (sürekli başarısız)'] = n;
   ok(`B5 navigator: yeniden rota aynı anda üst üste yok ve ≤ 300/saat (12 sn yeniden deneme tavanı): ${n}`, maxSameInstant('reroute') <= 1 && n <= 300, String(n));
-  knownGap('N-1', 'rotadan çıkınca yeniden rota başarısız oldukça 12 sn\'de bir yeniden denenir (geri çekilme yok; sürücü güvenliği ↔ istek ödünleşimi — kullanıcı kararı)', n > 60, `${n}/saat`);
+  // N-1 (v0.99.93, eskiden KNOWN-GAP: 12 sn sabit ≈ 277/saat): 12 → 24 → 48 → en çok 60 sn; ses sapma bölümü başına bir kez
+  ok(`B5 N-1: başarısız yeniden rota geri çekilir, 60 dk'da ≤ 65 (eskiden ≈ 277): ${n}`, n >= 30 && n <= 65, `${n}/saat`);
+  const g5 = G.calls.filter((c) => c.kind === 'reroute').map((c) => c.t).map((t, i, a) => (i ? t - a[i - 1] : null)).filter((x) => x != null);
+  ok('B5 N-1: ardışık aralıklar 12 sn\'den büyür, en çok 60 sn (+1 sn tik)', g5.length >= 3 && g5[0] >= 12e3 && g5[0] <= 13e3 && g5.every((d, i) => d <= 61e3 && (i === 0 || d >= g5[i - 1] - 1e3)) && Math.max(...g5) >= 59e3, JSON.stringify(g5.slice(0, 6).map((d) => Math.round(d / 1000))));
+  const said = globalThis.__spoken.filter((k) => k === 'reroute').length;
+  ok(`B5 N-1b: "Rota yeniden hesaplanıyor" sesi sapma bölümü başına 1 (eskiden her denemede): ${said}`, said === 1, String(said));
 }
 
 ok('A/B bölümlerinde gerçek ağ (fetch/XHR/WebSocket/EventSource) çağrısı yok', realFetchCalls.length === 0, realFetchCalls.slice(0, 3).join(', '));

@@ -5,6 +5,7 @@
 import { getLang, langInfo } from '../i18n/index.js';
 import { cached, TTL } from '../utils/cache.js';
 import { haversineKm } from '../utils/geo.js';
+import { publicFreeMode } from '../net/providerGate.js';
 
 const BASE = 'https://photon.komoot.io';
 const NOMINATIM = 'https://nominatim.openstreetmap.org';
@@ -67,7 +68,8 @@ export async function searchPlaces(q, _token, near = null, onMore = null) {
     lat: f.geometry.coordinates[1],
   })).slice(0, 8);
 
-  if (onMore) {
+  // Herkese açık ücretsiz Beta: Nominatim yok (OSMF politikası: sınır uygulamanın tüm kullanıcılarının toplamı; istemciden korunamaz)
+  if (onMore && !publicFreeMode()) {
     const seq = ++nomSeq;
     (async () => {
       await sleep(NOM_QUIET_MS);

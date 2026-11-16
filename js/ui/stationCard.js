@@ -12,6 +12,7 @@ import { tr, t } from '../i18n/index.js';
 import { fetchAvailability } from '../routing/occupancyClient.js';
 import { slotEl, livePrice } from '../routing/slots.js';
 import { getSession, proxyFetch, proxyHas } from '../net/proxy.js';
+import { publicFreeMode } from '../net/providerGate.js';
 import { fetchInfo, ratePoint, markFacility, shrinkPhoto, uploadPhoto, photoUrl, deletePhoto, reportPhoto, FACILITIES } from '../account/stationInfo.js';
 import { goToStation } from '../nav/nearby.js';
 
@@ -209,6 +210,7 @@ function open(s) {
   const info = el('div', 'stack sc-info');
   card.replaceChildren(head, meta, price, live, acts, info);
   card.classList.remove('hidden');
+  if (publicFreeMode()) { live.classList.add('hidden'); info.classList.add('hidden'); return; } // herkese açık ücretsiz Beta: doluluk/puan/fotoğraf sunucusu yok, giriş istemi gösterilmez
   load(s, live);
   loadInfo(s, info);
 }

@@ -417,4 +417,5 @@ export default {
   "Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.": "Automatisch folgt der Hell-/Dunkel-Einstellung des Telefons. Die Kartenkacheln ändern sich in dieser Version nicht.",
   "🟢 Müsait": "🟢 Verfügbar",
   "⚪ Bilinmiyor": "⚪ Unbekannt",
+  "Herkese açık ücretsiz Beta: harita OpenFreeMap (© OpenMapTiles, © OpenStreetMap katkıcıları), rota ve rakım Valhalla (FOSSGIS), yer arama Photon (komoot), şarj istasyonları Overpass (private.coffee), hava Open-Meteo.com (CC BY 4.0). Bu sürümde hesap, canlı trafik, doluluk, fiyat bildirimi, yol hız limiti ve uydu görüntüsü yoktur.": "Öffentliche kostenlose Beta: Karte OpenFreeMap (© OpenMapTiles, © OpenStreetMap-Mitwirkende), Route und Höhe Valhalla (FOSSGIS), Ortssuche Photon (komoot), Ladestationen Overpass (private.coffee), Wetter Open-Meteo.com (CC BY 4.0). Diese Version hat kein Konto, keinen Live-Verkehr, keine Belegung, keine Preismeldung, keine Tempolimits und keine Satellitenbilder.",
 };

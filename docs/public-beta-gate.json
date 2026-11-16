@@ -1,0 +1,13 @@
+{
+  "about": "Herkese açık ücretsiz Beta (build-beta --public-free) yayın kapısı. Her koşul 'met' olmadan çıktı bir git deposuna (yayın deposu dahil) yazılamaz. 'met' yalnız kullanıcı (ya da kullanıcı onaylı görev) tarafından ve kanıtıyla yazılır. Ayrıntı: docs/public-beta-release-gate.md",
+  "target": "https://ozdemirumit.github.io/EV-Route-Finder/",
+  "conditions": [
+    { "id": "G-PUB-AUTO", "status": "met", "owner": "ajan", "what": "Otomatik fail-closed testleri: ağ izin listesi, paylaşılan sunucuya sıfır istek, ücretli istek 0, yeniden deneme tavanları, harita/rota/istasyon/hava/arama, çevrimdışı, herkese açık derleme", "evidence": "scripts/test-public-beta-mode.mjs + run-tests-guarded (docs/public-beta-release-gate.md §4)" },
+    { "id": "G-PUB-VALHALLA", "status": "open", "owner": "kullanıcı", "what": "Valhalla demo sunucusu README: son kullanıcıya yayımlanan uygulama bakımcılara GitHub Discussions üzerinden bildirilmeli (X-Client-Id başlığı kodda var). Bakımcı ifadesi: üçüncü taraf üretim hizmeti için uygun değil.", "evidence": "" },
+    { "id": "G-PUB-OPENMETEO", "status": "open", "owner": "kullanıcı", "what": "Open-Meteo ücretsiz uç yalnız ticari olmayan kullanım içindir (abonelik ya da reklam olan uygulama ticari sayılır). Herkese açık Beta'nın (ve aynı ürünün Premium planının) bu koşulu karşıladığının kullanıcı teyidi ya da ticari plan kararı.", "evidence": "" },
+    { "id": "G-PUB-OVERPASS", "status": "open", "owner": "kullanıcı", "what": "Tek istasyon kaynağı overpass.private.coffee: büyük ölçekli kullanım önceden bildirilmeli (support@private.coffee). Beklenen kullanıcı sayısı ve bildirim kararı.", "evidence": "" },
+    { "id": "G-PUB-AGGREGATE", "status": "open", "owner": "kullanıcı", "what": "İstemci tavanları cihaz başınadır; tüm kullanıcıların TOPLAM trafiğini sınırlayamaz. Nominatim ve overpass-api.de bu nedenle kapalı. Kalan topluluk servisleri için toplam trafik riskinin yazılı kabulü + izleme ve geri alma planı (docs/public-beta-release-gate.md §6).", "evidence": "" },
+    { "id": "G-PUB-DEVICE", "status": "open", "owner": "kullanıcı", "what": "Gerçek cihaz (Android + iOS) duman testi public-free derlemesiyle: harita, arama, rota (X-Client-Id ile CORS), istasyon, hava; ağ günlüğünde paylaşılan sunucu ve ücretli ana makine 0.", "evidence": "" },
+    { "id": "G-PUB-PUBLISH", "status": "open", "owner": "kullanıcı", "what": "Yayın (EV-Route-Finder deposuna derleme + push) için ayrı açık onay. Bu görev push/yayın yapmaz.", "evidence": "" }
+  ]
+}

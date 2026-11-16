@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.92';
+self.APP_VERSION = '0.99.93';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.93', date: '2026-11-16',
+    notes: [
+      'Herkese açık ücretsiz Beta hazırlığı (henüz yayımlanmadı): Beta, isteğe bağlı "herkese açık ücretsiz" derlemeyle (build-beta --public-free) üretilebilir. Bu derleme ortak sunucuya hiç bağlanmaz (hesap, eşitleme, telemetri, fiyat, doluluk yok), ücretli harita/rota/arama servislerini kullanmaz; yalnızca OpenFreeMap, Valhalla, Open-Meteo, Photon ve Overpass kullanılır. Topluluk servisleri yanıt vermezse uygulama aynı isteği arka arkaya göndermez, giderek artan aralıklarla (en çok 10 dakika) yeniden dener; cihaz başına saatlik ve günlük üst sınır vardır. Hesap, uydu görüntüsü, trafik ve Premium öğeleri bu derlemede gizlidir.',
+      'Yakındaki istasyon araması kaynağa ulaşamazsa son bulunan istasyon listesi artık silinmez (en çok 1 saat gösterilir) ve otomatik yeniden arama 45 saniyeden başlayıp en çok 5 dakikaya kadar seyrekleşir; "Yenile" her zaman hemen arar.',
+      'Navigasyonda rotadan çıkınca yeni rota alınamazsa yeniden deneme 12 saniyeden başlayıp en çok 60 saniyeye kadar seyrekleşir; "Rota yeniden hesaplanıyor" sesi her sapmada yalnızca bir kez söylenir.',
+    ],
+  },
   {
     v: '0.99.92', date: '2026-11-16',
     notes: [

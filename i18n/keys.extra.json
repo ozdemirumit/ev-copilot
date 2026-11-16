@@ -416,5 +416,6 @@
  "Otomatik (sistem ayarı)",
  "Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.",
  "🟢 Müsait",
- "⚪ Bilinmiyor"
+ "⚪ Bilinmiyor",
+ "Herkese açık ücretsiz Beta: harita OpenFreeMap (© OpenMapTiles, © OpenStreetMap katkıcıları), rota ve rakım Valhalla (FOSSGIS), yer arama Photon (komoot), şarj istasyonları Overpass (private.coffee), hava Open-Meteo.com (CC BY 4.0). Bu sürümde hesap, canlı trafik, doluluk, fiyat bildirimi, yol hız limiti ve uydu görüntüsü yoktur."
 ]

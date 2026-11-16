@@ -1,13 +1,17 @@
 // Valhalla'ya (OpenStreetMap yol verisi; FOSSGIS herkese açık sunucusu, anahtarsız) JSON POST. Rota (/route), rakım (/height) ve yol hız limiti
 // (/locate) bunu kullanır. Herkese açık demo sunucu: adil kullanım, garanti yok.
+import { publicFreeMode, PUBLIC_CLIENT_ID } from '../net/providerGate.js';
+
 export const VALHALLA = 'https://valhalla1.openstreetmap.de';
+/** İstek başlıkları. Herkese açık ücretsiz Beta'da demo sunucunun son kullanıcı uygulamalarından istediği tanıtıcı X-Client-Id eklenir. */
+export const valhallaHeaders = () => (publicFreeMode() ? { 'Content-Type': 'application/json', 'X-Client-Id': PUBLIC_CLIENT_ID } : { 'Content-Type': 'application/json' });
 
 export async function valhalla(path, body, timeoutMs = 45000) {
   let res;
   try {
     res = await fetch(VALHALLA + path, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: valhallaHeaders(),
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(timeoutMs),
     });

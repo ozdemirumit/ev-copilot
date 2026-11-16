@@ -26,6 +26,10 @@ const FAR_OFF_KM = 0.4; // bu kadar uzaktaysan (yanlış çıkış vb.) beklemed
 const OFF_ROUTE_MS = 6000;
 const REROUTE_COOLDOWN_MS = 45000; // başarılı yeni rotadan sonra bir daha hemen sapma kontrolü yapma
 const RETRY_MS = 12000; // yeni rota alınamadıysa (internet yok vb.) bu kadar sonra tekrar dene
+// N-1 (v0.99.93): ardışık başarısız yeniden rota üstel geri çekilir: 12 → 24 → 48 → en çok 60 sn. Rotaya dönüş ya da başarı sıfırlar.
+// "Rota yeniden hesaplanıyor." sesi sapma bölümü başına bir kez (eskiden her 12 sn'de bir: sürücü dikkati).
+const RETRY_MAX_MS = 60000;
+export const rerouteRetryMs = (n) => Math.min(RETRY_MAX_MS, RETRY_MS * 2 ** Math.max(0, n - 1));
 const VIA_REACHED_KM = 0.3; // ara duraktan bu kadar yakından geçilince ulaşıldı sayılır: yeniden rota oraya geri götürmesin
 
 let said = new Set();
@@ -33,6 +37,8 @@ let planId = null;
 let offSince = 0;
 let lastReroute = 0;
 let rerouting = false;
+let rerouteFails = 0; // bu sapma bölümünde ardışık başarısız yeniden rota
+let rerouteSpoken = false; // bu sapma bölümünde "yeniden hesaplanıyor" söylendi mi
 let track = null;
 let trackKm = null; // son bilinen iz konumu (arama penceresi için)
 
@@ -155,15 +161,18 @@ function tick() {
     if (moving && waited && !rerouting && Date.now() - lastReroute > REROUTE_COOLDOWN_MS) {
       lastReroute = Date.now();
       rerouting = true;
-      speak('Rota yeniden hesaplanıyor.', { key: 'reroute', cooldownMs: 0, interrupt: true });
+      if (!rerouteSpoken) { rerouteSpoken = true; speak('Rota yeniden hesaplanıyor.', { key: 'reroute', cooldownMs: 0, interrupt: true }); }
+      const failed = () => { rerouteFails++; lastReroute = Date.now() - REROUTE_COOLDOWN_MS + rerouteRetryMs(rerouteFails); }; // başarısız: geri çekilerek tekrar
       Promise.resolve(rerouteFromHere()).then((ok) => {
-        if (ok) speak('Yeni rota hazır.', { key: 'rerouted', cooldownMs: 0 });
-        else lastReroute = Date.now() - REROUTE_COOLDOWN_MS + RETRY_MS; // başarısız: kısa süre sonra tekrar
-      }).catch(() => { lastReroute = Date.now() - REROUTE_COOLDOWN_MS + RETRY_MS; }).finally(() => { rerouting = false; });
+        if (ok) { rerouteFails = 0; rerouteSpoken = false; speak('Yeni rota hazır.', { key: 'rerouted', cooldownMs: 0 }); }
+        else failed();
+      }).catch(failed).finally(() => { rerouting = false; });
     }
     return;
   }
   offSince = 0;
+  rerouteFails = 0; // rotaya dönüldü: yeni sapma bölümü baştan
+  rerouteSpoken = false;
 
   const steps = plan.steps;
   let idx = steps.findIndex((s) => !isMinor(s) && s.km > km - 0.03);

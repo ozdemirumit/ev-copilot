@@ -3,6 +3,10 @@
 //          node scripts/build-beta.mjs --free-only <depo-dışı-boş-klasör>   (YALNIZ kapalı cihaz testi; YAYIMLANMAZ)
 // --free-only: js/net/providerGate.js PROVIDER_MODE_BUILD 'paused' → 'free-only' (yalnız ücretsiz izin listesi). Kaynak dosya değişmez.
 // Fail-closed: klasör açıkça verilmeli; ../ev-copilot-beta (herkese açık Beta deposu), git deposu olan ya da proje içi klasör reddedilir.
+//          node scripts/build-beta.mjs --public-free <klasör>   (HERKESE AÇIK ücretsiz Beta, D6: yalnız ozdemirumit.github.io/EV-Route-Finder/)
+// --public-free: PROVIDER_MODE_BUILD 'paused' → 'public-free' (paylaşılan sunucuya sıfır istek, daraltılmış ücretsiz izin listesi, geri çekilme).
+// YAYIN KAPISI (fail-closed): docs/public-beta-gate.json'daki HER koşul "met" değilse çıktı bir git deposuna (yayın deposu dahil) YAZILAMAZ;
+// yalnız depo dışı, git olmayan bir klasöre PUBLIC-BETA-GATE-BLOCKED.txt işaretiyle (yerel sınama) yazılır. Bu betik push/yayın YAPMAZ.
 // Neden: beta ve canlı uygulama aynı alan adında (ozdemirumit.github.io) çalışır; localStorage öneki, IndexedDB adı ve
 // servis çalışanı önbellek adları ortak olursa iki sürüm birbirinin verisini ve önbelleğini bozar.
 // Gizli bilgi içermez: yalnızca index.html, css, js, vendor, icons, sw.js, manifest, version.js kopyalanır (server/ ve .env asla).
@@ -14,12 +18,30 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const flags = args.filter((a) => a.startsWith('--'));
 const positional = args.filter((a) => !a.startsWith('--'));
-const unknown = flags.filter((a) => a !== '--free-only');
+const unknown = flags.filter((a) => a !== '--free-only' && a !== '--public-free');
 if (unknown.length || positional.length > 1) throw new Error('Bilinmeyen bağımsız değişken: ' + [...unknown, ...positional.slice(1)].join(' '));
 const FREE_ONLY = flags.includes('--free-only');
+const PUBLIC_FREE = flags.includes('--public-free');
+if (FREE_ONLY && PUBLIC_FREE) throw new Error('--free-only ve --public-free birlikte kullanılamaz');
 const PUBLIC_REPO = resolve(join(root, '..', 'ev-copilot-beta'));
 if (FREE_ONLY && !positional[0]) throw new Error('--free-only için çıktı klasörü açıkça verilmeli (varsayılan yayın deposu kullanılmaz)');
+if (PUBLIC_FREE && !positional[0]) throw new Error('--public-free için çıktı klasörü açıkça verilmeli');
 const out = resolve(positional[0] || PUBLIC_REPO);
+/** Yayın kapısı: docs/public-beta-gate.json. Okunamaz/bozuk/boş → kapalı. Dönüş: { ok, open: [kimlik...] }. */
+function readGate(file = join(root, 'docs', 'public-beta-gate.json')) {
+  try {
+    const g = JSON.parse(readFileSync(file, 'utf8'));
+    const list = Array.isArray(g?.conditions) ? g.conditions : [];
+    const open = list.filter((c) => c?.status !== 'met').map((c) => String(c?.id || '?'));
+    return { ok: list.length > 0 && open.length === 0, open: list.length ? open : ['(koşul listesi yok)'] };
+  } catch (err) { return { ok: false, open: ['(kapı dosyası okunamadı: ' + err.message + ')'] }; }
+}
+const GATE = PUBLIC_FREE ? readGate() : null;
+if (PUBLIC_FREE && !GATE.ok && existsSync(join(out, '.git'))) {
+  console.error('BLOCKED: herkese açık ücretsiz Beta yayın kapısı kapalı; çıktı bir git deposuna yazılamaz: ' + out);
+  console.error('Açık koşullar: ' + GATE.open.join(', ') + ' (docs/public-beta-gate.json, docs/public-beta-release-gate.md)');
+  process.exit(2);
+}
 if (FREE_ONLY && out.toLowerCase() === PUBLIC_REPO.toLowerCase()) throw new Error('--free-only çıktısı herkese açık Beta deposuna yazılamaz: ' + out);
 if (FREE_ONLY && existsSync(join(out, '.git'))) throw new Error('--free-only çıktısı bir git deposuna yazılamaz (yayımlanmasın): ' + out);
 const ITEMS = ['index.html', 'offline.html', 'manifest.webmanifest', 'version.js', 'sw.js', 'css', 'js', 'vendor', 'icons'];
@@ -75,7 +97,7 @@ walk(join(out, 'js'));
   const p = join(out, 'index.html');
   const s = readFileSync(p, 'utf8');
   if (!s.includes('<title>EV Route Finder</title>')) throw new Error('index.html başlığı beklenen biçimde değil');
-  writeFileSync(p, s.replace('<title>EV Route Finder</title>', FREE_ONLY ? '<title>EV Route Finder (Beta – yerel ücretsiz test)</title>' : '<title>EV Route Finder (Beta)</title>'));
+  writeFileSync(p, s.replace('<title>EV Route Finder</title>', FREE_ONLY ? '<title>EV Route Finder (Beta – yerel ücretsiz test)</title>' : PUBLIC_FREE ? '<title>EV Route Finder (Beta – ücretsiz)</title>' : '<title>EV Route Finder (Beta)</title>'));
 }
 // offline.html "Tekrar dene": Beta önizleme adresinde kalsın (kaynak/üretim offline.html ve Android server.url değişmez)
 {
@@ -98,6 +120,17 @@ if (FREE_ONLY) {
     'YAYIMLAMAYIN (GitHub Pages / ev-copilot-beta / herhangi bir genel sunucu). Ayrinti: docs/free-only-device-test.md\n');
 }
 
+// Herkese açık ücretsiz Beta: derleme modu satırı tam bir kez değiştirilir; bulunamazsa derleme durur (fail-closed).
+if (PUBLIC_FREE) {
+  const p = join(out, 'js', 'net', 'providerGate.js');
+  const s = readFileSync(p, 'utf8');
+  const from = "export const PROVIDER_MODE_BUILD = 'paused';";
+  if (s.split(from).length !== 2) throw new Error('providerGate.js derleme modu satırı tam bir kez bulunamadı');
+  writeFileSync(p, s.replace(from, "export const PROVIDER_MODE_BUILD = 'public-free';"));
+  if (!GATE.ok) writeFileSync(join(out, 'PUBLIC-BETA-GATE-BLOCKED.txt'), 'EV Route Finder Beta — HERKESE ACIK UCRETSIZ MOD derlemesi, YAYIN KAPISI KAPALI.\n' +
+    'Bu klasoru YAYIMLAMAYIN. Acik kosullar: ' + GATE.open.join(', ') + '\nAyrinti: docs/public-beta-release-gate.md\n');
+}
+
 // Doğrulama: çakışan adlar kalmadı mı?
 const leftovers = [];
 const scan = (dir) => {
@@ -111,5 +144,5 @@ const scan = (dir) => {
 };
 scan(out);
 if (leftovers.length) { console.error('Çakışan ad kaldı:', leftovers); process.exit(1); }
-console.log(FREE_ONLY ? 'Beta (YALNIZ ÜCRETSİZ, yerel test — yayımlamayın) hazır:' : 'Beta hazır:', out);
+console.log(FREE_ONLY ? 'Beta (YALNIZ ÜCRETSİZ, yerel test — yayımlamayın) hazır:' : PUBLIC_FREE ? (GATE.ok ? 'Beta (HERKESE AÇIK ÜCRETSİZ, kapı açık) hazır:' : 'Beta (HERKESE AÇIK ÜCRETSİZ — KAPI KAPALI, yayımlamayın) hazır:') : 'Beta hazır:', out);
 console.log('Değişen ad sayıları:', counts);
