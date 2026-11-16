@@ -54,6 +54,15 @@ export function pointPinShown(kind, point, vehicle) {
   return !(own && vehicle?.lat != null && vehicle?.lon != null);
 }
 
+/**
+ * Başlangıç iğnesi uzlaştırması (konum her değiştiğinde): 'add' | 'remove' | null. "Konumum" iğnesi araç konumu sonradan gelince
+ * kaldırılır; böylece normal haritada araç noktasıyla birlikte ikinci bir yeşil nokta kalmaz.
+ */
+export function startPinStep(hasPin, point, vehicle) {
+  const want = pointPinShown('start', point, vehicle);
+  return want === !!hasPin ? null : want ? 'add' : 'remove';
+}
+
 /** İstasyon iğnesi: damla biçimi, güce göre renk (AC mavi, DC turuncu, ≥150 kW mor). num: planlanan durak sırası. */
 const PIN_PATH = 'M18 45C18 45 3 28 3 17A15 15 0 0 1 33 17C33 28 18 45 18 45Z';
 function stationPin(s, { planned = false, num = 0, focus = false } = {}) {
@@ -366,6 +375,7 @@ export function initMap() {
     navOn = on;
     headingUp = up;
     if (!on) navPan = false;
+    if (!on) glideAt = 0; // kare kamera durdu: updateMe ok yerine noktayı hemen koysun (navigasyon bitince tek nokta)
     const cam = navCamera(on, up, d3);
     tiltNow = cam.tilt;
     if (cam.resetHeading) lastHeading = 0;
@@ -417,6 +427,7 @@ export function initMap() {
     meArrow.style.transform = `translateY(50%) rotate(${headingUp ? 0 : heading ?? 0}deg)`;
     if (!me) me = marker({ lat, lon }, meArrow, 'Konumum');
     else { me.setPosition({ lat, lon }); me.setContent(meArrow); }
+    mePos = { lat, lon };
     if (held()) return;
     if (zoom != null) zoomCur = zoomCur == null || Math.abs(zoom - zoomCur) > 3 ? zoom : zoomCur + (zoom - zoomCur) * 0.07;
     if (heading != null && headingUp) {
@@ -502,7 +513,9 @@ export function initMap() {
   // Araç konumu: GPS, Test Modu'nda simülatör konumu
   let meDot = null;
   let meArrow = null;
+  let mePos = null; // araç işaretinin son çizildiği yer (başlangıç iğnesi kararında)
   function updateMe() {
+    syncStartPin();
     if (performance.now() - glideAt < 500) return; // kare kamera aracı zaten yerleştiriyor
     const e = effective();
     if (!adapter || e.lat == null || e.lon == null) return;
@@ -511,9 +524,10 @@ export function initMap() {
     const pos = snap || e;
     meDot ??= dotEl(color, 16, '#fff');
     meArrow ??= el('div', 'me-arrow');
-    const content = navOn || driveOn ? meArrow : meDot;
+    const content = navOn || driveOn ? meArrow : meDot; // normal haritada tek yeşil nokta, navigasyon/sürüşte yalnız ok
     if (!me) me = marker(pos, content, 'Konumum');
     else { me.setPosition(pos); me.setContent(content); }
+    mePos = { lat: pos.lat, lon: pos.lon };
     meDot.style.background = color;
     meArrow.style.borderBottomColor = color;
     // yön-yukarıda ok hep yukarıdır (harita döner); kuzey-yukarıda ok gidiş yönünü gösterir
@@ -521,6 +535,19 @@ export function initMap() {
   }
   subscribe(['live', 'sim'], updateMe);
   readyHooks.push(updateMe);
+
+  // "Konumum" başlangıç iğnesi araç işaretiyle aynı yeri gösterir: konum sonradan gelince (ya da değişince) yeniden değerlendirilir
+  // (updateMe her live/sim değişiminde ve harita hazır olunca çağırır; yeni dinleyici yok). Araç işareti çizilmişse (konum geçici
+  // olarak bilinmese de) araç görünür sayılır: iğne geri gelip ikinci nokta olmaz.
+  function syncStartPin() {
+    if (!adapter) return;
+    const point = getState('route').start;
+    const e = effective();
+    const vehicle = e.lat != null && e.lon != null ? e : mePos;
+    const step = startPinStep(!!markers.start, point, vehicle);
+    if (step === 'remove') { unmark(markers.start); markers.start = null; }
+    else if (step === 'add') markers.start = marker(point, pinEl('start'), point.label || '');
+  }
 
   // Açılışta harita bulunulan konuma yakınlaşır: konum haritadan önce geldiyse bekleyen istek uygulanır; henüz konum yoksa son bilinen konuma
   // (GPS ilk konumu verince shell.js daha yakına odaklar). Son konum yalnızca bu cihazda saklanır, hesaba eşitlenmez.

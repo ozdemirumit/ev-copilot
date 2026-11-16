@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.89';
+self.APP_VERSION = '0.99.90';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.90', date: '2026-11-16',
+    notes: [
+      'Haritada konumunuz artık tek bir yeşil noktayla gösterilir: konum geç bulunduğunda "Konumum" başlangıç işareti ikinci bir yeşil nokta olarak kalmaz. Navigasyon sırasında yalnızca araç oku görünür, ayrıca konum noktası çıkmaz; navigasyonu durdurunca ok hemen tek yeşil noktaya döner. Rota, GPS ve yön oku aynen sürer.',
+    ],
+  },
   {
     v: '0.99.89', date: '2026-11-16',
     notes: [
