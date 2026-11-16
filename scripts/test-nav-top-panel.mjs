@@ -1,4 +1,4 @@
-// Navigasyon üst paneli (v0.99.59: üst satır manevra + sabit varış saati, #nb-metrics altı sabit metrik, #nb-alert dönüşümlü uyarı satırı),
+// Navigasyon üst paneli (v0.99.91: TEK panel iki yarı — solda manevra, sağda #nb-metrics dört sabit metrik + altında #nb-alert dönüşümlü uyarı),
 // rota stili, durdurma, OCR/kamera sabitleri. Kullanım: node scripts/test-nav-top-panel.mjs
 import { readFileSync } from 'node:fs';
 import { pickAlert, pickSlot, speedOver, etaShown, nextChargeView, nextChargeText, NO_STOP, ALERT_MS } from '../js/nav/panelLogic.js';
@@ -37,21 +37,21 @@ const seq = [0, 1, 2, 3, 4, 5].map((t) => pickSlot(['soc', 'alert:0'], t, true))
 ok('aşım öncelikli ama diğerlerini engellemez', seq.join() === 'over,soc,over,alert:0,over,soc', seq.join());
 ok('aşım ve başka öğe yoksa aşım sabit', [0, 1, 2].every((t) => pickSlot([], t, true) === 'over'));
 
-// --- HTML: üst satır manevra (nb-left), altında sabit metrikler (#nb-metrics), en altta uyarı satırı; alttaki tekrarlanan paneller kalktı
+// --- HTML: TEK panel iki yarı — sol manevra (nb-left), sağ (nb-right) sabit metrikler (#nb-metrics) ve altında uyarı; alttaki tekrarlanan paneller kalktı
 const banner = html.slice(html.indexOf('id="nav-banner"'), html.indexOf('id="near-alert"'));
-const left = banner.slice(banner.indexOf('class="nb-left"'), banner.indexOf('id="nb-metrics"'));
+const left = banner.slice(banner.indexOf('class="nb-left"'), banner.indexOf('class="nb-right"'));
 const metrics = banner.slice(banner.indexOf('id="nb-metrics"'), banner.indexOf('id="nb-alert"'));
-ok('üst panel: üstte manevra (nb-left), altında sabit metrikler (#nb-metrics), en altta uyarı', banner.includes('class="nb-left"') && /<div class="nb-metrics" id="nb-metrics">/.test(banner)
-  && banner.indexOf('class="nb-left"') < banner.indexOf('id="nb-metrics"') && banner.indexOf('id="nb-metrics"') < banner.indexOf('id="nb-alert"'));
+ok('üst panel iki yarı: solda manevra (nb-left), sağda (nb-right) sabit metrikler (#nb-metrics) ve altında uyarı', banner.includes('class="nb-left"') && /<div class="nb-right">\s*<div class="nb-metrics" id="nb-metrics">/.test(banner)
+  && banner.indexOf('class="nb-left"') < banner.indexOf('class="nb-right"') && banner.indexOf('id="nb-metrics"') < banner.indexOf('id="nb-alert"'));
 ok('sol: sonraki manevra ve mesafe', ['nav-arrow', 'nav-dist', 'nav-text'].every((id) => left.includes(`id="${id}"`) && !metrics.includes(`id="${id}"`)));
 ok('metrikler: hız, pil, varış pili, şarj durağı', ['nh-speed', 'ne-soc', 'ne-arrive', 'ne-next'].every((id) => metrics.includes(`id="${id}"`) && !left.includes(`id="${id}"`)));
 ok('sağ: dönüşümlü uyarı alanı, başlangıçta gizli', /id="nb-alert"/.test(banner) && /class="nb-alert hidden"/.test(banner));
 ok('ince hız çubuğu kalktı', !html.includes('nav-speedbar') && !/sb-track|sb-fill/.test(css));
-ok('hız ve hız sınırı levhası yan yana (ayrı hücreler), sürekli görünür', /<div class="nb-cell nb-speed" id="nb-speed">[\s\S]*?<\/span><\/div>\s*<div class="nb-cell nb-limit" id="ne-limit-box"[^>]*><small>Limit<\/small><div class="ne-v"><div class="limit-sign hidden" id="nh-limit"[^>]*><\/div>/.test(metrics)
-  && !/id="nb-speed"[^>]*hidden|id="ne-limit-box"[^>]*hidden|class="nb-cell[^"]*hidden"/.test(metrics));
+ok('hız ve hız sınırı levhası yan yana (aynı Hız hücresinde, hızın sağında), sürekli görünür', /<div class="nb-cell nb-speed" id="nb-speed"><small>Hız<\/small><div class="ne-v"><b id="nh-speed">0<\/b><div class="nb-limit" id="ne-limit-box"[^>]*><div class="limit-sign hidden" id="nh-limit"[^>]*><\/div><small class="ne-nolim">--<\/small><\/div><\/div>/.test(metrics)
+  && /\.nb-speed \.ne-v \{ flex-direction: row;/.test(css) && !/id="nb-speed"[^>]*hidden|id="ne-limit-box"[^>]*hidden|class="nb-cell[^"]*hidden"/.test(metrics));
 ok('levha belirgin (hücrede 38 px, 4 px kenar; temel levhadan küçük değil)', /\.nb-limit \.limit-sign \{ width: 38px; height: 38px; border-width: 4px;/.test(css) && /^\.limit-sign \{ flex: none; width: 38px; height: 38px;[^}]*border: 4px solid #e53935;/m.test(css));
 ok('aşımda hız kırmızı', /\.nb-speed\.over \.ne-v b \{ color: #e53935; \}/.test(css) && /classList\.toggle\('over', !!overNow\(e\)\)/.test(nav));
-ok('pil, varışta, durak sabit metrik hücrelerinde (dönüşüm yuvası yok); uyarı ayrı satırda', ['ne-soc-btn', 'ne-arrive-box', 'ne-next-box'].every((id) => new RegExp(`class="nb-cell[^"]*" id="${id}"`).test(metrics))
+ok('pil, varış (varışta pil), durak sabit metrik hücrelerinde (dönüşüm yuvası yok); uyarı ayrı alanda', ['ne-soc-btn', 'ne-eta-box', 'ne-next-box'].every((id) => new RegExp(`class="nb-cell[^"]*" id="${id}"`).test(metrics)) && metrics.includes('id="ne-arrive"')
   && !/data-slot=/.test(html) && !html.includes('id="nb-rot"') && !metrics.includes('id="nb-alert"'));
 ok('ayrı advisor bandı gösterilmez', !/subscribe\('advisor'/.test(read('js/ui/statusBadges.js')) && /class="advisor hidden" id="advisor-banner"/.test(html));
 ok('alttaki hız/pil paneli (navhud, nav-ev) kalktı', !html.includes('id="navhud"') && !html.includes('id="nav-ev"'));
@@ -80,14 +80,13 @@ ok('varışta da aynı temizlik (sesi kesmeden)', /endNav\(true\);\s*toast\('Var
 ok('clearTrip: plan sıfırlanır, çizgi ve işaretler kalkar', /export function clearTrip\(\)/.test(ctl) && /mapApi\.clearRoute\(\)/.test(ctl) && /setPoint\(k, null/.test(ctl));
 
 // --- v0.99.34 okunabilirlik: sol ikincil satır yok, yol adı talimatla aynı boyda, sağ hücreler büyük
-ok('sol ikincil satır (sonra/kalan süre/varış) gizli', /class="nav-then hidden" id="nav-then"/.test(banner) && /class="nb-trip hidden"/.test(banner));
+ok('sol ikincil satır (sonra) gizli; eski kalan süre alt satırı (.nb-trip) kaldırıldı', /class="nav-then hidden" id="nav-then"/.test(banner) && !banner.includes('nb-trip'));
 ok('yol adı talimatla aynı boy/ağırlık, en çok 2 satır', /\.nb-man \.nav-text, \.nb-man \.nav-road \{ font-size: 18px; font-weight: 700;[^}]*-webkit-line-clamp: 2; \}/.test(css));
-ok('sağ dönüşümlü değerler büyük (≥ 20 px)', /\.nb-cell \.ne-v b \{ font-size: 24px;/.test(css) && /\.nb-alert \{ font-size: 15px;/.test(css));
+ok('sağ değerler büyük (≥ 18 px), uyarı 15 px', /\.nb-metrics \.ne-v b \{ font-size: clamp\(18px, 5\.4vw, 22px\);/.test(css) && /\.nb-alert \{ font-size: 15px;/.test(css));
 
-// --- v0.99.51 → v0.99.59: varış saati (ETA) üst satırın sağında sabit hücrede (dönüşüm yok); etaShown saf işlevi korunur
+// --- v0.99.51 → v0.99.91: varış saati (ETA) sağ yarıdaki sabit "Varış" hücresinde, varışta pil ve kalan km ile (dönüşüm yok); etaShown saf işlevi korunur
 const man = banner.slice(banner.indexOf('class="nb-man"'), banner.indexOf('id="nav-then"'));
-const etaBox = man.slice(man.indexOf('id="ne-eta-box"'));
-const trip = banner.slice(banner.indexOf('class="nb-trip hidden"'), banner.indexOf('id="nb-metrics"'));
+const etaBox = metrics.slice(metrics.indexOf('id="ne-eta-box"'), metrics.indexOf('id="ne-next-box"'));
 ok('ETA: geçerli değer gösterilir, --:--/boş/Invalid Date/NaN atlanır', etaShown('14:05') && etaShown(' 2:05 PM ') && ![ '--:--', '', '  ', null, undefined, 'Invalid Date', 'NaN:NaN', '--'].some((x) => etaShown(x)));
 ok('ETA: dönüşüm sırası pil, varışta, varış, sonraki şarj, uyarı', ['soc', 'arrive', 'eta', 'next', 'alert:0', 'soc'].every((x, t) => pickSlot(['soc', 'arrive', 'eta', 'next', 'alert:0'], t, false) === x));
 ok('ETA yoksa adım atlanır (boş hücre gösterilmez)', ['soc', 'arrive', 'next', 'soc'].every((x, t) => pickSlot(['soc', 'arrive', etaShown('--:--') && 'eta', 'next'], t, false) === x));
@@ -95,17 +94,18 @@ const seqEta = [0, 1, 2, 3, 4, 5, 6, 7].map((t) => pickSlot(['soc', 'arrive', 'e
 ok('ETA: hız aşımı önceliği korunur (her ikinci adım)', seqEta === 'over,soc,over,arrive,over,eta,over,next', seqEta);
 ok('navigator: varış saati dönüşümde değil; paintHud yazar, geçersizde blankTrip --:-- yazar, hücre gizlenmez', !/etaShown|'eta'/.test(nav) && !/ne-eta-box'\)\.classList/.test(nav)
   && /\$\('nh-eta'\)\.textContent = eta;/.test(nav) && /\$\('nh-eta'\)\.textContent = '--:--';/.test(nav));
-ok('ETA hücresi tek: #ne-eta-box üst satırda (nb-man), "Varış" etiketli, gizli değil, dönüşüm yuvası yok', (html.match(/id="ne-eta-box"/g) || []).length === 1 && !/data-slot/.test(html)
-  && /<div class="nb-eta" id="ne-eta-box"><small>Varış<\/small><b id="nh-eta">--:--<\/b><span class="ne-sub" id="nh-rem">—<\/span><\/div>/.test(man) && !/id="ne-eta-box"[^>]*hidden/.test(html));
-ok('ETA hücresi sırası: manevra/yol adı → varış saati (üst satır) → metrikler: sonraki şarj → varışta pil', man.indexOf('id="nav-road"') < man.indexOf('id="ne-eta-box"')
-  && banner.indexOf('id="ne-eta-box"') < banner.indexOf('id="nb-metrics"') && metrics.indexOf('id="ne-next-box"') < metrics.indexOf('id="ne-arrive-box"'));
-ok('nh-eta/nh-rem taşındı (çoğaltılmadı): yalnızca ETA hücresinde, gizli satırda ve metriklerde yok', etaBox.includes('id="nh-eta"') && etaBox.includes('id="nh-rem"') && !trip.includes('id="nh-eta"') && !trip.includes('id="nh-rem"')
-  && !metrics.includes('id="nh-eta"') && !metrics.includes('id="nh-rem"'));
+ok('ETA hücresi tek: #ne-eta-box sağ yarıdaki metriklerde, "Varış" etiketli, gizli değil, dönüşüm yuvası yok', (html.match(/id="ne-eta-box"/g) || []).length === 1 && !/data-slot/.test(html)
+  && /<div class="nb-cell" id="ne-eta-box"><small>Varış<\/small><span class="ne-v"><b id="nh-eta">--:--<\/b><span class="ne-sub"><b id="ne-arrive">--<\/b> · <span id="nh-rem">—<\/span><\/span><\/span><\/div>/.test(metrics) && !/id="ne-eta-box"[^>]*hidden/.test(html));
+ok('ETA hücresi sırası: sol manevra/yol adı → sağ metrikler: Hız, Pil, Varış (saat → varışta pil → kalan km), Sonraki şarj', !man.includes('id="ne-eta-box"')
+  && metrics.indexOf('id="ne-soc-btn"') < metrics.indexOf('id="ne-eta-box"') && metrics.indexOf('id="ne-eta-box"') < metrics.indexOf('id="ne-next-box"')
+  && etaBox.indexOf('id="nh-eta"') < etaBox.indexOf('id="ne-arrive"') && etaBox.indexOf('id="ne-arrive"') < etaBox.indexOf('id="nh-rem"'));
+ok('nh-eta/nh-rem/ne-arrive çoğaltılmadı: yalnızca Varış hücresinde, sol yarıda yok', etaBox.includes('id="nh-eta"') && etaBox.includes('id="nh-rem"') && etaBox.includes('id="ne-arrive"')
+  && !left.includes('id="nh-eta"') && !left.includes('id="nh-rem"') && !left.includes('id="ne-arrive"'));
 const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]);
 const dup = ids.filter((x, i) => ids.indexOf(x) !== i);
 ok('index.html kimlikleri benzersiz', dup.length === 0, dup.join());
-ok('eski gizli satır: .nb-trip gizli kalır, #nh-dur gizli satırda ve tek', /<div class="nb-trip hidden"><b id="nh-dur">--<\/b><\/div>/.test(banner) && (html.match(/id="nh-dur"/g) || []).length === 1 && /\.nb-left \.nav-then, \.nb-left \.nb-trip \{ display: none; \}/.test(css));
-ok('paintHud aynı değerleri her saniye yazar (nh-eta, nh-rem, nh-dur)', /\$\('nh-eta'\)\.textContent = eta;/.test(nav) && /\$\('nh-rem'\)\.textContent = `\$\{remainKm\.toFixed\(0\)\} km`;/.test(nav) && /\$\('nh-dur'\)\.textContent = /.test(nav));
+ok('eski gizli alt satır kaldırıldı: .nb-trip ve #nh-dur yok (HTML, CSS, JS); .nav-then gizli kalır', !html.includes('nb-trip') && !html.includes('id="nh-dur"') && !/nb-trip/.test(css) && !/nh-dur/.test(nav) && /\.nb-left \.nav-then \{ display: none; \}/.test(css));
+ok('paintHud aynı değerleri her saniye yazar (nh-eta, nh-rem)', /\$\('nh-eta'\)\.textContent = eta;/.test(nav) && /\$\('nh-rem'\)\.textContent = `\$\{remainKm\.toFixed\(0\)\} km`;/.test(nav));
 
 // --- Sonraki PLANLI şarj durağı: ad, rota boyunca kalan km, durakta varış pili (yalnızca güvenilir pil kaynağında)
 const stopA = { km: 142.6, arriveSoc: 23.4, station: { id: 's1', name: '  Örnek Tesis  ' } };

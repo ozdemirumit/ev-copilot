@@ -1,5 +1,6 @@
-// Navigasyon üst barı (v0.99.59 tasarımı): 1) büyük dönüş oku + manevra + yol adı, sağda sabit varış saati; 2) ALTI SABİT metrik
-// Hız | Hız limiti | Pil | Menzil | Sonraki şarj | Varışta pil; 3) dinamik uyarı satırı (trafik/yağış/eğim/diğer; boşsa gizli).
+// Navigasyon üst barı (v0.99.91 tasarımı): TEK panel, iki yarı. Sol: büyük dönüş oku + canlı mesafe, altında talimat ve yol adı (aynı boy).
+// Sağ: DÖRT SABİT temel metrik Hız (+limit levhası) | Pil (+menzil) / Varış saati (+varışta pil, kalan km) | Sonraki şarj;
+// altında AYRI dönüşümlü uyarı alanı (trafik/yağış/eğim/plan/hız aşımı, 3 sn; boşsa gizli). Metrikler dönmez, gizlenmez.
 // Pil güveni: live/manual/sim güvenilir, stale/estimate yaklaşık (≈), default/none ya da ocr.contested ise menzil '--'.
 // Kullanım: node scripts/test-nav-topbar.mjs
 import { readFileSync } from 'node:fs';
@@ -64,19 +65,35 @@ ok('limit sorgusu varsayılan KAPALI', /limitOn: load\('limitOn', false\)/.test(
 ok('levha speedLimit.js tarafından nh-limit\'e boyanır (yeniden yazılmadı)', /for \(const id of \['hud-limit', 'nh-limit'\]\)/.test(limitJs));
 ok('limit yoksa (levha gizli) -- görünür, varsa gizlenir', /\.nb-limit \.limit-sign:not\(\.hidden\) \+ \.ne-nolim \{ display: none; \}/.test(css));
 
-// --- 5. HTML yapısı: üç satır, altı sabit metrik, sıra
+// --- 5. HTML yapısı (v0.99.91): TEK panel, iki yarı. Sol: ok + canlı mesafe, talimat, yol adı. Sağ: dört sabit temel metrik + ayrı uyarı alanı.
 const banner = html.slice(html.indexOf('id="nav-banner"'), html.indexOf('id="near-alert"'));
-const man = banner.slice(banner.indexOf('class="nb-man"'), banner.indexOf('id="nav-then"'));
-ok('üst satır: ok, mesafe, manevra, yol adı, sağda varış saati', ['nav-arrow', 'nav-dist', 'nav-text', 'nav-road', 'ne-eta-box', 'nh-eta', 'nh-rem'].every((id) => man.includes(`id="${id}"`)) && man.indexOf('id="nav-road"') < man.indexOf('id="ne-eta-box"'));
-ok('varış saati sabit: gizli değil, dönüşüm yuvası yok', /<div class="nb-eta" id="ne-eta-box"><small>Varış<\/small><b id="nh-eta">--:--<\/b><span class="ne-sub" id="nh-rem">—<\/span><\/div>/.test(man) && !/data-slot/.test(html));
+const left = banner.slice(banner.indexOf('class="nb-left"'), banner.indexOf('class="nb-right"'));
+const right = banner.slice(banner.indexOf('class="nb-right"'));
 const metrics = banner.slice(banner.indexOf('id="nb-metrics"'), banner.indexOf('id="nb-alert"'));
+ok('tek panel iki yarı: nav-banner içinde önce .nb-left sonra .nb-right', banner.includes('<div class="nb-left">') && banner.includes('<div class="nb-right">') && banner.indexOf('class="nb-left"') < banner.indexOf('class="nb-right"'));
+ok('sol yarı: ok, canlı mesafe, talimat, yol adı, şerit; metrik yok', ['nav-arrow', 'nav-dist', 'nav-text', 'nav-road', 'nav-lanes'].every((id) => left.includes(`id="${id}"`))
+  && !['nh-speed', 'ne-soc', 'nh-eta', 'ne-next', 'ne-arrive', 'nb-alert'].some((id) => left.includes(`id="${id}"`)));
+ok('sol yarı: ok ile mesafe üst satırda (.nb-head), talimat ve yol adı altında', /<div class="nb-head">\s*<div class="nav-arrow" id="nav-arrow"[\s\S]*?<div class="nav-dist" id="nav-dist"><\/div>\s*<\/div>/.test(left)
+  && left.indexOf('id="nav-dist"') < left.indexOf('id="nav-text"') && left.indexOf('id="nav-text"') < left.indexOf('id="nav-road"'));
+ok('sağ yarı: önce sabit metrikler (#nb-metrics), altında ayrı uyarı alanı (#nb-alert)', right.includes('<div class="nb-metrics" id="nb-metrics">') && right.indexOf('id="nb-metrics"') < right.indexOf('id="nb-alert"'));
 const cells = [...metrics.matchAll(/class="nb-cell[^"]*" id="([^"]+)"/g)].map((m) => m[1]);
-ok('altı sabit metrik, sırayla: Hız | Limit | Pil | Menzil | Sonraki şarj | Varışta', cells.join() === 'nb-speed,ne-limit-box,ne-soc-btn,ne-range-box,ne-next-box,ne-arrive-box', cells.join());
-ok('metrik hücreleri hiç gizlenmez (sabit)', !/class="nb-cell[^"]*hidden/.test(metrics));
-ok('etiketler: Hız, Limit, Pil, Menzil, Sonraki şarj, Varışta', ['<small>Hız</small>', '<small>Limit</small>', '<small>Pil</small>', '<small>Menzil</small>', '<small>Sonraki şarj<span', '<small>Varışta</small>'].every((s) => metrics.includes(s)));
-ok('değer kimlikleri tek: nh-speed, nh-limit, ne-soc, ne-range, ne-next, ne-arrive', ['nh-speed', 'nh-limit', 'ne-soc', 'ne-range', 'ne-next', 'ne-arrive'].every((id) => metrics.includes(`id="${id}"`) && (html.match(new RegExp(`id="${id}"`, 'g')) || []).length === 1));
+ok('dört sabit temel metrik, sırayla: Hız | Pil / Varış | Sonraki şarj', cells.join() === 'nb-speed,ne-soc-btn,ne-eta-box,ne-next-box', cells.join());
+ok('metrik hücreleri hiç gizlenmez (sabit)', !/class="nb-cell[^"]*hidden/.test(metrics) && !/id="(nb-speed|ne-soc-btn|ne-eta-box|ne-next-box)"[^>]*hidden/.test(metrics));
+const cell = (id) => { const i = metrics.indexOf(`id="${id}"`); const nx = cells.map((c) => metrics.indexOf(`id="${c}"`)).filter((j) => j > i); return metrics.slice(i, nx.length ? Math.min(...nx) : metrics.length); };
+ok('Hız hücresi: hız, hız limiti levhası (yoksa --), ortalama hız', ['nh-speed', 'ne-limit-box', 'nh-limit', 'nh-avg', 'nh-avg-v'].every((id) => cell('nb-speed').includes(`id="${id}"`)) && /class="ne-nolim">--</.test(cell('nb-speed')));
+ok('Pil hücresi: pil ve menzil (km)', ['ne-soc', 'ne-range'].every((id) => cell('ne-soc-btn').includes(`id="${id}"`)) && /<b id="ne-range">--<\/b> km<\/span>/.test(cell('ne-soc-btn')));
+ok('Varış hücresi: varış saati, varışta pil, kalan km', /<small>Varış<\/small>/.test(cell('ne-eta-box')) && ['nh-eta', 'ne-arrive', 'nh-rem'].every((id) => cell('ne-eta-box').includes(`id="${id}"`))
+  && cell('ne-eta-box').indexOf('id="nh-eta"') < cell('ne-eta-box').indexOf('id="ne-arrive"'));
+ok('Sonraki şarj hücresi: ad, km, alt satır', ['ne-next-n', 'ne-next', 'ne-next-t'].every((id) => cell('ne-next-box').includes(`id="${id}"`)));
+ok('etiketler: Hız, Pil, Varış, Sonraki şarj', ['<small>Hız</small>', '<small>Pil</small>', '<small>Varış</small>', '<small>Sonraki şarj<span'].every((s) => metrics.includes(s)));
+ok('değer kimlikleri tek: nh-speed, nh-limit, ne-soc, ne-range, nh-eta, nh-rem, ne-arrive, ne-next', ['nh-speed', 'nh-limit', 'ne-soc', 'ne-range', 'nh-eta', 'nh-rem', 'ne-arrive', 'ne-next'].every((id) => metrics.includes(`id="${id}"`) && (html.match(new RegExp(`id="${id}"`, 'g')) || []).length === 1));
 ok('pil hücresi pil penceresini açan düğme', /<button type="button" class="nb-cell" id="ne-soc-btn" aria-haspopup="dialog" aria-controls="soc-sheet">/.test(metrics));
-ok('uyarı satırı metriklerin altında, başta gizli', banner.indexOf('id="nb-metrics"') < banner.indexOf('id="nb-alert"') && /<div class="nb-alert hidden" id="nb-alert" role="status" aria-live="off"><\/div>/.test(banner));
+ok('uyarı alanı sağ yarıda metriklerin altında, başta gizli', /<div class="nb-alert hidden" id="nb-alert" role="status" aria-live="off"><\/div>/.test(right) && !left.includes('nb-alert'));
+ok('ayrı ikinci tam genişlik metrik satırı yok: #nb-metrics yalnız .nb-right içinde, kenar çizgili tam genişlik kuralı yok',
+  banner.indexOf('id="nb-metrics"') > banner.indexOf('class="nb-right"') && !/\.nb-metrics \{[^}]*border-top/.test(css) && !/\.navbar > \.nb-alert \{ grid-column: 1 \/ -1; \}/.test(css));
+ok('eski gizli alt satır (.nb-trip / #nh-dur) kaldırıldı, JS de yazmıyor', !html.includes('nb-trip') && !html.includes('id="nh-dur"') && !/nh-dur/.test(nav) && !/\.nb-trip/.test(css));
+ok('eski üst satır varış kutusu (.nb-eta) kaldırıldı (varış sağ yarıdaki hücrede)', !/class="nb-eta"/.test(html) && !/\.nb-eta[ .{]/.test(css));
+ok('canlı mesafe sayacı korunur (paint nav-dist yazar)', /\$\('nav-dist'\)\.textContent = dist;/.test(nav));
 const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]);
 ok('index.html kimlikleri benzersiz', ids.length === new Set(ids).size);
 
@@ -90,13 +107,21 @@ ok('metrikler dönüşümde değil (data-slot gizleme döngüsü yok)', !/queryS
 ok('navigator: üst bar topMetrics ile, kaynak socSource()/Test Modu ve ocr.contested', /topMetrics\(\{ soc: e\.soc, source: src, contested: getState\('ocr'\)\.contested, rangeKm: getState\('engine'\)\.totalRangeKm, arriveSoc: plan\.totals\?\.arriveSoc \}\)/.test(nav) && /const src = e\.source === 'sim' \? 'sim' : socSource\(\);/.test(nav));
 ok('yaklaşık değerler ≈ ile işaretlenir', /classList\.toggle\('approx', m\.approx && m\.soc != null && v != null\)/.test(nav) && /b\.approx::before \{ content: '≈';/.test(css));
 
-// --- 8. Mobil okunurluk ve tema (360/375/390 px)
-ok('altı sütun tek satır, sonraki şarj daha geniş', /\.nb-metrics \{ display: grid; grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\) minmax\(0, 1\.15fr\) minmax\(0, 1\.1fr\) minmax\(0, 1\.5fr\) minmax\(0, 1\.1fr\);/.test(css));
+// --- 8. Mobil okunurluk ve tema (360/375/390 px): iki yarı, sağda 2×2 metrik
+const lastIdx = (re) => { let i = -1, m; const g = new RegExp(re.source, 'g'); while ((m = g.exec(css))) i = m.index; return i; };
+const halves = '.navbar { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 6px 10px; padding: 8px 8px 6px; align-items: start; }';
+ok('panel iki yarı (sol 1fr, sağ 1.2fr) ve bu son .navbar ızgara kuralı', css.includes(halves) && css.indexOf(halves) === lastIdx(/\.navbar \{ grid-template-columns:/));
+ok('sağ yarı: metrikler üstte, uyarı altta (sütun)', /\.nb-right \{ display: flex; flex-direction: column; gap: 6px; min-width: 0; \}/.test(css));
+ok('metrikler 2×2 ızgara', /\.nb-metrics \{ display: grid; grid-template-columns: minmax\(0, 1\.1fr\) minmax\(0, 1fr\);/.test(css));
 ok('metrik değerleri en az 18 px, hız en az 22 px', /\.nb-metrics \.ne-v b \{ font-size: clamp\(18px, 5\.4vw, 22px\);/.test(css) && /\.nb-metrics \.nb-speed \.ne-v b \{ font-size: clamp\(22px, 6\.6vw, 28px\);/.test(css));
+ok('varışta pil ve menzil alt satırda da okunur (≥ 14 px, kalın)', /\.nb-metrics \.ne-sub b \{ font-size: 14px; font-weight: 800; color: var\(--text\);/.test(css) && css.indexOf('.nb-metrics .ne-sub b {') > css.indexOf('.nb-metrics .ne-v b {'));
 ok('pil düğmesi dokunma hedefi ≥ 44 px', /\.nb-metrics \.nb-cell \{[^}]*min-height: 44px;/.test(css));
 ok('taşan metin … ile kesilir (yarım rakam yok)', /\.nb-metrics \.nb-cell small \{[^}]*text-overflow: ellipsis;/.test(css));
-ok('renkler tema değişkenlerinden (açık/koyu)', /\.nb-metrics \{[^}]*border-top: 1px solid var\(--line\);/.test(css) && /\.nb-eta small \{[^}]*color: var\(--muted\);/.test(css));
+ok('talimat ve yol adı aynı boy (ortak kural; ayrı boyutlanmaz)', /\.nb-man \.nav-text, \.nb-man \.nav-road \{ font-size: 18px; font-weight: 700;/.test(css) && !/(^|\n)\.nb-man \.nav-(text|road) \{[^}]*font-size/.test(css)
+  && /\.nb-man \.nav-text, \.nb-man \.nav-road \{ font-size: 16px; \}/.test(css));
+ok('renkler tema değişkenlerinden (açık/koyu)', /\.nb-metrics \.nb-cell \{[^}]*border-left: 1px solid var\(--line\);/.test(css) && /\.nb-metrics \.nb-cell small \{[^}]*color: var\(--muted\);/.test(css) && /\.nb-speed \.ne-nolim \{[^}]*var\(--line\)[^}]*var\(--muted\)/.test(css));
 ok('harita alanı: en düşük yükseklik değişmedi (150 px)', /\.navbar, \.mapsoc \{ box-sizing: border-box; min-height: 150px; \}/.test(css));
+ok('sağ dikey kontroller ve ortala düğmesi duruyor (panelin dışında)', ['nh-limitbtn', 'nh-voice', 'nh-overview', 'nh-search', 'nh-recenter'].every((id) => (html.match(new RegExp(`id="${id}"`, 'g')) || []).length === 1) && !banner.includes('id="nh-voice"'));
 
 console.log(`\n${pass} geçti, ${fail} kaldı`);
 process.exit(fail ? 1 : 0);

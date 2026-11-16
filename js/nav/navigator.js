@@ -195,7 +195,7 @@ function tick() {
   const secondary = then && then.type !== 'arrive' && gapM <= THEN_MAX_M ? t('Sonra ({0} sonra): {1}', fmtDist(gapM), instruction(then).text)
     : '';
   paint(ins.arrow, fmtDist(distM), ins.text, ins.road, false, secondary, lanesToShow(st, distM));
-  paintHud(e, remain, eta, driveH, chargeMin);
+  paintHud(e, remain, eta);
   paintCharge(plan, km, nextStop, e);
 
   // Sesli yönlendirme: panel metninden ayrı, yalnızca kısa manevra komutu
@@ -317,12 +317,10 @@ function paintAlert(step) {
   if (el.textContent !== text) el.textContent = text;
 }
 
-/** Sol sütun alt satırı: kalan süre, kalan yol, varış saati; ortala düğmesi (harita kaydırıldıysa). */
-function paintHud(e, remainKm, eta, driveH, chargeMin) {
-  const totalMin = Math.round(driveH * 60 + chargeMin);
+/** Sağ yarıdaki Varış hücresi: varış saati ve kalan yol (v0.99.91: eski gizli kalan süre satırı kaldırıldı); ortala düğmesi (harita kaydırıldıysa). */
+function paintHud(e, remainKm, eta) {
   $('nh-eta').textContent = eta;
   $('nh-rem').textContent = `${remainKm.toFixed(0)} km`;
-  $('nh-dur').textContent = totalMin >= 60 ? `${Math.floor(totalMin / 60)} sa ${totalMin % 60} dk` : `${totalMin} dk`;
   $('nh-soc').textContent = e.soc == null ? '--' : Math.round(e.soc);
   $('nh-recenter').classList.toggle('hidden', !mapApi.dragged());
 }

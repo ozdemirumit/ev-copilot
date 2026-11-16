@@ -117,6 +117,12 @@ ok('üst paneldeki ✕ ve Rota sayfasındaki büyük durdur kalktı', !html.incl
 ok('varsayılan odak Devam et', /id="stop-nav-no"[^>]*autofocus/.test(html));
 ok('navigasyon şeridi: pil, menzil, varış, sonraki şarj', ['ne-soc', 'ne-range', 'ne-arrive', 'ne-next', 'ne-next-t'].every((id) => html.includes(`id="${id}"`)));
 ok('şerit değerleri gerçek kaynaktan', /topMetrics\(\{[^}]*arriveSoc: plan\.totals\?\.arriveSoc/.test(nav) && /put\('ne-arrive', m\.arrive, pct\(m\.arrive\)\)/.test(nav) && /totalRangeKm/.test(nav) && /timeBetween\(km, nextStop\.km\)/.test(nav));
+// v0.99.91 üst bar: TEK beyaz kart, iki yarı (sol manevra, sağ sabit metrikler + uyarı); ikinci tam genişlik metrik şeridi yok
+const navCard = between('id="nav-banner"', 'id="near-alert"');
+ok('üst bar tek kart: nav-banner içinde .nb-left ve .nb-right, ayrı ikinci şerit/kart yok', navCard.includes('<div class="nb-left">') && navCard.includes('<div class="nb-right">')
+  && navCard.indexOf('id="nb-metrics"') > navCard.indexOf('class="nb-right"') && (navCard.match(/class="nb-metrics"/g) || []).length === 1 && !/\.nb-metrics \{[^}]*border-top/.test(css));
+ok('üst bar açık/koyu temada aynı kurallar: metrik/uyarı renkleri tema değişkeni ya da koyu tema karşılığı', /\.nb-metrics \.nb-cell \{[^}]*var\(--line\)/.test(css) && /\.nb-metrics \.ne-sub b \{[^}]*color: var\(--text\);/.test(css)
+  && /:root\[data-theme="dark"\] \.nb-alert\.over \{ color: #ff9ca7; \}/.test(css) && !/\.nb-(right|metrics|speed)[^{]*\{[^}]*color: #(?:fff|000|111)\b/.test(css));
 
 // Örnek değerler yok
 const statics = html.replace(/<symbol[\s\S]*?<\/symbol>/g, '');

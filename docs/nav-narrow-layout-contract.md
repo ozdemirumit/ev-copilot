@@ -1,7 +1,7 @@
 # RM-07 — Dar ekran navigasyon üst barı: çevrimdışı yerleşim risk sözleşmesi
 
 Durum: **test + belge**; tek uygulama değişikliği RM-07 A1 (v0.99.74): `#near-alert-close` görünmez dokunma alanı 36→44px (yalnız CSS `::after`). Diğer boşluklar açık; hiçbiri cihazda "düzeltildi" sayılmaz.
-Taban: `e08b265` (v0.99.73). Test: `scripts/test-nav-narrow-layout-contract.mjs` (düz Node, bağımlılık yok, ağ yok).
+Taban: `e08b265` (v0.99.73); **v0.99.91 ile model iki yarılı tek panele güncellendi** (taban `2c06f69`). Test: `scripts/test-nav-narrow-layout-contract.mjs` (düz Node, bağımlılık yok, ağ yok).
 
 ## 1. Ne ölçülüyor, ne ölçülmüyor
 
@@ -16,36 +16,46 @@ Sınıflar:
 - Genişlik: `SIĞAR` (tutucu tahmin sığar) · `SINIRDA` (yalnız iyimser tahmin sığar) · `KESİLME-RİSKİ` (iyimser tahmin bile sığmaz).
 - Yükseklik: `SIĞAR` · `KAYAR-RİSKİ` (`#banners` kendi içinde kayar; alt satırlar ilk bakışta görünmeyebilir).
 
-## 2. Model (testte kodlanmış)
+## 2. Model (testte kodlanmış) — v0.99.91 tek panel, iki yarı
 
 - İçerik genişliği = W − 20 (`#banners > *` 0 10px) − 2 (kenarlık) − 16 (`.navbar` dolgu 8px 8px) = **W − 38**.
-- `.nb-metrics` sütunları `1 | 1 | 1.15 | 1.1 | 1.5 | 1.1` fr (toplam 6.95), `minmax(0, …)` → içerikten bağımsız oransal.
-  Hücre iç genişliği = sütun − 4 (dolgu 0 2px) − 1 (sol kenarlık, ilk hücre hariç).
-- Değer yazısı `clamp(18px, 5.4vw, 22px)`, hız `clamp(22px, 6.6vw, 28px)`, `letter-spacing: -.3px`; `≈` öneki `b.approx::before` .7em.
-- Taşma davranışı (CSS kanıtı): `.ne-v` nowrap, `.ne-v b` overflow:hidden + ellipsis → taşan değer komşuya geçmez, **… ile kırpılır**.
+- `.navbar` iki sütun `minmax(0, 1fr) minmax(0, 1.2fr)`, sütun boşluğu 10px: sol yarı = (W − 48)·1/2.2, sağ yarı = (W − 48)·1.2/2.2.
+- Sol yarı: `.nb-head` (ok 46px + 6px + canlı mesafe; ≤380px 26px, üstü 30px), altında talimat ve yol adı aynı boy (18px; ≤380px 16px; en çok 2+2 satır), şerit.
+- Sağ yarı: `.nb-metrics` 2×2, sütunlar `1.1 | 1` fr (sütun 0 = Hız, Varış; sütun 1 = Pil, Sonraki şarj); altında `.nb-alert` (ayrı uyarı alanı).
+  Hücre iç genişliği = sütun − 4 (dolgu 0 2px) − 1 (sol kenarlık, sütun 0 hariç).
+- Değer yazısı `clamp(18px, 5.4vw, 22px)`, hız `clamp(22px, 6.6vw, 28px)` + aynı satırda 38px limit levhası (4px boşluk); alt satır kalın değerler (`.ne-sub b`) 14px, alt satır metni 11px; `≈` öneki `b.approx::before` .7em.
+- Taşma davranışı (CSS kanıtı): `.ne-v` nowrap, `.ne-v b` / `.ne-sub` overflow:hidden + ellipsis → taşan değer komşuya geçmez, **… ile kırpılır**. Canlı mesafe (`.nav-dist`) kırpılmaz: sığmazsa boşlukta ikinci satıra kayar.
+- Yükseklik: iki yarı yan yana → panel = max(sol, sağ); eskiden manevra + metrik satırı + uyarı üst üste toplanırdı.
 
 ## 3. Tahmini sonuçlar (model çıktısı, sabitlendi)
 
 | Durum | 360 | 375 | 399 | 412 |
 |---|---|---|---|---|
-| Pil `≈%100` (tahmini/eski pil) | KESİLME-RİSKİ (60.7 / 49.1) | KESİLME-RİSKİ | KESİLME-RİSKİ | KESİLME-RİSKİ (68.8 / 57.8) |
-| Hız `199` | SIĞAR (41.9 / 43.0) | SIĞAR | SIĞAR | SIĞAR |
+| Pil `≈%100` (sütun 1) | SIĞAR (60.7 / 76.0) | SIĞAR | SIĞAR | SIĞAR (68.8 / 89.5) |
+| Hız `199` + 38px levha (sütun 0) | SIĞAR (83.9 / 85.1) | SIĞAR | SIĞAR | SIĞAR |
 | Hız ortalaması `Ø199` | SIĞAR | SIĞAR | SIĞAR | SIĞAR |
-| Sonraki şarj değeri `1234 km` | SINIRDA (73.1 / 65.5) | SINIRDA | SINIRDA | SINIRDA |
-| Sonraki şarj alt satırı `%100 · 1 sa 59 dk` (11px) | KESİLME-RİSKİ (94.6 / 65.5) | KESİLME-RİSKİ | KESİLME-RİSKİ | KESİLME-RİSKİ |
+| Varış saati `23:59` | SIĞAR (56.8 / 85.1) | SIĞAR | SIĞAR | SIĞAR |
+| Varış alt satırı `≈%100 · 1234 km` | SINIRDA (96.4 / 85.1) | SINIRDA | SINIRDA | SIĞAR (96.4 / 100.0) |
+| Varış alt satırı yalnız varışta pil `≈%100 ·` | SIĞAR (50.8 / 85.1) | SIĞAR | SIĞAR | SIĞAR |
+| Menzil alt satırı `≈999 km` | SIĞAR (47.4 / 76.0) | SIĞAR | SIĞAR | SIĞAR |
+| Sonraki şarj değeri `1234 km` | SIĞAR (73.1 / 76.0) | SIĞAR | SIĞAR | SIĞAR |
+| Sonraki şarj alt satırı `%100 · 1 sa 59 dk` (11px) | KESİLME-RİSKİ (94.6 / 76.0) | KESİLME-RİSKİ | SINIRDA | SINIRDA |
+| Sol üst: ok + `850 m` | SIĞAR (121.4 / 141.8) | SIĞAR | SIĞAR | SIĞAR |
+| Sol üst: ok + `12,5 km` | SINIRDA (152.6 / 141.8) → 2. satıra kayabilir | SINIRDA | SINIRDA | SINIRDA |
 
 (parantez: gereken ≈px / kullanılabilir ≈px)
 
-Yükseklik, 360×640 (`@media (min-height: 521px) and (max-height: 640px) { #banners { max-height: 34dvh } }` → 217.6px; çubuk bütçesi ≈209.6px):
+Yükseklik, 360×640 (`@media (min-height: 521px) and (max-height: 640px) { #banners { max-height: 34dvh } }` → 217.6px; çubuk bütçesi ≈209.6px; sağ yarı metrikleri uyarısız ≈129.0px):
 
 | Senaryo | Tahmini yükseklik | Sınıf |
 |---|---|---|
 | En az (1 satır manevra, yol yok, uyarı yok) | ≈150.0 (min-height 150) | SIĞAR |
-| Tipik + uyarı 1 satır | ≈178.4 | SIĞAR |
-| Tipik + uyarı 3 satır | ≈212.0 | KAYAR-RİSKİ (sınırda, ≈2.4px aşım) |
-| En kötü (2+2 satır, şerit, uyarı 3 satır) | ≈277.2 | KAYAR-RİSKİ |
+| Tipik + uyarı 1 satır | ≈173.8 | SIĞAR |
+| Tipik + uyarı 3 satır | ≈207.4 | SIĞAR (sınırda, ≈2.2px pay) |
+| En kötü (2+2 satır, şerit, uyarı 3 satır) | ≈207.4 | SIĞAR (sağ yarı belirler) |
+| En kötü + uzun mesafe 2 satır | ≈207.4 | SIĞAR |
 
-Uyarı (`.nb-alert`): `-webkit-line-clamp: 3`, dar ekranda 14px/1.2 → 1→3 satır büyümesi ≈33.6px; 4. satır kırpılır.
+Uyarı (`.nb-alert`): artık sağ yarıda, `-webkit-line-clamp: 3`, dar ekranda 14px/1.2 → 1→3 satır büyümesi ≈33.6px; 4. satır kırpılır. Sağ yarı daha dar olduğundan uzun uyarı metni eskisinden önce 3 satıra ulaşır.
 
 Kapat X (`#near-alert-close`, `.tp-head .tog`): görünür boyut 36×36px (değişmedi). RM-07 A1 (v0.99.74) ile görünmez dokunma alanı
 `#near-alert-close { position: relative; }` + `#near-alert-close::after { content: ""; position: absolute; inset: -5px; }` (mevcut `.fabs-more button::after` deseni):
@@ -55,14 +65,17 @@ border-box, 1px kenarlık → dolgu kutusu 34px + 2×5 = **etkin 44×44px** (≥
 - Alt: `.tp-charge .near-body` margin-top 4px → liste gövdesine binmez.
 Test bu hesabı kaynaktan okur ve **etkin ≥44×44**'ü kabul ölçütü olarak denetler (tahmini; tarayıcı/cihaz ölçümü değil).
 
-## 4. Bilinen boşluklar (5. hariç açık; düzeltilmedi)
+## 4. Bilinen boşluklar (v0.99.91 sonrası; hiçbiri cihazda doğrulanmadı)
 
-1. **Pil `≈%100`** dar hücrede (1.15fr) model tüm genişliklerde kırpılma öngörüyor → `≈%10…` görünebilir. Gerçek cihazda doğrulanmadı.
-2. **Sonraki şarj alt satırı** (`%100 · 1 sa 59 dk`) tüm genişliklerde … ile kırpılır (tasarım gereği ellipsis; bilgi kaybı riski).
-3. **Sonraki şarj `1234 km`** sınırda; 3–4 haneli km değerleri yazı tipine göre kırpılabilir.
-4. **360×640'ta 3 satır uyarı** veya uzun manevra/yol adı + şerit ile üst bar `#banners` içinde kayar; metrik/uyarı satırı ilk bakışta görünmeyebilir. `#near-alert` (şarj uyarısı) aynı kutuda ayrıca yer kaplar — modele katılmadı.
-5. ~~**Kapat X 36px** < 44px dokunma önerisi.~~ **Kaynak modelinde kapandı** (RM-07 A1, v0.99.74): etkin dokunma alanı 44×44px, görünür 36px. Gerçek cihazda doğrulanmadı (§6 madde 6).
-6. Model dışı: kullanıcı yazı tipi ölçeklemesi (Android "Yazı tipi boyutu", iOS Safari metin boyutu / sayfa yakınlaştırma), 11 dil etiketleri (yalnız Türkçe metin modellendi), `Limit` hücresi, `Varışta`/`Menzil` değerleri, yatay yönlendirme (≤520px yükseklik), güvenli alan girintileri.
+1. ~~**Pil `≈%100`** dar hücrede kırpılma~~ — v0.99.91 modelinde tüm genişliklerde SIĞAR (hücre genişledi). Cihazda doğrulanmadı.
+2. **Sonraki şarj alt satırı** (`%100 · 1 sa 59 dk`) 360/375px'te … ile kırpılır, 399/412px'te sınırda (tasarım gereği ellipsis; tam metin hücre `title`'ında).
+3. ~~**Sonraki şarj `1234 km`** sınırda~~ — modelde SIĞAR (az payla: 360px'te ≈3px).
+4. **Yükseklik:** 360×640'ta en kötü durum ≈207.4px / 209.6px bütçe (≈2.2px pay); `#near-alert` (şarj uyarısı) aynı kutuda ayrıca yer kaplar — modele katılmadı.
+5. ~~**Kapat X 36px**~~ — kaynak modelinde kapandı (RM-07 A1, v0.99.74), cihazda doğrulanmadı.
+6. **Varış alt satırı** `≈%100 · 1234 km` 360–399px'te sınırda: kesilirse önce sondaki kalan km … olur; varışta pil kısmı tüm genişliklerde sığar.
+7. **Sol üst satır** uzun mesafe (`12,5 km`) dar ekranda ok ile aynı satıra sığmayabilir → kırpılmaz, ikinci satıra kayar (yükseklik modelinde hesaba katıldı).
+8. **Sol yarı daha dar:** talimat/yol adı satır başına ≈14 karakter (360px, 16px) → uzun adlar 2 satırda … ile kesilir (eskiden tam genişlikti).
+9. Model dışı: kullanıcı yazı tipi ölçeklemesi (Android "Yazı tipi boyutu", iOS Safari metin boyutu / sayfa yakınlaştırma), 11 dil etiketleri (yalnız Türkçe metin modellendi), yatay yönlendirme (≤520px yükseklik), güvenli alan girintileri.
 
 ## 5. Kaynak kayması koruması
 
