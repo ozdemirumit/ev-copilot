@@ -1,9 +1,9 @@
-# Beta — bağımlılık ve karar matrisi (D1–D7 ONAYLANDI 2026-11-15, hiçbiri uygulanmadı)
+# Beta — bağımlılık ve karar matrisi (D1–D7 ONAYLANDI 2026-11-15; D1 kısmen uygulandı 2026-11-16, D2–D7 uygulanmadı)
 
 ## 0. Onaylı kararlar (2026-11-15)
 
 Kullanıcı D1–D7'yi 2026-11-15'te onayladı; köprü görevi `1c769a50` istemiyle kaydedildi (JSON `decisions[]`, durum `approved`).
-**Hiçbiri uygulanmadı**; `implemented` ancak ilgili kod commit'i + testlerle, `device-verified` yalnız kullanıcı tarafından yazılır.
+**2026-11-16 durumu (`a0fa9e93`):** D1 kısmen uygulandı — yalnız yerel integ `405f628` (yağış), `e28ee47` ve `8e2399f` (trafik hata yolu); push/yayın/cihaz yok. D2–D7 uygulanmadı (`f0f448e` kota koruması D2 değildir). Kural: `implemented` ancak ilgili kod commit'i + testlerle, `device-verified` yalnız kullanıcı tarafından yazılır.
 Kayıt anında temel: `integ/beta-2026-11-14` @`f51e40a` (v0.99.76, yerel, push yok, Beta'da değil, cihazda doğrulanmadı; canlı Beta 0.99.61).
 
 > **Bu kararlar izin değildir.** Ürün kararlarıdır; ücretli API çağrısı, lisans satın alma, sır/anahtar paylaşımı, production
@@ -37,7 +37,7 @@ tüm `scripts/test-*.mjs` sıralı 0 FAIL), **G-USER** (kullanıcı kararı/onay
 
 | # | Konu | Kayıt | Karar | Kapılar | Karardan sonra ajanın yapabileceği | Durum (2026-11-15) |
 |---|---|---|---|---|---|---|
-| D1 | Yol önü yağış kalan mesafe GAP-1/2 | `docs/ahead-rain-distance-gap.md`, `test-ahead-rain-progress` | koru / yakın örnek ekle / olduğu gibi | G-USER, G-HEAD, G-SUITE | `js/nav/ahead.js` düzeltmesi + sürüm artışı | **ONAYLANDI** (uygulanmadı; §0) |
+| D1 | Yol önü yağış kalan mesafe GAP-1/2 | `docs/ahead-rain-distance-gap.md`, `test-ahead-rain-progress` | koru / yakın örnek ekle / olduğu gibi | G-USER, G-HEAD, G-SUITE | `js/nav/ahead.js` düzeltmesi + sürüm artışı | **ONAYLANDI**; kısmen uygulandı 2026-11-16 (yerel `405f628`, `e28ee47`, `8e2399f`; cihaz yok) |
 | D2 | Mapbox rotası Premium kapısı (BL-P3-01 M1/M1b/M2/M2b) | `test-mapbox-route-gate` (4 KNOWN-GAP) | Premium'a kapat / aylık sınır / olduğu gibi | G-USER, sunucu yeniden başlatma onayı | `server/proxy.mjs` `mapbox()` değişikliği | **ONAYLANDI** (uygulanmadı; §0) |
 | D3 | Doluluk BL-P2-09 R3 K1–K6 | `docs/occupancy-consistency-contract.md` §4–5 (12 boşluk) | K1…K6 ayrı ayrı | G-USER; R3-e için sunucu onayı | R3-a…R3-d sıralı, her biri ayrı commit | **ONAYLANDI** (uygulanmadı; §0) |
 | D4 | Türkçe sesli yönlendirme sözcükleri (BL-P3-09 / RM-01) | `js/nav/steps.js:62-85`, `test-nav-panel` | yol adı / çıkış no / "ardından" / yuvarlama | G-USER | `steps.js` + test genişletmesi + sürüm artışı | **ONAYLANDI** (uygulanmadı; §0) |
@@ -141,8 +141,41 @@ gerektirmez.
 
 ## 4. Sonraki D1 kod görevi — küçük güvenli kapsam (öneri, başlatılmadı)
 
+> **2026-11-16 notu (`a0fa9e93`):** bu öneri D1-T1 olarak `405f628` (v0.99.77) ile yapıldı; trafik tarafı D1-T2 `e28ee47` ve D1-T3 `8e2399f` ile. Tekrar açılmaz. `docs/ahead-rain-distance-gap.md` hâlâ GAP'leri "mevcut" diye anlatır (açık belge işi).
+
 - **Ad:** D1-T1, tek görev, tek aktif kod değiştirici. Taban: integ HEAD, yalıtılmış dal/worktree, yalnız `--ff-only`, push/yayın yok.
 - **Ön adım (salt okunur):** trafik tarafı (v0.99.56 konumla güncelleme, `aheadTraffic.js` / `trafficGuard.js`) D1'i zaten sağlıyorsa trafik için NO-CHANGE kanıtı; değişiklik yalnız yağış yoluna.
 - **Dosyalar:** `js/nav/ahead.js` (yağış yenilemesi: her yenilemede olay konumu yeniden alınır, mesafe güncel araç km'sinden hesaplanır; istek reddi / veri yoksa olay "belirsiz" işaretlenir, eski mesafe gösterilmez/seslendirilmez), `scripts/test-ahead-rain-progress.mjs` (GAP-1/2/3 denetimleri yeni beklenen davranışa **bilinçli** çevrilir; denetim sayısı azalmaz), `version.js` (0.99.77 + changelog), `docs/ahead-rain-distance-gap.md`.
 - **Kapsam dışı:** ek Open-Meteo örneği (b), eski olayı körlemesine koruma, yeni i18n dizesi ("belirsiz" için yeni metin gerekirse ayrı D1-T2 + `i18n-validate`), ses anahtarı politikası, sunucu, ağ, push/yayın.
 - **Kabul:** `test-ahead-rain-progress`, `test-ahead-events`, `test-ahead-update`, `test-traffic-guard`, `check.mjs`, tüm `scripts/test-*.mjs` 0 FAIL; testteki ağ çağrısı sayısı değişmez; cihazda sürüş gözlemi ayrı (G-DEVICE).
+
+## 5. D3 canlı doluluk — hazırlık envanteri ve sıradaki tek alt görev (2026-11-16, `a0fa9e93`; başlatılmadı)
+
+Salt okunur inceleme, integ @`8e2399f`. Kod değiştirilmedi. Gerçek sağlayıcı çağrısı yapılmadı.
+
+**Mevcut envanter**
+
+| Katman | Dosya | Durum | Test (a0fa9e93 @8e2399f) |
+|---|---|---|---|
+| Sunucu normalize | `server/availability.mjs` (`buildAvailability`, `fromOcpiLocation`, `fromNdwAvailabilities`, `fromHereItem`, `fromTomTom`, `fromGoogleAggregation`, `fromMockFixture`, `staleness`; `timestampKind` `provider`/`fetched`) | var; NDW/TomTom `fetched` (sağlayıcı zamanı yok) | `test-availability` 39/0 (yalnız sahte fikstür `scripts/fixtures/availability/*`) |
+| Sunucu uç | `server/occupancy.mjs` | NDW eski `at: Date.now()` alanı (R3-e kökü) | dolaylı |
+| İstemci istemi | `js/routing/occupancyClient.js` | `checked: Date.now()` yazar | dolaylı |
+| Fail-closed biçimlendirici | `js/routing/occupancyLabel.js` `formatOccupancy` | var, **hiçbir çalışma zamanı modülüne bağlı değil** | `test-occupancy-label` 154/0 |
+| Görüntü bileşeni | `js/ui/occupancyView.js` | var, bağlı değil, `sw.js` SHELL'de yok | `test-occupancy-view` 101/0 |
+| Canlı nav/planlayıcı yolu | `js/routing/slots.js` (`slotKind`, `isFresh`, `slotEl`, `slotLabel`), `nearSort.js`, `planner.js`, `nearby.js`, `livePlan.js` | NDW `fetched` kaydını taze/dolu/boş sayar | `test-occupancy-consistency-contract` 34/0, **12/12 KNOWN-GAP açık** (G1–G7) |
+| Sağlayıcı sözleşmesi | `server/tomtom.mjs`, `server/veriapi.mjs` | doluluk TomTom'da `fetched`; VeriApi doluluk vermez | `test-tomtom` 36/0, `test-veriapi` 25/0 |
+| Kota kapısı | `js/net/providerGate.js`, `server/providerGate.mjs` (`f0f448e`) | tüm harici istekler varsayılan **duraklatıldı** | `test-provider-pause` 111/0 |
+
+**Boşluklar / blokajlar**
+
+- Canlı (gerçek) doluluk doğrulaması bugün **yapılamaz**: `f0f448e` kota koruması istekleri duraklatıyor; gerçek uç noktası ücretli/kotalı (CLAUDE.md §7 onayı); gerçek, temizlenmiş sağlayıcı fikstürü yok (D5); cihaz testi yok (D6). Mevcut tüm kanıt sentetiktir.
+- `occupancyDecision` (R3-a) kodda yok (grep 0 eşleşme); biçimlendirici ile `slots.js` arasında köprü yok.
+- Kural: "K1/K2 olmadan R3-a bile yazılmaz" (§2 D3). D3 onayı "tazeliği kanıtsız → Bilinmiyor" eşlemesini öneriyor ama teyidi açık.
+
+**Sıradaki tek ≤30 dk kod alt görevi — D3-T1 (= R3-a, öneri, başlatılmadı)**
+
+- **Önkoşul (kullanıcı, tek satır):** K1 = hayır (NDW AFIR varsayımı doğrulama sayılmaz → `unknown`), K2 = bilinmiyor (NDW 0/N), K4 = aynı kural (TomTom `fetched` → `unknown`) eşlemesinin teyidi. K3/K5/K6 kapsam dışı.
+- **Dosyalar:** `js/routing/slots.js` — yalnız yeni saf dışa aktarım `occupancyDecision(slots, now)` → `{ trusted, state }` (`formatOccupancy(slots.availability, { now })` sarmalı; `trusted` ⇔ `confirmed === true`; `availability` yoksa `unknown`, A7); mevcut `slotKind`/`isFresh`/`slotEl`/`slotLabel` **değişmez**, çağıran yok. Yeni test `scripts/test-occupancy-decision.mjs` (düz Node, sentetik fikstür, ağ yok). `version.js` 0.99.81 + changelog (CLAUDE.md §8, `js/` değiştiği için).
+- **Kabul:** yeni test — Google benzeri sağlayıcı zamanlı taze kayıt `trusted:true` + `free`/`busy`/`out` aynen (A6); NDW `fetched` 2/4 ve 0/4 → `trusted:false, state:'unknown'` (K1/K2); TomTom `fetched` → `unknown` (K4); 3 sa eski → `unknown`; `availability` yok → `unknown` (A7); `checked` tek başına tazelik sayılmaz (A1); `Date.now` yerine `now` parametresi kullanılır. `test-occupancy-consistency-contract` 34/0 ve **12/12 KNOWN-GAP değişmeden** (R3-a bağlı olmadığı için hiçbir G kapanmaz; kapanırsa `GAP CLOSED` = hata); `test-occupancy-label`, `test-availability`, `test-near-sort`, `test-charge-pick`, `test-stop-swap`, `test-route-options`, `check.mjs`, tüm `scripts/test-*.mjs` 0 FAIL (ağ engelleyiciyle); ağ çağrısı yok; i18n değişmez.
+- **Kapsam dışı:** R3-b planlayıcı / R3-c nav / R3-d görüntü bağlama, `sw.js`, sunucu (R3-e), gerçek sağlayıcı çağrısı, push/yayın. Yalıtılmış dal, yalnız `--ff-only`.
+- **Sonrası (ayrı görevler, sırayla):** R3-b (G5 → ACCEPT), R3-c (G1/G2/G4 → ACCEPT), R3-d (K5 kararı + G3/G6), canlı doğrulama yalnız ücretli çağrı/kota onayı ve cihaz testiyle.
