@@ -121,6 +121,7 @@ Her satırda "Kabul" kararın **uygulanmış** sayılması için gereken kanıtt
   varsayılan + büyük yazı; açık/koyu; TR + DE) ölçüm ve ekran görüntüleri; kırpılmanın kabul edilip edilmediği (ürün kararı).
 - Bağımlılık: D7 (cihaza Beta/APK ulaşması için push/yayın ya da yerel derleme kararı); www/ ve APK 0.85.x eski (BL-P0-07, RM-09).
 - Kabul: madde başına geçti/kaldı + ekran görüntüsü + cihaz/OS/tarayıcı/APK sürümü kayıtta; `verified` yalnız kullanıcı yazar.
+- **2026-11-16 (`8858f5da`, yalnız belge):** iOS/Android kabul matrisi ve kontrol listeleri (T1–T11, kapılar G-ACCESS/G-BUILD/G-PAUSE/G-SERVER/G-PAID/G-DEBUG) → `docs/d6-device-acceptance.md`. Sonuç yok; D6 uygulanmadı, cihazda doğrulanmadı.
 
 ### D7 — Kaynak yedeği ve push/yayın kapısı — ONAYLANDI (2026-11-15, uygulanmadı)
 

@@ -474,7 +474,7 @@ Uzak: `origin/beta/verified-integration-2026-11-16` = `e09067613b84f06d713bd5cdd
 | geodot tek yeşil konum noktası | `8e9ac846` completed / 0 | `e090676` v0.99.90 (guarded 109/109) | HEAD | = uzak SHA | hayır | **hayır** |
 | Kaynak push | `53093aa1` completed / 0 | push `e090676` (guarded 109/109, BLOCK_ 0) | — | yeni dal | hayır | — |
 
-Açık: S-1 / N-1 kullanıcı kararı; G3 gerçek karo / faturalama sayımı; D6 kapalı gerçek cihaz kabulü (BL-P0-07); Beta yayını ayrı onay; sunucu yeniden başlatma ayrı onay. Hiçbir satır `verified` değildir.
+Açık: S-1 / N-1 kullanıcı kararı; G3 gerçek karo / faturalama sayımı; D6 kapalı gerçek cihaz kabulü (BL-P0-07; hazırlık belgesi `docs/d6-device-acceptance.md`, köprü `8858f5da`, sonuç yok); Beta yayını ayrı onay; sunucu yeniden başlatma ayrı onay. Hiçbir satır `verified` değildir.
 
 ## 8. Açık hatalar
 
