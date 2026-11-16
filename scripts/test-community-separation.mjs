@@ -2,7 +2,8 @@
 // node scripts/test-community-separation.mjs
 // Karar K3 (docs/beta-task-registry.json decisions[D3].sub_decisions): topluluk bildirimi resmî doluluktan ayrı veri olarak
 // tutulur; resmî doluluk durumunu belirlemez/üzerine yazmaz. Topluluk bildirimi doğrulanmış resmî "Müsait"e DÖNÜŞEMEZ.
-// Rota planlaması bu görevde DEĞİŞMEZ (ayrı karar gerekir): slots.js slotKind/isFresh davranışı aynen kilitlenir.
+// D3-T5: tüketici kararları (slots.js slotKind/isFresh → planlayıcı, düşük pil, yakın sıralama, sesli uyarı) yalnız doğrulanmış
+// resmî doluluğu kullanır; topluluk bildirimi AYRI kalır (yalnız gösterim) ve hiçbir tüketicide 'full'/'free' üretmez.
 // Ağ yok: global fetch çağrılırsa test başarısız olur; sunucu açılmaz.
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -118,26 +119,32 @@ ok('COMMUNITY_REPORT_MAX_AGE_MS = 60 dk (server/community.mjs REPORT_MS ile ayn�
   ok('saat kayması ≤ 1 dk ileri tolerans → ageMin 0', communityReport({ busy: 0, report: { status: 'free', at: NOW + 30e3 } }, { now: NOW })?.report?.ageMin === 0);
 }
 
-// ---------- 3) Rota planlaması DEĞİŞMEDİ (ayrı karar gerekir): slots.js davranışı kilit ----------
+// ---------- 3) D3-T5: tüketici kararı yalnız doğrulanmış resmî doluluk; topluluk ayrı ----------
 {
   const realNow = Date.now();
   const { slotKind, isFresh } = await imp('js/routing/slots.js');
+  const { buildAvailability } = await imp('server/availability.mjs');
   const s = (sl) => ({ slots: sl });
+  const official = (counts) => { const availability = buildAvailability({ source: 'here', counts, at: realNow - MIN, fetchedAt: realNow, now: realNow }); return { total: availability.total, available: availability.available, out: 0, checked: realNow, src: 'here', availability }; };
   ok('slotKind: topluluk Boş (resmî sayı yok) → unknown (asla free)', slotKind(s({ available: null, community: { busy: 0, report: { status: 'free', at: realNow } } })) === 'unknown');
   ok('slotKind: topluluk Boş + varlık → unknown', slotKind(s({ available: null, community: { busy: 4, report: { status: 'free', at: realNow } } })) === 'unknown');
-  ok('slotKind: mevcut davranış — taze topluluk Dolu (<20 dk) → full (değiştirilmedi)', slotKind(s({ available: null, community: { busy: 0, report: { status: 'full', at: realNow - MIN } } })) === 'full');
-  ok('slotKind: mevcut davranış — 20 dk+ topluluk Dolu → unknown (değiştirilmedi)', slotKind(s({ available: null, community: { busy: 0, report: { status: 'full', at: realNow - 21 * MIN } } })) === 'unknown');
-  ok('slotKind: resmî sayı varsa topluluk yok sayılır (1/2 + topluluk Dolu → free)', slotKind(s({ total: 2, available: 1, out: 0, community: { busy: 0, report: { status: 'full', at: realNow } } })) === 'free');
-  ok('slotKind: resmî 0/2 + topluluk Boş → full (topluluk resmîyi ezmez)', slotKind(s({ total: 2, available: 0, out: 0, community: { busy: 0, report: { status: 'free', at: realNow } } })) === 'full');
+  ok('slotKind: D3-T5 — taze topluluk Dolu (<20 dk) → unknown (topluluk ayrı, tüketici dolu saymaz)', slotKind(s({ available: null, community: { busy: 0, report: { status: 'full', at: realNow - MIN } } })) === 'unknown');
+  ok('isFresh: taze topluluk Dolu → false', isFresh(s({ available: null, community: { busy: 3, report: { status: 'full', at: realNow - MIN } } })) === false);
+  ok('slotKind: 20 dk+ topluluk Dolu → unknown', slotKind(s({ available: null, community: { busy: 0, report: { status: 'full', at: realNow - 21 * MIN } } })) === 'unknown');
+  ok('slotKind: doğrulanmış resmî varsa topluluk yok sayılır (1/2 + topluluk Dolu → free)', slotKind(s({ ...official({ AVAILABLE: 1, CHARGING: 1 }), community: { busy: 0, report: { status: 'full', at: realNow } } })) === 'free');
+  ok('slotKind: doğrulanmış resmî 0/2 + topluluk Boş → full (topluluk resmîyi ezmez)', slotKind(s({ ...official({ CHARGING: 2 }), community: { busy: 0, report: { status: 'free', at: realNow } } })) === 'full');
+  ok('slotKind: zaman damgasız resmî 0/2 + topluluk Dolu → unknown (ikisi birleşip dolu olmaz)', slotKind(s({ total: 2, available: 0, out: 0, checked: realNow, community: { busy: 2, report: { status: 'full', at: realNow } } })) === 'unknown');
   ok('isFresh topluluğa bakmaz (checked yok → bayat)', isFresh(s({ available: null, community: { busy: 1, report: { status: 'free', at: realNow } } })) === false);
 }
 {
-  // Planlayıcı / planla ilgili modüller yeni topluluk modelini ya da occupancyDecision'ı içe aktarmaz. D3-T4: slots.js yalnız
-  // ARAYÜZ (slotEl/slotLabel) için içe aktarır; planlayıcı kararları (slotKind/isFresh/slotsOf) bunlara dokunmaz.
+  // Planlayıcı / planla ilgili modüller yeni topluluk modelini ya da occupancyDecision'ı doğrudan içe aktarmaz: tek karar noktası
+  // slots.js'tir (D3-T4 arayüz + D3-T5 slotKind/isFresh → trustedOccupancy → occupancyDecision). Topluluk kararı slotKind'e girmez.
   {
     const sl = readFileSync(join(root, 'js/routing/slots.js'), 'utf8').replace(/\/\/.*$/gm, '');
     const body = (n) => { const i = sl.indexOf(`export ${n.startsWith('isFresh') ? 'const' : 'function'} ${n}`); const j = sl.indexOf('\nexport ', i + 1); return i < 0 ? '' : sl.slice(i, j < 0 ? undefined : j); };
-    ok('slots.js slotKind/isFresh/slotsOf communityReport/occupancyDecision kullanmaz (planlayıcı değişmedi)', ['slotKind', 'isFresh', 'slotsOf'].every((n) => body(n).length > 20 && !/communityReport|occupancyDecision/.test(body(n))));
+    ok('slots.js slotKind/isFresh doğrulanmış karar yardımcısını kullanır, topluluk modelini kullanmaz (D3-T5)', ['slotKind', 'isFresh'].every((n) => body(n).length > 20 && /trustedOccupancy\(/.test(body(n)) && !/communityReport|community/.test(body(n))));
+    const helper = sl.slice(sl.indexOf('function trustedOccupancy'), sl.indexOf('export function slotKind'));
+    ok('slots.js trustedOccupancy: occupancyDecision + sunucu vetosu, topluluk yok', /occupancyDecision\(sl, \{ now \}\)/.test(helper) && /decision\.trusted !== true/.test(helper) && !/community/.test(helper));
   }
   const PLAN = ['js/routing/planner.js', 'js/routing/livePlan.js', 'js/routing/routeOptions.js', 'js/routing/controller.js', 'js/nav/nearSort.js', 'js/nav/nearby.js', 'js/nav/chargePick.js'];
   for (const f of PLAN) {

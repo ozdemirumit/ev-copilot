@@ -10,11 +10,17 @@ globalThis.localStorage = { getItem: () => null, setItem() {}, removeItem() {} }
 const { sortNearby, sortNote, availability, priceLabel, powerLabel, NEAR_SORTS } = await import('../js/nav/nearSort.js');
 const { FRESH_MS } = await import('../js/routing/slots.js');
 const { pickEmergency } = await import('../js/nav/chargePick.js');
+const { buildAvailability } = await import('../server/availability.mjs');
 
 const NOW = 1_800_000_000_000;
 const st = (id, o = {}) => ({ id, name: id, opName: 'Op', distKm: 1, kw: 180, srcKw: 180, uncertain: false, slow: false, tariff: 'list', price: 10, ...o });
 const ids = (r) => r.list.map((s) => s.id).join(',');
-const fresh = (available, total = 4, extra = {}) => ({ slots: { available, total, out: 0, checked: NOW - 60e3, ...extra } });
+// D3-T5: free/full/out yalnız doğrulanmış resmî doluluktan → "taze" fikstür sağlayıcı zaman damgalı (1 dk önce) availability taşır.
+const fresh = (available, total = 4, extra = {}) => {
+  const out = extra.out || 0;
+  const availability = buildAvailability({ source: 'here', counts: { AVAILABLE: available, CHARGING: total - available - out, OUTOFORDER: out }, at: NOW - 60e3, fetchedAt: NOW, now: NOW });
+  return { slots: { available, total, out: 0, checked: NOW - 60e3, availability, ...extra } };
+};
 
 // ---- En yakın ----
 {
@@ -80,6 +86,7 @@ const fresh = (available, total = 4, extra = {}) => ({ slots: { available, total
   ok('zamanı olmayan sayısal veri stale', availability(st('a', { slots: { available: 3, total: 4, out: 0 } }), NOW) === 'stale');
   ok('gelecekteki zaman damgası taze sayılmaz', availability(st('a', fresh(2, 4, { checked: NOW + 60e3 })), NOW) === 'stale');
   ok('doluluk yok = unknown', availability(st('a'), NOW) === 'unknown');
+  ok('D3-T5: zaman damgasız (okuma anı taze) sayısal veri ne boş ne dolu', availability(st('a', { slots: { available: 0, total: 4, out: 0, checked: NOW - 60e3 } }), NOW) === 'unknown');
 
   const l = [st('full', { distKm: 0.1, price: 5, ...fresh(0) }), st('out', { distKm: 0.2, price: 4, ...fresh(0, 2, { out: 2 }) }),
     st('staleFull', { distKm: 0.3, price: 6, slots: { available: 0, total: 4, out: 0, checked: NOW - FRESH_MS - 1 } }),

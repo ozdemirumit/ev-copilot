@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.83';
+self.APP_VERSION = '0.99.84';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.84', date: '2026-11-16',
+    notes: [
+      'Rota planı, düşük pil önerisi, yakın istasyon sıralaması ve sesli uyarılar artık yalnız doğrulanmış resmî doluluğu kullanır: sağlayıcı zaman damgası olmayan, 15 dakikadan eski, NDW 0/N, sunucunun doğrulamadığı ya da yalnız topluluk bildirimine dayanan doluluk ne "boş" ne "dolu" sayılır (istasyon plandan çıkarılmaz, sona atılmaz, "boş yuva yok" anonsu yapılmaz). Topluluk bildirimleri ayrı satırda gösterilmeye devam eder. Ekrandaki üç durum (Müsait / Dolu / Bilinmiyor) değişmedi. Yeni sağlayıcı isteği yok.',
+    ],
+  },
   {
     v: '0.99.83', date: '2026-11-16',
     notes: [

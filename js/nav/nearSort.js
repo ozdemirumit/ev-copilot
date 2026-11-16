@@ -2,6 +2,7 @@
 // Fiyat uydurulmaz: yalnızca chargePick.priceStatus "known" diyen fiyatlar sıralanır; tahmini/bilinmeyen fiyatlar etiketlenir ve
 // bilinen fiyatlardan SONRA gelir. Güç: kayıtta yazan kW (knownKw); varsayılan/eksik kW etiketlenir ve en hızlıda sona gelir.
 // Doluluk: arızalı ya da taze "dolu" istasyonlar her sıralamada sona alınır; eski (bayat) doluluk "boş" sayılmaz.
+// D3-T5: free/full/out yalnız doğrulanmış resmî doluluktan (slots.slotKind); doğrulanmamış veri ve topluluk bildirimi sona atmaz.
 import { priceStatus, knownKw } from './chargePick.js';
 import { slotKind, FRESH_MS } from '../routing/slots.js';
 
@@ -9,13 +10,13 @@ export const NEAR_SORTS = ['near', 'cheap', 'fast'];
 export const NEAR_SORT_TITLE = { near: 'En yakın', cheap: 'En ucuz', fast: 'En hızlı' };
 
 /**
- * Ekranda gösterilecek doluluk durumu: 'free' (taze boş), 'full' (taze dolu ya da süresi geçmemiş topluluk bildirimi),
+ * Ekranda gösterilecek doluluk durumu: 'free' (doğrulanmış taze boş), 'full' (doğrulanmış taze dolu),
  * 'out' (arızalı), 'stale' (sayısal veri var ama FRESH_MS'ten eski: boş/dolu denmez), 'unknown'.
  */
 export function availability(s, now = Date.now()) {
-  const k = slotKind(s);
+  const k = slotKind(s, now);
   const sl = s?.slots;
-  if (!sl || sl.available == null) return k; // topluluk bildirimi slotKind içinde zaman sınırlı
+  if (!sl || sl.available == null) return k;
   const t = sl.checked ?? sl.at;
   const fresh = typeof t === 'number' && now - t >= 0 && now - t < FRESH_MS;
   if (!fresh) return 'stale';

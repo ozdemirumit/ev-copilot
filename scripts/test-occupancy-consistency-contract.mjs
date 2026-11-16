@@ -6,8 +6,9 @@
 //  2) KNOWN-GAP: bugün bilinen çelişkiler (docs/occupancy-consistency-contract.md G1..G7). Çelişki HÂLÂ VARSA beklenen bulgu
 //                olarak sayılır (PASS değil "KNOWN-GAP present"). Çelişki KENDİLİĞİNDEN kaybolursa test BAŞARISIZ olur:
 //                "GAP CLOSED" → gelecekteki düzeltme görevi bu boşluğu sözleşme kabul denetimine (ACCEPT) taşımalı ve belgeyi güncellemelidir.
-//  3) ACCEPT   : gelecekteki ayrı düzeltmenin kabul ölçütleri. Bugün yalnızca biçimlendiricinin (occupancyLabel.js) kendisi için
-//                sınanır; nav/planlayıcı tarafı için kabul ölçütleri KNOWN-GAP olarak duruyor (sahte "düzeldi" yok).
+//  3) ACCEPT   : düzeltmenin kabul ölçütleri. D3-T4 (v0.99.83) görüntü yolunu (G3/G3b/G3c/G6b), D3-T5 (v0.99.84) nav/planlayıcı
+//                karar yolunu (G1/G2/G2b/G4/G4b/G5/G6/G7: slots.js slotKind/isFresh → doğrulanmış occupancyDecision) kapattı;
+//                bu boşluklar artık ACCEPT denetimidir. Yeniden açılırlarsa test BAŞARISIZ olur.
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -107,11 +108,11 @@ const station = (id, slots, extra = {}) => ({ id, name: id, slots, distKm: 1, kw
   ok('formatter: NDW 0/4 sağlayıcı zamanlı olsa da UNKNOWN EVSE → unknown-evse', fB2.state === 'unknown' && fB2.reason === 'unknown-evse', JSON.stringify(fB2));
 
   const sF = station('ndwF', NDW_FREE), sB = station('ndwB', NDW_FULL);
-  // G1: nav/planlayıcı tazelik kapısı okuma anını (checked) tazelik sayar.
-  knownGap('G1', 'isFresh(NDW fetched) === true (formatter: unverified-time)', isFresh(sF) === true && isFresh(sB) === true);
-  // G2: slotKind NDW 0/4'ü 'full' sayar (formatter: unknown; boş olmayanların durumu bilinmiyor).
-  knownGap('G2', "slotKind(NDW fetched 0/4) === 'full' (formatter: unknown)", slotKind(sB) === 'full');
-  knownGap('G2b', "slotKind(NDW fetched 2/4) === 'free' (formatter: unknown)", slotKind(sF) === 'free');
+  // G1/G2/G2b KAPANDI (D3-T5, v0.99.84): tazelik kapısı okuma anını (checked) değil doğrulanmış sağlayıcı kararını kullanır;
+  // NDW fetched kayıt ne taze ne boş/dolu sayılır (ACCEPT).
+  ok('ACCEPT G1 (D3-T5): isFresh(NDW fetched 2/4 ve 0/4) === false', isFresh(sF) === false && isFresh(sB) === false);
+  ok("ACCEPT G2 (D3-T5): slotKind(NDW fetched 0/4) === 'unknown' (asla full)", slotKind(sB) === 'unknown', slotKind(sB));
+  ok("ACCEPT G2b (D3-T5): slotKind(NDW fetched 2/4) === 'unknown' (asla free)", slotKind(sF) === 'unknown', slotKind(sF));
   // G3/G3b/G3c KAPANDI (D3-T4, v0.99.83): liste/kart görüntüsü (slotEl/slotLabel) saf occupancyDecision kararıyla yalnız
   // Müsait / Dolu / Bilinmiyor gösterir → NDW fetched kayıtta "⚪ Bilinmiyor"; sayı, yaş, "boş"/"dolu" yazılmaz (ACCEPT).
   const elF = slotEl(sF)?.textContent || '', elB = slotEl(sB)?.textContent || '';
@@ -120,13 +121,13 @@ const station = (id, slots, extra = {}) => ({ id, name: id, slots, distKm: 1, kw
   ok('ACCEPT G3c (D3-T4): slotLabel(NDW fetched 2/4) → "⚪ Bilinmiyor"', slotLabel(sF) === '⚪ Bilinmiyor', slotLabel(sF));
   ok('ACCEPT (D3-T4): sağlayıcı zamanlı taze kayıtta görüntü korunur (Müsait/Dolu + sayı)', /^ · 🟢 Müsait · 3\/4 · 3 dk önce/.test(slotEl(station('p', PROV_FREE))?.textContent || '') && /^ · 🔴 Dolu · 0\/4 · 3 dk önce/.test(slotEl(station('p', PROV_FULL))?.textContent || ''), slotEl(station('p', PROV_FREE))?.textContent);
   ok('ACCEPT (D3-T4): 3 sa eski kayıt → "⚪ Bilinmiyor"', slotEl(station('p', PROV_STALE))?.textContent === ' · ⚪ Bilinmiyor', slotEl(station('p', PROV_STALE))?.textContent);
-  // G4: Yakın istasyonlar sıralaması (nearSort) NDW kaydını taze free/full sayar; 0/4 sona atılır.
-  knownGap('G4', "nearSort.availability(NDW fetched 0/4) === 'full'", nearAvail(sB, NOW) === 'full');
+  // G4/G4b KAPANDI (D3-T5): yakın istasyon sıralaması NDW fetched kaydını dolu saymaz; mesafe sırası korunur (ACCEPT).
+  ok("ACCEPT G4 (D3-T5): nearSort.availability(NDW fetched 0/4) === 'unknown'", nearAvail(sB, NOW) === 'unknown', nearAvail(sB, NOW));
   const near = sortNearby([station('ndwB', NDW_FULL, { distKm: 1 }), station('none', null, { distKm: 5 })], 'near', NOW);
   const order = (Array.isArray(near) ? near : near?.items || near?.list || []).map((x) => x.id);
-  knownGap('G4b', 'sortNearby: 1 km NDW "dolu" istasyon 5 km bilinmeyenin ARKASINA atılır', order[0] === 'none' && order[1] === 'ndwB', order.join());
+  ok('ACCEPT G4b (D3-T5): sortNearby: 1 km NDW 0/4 istasyon 5 km bilinmeyenin ÖNÜNDE (mesafe sırası)', order[0] === 'ndwB' && order[1] === 'none', order.join());
 
-  // G5: planlayıcı NDW 0/4'ü "taze dolu" sayıp yakın durağı plandan çıkarır (ya da bekleme ekler).
+  // G5 KAPANDI (D3-T5): planlayıcı NDW 0/4'ü "taze dolu" saymaz; yakın durak plandan çıkarılmaz, bekleme eklenmez (ACCEPT).
   const KWH_PER_KM = 0.25;
   const profile = { totalKm: 400, energyBetween: (a, b, k = 1) => Math.max(0, b - a) * KWH_PER_KM * k, timeBetween: (a, b) => Math.max(0, b - a) / 100 };
   const st = (id, km, slots = null) => ({ id, name: id, km, lat: 40 + km * 1e-4, lon: 30, kw: 180, price: 14, opId: 'x', opName: 'X', slow: false, uncertain: false, offKm: 0.2, slots });
@@ -138,7 +139,7 @@ const station = (id, slots, extra = {}) => ({ id, name: id, slots, distKm: 1, kw
     const stations = [st('a100', 100), st('b104', 104), st('c250', 250), st('d254', 254)].map((s) => (s.id === first.id ? { ...s, slots: NDW_FULL } : s));
     const plan1 = planRoute({ ...base, stations });
     const ids1 = plan1.stops.map((s) => s.station.id);
-    knownGap('G5', `planRoute: NDW fetched 0/4 olan ilk durak (${first.id}) "taze dolu" sayılıp plandan çıkarılır`, plan1.feasible && !ids1.includes(first.id), ids1.join());
+    ok(`ACCEPT G5 (D3-T5): planRoute: NDW fetched 0/4 olan ilk durak (${first.id}) planda kalır, bekleme yok`, plan1.feasible && ids1.join() === plan0.stops.map((s) => s.station.id).join() && plan1.stops.every((s, i) => s.waitMin === plan0.stops[i].waitMin), ids1.join());
   }
   // usable(): NDW eski alanında out=null → 'out' olmaz (kontrol; ayrık bir boşluk değil).
   ok("kontrol: usable(NDW fetched) — NDW 'out' üretmez", usable(sB) === true);
@@ -147,13 +148,14 @@ const station = (id, slots, extra = {}) => ({ id, name: id, slots, distKm: 1, kw
 // ---------- 3) KNOWN-GAP: kaynak denetimi — nav/planlayıcı KARAR yolu fail-closed karara bağlı değil ----------
 {
   const files = { nearby: read('js/nav/nearby.js'), routePanel: read('js/ui/routePanel.js'), planner: read('js/routing/planner.js'), livePlan: read('js/routing/livePlan.js'), slots: read('js/routing/slots.js'), sw: read('sw.js') };
-  // D3-T4: GÖRÜNTÜ yolu (slots.js slotEl/slotLabel) saf occupancyDecision'a bağlandı; planlayıcı/nav KARAR yolu (slotKind/isFresh,
-  // planner, livePlan, nearby gone()) hâlâ bağlı değil (R3-b/R3-c, ayrı görev). G6 artık yalnız karar yolunu sayar.
+  // D3-T4: GÖRÜNTÜ yolu (slots.js slotEl/slotLabel) saf occupancyDecision'a bağlandı. D3-T5: KARAR yolu (slotKind/isFresh →
+  // planner, livePlan, nearby gone(), nearSort, chargePick, routeOptions) aynı doğrulanmış karara (trustedOccupancy) bağlandı.
   const decide = (src) => /occupancyLabel|formatOccupancy|occupancyView|occupancyDecision/.test(src);
   const slotsDecision = files.slots.replace(/\/\/.*$/gm, '').split(/\nexport /).filter((b) => /^(function slotKind|const isFresh|function slotsOf)/.test(b));
   const usesFormatter = [...Object.entries(files).filter(([k]) => !['sw', 'slots'].includes(k)).filter(([, src]) => decide(src)).map(([k]) => k), ...(slotsDecision.length === 3 && slotsDecision.some(decide) ? ['slots(slotKind/isFresh)'] : [])];
   ok('kaynak: slots.js karar gövdeleri (slotKind/isFresh/slotsOf) bulundu', slotsDecision.length === 3, String(slotsDecision.length));
-  knownGap('G6', 'nav/planlayıcı karar yolu (nearby/routePanel/planner/livePlan, slots slotKind/isFresh) fail-closed kararı kullanmıyor', usesFormatter.length === 0, usesFormatter.join());
+  const kindBody = slotsDecision.find((b) => b.startsWith('function slotKind')) || '', freshBody = slotsDecision.find((b) => b.startsWith('const isFresh')) || '';
+  ok('ACCEPT G6 (D3-T5): slots slotKind/isFresh fail-closed kararı (trustedOccupancy → occupancyDecision) kullanır', usesFormatter.includes('slots(slotKind/isFresh)') && /trustedOccupancy\(/.test(kindBody) && /trustedOccupancy\(/.test(freshBody), usesFormatter.join());
   // G6b KAPANDI (D3-T4): karar + biçimlendirici yayında yüklenir.
   ok('ACCEPT G6b (D3-T4): sw.js SHELL occupancyDecision.js + occupancyLabel.js + communityReport.js içerir', ['occupancyDecision', 'occupancyLabel', 'communityReport'].every((m) => files.sw.includes(`'./js/routing/${m}.js'`)));
   ok('ACCEPT (D3-T4): slots.js görüntü yolu occupancyDecision kullanır', /import \{ occupancyDecision \} from '\.\/occupancyDecision\.js'/.test(files.slots) && /occupancyDecision\(sl, \{ now \}\)/.test(files.slots));
@@ -164,7 +166,7 @@ const station = (id, slots, extra = {}) => ({ id, name: id, slots, distKm: 1, kw
   ok('kaynak: nearby liste/uyarı slotEl kullanır (D3-T4: ayrı "eski" etiketi yok)', /const slotNode = slotEl\(s\);/.test(files.nearby) && /slotEl\(s, ''\)/.test(files.nearby) && !/doluluk bilgisi eski/.test(files.nearby));
   ok('kaynak: routePanel durak satırı slotEl kullanır', /slotEl\(s\.station\)/.test(files.routePanel));
   ok('kaynak: livePlan slotKind ile "şu an boş yuva yok" söyler', /slotKind\(worse\) === 'out' \? 'şarj üniteleri arızalı' : 'şu an boş yuva yok'/.test(files.livePlan));
-  ok("kaynak: slots.isFresh 'checked' (okuma anı) üzerinden", /isFresh = \(s\) => !!s\.slots && Date\.now\(\) - \(s\.slots\.checked \|\| 0\) < FRESH_MS/.test(files.slots));
+  ok("ACCEPT (D3-T5): slots.isFresh okuma anı ('checked') değil doğrulanmış karar", /isFresh = \(s, now = Date\.now\(\)\) => !!trustedOccupancy\(s\?\.slots, now\)/.test(files.slots) && !/checked/.test(freshBody));
 }
 
 // ---------- 4) ACCEPT: gelecekteki düzeltmenin kabul ölçütleri (bugün yalnız biçimlendirici için doğrulanabilir) ----------
@@ -185,7 +187,7 @@ const contract = (slots) => { const d = fmt(slots); return { trusted: d.confirme
   ok('ACCEPT(formatter): simüle (mock) → trusted false', !contract({ availability: { ...NDW_FREE.availability, simulated: true, timestampKind: 'provider', at: NOW } }).trusted);
   // Nav/planlayıcı tarafı: bugünkü davranış sözleşmeyi ihlal ediyor mu? (ihlal = bilinen boşluk; G1/G2/G5 ile aynı kök)
   const violates = (slots) => { const s = station('v', slots); const c = contract(slots); return (isFresh(s) && slotKind(s) === 'full') !== c.plannerFull || (isFresh(s) && slotKind(s) !== 'unknown' && c.shown === 'unknown'); };
-  knownGap('G7', 'nav/planlayıcı kararı sözleşmeden sapar (NDW fetched 2/4 ve 0/4)', violates(NDW_FREE) && violates(NDW_FULL));
+  ok('ACCEPT G7 (D3-T5): nav/planlayıcı kararı sözleşmeden sapmaz (NDW fetched 2/4 ve 0/4, 3 sa eski)', !violates(NDW_FREE) && !violates(NDW_FULL) && !violates(PROV_STALE));
   ok('ACCEPT: sağlayıcı zamanlı taze boş/dolu kayıtta bugün de sapma yok', !violates(PROV_FREE) && !violates(PROV_FULL));
 }
 

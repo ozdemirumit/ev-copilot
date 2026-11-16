@@ -121,8 +121,12 @@ const A = st('A'); const B = st('B', { price: 8 }); const C = st('C', { kw: 60 }
   ok('pil eşitse belirsiz durağı az olan', m.best.risk === 'cheap');
   ok('belirsiz durak sayılır', m.options[0].risky === 1 && R.stopRisks(S).includes('yavaş (AC)'));
   const NOW = Date.now();
-  ok('taze dolu riskli, eski bilgi değil', R.stopRisks(st('x', { slots: { total: 2, available: 0, out: 0, checked: NOW } })).includes('dolu')
-    && R.stopRisks(st('y', { slots: { total: 2, available: 0, out: 0, checked: NOW - 3600e3 } })).length === 0);
+  // D3-T5: "dolu" riski yalnız doğrulanmış resmî dolulukta (sağlayıcı zaman damgası ≤ 15 dk)
+  const { buildAvailability } = await import('../server/availability.mjs');
+  const av = (agoMs) => buildAvailability({ source: 'here', counts: { CHARGING: 2 }, at: NOW - agoMs, fetchedAt: NOW, now: NOW });
+  ok('taze dolu riskli, eski bilgi değil', R.stopRisks(st('x', { slots: { total: 2, available: 0, out: 0, checked: NOW, availability: av(60e3) } })).includes('dolu')
+    && R.stopRisks(st('y', { slots: { total: 2, available: 0, out: 0, checked: NOW - 3600e3, availability: av(3600e3) } })).length === 0);
+  ok('D3-T5: zaman damgasız dolu riskli sayılmaz', R.stopRisks(st('z', { slots: { total: 2, available: 0, out: 0, checked: NOW } })).length === 0);
 }
 
 // ---- Gerçek planlayıcıyla uçtan uca (ağsız) ----

@@ -135,10 +135,10 @@ const NO_OLD_WORDS = (s) => !/boş\b|dolu \(|arızalı|canlı|eski bilgi|doluluk
   ok('slotLabel veri yok → ""', slotLabel(st(null)) === '');
 }
 
-// ---------- 6) Planlayıcı kararı bu görevde DEĞİŞMEDİ (ayrı R3-b/R3-c işi) ----------
+// ---------- 6) D3-T5: planlayıcı kararı arayüzle aynı (R3-b/R3-c kapandı) ----------
 {
   const ndw0 = slots('ndw', fromNdwAvailabilities([{ available: 0, total: 4, power_max: 150000 }], { now: NOW }));
-  ok("slotKind(NDW fetched 0/4) hâlâ 'full' (planlayıcı değişmedi; G2 açık)", slotKind(st(ndw0)) === 'full');
+  ok("slotKind(NDW fetched 0/4) → 'unknown' (D3-T5; G2 kapandı)", slotKind(st(ndw0)) === 'unknown');
   ok('ama arayüz Bilinmiyor gösterir', state(ndw0)[0] === '⚪ Bilinmiyor');
 }
 
@@ -149,7 +149,7 @@ const NO_OLD_WORDS = (s) => !/boş\b|dolu \(|arızalı|canlı|eski bilgi|doluluk
   const imports = [...sl.matchAll(/import\s[^;]*?from\s+['"]([^'"]+)['"]/g)].map((m) => m[1]).sort();
   ok('slots.js yalnız saf occupancyDecision + communityReport içe aktarır', JSON.stringify(imports) === JSON.stringify(['./communityReport.js', './occupancyDecision.js']), JSON.stringify(imports));
   const body = (name) => { const i = sl.indexOf(`export function ${name}`) >= 0 ? sl.indexOf(`export function ${name}`) : sl.indexOf(`export const ${name}`); const j = sl.indexOf('\nexport ', i + 1); return sl.slice(i, j < 0 ? undefined : j); };
-  ok('slotKind / isFresh / slotsOf karar modüllerini kullanmaz (planlayıcı değişmedi)', ['slotKind', 'isFresh', 'slotsOf'].every((n) => { const b = body(n); return b.length > 20 && !/occupancyDecision|communityReport/.test(b); }));
+  ok('slotKind / isFresh arayüzle aynı doğrulanmış kararı (trustedOccupancy) kullanır, topluluk modelini kullanmaz (D3-T5)', ['slotKind', 'isFresh'].every((n) => { const b = body(n); return b.length > 20 && /trustedOccupancy\(/.test(b) && !/communityReport/.test(b); }) && /const d = trustedOccupancy\(sl, now\)/.test(sl));
   const nb = read('js/nav/nearby.js');
   ok('nearby: dördüncü etiket "doluluk bilgisi eski" kaldırıldı, liste slotEl(s) kullanır', !/doluluk bilgisi eski/.test(nb) && /const slotNode = slotEl\(s\);/.test(nb));
   const sw = read('sw.js');

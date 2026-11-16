@@ -2,12 +2,14 @@
 // (count, availableCount, outOfServiceCount, availabilityLastUpdateTime). Bilgi yalnızca bazı ağlar için vardır.
 // D3-T4: ARAYÜZ (slotEl / slotLabel) resmî doluluğu yalnız üç durumla gösterir — 🟢 Müsait / 🔴 Dolu / ⚪ Bilinmiyor (K5) — ve
 // kararı saf occupancyDecision'dan alır (sağlayıcı zaman damgası yoksa ya da 15 dk'dan eskiyse Bilinmiyor). Topluluk satırları
-// communityReport modelinden, resmî durumdan ayrı (K3). Planlayıcı kararları (slotKind / isFresh) bu görevde DEĞİŞMEDİ.
+// communityReport modelinden, resmî durumdan ayrı (K3).
+// D3-T5: TÜKETİCİ kararları (slotKind / isFresh → planlayıcı, rota seçenekleri, düşük pil önerisi, yakın istasyon sıralaması,
+// sesli uyarı) aynı karara bağlandı: yalnız doğrulanmış resmî doluluk (occupancyDecision trusted + sunucu vetosu yok) 'free' /
+// 'full' / 'out' olur; zaman damgasız, 15 dk'dan eski, NDW 0/N, simüle ve topluluk bildirimi → 'unknown' (ne müsait ne dolu).
 import { occupancyDecision } from './occupancyDecision.js';
 import { communityReport } from './communityReport.js';
 
 export const FRESH_MS = 15 * 60e3; // planlamada doluluk bu kadar tazeyse dikkate alınır
-const COMMUNITY_FULL_MS = 20 * 60e3; // "Dolu" bildirimi bu kadar süre planı etkiler
 const sum = (a, f) => a.reduce((t, x) => t + (f(x) || 0), 0);
 
 /**
@@ -31,17 +33,23 @@ export function slotsOf(ev, dcTypes) {
   };
 }
 
-/** 'unknown' | 'out' (tamamı arızalı) | 'full' (boş yuva yok) | 'free'. Resmî sayı yoksa taze "Dolu" topluluk bildirimi 'full' sayılır. */
-export function slotKind(s) {
-  const sl = s.slots;
-  if (!sl) return 'unknown';
-  if (sl.available == null) {
-    const r = sl.community?.report;
-    return r?.status === 'full' && Date.now() - r.at < COMMUNITY_FULL_MS ? 'full' : 'unknown';
-  }
-  if (sl.out >= sl.total) return 'out';
-  if (sl.available <= 0) return 'full';
-  return 'free';
+/**
+ * Doğrulanmış resmî doluluk kararı ya da null. Tek karar noktası (arayüz + tüketiciler): saf occupancyDecision trusted olmalı
+ * VE sunucu kararı (server/availability.mjs `decision`, occupancyClient aynen taşır) varsa güvenilir demeli (yoksa fail-closed).
+ * Sunucu kararı tek başına Müsait/Dolu yapmaz; istemci kararı (saat, AGE) ayrıca gerekir. Topluluk bildirimi burada YOK (K3).
+ */
+function trustedOccupancy(sl, now) {
+  if (!sl || typeof sl !== 'object') return null;
+  const d = occupancyDecision(sl, { now });
+  const veto = sl.decision != null && (typeof sl.decision !== 'object' || sl.decision.trusted !== true);
+  return d.trusted && !veto ? d : null;
+}
+
+/** 'unknown' | 'out' (tamamı arızalı) | 'full' (boş yuva yok) | 'free' — yalnız doğrulanmış resmî doluluktan (D3-T5). */
+export function slotKind(s, now = Date.now()) {
+  const d = trustedOccupancy(s?.slots, now);
+  if (!d) return 'unknown';
+  return d.state === 'free' ? 'free' : d.state === 'busy' ? 'full' : d.state === 'out' ? 'out' : 'unknown';
 }
 
 /** Arayüzde gösterilen üç resmî doluluk durumu (K5). Başka durum etiketi (boş/dolu (0/N)/arızalı/eski) yazılmaz. */
@@ -54,11 +62,8 @@ export const OCC_UI_LABELS = Object.freeze({ free: '🟢 Müsait', full: '🔴 D
  */
 function officialUi(sl, now) {
   if (!sl || (sl.available == null && (sl.availability == null || typeof sl.availability !== 'object'))) return null;
-  const d = occupancyDecision(sl, { now });
-  // Sunucu kararı (server/availability.mjs `decision`, occupancyClient aynen taşır) güvenilmez diyorsa fail-closed: Bilinmiyor.
-  // Sunucu kararı tek başına Müsait/Dolu yapmaz; istemci kararı (saat, AGE) ayrıca gerekir.
-  const veto = sl.decision != null && (typeof sl.decision !== 'object' || sl.decision.trusted !== true);
-  if (!d.trusted || veto) return { ui: 'unknown', available: null, total: null, ageMin: null };
+  const d = trustedOccupancy(sl, now);
+  if (!d) return { ui: 'unknown', available: null, total: null, ageMin: null };
   const c = sl.availability.counts;
   const total = Object.values(c).reduce((n, v) => n + v, 0);
   return { ui: d.state === 'free' ? 'free' : 'full', available: c.AVAILABLE, total, ageMin: d.ageMin };
@@ -109,8 +114,8 @@ export function livePrice(s) {
   return { text: `${sym}${p.kwh.toFixed(2)}/kWh (${how})`, extra: !!(p.flat || p.hour || p.parkingHour) };
 }
 
-/** Planlama için doluluk bilgisi yeterince taze mi? */
-export const isFresh = (s) => !!s.slots && Date.now() - (s.slots.checked || 0) < FRESH_MS;
+/** Planlama için doluluk bilgisi doğrulanmış ve güncel mi? (sağlayıcı zamanı ≤ 15 dk; okuma anı `checked` tazelik sayılmaz) */
+export const isFresh = (s, now = Date.now()) => !!trustedOccupancy(s?.slots, now);
 
 /** Ekran metni (slotEl ile aynı karar): "🟢 Müsait · 3/4 · 2 dk önce", "🔴 Dolu · 0/4 · şimdi", "⚪ Bilinmiyor"; doluluk verisi yoksa boş metin. */
 export function slotLabel(s) {

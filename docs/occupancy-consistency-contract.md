@@ -26,13 +26,13 @@ Biçimlendirici bu varsayımı kabul etmez. Hangisinin geçerli olacağı **kull
 
 | Kimlik | Bugünkü davranış (sentetik NDW fikstürü) | Etki | Yer |
 |---|---|---|---|
-| G1 | `isFresh` NDW fetched kaydını taze sayar | planlayıcı/nav tazelik kapısı açık | `slots.js` `isFresh` |
-| G2 / G2b | `slotKind` 0/4 → `full`, 2/4 → `free` | "dolu"/"boş" kararı, biçimlendirici `unknown` | `slots.js` `slotKind` |
+| ~~G1~~ | **KAPANDI (D3-T5, v0.99.84) → ACCEPT:** `isFresh` okuma anını (`checked`) değil doğrulanmış kararı (`trustedOccupancy` → `occupancyDecision` + sunucu vetosu) kullanır; NDW fetched → taze değil. Önce: NDW fetched kaydını taze sayıyordu | — | `slots.js` `isFresh` |
+| ~~G2 / G2b~~ | **KAPANDI (D3-T5, v0.99.84) → ACCEPT:** `slotKind` NDW fetched 0/4 ve 2/4 → `unknown`; yalnız doğrulanmış resmî doluluk `free`/`full`/`out`; topluluk bildirimi `slotKind`e girmez. Önce: 0/4 → `full`, 2/4 → `free` | — | `slots.js` `slotKind` |
 | ~~G3 / G3b / G3c~~ | **KAPANDI (D3-T4, v0.99.83) → ACCEPT:** `slotEl`/`slotLabel` saf `occupancyDecision` ile yalnız 🟢 Müsait / 🔴 Dolu / ⚪ Bilinmiyor; NDW fetched → "⚪ Bilinmiyor" (sayı/yaş yok). Önce: "🟢 2/4 boş · şimdi", "🔴 dolu (0/4)" | Yakın istasyonlar listesi, düşük pil kartı, Şarj planı durak satırı, istasyon kartı | `slots.js`; çağıranlar `nearby.js`, `routePanel.js`, `stationCard.js`, `stationsView.js` |
-| G4 / G4b | `nearSort.availability` → `full`; 1 km NDW-dolu, 5 km bilinmeyenin arkasına atılır | sıralama | `nearSort.js` |
-| G5 | `planRoute` NDW 0/4 olan yakın durağı "taze dolu" sayıp plandan çıkarır (`fullNear`/`waitMin`) | rota planı | `planner.js` |
-| G6 (daraltıldı) / ~~G6b~~ | G6: nav/planlayıcı **karar** yolu (`slotKind`/`isFresh`, `planner.js`, `livePlan.js`, `nearby.js` `gone()`) karar modülünü kullanmıyor (açık). G6b **KAPANDI (D3-T4) → ACCEPT:** `sw.js` SHELL `occupancyDecision.js` + `occupancyLabel.js` + `communityReport.js` içerir; görüntü yolu (`slotEl`) bağlı | — | `nearby.js`, `routePanel.js`, `planner.js`, `livePlan.js`, `slots.js`, `sw.js` |
-| G7 | Nav/planlayıcı kararı §3 sözleşmesinden sapar (G1+G2+G5 ortak kökü) | — | — |
+| ~~G4 / G4b~~ | **KAPANDI (D3-T5, v0.99.84) → ACCEPT:** `nearSort.availability` NDW 0/4 → `unknown`; 1 km NDW kaydı 5 km bilinmeyenin önünde (mesafe sırası). Önce: `full`, sona atılıyordu | — | `nearSort.js` |
+| ~~G5~~ | **KAPANDI (D3-T5, v0.99.84) → ACCEPT:** `planRoute` NDW 0/4 olan yakın durağı plandan çıkarmaz, bekleme eklemez (`fullNear`/`waitMin`/`usable` aynı `slotKind`/`isFresh` kararını kullanır) | — | `planner.js` |
+| ~~G6~~ / ~~G6b~~ | G6 **KAPANDI (D3-T5, v0.99.84) → ACCEPT:** karar yolu (`slotKind`/`isFresh` → `planner.js`, `routeOptions.js`, `livePlan.js` anons, `nearby.js` `gone()`/`pen`/not, `nearSort.js`, `chargePick.js`) `slots.js` `trustedOccupancy` ile `occupancyDecision` kullanır. G6b KAPANDI (D3-T4) → ACCEPT: `sw.js` SHELL karar + biçimlendirici modüllerini içerir | — | `slots.js` |
+| ~~G7~~ | **KAPANDI (D3-T5, v0.99.84) → ACCEPT:** nav/planlayıcı kararı §3 sözleşmesinden sapmaz (NDW fetched 2/4, 0/4, 3 sa eski) | — | — |
 
 Ek (test edilmedi, kaynakta görülen): `livePlan.js` aynı `slotKind` ile sesli "{istasyon} istasyonunda şu an boş yuva yok. Plan güncellendi."
 der; `nearby.js` düşük pilde "N dolu istasyon elendi" notu yazar (`gone()` = `isFresh && full`). İkisi de G1/G2'ye bağlıdır.
@@ -60,8 +60,8 @@ Tek doğruluk kaynağı `formatOccupancy(slots.availability, { now })` olur (`d`
 ## 4. Önerilen küçük uygulama aşamaları (her biri ayrı görev, ayrı commit, sürüm artışıyla)
 
 1. **R3-a (saf, bağlı değil):** `slots.js` yanına saf `occupancyDecision(slots, now)` → `{ trusted, state }` (biçimlendiriciyi sarar). Yalnız test; çağıran yok.
-2. **R3-b (planlayıcı):** `planner.js` `usable`/`waitMin`/`fullNear` → `occupancyDecision`. Test: G5 → ACCEPT, `test-stop-swap`, `test-route-options`, `test-rank-nocharge`.
-3. **R3-c (nav kararları):** `nearby.js` `gone()`/`pen`/notlar, `nearSort.availability`, `livePlan.js` anons koşulu. Test: G1/G2/G4 → ACCEPT, `test-near-sort`, `test-charge-pick`.
+2. **R3-b (planlayıcı) — Yapıldı: D3-T5 (v0.99.84), merkezi `slots.js` `slotKind`/`isFresh`:** `planner.js` `usable`/`waitMin`/`fullNear` → `occupancyDecision`. Test: G5 → ACCEPT, `test-stop-swap`, `test-route-options`, `test-rank-nocharge`.
+3. **R3-c (nav kararları) — Yapıldı: D3-T5 (v0.99.84), aynı merkezi karar; `nearSort` `slotKind(s, now)`; yeni `test-occupancy-consumers`:** `nearby.js` `gone()`/`pen`/notlar, `nearSort.availability`, `livePlan.js` anons koşulu. Test: G1/G2/G4 → ACCEPT, `test-near-sort`, `test-charge-pick`.
 4. **R3-d (görüntü):** `slotEl`/`slotLabel` unknown'da boş/dolu yazmaz (ya da `occupancyView` bağlanır + `sw.js` SHELL). Test: G3/G6 → ACCEPT; i18n gerekirse `i18n-validate`. → **Yapıldı: D3-T4 (v0.99.83)** — `slotEl` düzeltildi (`occupancyView` bağlanmadı); G3/G3b/G3c/G6b ACCEPT, G6 karar yoluna daraltıldı; `test-occupancy-ui`; 2 yeni çeviri anahtarı (11 dil).
 5. **R3-e (isteğe bağlı, sunucu):** NDW eski `at` alanı `null` ya da `availability` ile tutarlı hâle getirilir (sunucu yeniden başlatma = kullanıcı onayı).
 

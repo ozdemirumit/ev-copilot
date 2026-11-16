@@ -40,9 +40,14 @@ ok('ulaşılamayan en ucuz seçilmez', pickEmergency([st('u', { price: 5, reacha
 ok('varış pili güvenli sınırın altındaysa seçilmez', pickEmergency([st('u', { price: 5, arrive: 4 }), st('a', { price: 15 }), st('b', { price: 14 })]).station.id === 'b');
 ok('rota dışı istasyon seçilmez', pickEmergency([st('off', { price: 5 }), st('a', { price: 15 }), st('b', { price: 14 })], { onRoute: (s) => s.id !== 'off' }).station.id === 'b');
 {
-  const full = { total: 4, available: 0, out: 0, checked: Date.now() };
-  const out = { total: 4, available: 0, out: 4, checked: Date.now() };
+  // D3-T5: yalnız doğrulanmış resmî doluluk (sağlayıcı zaman damgası ≤ 15 dk) dolu/arızalı sayılır
+  const { buildAvailability } = await import('../server/availability.mjs');
+  const n = Date.now();
+  const verified = (counts) => buildAvailability({ source: 'here', counts, at: n - 60e3, fetchedAt: n, now: n });
+  const full = { total: 4, available: 0, out: 0, checked: n, availability: verified({ CHARGING: 4 }) };
+  const out = { total: 4, available: 0, out: 4, checked: n, availability: verified({ OUTOFORDER: 4 }) };
   ok('dolu ve arızalı seçilmez', pickEmergency([st('f', { price: 5, slots: full }), st('o', { price: 6, slots: out }), st('a', { price: 15 }), st('b', { price: 14 })]).station.id === 'b');
+  ok('D3-T5: zaman damgasız "dolu" dolu sayılmaz (aday kalır)', pickEmergency([st('f', { price: 5, slots: { total: 4, available: 0, out: 0, checked: n } }), st('a', { price: 15 }), st('b', { price: 14 })]).station.id === 'f');
 }
 ok('tercih edilen marka önce', pickEmergency([st('a', { price: 12, opId: 'x' }), st('b', { price: 15, opId: 'y' }), st('c', { price: 16, opId: 'y' })], { brandOk: (s) => s.opId === 'y' }).station.id === 'b');
 ok('tercih edilen markada hızlı yoksa tüm markalar', pickEmergency([st('a', { price: 12, opId: 'x' }), st('b', { price: 15, opId: 'x' }), st('c', { srcKw: 60, kw: 60, opId: 'y' })], { brandOk: (s) => s.opId === 'y' }).station.id === 'a');
