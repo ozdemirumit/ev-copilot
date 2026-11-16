@@ -1,7 +1,7 @@
 // Harita bağdaştırıcısı: MapLibre GL JS (yerel vendor/maplibre kopyası, BSD-3) + OpenFreeMap vektör karoları (OpenStreetMap verisi,
 // anahtarsız). Gövde ortak vektör-harita motorundadır (mapEngine.js); burada kütüphane yükleme, stil ve Esri uydu stratejisi kalır.
 import { createVectorMap, buildingsLayer, BUILDINGS_3D } from './mapEngine.js';
-import { providerRequestsPaused } from '../../net/providerGate.js';
+import { providerRequestsPaused, freeOnlyMode, freeMapRequest } from '../../net/providerGate.js';
 
 const STYLE = 'https://tiles.openfreemap.org/styles/dark';
 const VENDOR = new URL('../../../vendor/maplibre/', import.meta.url).href;
@@ -61,8 +61,11 @@ const BUILDINGS = {
   hide: ['building'],
 };
 
-export async function createMapLibreMap(container, { paused = providerRequestsPaused() } = {}) {
+/** Yalnız ücretsiz mod (kapalı cihaz testi derlemesi): OpenFreeMap stili + transformRequest izin listesi (Worker karoları dahil);
+ *  Esri/ArcGIS uydu katmanı EKLENMEZ. Duraklatma her zaman önce gelir (ikisi birden → yerel boş stil). */
+export async function createMapLibreMap(container, { paused = providerRequestsPaused(), freeOnly = freeOnlyMode() } = {}) {
   const ml = await loadMapLibre(); // yerel vendor/maplibre kopyası (aynı köken)
   if (paused) return createVectorMap(ml, container, { mapOptions: { style: structuredClone(OFFLINE_STYLE) }, name: 'offline' }); // uydu (Esri) ve 3B bina yok: harici karo yok
+  if (freeOnly) return createVectorMap(ml, container, { mapOptions: { style: STYLE, transformRequest: freeMapRequest }, name: 'osm', buildings: BUILDINGS }); // uydu yok
   return createVectorMap(ml, container, { mapOptions: { style: STYLE }, name: 'osm', satellite: esriSatellite(), buildings: BUILDINGS });
 }

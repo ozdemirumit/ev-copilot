@@ -1,5 +1,8 @@
 // Beta (paralel) sürüm üretir: genel uygulama dosyalarını ayrı bir klasöre kopyalar ve canlı uygulamayla çakışan adları değiştirir.
 // Kullanım: node scripts/build-beta.mjs [çıktı-klasörü]   (varsayılan: ../ev-copilot-beta)
+//          node scripts/build-beta.mjs --free-only <depo-dışı-boş-klasör>   (YALNIZ kapalı cihaz testi; YAYIMLANMAZ)
+// --free-only: js/net/providerGate.js PROVIDER_MODE_BUILD 'paused' → 'free-only' (yalnız ücretsiz izin listesi). Kaynak dosya değişmez.
+// Fail-closed: klasör açıkça verilmeli; ../ev-copilot-beta (herkese açık Beta deposu), git deposu olan ya da proje içi klasör reddedilir.
 // Neden: beta ve canlı uygulama aynı alan adında (ozdemirumit.github.io) çalışır; localStorage öneki, IndexedDB adı ve
 // servis çalışanı önbellek adları ortak olursa iki sürüm birbirinin verisini ve önbelleğini bozar.
 // Gizli bilgi içermez: yalnızca index.html, css, js, vendor, icons, sw.js, manifest, version.js kopyalanır (server/ ve .env asla).
@@ -8,7 +11,17 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const out = resolve(process.argv[2] || join(root, '..', 'ev-copilot-beta'));
+const args = process.argv.slice(2);
+const flags = args.filter((a) => a.startsWith('--'));
+const positional = args.filter((a) => !a.startsWith('--'));
+const unknown = flags.filter((a) => a !== '--free-only');
+if (unknown.length || positional.length > 1) throw new Error('Bilinmeyen bağımsız değişken: ' + [...unknown, ...positional.slice(1)].join(' '));
+const FREE_ONLY = flags.includes('--free-only');
+const PUBLIC_REPO = resolve(join(root, '..', 'ev-copilot-beta'));
+if (FREE_ONLY && !positional[0]) throw new Error('--free-only için çıktı klasörü açıkça verilmeli (varsayılan yayın deposu kullanılmaz)');
+const out = resolve(positional[0] || PUBLIC_REPO);
+if (FREE_ONLY && out.toLowerCase() === PUBLIC_REPO.toLowerCase()) throw new Error('--free-only çıktısı herkese açık Beta deposuna yazılamaz: ' + out);
+if (FREE_ONLY && existsSync(join(out, '.git'))) throw new Error('--free-only çıktısı bir git deposuna yazılamaz (yayımlanmasın): ' + out);
 const ITEMS = ['index.html', 'offline.html', 'manifest.webmanifest', 'version.js', 'sw.js', 'css', 'js', 'vendor', 'icons'];
 const KEEP = new Set(['.git', 'README.md']); // çıktı klasörünün kendi git deposu ve açıklaması silinmez
 
@@ -62,7 +75,7 @@ walk(join(out, 'js'));
   const p = join(out, 'index.html');
   const s = readFileSync(p, 'utf8');
   if (!s.includes('<title>EV Route Finder</title>')) throw new Error('index.html başlığı beklenen biçimde değil');
-  writeFileSync(p, s.replace('<title>EV Route Finder</title>', '<title>EV Route Finder (Beta)</title>'));
+  writeFileSync(p, s.replace('<title>EV Route Finder</title>', FREE_ONLY ? '<title>EV Route Finder (Beta – yerel ücretsiz test)</title>' : '<title>EV Route Finder (Beta)</title>'));
 }
 // offline.html "Tekrar dene": Beta önizleme adresinde kalsın (kaynak/üretim offline.html ve Android server.url değişmez)
 {
@@ -73,6 +86,17 @@ walk(join(out, 'js'));
   writeFileSync(p, s.replace(prod, "location.replace('https://ozdemirumit.github.io/EV-Route-Finder/')"));
 }
 writeFileSync(join(out, '.nojekyll'), '');
+
+// Yalnız ücretsiz mod (kapalı cihaz testi): derleme modu satırı tam bir kez değiştirilir; bulunamazsa derleme durur (fail-closed).
+if (FREE_ONLY) {
+  const p = join(out, 'js', 'net', 'providerGate.js');
+  const s = readFileSync(p, 'utf8');
+  const from = "export const PROVIDER_MODE_BUILD = 'paused';";
+  if (s.split(from).length !== 2) throw new Error('providerGate.js derleme modu satırı tam bir kez bulunamadı');
+  writeFileSync(p, s.replace(from, "export const PROVIDER_MODE_BUILD = 'free-only';"));
+  writeFileSync(join(out, 'FREE-ONLY-LOCAL-TEST.txt'), 'EV Route Finder Beta — YALNIZ UCRETSIZ SAGLAYICI MODU, kapali cihaz testi icin yerel derleme.\n' +
+    'YAYIMLAMAYIN (GitHub Pages / ev-copilot-beta / herhangi bir genel sunucu). Ayrinti: docs/free-only-device-test.md\n');
+}
 
 // Doğrulama: çakışan adlar kalmadı mı?
 const leftovers = [];
@@ -87,5 +111,5 @@ const scan = (dir) => {
 };
 scan(out);
 if (leftovers.length) { console.error('Çakışan ad kaldı:', leftovers); process.exit(1); }
-console.log('Beta hazır:', out);
+console.log(FREE_ONLY ? 'Beta (YALNIZ ÜCRETSİZ, yerel test — yayımlamayın) hazır:' : 'Beta hazır:', out);
 console.log('Değişen ad sayıları:', counts);

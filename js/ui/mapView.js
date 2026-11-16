@@ -9,7 +9,7 @@ import { createGoogleMap } from './maps/google.js';
 import { createTomTomMap } from './maps/tomtom.js';
 import { setActiveMap } from '../net/activeMap.js';
 import { resolveProvider, forceOsm } from '../net/mapConfig.js';
-import { providerRequestsPaused } from '../net/providerGate.js';
+import { providerRequestsPaused, freeOnlyMode } from '../net/providerGate.js';
 import { showTab } from './tabs.js';
 import { navCamera, followAnchorPx, groundAheadPx } from './navCamera.js';
 import { icon } from './icons.js';
@@ -103,6 +103,9 @@ export function initMap() {
     if (providerRequestsPaused()) { // kota koruması: /v1/map/config sorulmaz, Mapbox/Google/TomTom betiği ve karo yüklenmez; yerel boş stil
       toast('Sağlayıcı istekleri duraklatıldı (kota koruması): harita altlığı ve canlı veriler kapalı');
       return createMapLibreMap(mapEl, { paused: true });
+    }
+    if (freeOnlyMode()) { // yalnız ücretsiz mod (kapalı cihaz testi): /v1/map/config sorulmaz, doğrudan OpenFreeMap; Esri/Mapbox/Google/TomTom yok
+      return createMapLibreMap(mapEl, { paused: false, freeOnly: true });
     }
     const cfg = await resolveProvider();
     if (cfg.provider !== 'osm') {

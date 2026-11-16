@@ -95,6 +95,11 @@ Hepsi: Beta'da providerGate (istemci) + server/providerGate.mjs varsayılan DURA
   `scripts/test-server-quota.mjs`; `test-d2-quota-inventory` KNOWN-GAP satırları `ok(...)` kabul denetimine çevrildi.
 - Harita karoları MapLibre Web Worker'ından yüklenir: `fetch` sarmalayıcısı ve bu manifest onları görmez (`providerGate.js:8`);
   takip kamerası GPS ile kaydıkça karo isteği oluşabilir. Duraklatmada yerel boş stil kullanılır. Sayılmadı → G2.
+- **Yalnız ücretsiz mod (v0.99.92, `dee61f95`):** yalnız `build-beta.mjs --free-only` yerel çıktısında `providerGate.js` izin listesi
+  (`FREE_ENDPOINTS`: OpenFreeMap, Valhalla, Open-Meteo, Photon, Nominatim, Overpass) + ana makine başına jeton kovası/saatlik tavan;
+  `proxyHas()` false, kişisel Mapbox/OCM anahtarı kullanılmaz; harita Worker istekleri `freeMapRequest` (transformRequest) ile yalnız
+  OpenFreeMap. Yeni çağrı noktası ya da köken EKLENMEDİ (sink manifestosu ve 16 köken aynı). Kanıt `scripts/test-free-only-mode.mjs`;
+  kullanım ve cihaz kanıt listesi `docs/free-only-device-test.md`. Kaynak varsayılanı duraklatılmış kalır.
 - **S-0 (G2b ile kapandı, v0.99.89):** `nearby.refreshNearby` atılan hata (throw) yolunda `meta.at` yazılmıyordu. `fetchAround` reddi
   gerçek: sunucu Mapbox 402/401/501 ya da sunucuya ulaşılamaması `categoryId` içinde fatal olarak yeniden atılır (`mapbox/chargers.js`).
   Sonuç: güvenilir düşük pilde `refreshNearby → checkLow → autoSearch → refreshNearby` beklemesiz döngü (sanal saatte aynı anda 26+

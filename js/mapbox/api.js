@@ -2,8 +2,9 @@
 // Anahtar yalnızca bu cihazın LocalStorage'ında durur (`mbKey`); herkese açık "pk." anahtarı olmalı, gizli "sk." anahtarı kabul edilmez.
 import { load } from '../utils/storage.js';
 import { proxyBase, proxyFetch, proxyFetchRetry, proxyHas } from '../net/proxy.js';
+import { freeOnlyMode } from '../net/providerGate.js';
 
-export const mapboxKey = () => (proxyHas('mapbox') ? 'proxy' : load('mbKey', '')); // ara sunucuda anahtar varsa o kullanılır (anahtar telefona yazılmaz)
+export const mapboxKey = () => (freeOnlyMode() ? '' : proxyHas('mapbox') ? 'proxy' : load('mbKey', '')); // ara sunucuda anahtar varsa o kullanılır (anahtar telefona yazılmaz); yalnız ücretsiz modda kişisel anahtar da kullanılmaz
 export const MB_VALID = /^pk\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}$/;
 
 export class MapboxError extends Error {

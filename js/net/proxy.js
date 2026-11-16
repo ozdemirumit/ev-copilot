@@ -2,6 +2,7 @@
 // Mapbox, OpenChargeMap ve Overpass istekleri sunucudan geçer, anahtarlar sunucuda durur. Eski yöntem (yönetici erişim kodu) gelişmiş ayar olarak durur.
 // Hesap yoksa ya da sunucuya ulaşılamazsa uygulama servislere doğrudan gider.
 import { load, save } from '../utils/storage.js';
+import { freeOnlyMode } from './providerGate.js';
 
 export const DEFAULT_SERVER = 'https://evcopilot.duckdns.org'; // herkese açık adres (gizli değil); gelişmiş ayardan değiştirilebilir
 
@@ -27,8 +28,9 @@ export function deviceId() {
 const hasCreds = () => !!(getSession() || proxyCode());
 export const proxyReady = hasCreds; // hesapla giriş ya da yönetici kodu var mı
 
-/** Sunucu kullanılabilir mi ve istenen özelliği (mapbox | ocm | overpass) sağlıyor mu. */
-export const proxyHas = (what) => !!(hasCreds() && caps?.[what]);
+/** Sunucu kullanılabilir mi ve istenen özelliği (mapbox | ocm | overpass) sağlıyor mu. Yalnız ücretsiz modda (providerGate.js) daima false:
+ *  sunucunun her yeteneği bir üst sağlayıcıya gider; ücretli/sağlayıcı yolu hiç seçilmez, doğrudan ücretsiz kaynak kullanılır. */
+export const proxyHas = (what) => !freeOnlyMode() && !!(hasCreds() && caps?.[what]);
 export const getPlan = () => (getSession() ? plan : null);
 /**
  * Sunucunun Premium saydığı erişim (sunucudaki premiumOk ile aynı): hesapla girişte plan Premium (ya da yönetici), hesapsız eski yönetici erişim koduyla her zaman.

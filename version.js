@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.91';
+self.APP_VERSION = '0.99.92';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.92', date: '2026-11-16',
+    notes: [
+      'Yalnız kapalı cihaz testi için: Beta, isteğe bağlı "yalnız ücretsiz" yerel derlemeyle (build-beta --free-only) üretilebilir. Bu derlemede harita doğrudan OpenFreeMap ile açılır, rota Valhalla, hava ve yükselti Open-Meteo, arama Photon/Nominatim, şarj istasyonları Overpass\'tan gelir; Mapbox, Google, TomTom, HERE, ABRP ve Esri uydu gibi ücretli kaynaklara hiç istek gönderilmez ve ücretsiz servislerin istek sınırlarına uyulur. Normal Beta ve canlı uygulama değişmedi: sağlayıcı istekleri orada hâlâ duraklatılmış.',
+    ],
+  },
   {
     v: '0.99.91', date: '2026-11-16',
     notes: [
