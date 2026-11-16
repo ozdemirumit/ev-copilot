@@ -264,3 +264,120 @@ sonucudur ve K1/K4 teyidinde kullanıcıya açıkça söylenmelidir.
 3. **D3-T1 = R3-a** (§5 tanımı; K1 = evet seçilirse kapsam yeniden yazılır): saf `occupancyDecision`, çağıran yok, `version.js` artışı.
 4. **R3-b** planlayıcı (K3 gerekir) → **R3-c** nav kararları → **R3-d** görüntü (K5) → **R3-e** sunucu (yeniden başlatma onayı).
 5. Canlı doğrulama: kota/G-PAID onayı + temizlenmiş fikstür (D5) + cihaz (D6). `verified` yalnız kullanıcı.
+
+## 7. Durum kaydı 2026-11-16 — D3-T0 ve T-SAFE-1 tamamlandı; depo içi test ağ engelleyicisi yazıldı (COMMIT EDİLMEDİ — STOP); D3 kullanıcı kararları BEKLİYOR (köprü `83d3680e`; yalnız test altyapısı + belge)
+
+Temel: `integ/beta-2026-11-14` @`0987a72` (v0.99.80, yerel, temiz), yalıtılmış worktree `MBRP-netguard`, dal `test/netguard-hardening-0987a72`.
+Uygulama `js/`, `server/`, `version.js`, `sw.js`, navigasyon ve şarj davranışı **değişmedi**; sürüm artmaz. Gerçek sağlayıcı isteği (ücretli
+ya da ücretsiz) yapılmadı. Push/yayın/cihaz yok; **Beta NO-GO** sürüyor.
+
+### 7.1 Tamamlanan görevler (yerel entegre; `verified` DEĞİL)
+
+| Köprü | Oturum | İş | Commit | Entegrasyon (git'ten okundu) |
+|---|---|---|---|---|
+| `531d536f` | `7e7face6` | D3-T0: salt okunur doluluk karar modeli hazırlığı + test güvenliği denetimi (§6) | `9394189` (yalnız belge: bu dosya §6 + `docs/beta-next-backlog.md` §1a) | `--ff-only` integ, reflog 2026-11-16 04:47:37 +0300; köprü `completed`, çıkış 0 (01:39–01:48Z) |
+| `8a21b5a9` | `cfbf8802` | T-SAFE-1: `test-map-provider` / `test-providers-endpoint` her `start()` öncesi geçici `DATA_DIR`'e taze boş `tesla.json` yazar → sunucu açılışında `supercharge.info` isteği yok | `0987a72` (yalnız iki test dosyası, +5 satır) | `--ff-only` integ, reflog 2026-11-16 06:39:47 +0300; köprü `completed`, çıkış 0 (03:33–03:40Z) |
+
+"Tamamlandı" = commit + çevrimdışı testler + yerel `--ff-only`. Push, Beta yayını, gerçek cihaz ya da gerçek sağlayıcı yanıtıyla doğrulama yok.
+
+### 7.2 Depo içi test ağ engelleyicisi (bu görev; yalnız test altyapısı; commit edilmedi)
+
+- **Dosyalar:** `scripts/netguard.mjs` (engelleyici; `NODE_OPTIONS=--import=…` ile yüklenir, uygulama/sunucu içe aktarmaz),
+  `scripts/test-netguard.mjs` (öz-sınama), `scripts/run-tests-guarded.mjs` (ön denetim + `check.mjs` + tüm `scripts/test-*.mjs` sıralı).
+  Depo dışı `D:/AI-Codes/netguard-tmp/netguard.mjs` ve `D:/AI-Codes/d3t0-logs/netguard-fixed.mjs` yalnız okundu, değiştirilmedi.
+- **Kapatılan açıklar (§6.4'e ek):** `dns.resolve*` / `reverse` / `lookupService` (geri çağrı, `dns.promises`, `dns.Resolver`,
+  `dns.promises.Resolver`; c-ares DNS sunucusuna doğrudan gider, `lookup` sarmalayıcısını atlar) her zaman reddedilir; `dgram`
+  `send`/`connect` yerel olmayan adrese ve çoklu yayın üyeliği reddedilir; `/^127\./` ad açığı (`127.evil.invalid` yerel sayılıyordu)
+  kapandı — yalnız `localhost` ve loopback IP (127/8, `::1`, `::ffff:127/104`) izinli, `0.0.0.0` değil; `localhost` çözümü ve özel
+  `lookup` seçeneği sonucu loopback değilse reddedilir; ESM adlandırılmış içe aktarmalar (`import { resolve4 } from 'node:dns'`)
+  `syncBuiltinESMExports` ile kapsanır; `child_process` çağrılarına engelleyici `NODE_OPTIONS` ile enjekte edilir — böylece
+  `test-package-parity`'nin ortamı PATH/SystemRoot'a indirerek başlattığı `build-beta.mjs` çocuğu da korunur (eski engelleyicide
+  korumasızdı); `worker_threads.Worker`, `process.binding(ağ sarmalayıcıları)`, `process.dlopen` reddedilir. `dns.setServers`
+  sarmadan ÖNCE loopback'e çekilir (Node `setServers` dışa aktarımları yeniden bağlar; öz-sınama bu sıralama hatasını yakaladı).
+- **0 gerçek DNS/ağ denemesi kanıtı:** `test-netguard` engelleyiciyi, hiçbir zaman ağa çıkmayan tuzak (tripwire) işlevlerin
+  ÜSTÜNE kurar ve yalnız sentetik `.invalid` / RFC 5737 `192.0.2.x` hedefleriyle her yolu dener: her yerel olmayan denemede
+  engelleyici reddeder VE alttaki tuzağa inen çağrı 0'dır; loopback kontrolleri tuzağa ulaşır (sınama boş değil). Gerçek alt süreç
+  ve ortamı indirilmiş torun süreçte tüm uçların sarılı olduğu yalnız işaret denetimiyle (ağ çağrısı olmadan) doğrulanır.
+  Sonuç: `test-netguard` **214/0** (tek başına ve dış engelleyici altında; ikinci durumda dış günlük hiç oluşmadı).
+- **Koşu (`node scripts/run-tests-guarded.mjs`, belge düzenlemesinden önce, @`0987a72` + 3 yeni betik):** `check.mjs` v0.99.80 / 267 kayıt / 185 dosya çıkış 0; 95 dosya (check + 94 test) 94 PASS / **1 FAIL** (`test-station-card-layout` 57/1, "chromium 320x568: kart ve olanaklar yüklendi" chips=0); 0 BLOCK satırı; node dışı çocuklar `Playwright.exe`, `chrome.exe`, `git`, `icacls`. **Bu koşuda Chromium ve WebKit gerçekten başlatıldı ve Node engelleyicisinin DIŞINDA çalıştı** (bkz. aşağı).
+- **Tarayıcı engellendikten sonra (2. koşu):** ön denetim 214/0; `check.mjs` 185 dosya çıkış 0; 95 dosya 94 PASS / **1 FAIL** (`test-station-card-layout`: `browserType.launch` → `BLOCK_CHILD chrome.exe`, tarayıcı hiç başlamadı); tam olarak 1 BLOCK satırı (o `chrome.exe`), ağ BLOCK satırı 0; `test-map-provider` 534/0 ve `test-providers-endpoint` 44/0 **0 blok → 0 `supercharge.info`** (T-SAFE-1 korunuyor); `test-package-parity` 56/0, `test-beta-tracker` 64/0; node dışı çocuk yalnız `git`, `icacls`.
+- **STOP — tarayıcı testi engelleyicinin dışında:** `scripts/test-station-card-layout.mjs` (yerelde `%TEMP%\evrf-ocr\node_modules\playwright-core`
+  ve `ms-playwright` tarayıcıları varsa) Playwright ile `chrome.exe` / `Playwright.exe` başlatır. Sayfa istekleri test içinde `p.route` ile
+  yerel olmayanlara 404 döner ve Playwright arka plan ağını kapatan bayraklar (`--disable-background-networking`, `--disable-component-update` …)
+  kullanır; ama tarayıcı süreci Node engelleyicisinin kapsamı dışındadır, bu yüzden "0 harici deneme" **kanıtlanamaz**. Önceki engelleyicili
+  koşularda da (`d3t0-logs`, `tsafe1-logs`) bu test tarayıcıyı başlatıyordu; "0 blok" o koşularda tarayıcıyı kapsamıyordu. Bu görevde bir koşu
+  (1. koşu) tarayıcıyı başlattı — fark edildikten sonra engelleyici fail-closed yapıldı (izinli node dışı çocuk yalnız `git`, `icacls`) ve
+  tarayıcılı koşu tekrarlanmadı. Görev kuralı (sızma olasılığı → STOP, 0 FAIL) gereği **commit ve integ ff yapılmadı**; değişiklikler
+  `MBRP-netguard` worktree'sinde commit edilmemiş durur. **Kullanıcı kararı gerekir** (seçenekler, öneri değil karar sizin):
+  (a) tarayıcı testi engelleyicili koşuda `PLAYWRIGHT_CORE`'u yok bir yola çevirerek testin kendi "atlandı" yoluna düşsün (tarayıcı
+  denetimleri bu koşuda sayılmaz — CLAUDE.md §4 "atlama" kuralı nedeniyle açık onay ister); (b) tarayıcı başlatmaya izin verilsin, sayfa
+  `p.route` + Playwright bayraklarıyla sınırlı kabul edilsin (artık risk kabulü); (c) tarayıcı testi yalnız işletim sistemi düzeyinde
+  dış ağ engeli (güvenlik duvarı kuralı; yönetici yetkisi) altında koşulsun.
+- **Kalan sınırlar (bilinçli):** engelleyici yalnız Node süreçlerini korur (işletim sistemi güvenlik duvarı değildir); node olmayan
+  çocuk süreçler `git`/`icacls` dışında reddedilir (izinliler `INFO_CHILD` olarak günlüğe girer; pakette `git status` ve `icacls` yerel); `internalBinding` yalnız
+  `--expose-internals` ile erişilebilir, testlerde yok. Ön denetim başarısızsa koşucu hiçbir testi çalıştırmaz (çıkış 2) —
+  bu görevde bir kez tetiklendi (öz-sınama beklentisi koşucu ortamına göre düzeltildi, engelleyici değişmedi), testler o koşuda başlamadı.
+
+### 7.5 Kullanıcı kararı (b) uygulandı — tarayıcı testi sınırlı izinle; commit + integ ff (köprü `6883b3a8`, 2026-11-16)
+
+Kullanıcı kararı (aynen): *"Playwright testlerinin mevcut yönlendirmelerle çalıştırılmasındaki kalan ağ riskini kabul ediyorum. Ücretli
+sağlayıcı isteklerini yine de engelle."* Kapsam: yalnız Playwright'ın mevcut `p.route` yönlendirmeleri, Playwright'ın varsayılan arka plan
+ağ kapatma bayrakları ve mevcut test sınırlarıyla başlatılması. Ücretli/kotalı sağlayıcı çağrısı, genel ağ açılması, canlı yayın ya da test
+atlama onayı **değildir**. §7.2'deki STOP bu kararla kapandı; `83d3680e`'nin commit edilmemiş 6 dosyası `6883b3a8` tarafından sahiplenildi.
+
+- **`scripts/netguard.mjs`:** Node dışı çocuk süreç yine fail-closed (`git`/`icacls` dışında red). TEK istisna: çağıran betik
+  `test-station-card-layout.mjs` ise (`BROWSER_SCRIPTS`), yalnız `spawn` ile, yalnız `%LOCALAPPDATA%\ms-playwright\chromium-*\chrome-win64\chrome.exe`
+  ya da `webkit-*\Playwright.exe`, yalnız headless + pipe (Chromium'da `--disable-background-networking` ve `--remote-debugging-pipe`
+  zorunlu; `--remote-debugging-port`, `--proxy-*`, `--host-rules`, `--load-extension` yasak) ve yalnız Playwright bu engelleyici
+  tarafından sarılmışsa (`Module._load`) → `INFO_BROWSER`. Playwright sarmalı: `launch` yalnız `executablePath`/`headless`/`timeout`
+  (`args`, `ignoreDefaultArgs`, `proxy`, `channel`, `headless:false` red); `launchPersistentContext`/`launchServer`/`connect`/
+  `connectOverCDP` ve örtük `browser.newPage` red; `newContext` `serviceWorkers:'block'` zorunlu, `proxy` red; `goto` yalnız loopback ve
+  ancak `'**/*'` route kurulduktan sonra; route içinde harici isteğe `continue`/`fallback`/`fetch` → `abort` + `BLOCK_BROWSER_CONTINUE`;
+  route'tan geçmeyen ya da kapanışta bekleyen harici istek → `BLOCK_BROWSER_UNROUTED`; gerçek sunucu adresli (`serverAddr`) harici yanıt →
+  `BLOCK_BROWSER_NETWORK`. Yerelde sahte yanıtlanan harici istek `INFO_BROWSER_MOCKED_PROVIDER` (ücretli/kotalı sağlayıcı ya da onlara
+  vekil kendi sunucumuz `evcopilot.duckdns.org`) / `INFO_BROWSER_MOCKED_HOST`. Günlüğe yalnız ana makine adı girer (yol/sorgu girmez).
+- **`scripts/run-tests-guarded.mjs`:** tüm testlere `EVRF_REQUIRE_BROWSER=1` (tarayıcı bölümü atlanamaz); `test-station-card-layout`
+  çıktısında "atlandı" varsa ya da Chromium+WebKit için `INFO_BROWSER` yoksa FAIL; başka betikte tarayıcı satırı FAIL; özet tarayıcı
+  satırlarını listeler. İzinli betik listesi `netguard.mjs`'ten metin olarak okunur (koşucu kendini sarmaz).
+- **`scripts/test-netguard.mjs`:** 214 önceki denetim değişmedi; +74 denetim (sahte Playwright nesneleri ve tuzak `child_process`; gerçek
+  tarayıcı/ağ yok) → **288/0**. Depo dışı geçici kopyada 3 mutasyon (continue serbest, bayrak denetimi yok, `serverAddr` yok sayılır)
+  sırasıyla 3, 4, 1 FAIL üretti.
+- **Sonuç (`run-tests-guarded`, @`0987a72` + bu değişiklik):** ön denetim 288/0; `check.mjs` v0.99.80 / 185 dosya çıkış 0;
+  **95/95 PASS, 0 FAIL, 0 BLOCK**; `test-station-card-layout` 58/0 (Chromium + WebKit gerçekten çalıştı). Sayfanın 24 harici isteği
+  (`evcopilot.duckdns.org` `/v1/me`, `/v1/station/info`, `/v1/sync`, `/v1/tariffs`; 3 görünüm × 2 tarayıcı) testin route'u ile
+  yerelde yanıtlandı (`/v1/station/info` sahte veri, diğerleri 404); gerçek sunucuya ulaşan sayfa isteği 0.
+- **Kalan risk (kabul edildi, sıfır iddiası YOK):** tarayıcı sürecinin kendi ağ yığını (bileşen güncelleme, güvenli tarama, DNS ön
+  çözümleme, WebKit iç istekleri vb.) Node engelleyicisinin dışındadır; yalnız Playwright'ın varsayılan bayraklarıyla (`--disable-background-networking`,
+  `OptimizationHints`/`NetworkTimeServiceQuerying`/`PreconnectToSearch` kapalı …) sınırlıdır ve gözlenemez. WebKit'te eşdeğer bayrak yoktur.
+  Ek sertleştirme önerisi (uygulanmadı, ayrı onay gerekir): Chromium'a `--host-resolver-rules="MAP * ~NOTFOUND, EXCLUDE 127.0.0.1"` ya da
+  işletim sistemi güvenlik duvarı kuralı (seçenek c).
+- Ürün kodu (`js/`, `server/`, `css/`, `index.html`, `version.js`, `sw.js`) değişmedi; sürüm artmaz. Push/yayın/cihaz yok; **Beta NO-GO** sürer.
+
+### 7.3 BEKLEYEN kullanıcı kararları — onay verilmedi, doğrulanmış sayılmaz
+
+| Karar | Soru | Durum | Bağladığı iş |
+|---|---|---|---|
+| K1 | NDW "AFIR ≤1 dk" tazelik varsayımı kabul mü? | **bekliyor** (§5'teki "hayır" yalnız öneri) | D3-T1 (R3-a) önkoşulu |
+| K2 | NDW 0/N (ayrıntısız) dolu mu, bilinmiyor mu? | **bekliyor** | D3-T1 |
+| K4 | TomTom `fetched` (sağlayıcı zamanı yok) için aynı kural mı? | **bekliyor** | D3-T1 |
+| Aging | 15 dk–2 sa yaşındaki doluluk karar katmanında `unknown` mu, yalnız görüntüde "X dk önce" mi? (§6.3-2) | **bekliyor** | D3-T1 `trusted` bayrağı; görüntü K5/R3-d |
+
+D3 kararı (`approved`, 2026-11-15) yerinde; yukarıdaki dört alt karar **teyit edilmedi**. D3-T1 dahil hiçbir D3 kodu bu kararlar
+gelmeden başlatılmaz. K3, K5, K6 ve R3-e sunucu onayı da ayrıca açıktır (§6.3).
+
+### 7.4 Sıradaki D2 ve D4 alt görevleri — yalnız belge (başlatılmadı; paralel kod görevi açılmadı)
+
+Kural: aynı anda tek kod değiştirici görev; her biri integ HEAD'den yalıtılmış worktree, `scripts/run-tests-guarded.mjs` 0 FAIL / 0 BLOCK,
+yalnız `--ff-only`, push/yayın yok. Karar (`approved`) uygulama izni değildir; kullanıcı girdisi
+gerektirmeyen alt görev de yalnız ayrı, açık görev istemiyle başlatılır.
+
+| Alt görev | Kapsam (öneri) | Kullanıcı girdisi / kapı | Kabul |
+|---|---|---|---|
+| D2-T1 | `server/proxy.mjs` `mapbox()` rota yolunda Premium yetki denetimi; yetki yoksa Free yedek (Valhalla) — M1/M1b | sunucu yeniden başlatma ayrı onay (canlıya alma); Free yedek sağlayıcısının Valhalla olduğu teyidi | `test-mapbox-route-gate` M1/M1b KNOWN-GAP → `ok`; `test-provider-policy*`, `test-secret-hardening`, `test-proxy-retry`, `test-provider-pause` geçer; `f0f448e` kota duraklatması korunur; sürüm artışı |
+| D2-T2 | Mapbox rotası aylık sınır + sayaç (M2/M2b); sınırda Free yedeğe düşüş | **aylık kota değeri** (kullanıcı) | M2/M2b KNOWN-GAP → `ok`; sayaç `DATA_DIR` sahte dizinde sınanır; anahtar değeri hiçbir yerde görünmez |
+| D4-T0 | Örnek cümle fikstürü (yol adı, çıkış no, "ardından", yuvarlama/eşikler) — yalnız test + belge, KNOWN-GAP olarak | örnek cümle listesinin **onayı** | `test-nav-panel`, `test-lanes` geçer; davranış değişmez |
+| D4-T1 | `js/nav/steps.js` Türkçe cümle kurucusu: onaylı fikstüre göre yol adı / çıkış no / birleşik manevra | D4-T0 onayı; çıkış numarası verisi D5 / BL-P2-08'e bağlı | fikstür KNOWN-GAP → `ok`; sürüm artışı; sesli çıktı cihazda (G-DEVICE) |
+| D4-T2 | 12 → 16 dil (BL-P3-08) | **eklenecek 4 dilin adı** (kullanıcı) | `i18n-validate` (yer tutucular korunur); sürüm artışı |
+
+Önerilen sıra (karar değildir): K1/K2/K4 + aging gelirse **D3-T1**; gelmezse kullanıcı girdisi gerektirmeyen tek aday **D2-T1**
+(canlıya alma yine sunucu onayı ister). D4-T0 örnek cümle onayıyla başlar. Hiçbiri bu görevde başlatılmadı.
