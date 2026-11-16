@@ -85,8 +85,11 @@ Hepsi: Beta'da providerGate (istemci) + server/providerGate.mjs varsayılan DURA
 ## 4. Bilinen boşluklar (açık) ve kapsam dışı gözlemler
 
 - **W-1 (G1a ile kapandı, v0.99.87):** hata sonrası en az 60 sn, üstel, en çok 10 dk bekleme; test §E KNOWN-GAP satırı `ok(...)` kabul denetimlerine çevrildi.
-- D2-T0'dan açık: **Q-SOC-1** (`advisor/fallback.js` SOC tabanlı `replanFrom` güven denetimsiz), **Q-SOC-2** (`nearby.checkLow` kaynak
-  denetimsiz arama/doluluk), **Q-SRV-1/2/3** (sunucu sayacı reddedilende artar, aylık sınır NaN'da açık, günlük sayaç bellekte).
+- **Q-SOC-1 / Q-SOC-2 (G1b ile kapandı, v0.99.88):** `advisor/fallback.js` yedek `replanFrom` ve `nearby.js` düşük pil kaynaklı
+  arama/doluluk (`checkLow` refreshOccupancy + autoSearch, `watch` düşük pil sıklığı) yalnızca `socTrusted` (live/manual/Test Modu sim)
+  ile; güvenilmeyen pilde uyarı, ses ve eko-hız tavsiyesi sürer, elle Yenile ve normal sürüş tazelemesi değişmedi. Davranış testi
+  `scripts/test-soc-request-gates.mjs`; `test-d2-quota-inventory` KNOWN-GAP satırları `ok(...)` kabul denetimine çevrildi.
+- D2-T0'dan açık: **Q-SRV-1/2/3** (sunucu sayacı reddedilende artar, aylık sınır NaN'da açık, günlük sayaç bellekte).
 - Harita karoları MapLibre Web Worker'ından yüklenir: `fetch` sarmalayıcısı ve bu manifest onları görmez (`providerGate.js:8`);
   takip kamerası GPS ile kaydıkça karo isteği oluşabilir. Duraklatmada yerel boş stil kullanılır. Sayılmadı → G2.
 - `nearby.refreshNearby` hata (throw) yolunda `meta.at` güncellenmez; `autoSearch` 45 sn bekler. `fetchAround` sağlayıcı hatalarını
@@ -94,8 +97,8 @@ Hepsi: Beta'da providerGate (istemci) + server/providerGate.mjs varsayılan DURA
 
 ## 5. Takip görevleri (YAPILMADI)
 
-- **G1 — istemci düzeltmeleri (uygulama kodu, sürüm artırımı):** W-1 geri çekilme; Q-SOC-1 / Q-SOC-2 `socTrusted` kapısı. Her biri
-  ilgili KNOWN-GAP satırını kabul denetimine çevirir; `test-api-call-graph` D1–D3 sınırları korunur.
+- **G1 — istemci düzeltmeleri:** YAPILDI — G1a W-1 (v0.99.87), G1b Q-SOC-1 / Q-SOC-2 (v0.99.88); `test-api-call-graph` D1–D3
+  sınırları korundu.
 - **G2 — kapsam genişletme:** navigasyon açıkken tam simülasyon (navigator/ahead/speedLimit/nearby/livePlan/roadWarnings birlikte, plan
   yüklü, ücretli sağlayıcı sahte) ile sağlayıcı başına saatlik istek bütçesi; harita karosu sayımı; `nearby` throw yolu; sunucu
   Q-SRV-1/2/3.

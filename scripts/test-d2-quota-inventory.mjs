@@ -222,8 +222,15 @@ ok('duraklatma 503, Mapbox dağıtıcısından önce', PROXY.indexOf('pausedRout
 // ve aylık rota sınırı (M2/M2b) test-mapbox-route-gate.mjs içinde sabitli; burada TEKRARLANMAZ.
 // =====================================================================================================================
 const FB = src('js/advisor/fallback.js');
-knownGap('Q-SOC-1', 'advisor/fallback.js check(): SOC tabanlı replanFrom socTrusted denetimi olmadan (tahmin/varsayılan pil de tetikler; yalnız 60 sn soğuma) → olası Valhalla erişim sorgusu', /replanFrom\(/.test(fnBody(FB, 'check')) && !/socTrusted|socSource/.test(FB));
-knownGap('Q-SOC-2', 'nearby.js checkLow(): düşük pil (kaynak denetimsiz) → refreshOccupancy + autoSearch (ücretli arama sağlayıcıları); yalnız goTo socTrusted kapılı', /refreshOccupancy\(\);/.test(fnBody(NEAR, 'checkLow')) && /autoSearch\(/.test(fnBody(NEAR, 'checkLow')) && (fnBody(NEAR, 'checkLow').match(/socTrusted\(/g) || []).length === 1);
+// Q-SOC-1 / Q-SOC-2 G1b ile KAPANDI → kabul denetimi; davranış testi scripts/test-soc-request-gates.mjs (sanal saat, sahte ağ).
+ok('Q-SOC-1 kapandı: advisor/fallback.js check() replanFrom yalnızca socTrusted (Test Modu sim ya da socSource) ile', /replanFrom\(/.test(fnBody(FB, 'check')) && /if \(prev && socTrusted\(e\.source === 'sim' \? 'sim' : socSource\(\)\)\)/.test(fnBody(FB, 'check')));
+ok('Q-SOC-2 kapandı: nearby.js checkLow() refreshOccupancy + her autoSearch yalnızca güvenilir pilde (socOk); watch() düşük pil sıklığı da', (() => {
+  const body = fnBody(NEAR, 'checkLow');
+  const calls = body.split('\n').filter((l) => /autoSearch\(/.test(l));
+  return /if \(socOk\) refreshOccupancy\(\);/.test(body) && body.indexOf('const socOk = socTrusted(') < body.indexOf('refreshOccupancy(')
+    && calls.length === 3 && calls.every((l) => /socOk\)? (?:&&[^;]*\) )?autoSearch\(|if \(socOk\) autoSearch\(/.test(l))
+    && /const lowNow = inTrouble\(e, nav\) && socTrusted\(e\.source === 'sim' \? 'sim' : socSource\(\)\);/.test(fnBody(NEAR, 'watch'));
+})());
 knownGap('Q-SRV-1', 'overQuota sayacı reddedilen istekte de artar (n+1 yazılır, sonra karşılaştırılır)', /usage\.set\(k, n\);[\s\S]*return n > DAILY\[kind\];/.test(overQ));
 knownGap('Q-SRV-2', 'MAPBOX_MONTHLY_CAP / HERE_MONTHLY_CAP geçersizse NaN → n >= NaN false → sınır kapanmaz (fail-open)', /Number\(env\.MAPBOX_MONTHLY_CAP \|\| 4800\)/.test(PROXY) && Number('abc') !== Number('abc') && !(5 >= Number('abc')));
 knownGap('Q-SRV-3', 'günlük kullanıcı sayacı (overQuota) bellekte (usage Map); sunucu yeniden başlarsa günlük hak sıfırlanır (aylık mbUsage/hereUsage kalıcı)', /const usage = new Map\(\)/.test(PROXY));

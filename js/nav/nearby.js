@@ -421,20 +421,23 @@ function checkLow() {
   }
   if (!troubleSince) troubleSince = Date.now();
   if (Date.now() < dismissedUntil) return;
-  refreshOccupancy(); // Premium: kritik pilde aday istasyonların doluluğunu dakikada bir yenile
+  // Güvenilir pil (taze kamera, elle, Test Modu): düşük pilin KENDİSİ yalnızca bunda dış istek (canlı doluluk, yakın arama) ve otomatik
+  // rota tetikler. Tahmin/eski/varsayılan pilde uyarı ve ses sürer; arama kullanıcının Yenile'sine ve normal sürüş tazelemesine kalır (Q-SOC-2).
+  const socOk = socTrusted(e.source === 'sim' ? 'sim' : socSource());
+  if (socOk) refreshOccupancy(); // Premium: kritik pilde aday istasyonların doluluğunu dakikada bir yenile
 
   const soc = Math.round(e.soc);
   if (!all.length) {
-    const why = meta.at ? (meta.errors[0] ? `arama başarısız: ${meta.errors[0]}` : `${radius} km çevrede istasyon bulunamadı`) : 'aranıyor…';
+    const why = meta.at ? (meta.errors[0] ? `arama başarısız: ${meta.errors[0]}` : `${radius} km çevrede istasyon bulunamadı`) : socOk ? 'aranıyor…' : "aranmadı (pil tahmini) — İstasyonlar'da Yenile'ye dokunun";
     showAlert(`Pil %${soc}: yakındaki istasyonlar ${why}`);
-    autoSearch(meta.at > 0); // önceki arama boş döndüyse yarıçapı 50 km'ye çıkarıp kendiliğinden yeniden dene
+    if (socOk) autoSearch(meta.at > 0); // önceki arama boş döndüyse yarıçapı 50 km'ye çıkarıp kendiliğinden yeniden dene
     return;
   }
-  if (radiusSetting === 'auto' && radius < EMERGENCY_KM) autoSearch(); // pil yeni düştü: liste dar yarıçaptan kalmış olabilir
+  if (socOk && radiusSetting === 'auto' && radius < EMERGENCY_KM) autoSearch(); // pil yeni düştü: liste dar yarıçaptan kalmış olabilir
   const pickPool = rankNearby({ anyBrand: true });
   const ranked = rankNearby(); // elimCount bu listeye göre kalsın
   const best = ranked[0];
-  if (!best) { showAlert(`Pil %${soc}: uygun istasyon bulunamadı`); autoSearch(true); return; }
+  if (!best) { showAlert(`Pil %${soc}: uygun istasyon bulunamadı`); if (socOk) autoSearch(true); return; }
   const planBroken = getState('advisor').level === 'bad';
   const updated = Date.now() - lastAutoVia < 10 * 60e3;
   const premium = proxyHas('occupancy');
@@ -447,8 +450,7 @@ function checkLow() {
   const stations = alertList(card, pick.fast, ranked); // sınırsız: önerilen kart, uygun hızlı istasyonlar, kalan uygun istasyonlar
   showAlert(t(PICK_TITLES[pick.kind], soc) + (updated ? ' ' + t('(rota otomatik güncellendi)') : ''), stations, notes);
   // Plan sıradaki durağa/varışa ulaşılamıyor diyorsa: navigasyonda rotayı en uygun istasyon üzerinden kendiliğinden güncelle.
-  // Yalnızca güvenilir pil (taze kamera, elle, Test Modu): tahmin/eski/varsayılan pilde uyarı ve ses sürer, rota kendiliğinden değişmez.
-  const socOk = socTrusted(e.source === 'sim' ? 'sim' : socSource());
+  // Yalnızca güvenilir pil (taze kamera, elle, Test Modu; socOk yukarıda): tahmin/eski/varsayılan pilde uyarı ve ses sürer, rota kendiliğinden değişmez.
   if (planBroken && socOk && nav.active && getState('route').end && !updated && card.reachable && (card.arrive ?? 99) >= 5
       && getState('plan').stops[0]?.station.id !== card.id && getState('plan').status !== 'loading') {
     lastAutoVia = Date.now();
@@ -472,7 +474,7 @@ function watch() {
   const moving = nav.active || (e.speed ?? 0) > 5;
   const age = Date.now() - meta.at;
   const moved = meta.lat == null ? Infinity : haversineKm({ lat: meta.lat, lon: meta.lon }, e);
-  const lowNow = inTrouble(e, nav);
+  const lowNow = inTrouble(e, nav) && socTrusted(e.source === 'sim' ? 'sim' : socSource()); // düşük pil sıklığı (5 dk arama, 1 dk doluluk) yalnızca güvenilir pilde (Q-SOC-2)
   const wanted = moving && (all.length || nav.active) || lowNow;
   if (wanted && !busy && (age > (lowNow ? LOW_REFRESH_MS : REFRESH_MS) || moved > REFRESH_KM)) refreshNearby({ silent: true });
   else { if (meta.at) render(); checkLow(); }

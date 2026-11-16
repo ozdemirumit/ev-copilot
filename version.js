@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.87';
+self.APP_VERSION = '0.99.88';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.88', date: '2026-11-16',
+    notes: [
+      'Pil değeri yalnızca tahminse (kamera okuması eski, son değerden hesaplanan ya da varsayılan pil) düşük pil artık kendiliğinden rota yeniden planlamaz, yakındaki istasyonları ve doluluklarını internetten sormaz. Düşük pil uyarısı, sesli öneri ve hız tavsiyesi aynen sürer; istasyon listesi için İstasyonlar\'da Yenile\'ye dokunabilirsiniz. Kamera taze okuyunca, pili elle girince ya da Test Modu\'nda eskisi gibi çalışır.',
+    ],
+  },
   {
     v: '0.99.87', date: '2026-11-16',
     notes: [

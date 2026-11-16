@@ -4,6 +4,8 @@ import { replanFrom } from '../routing/controller.js';
 import { safeSpeed } from './ecoSpeed.js';
 import { usable } from '../routing/planner.js';
 import { speak } from './voice.js';
+import { socSource } from '../physics/socEstimate.js';
+import { socTrusted } from '../routing/socTrust.js';
 
 const BAT = VEHICLE.batteryNetKwh;
 const CHECK_MS = 5000;
@@ -52,7 +54,9 @@ function check() {
     .sort((a, b) => b.km - a.km)
     .find((s) => e.soc - ((profile.energyBetween(km, s.km, k) + detour(s) * k) / BAT) * 100 >= PLANNER.hardMinArrival);
 
-  if (prev) {
+  // Yeniden plan (olası Valhalla erişim sorgusu) yalnızca güvenilir pille (taze kamera, elle, Test Modu): tahmin/eski/varsayılan pil
+  // dış istek tetiklemez, soğuma da harcanmaz; güvenlik için aşağıdaki eko-hız tavsiyesi ve sesli uyarı sürer (Q-SOC-1).
+  if (prev && socTrusted(e.source === 'sim' ? 'sim' : socSource())) {
     if (Date.now() - lastFallback < FALLBACK_COOLDOWN_MS) return set('bad', `${info} — yeniden planlanıyor`);
     lastFallback = Date.now();
     const ok = replanFrom({ km, soc: e.soc, maxFirstStopKm: prev.km });
