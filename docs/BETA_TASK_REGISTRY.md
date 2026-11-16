@@ -2,7 +2,9 @@
 
 > **Kapsam:** Yalnızca Beta, kaynak dalı `design/modern-ui-soc`. `main` / üretim (v0.86.1) bu kaydın dışında.
 > **Makine okunur kopya:** [`docs/beta-task-registry.json`](beta-task-registry.json). İki dosya birlikte güncellenir. Çelişki olursa JSON esas alınır.
-> **Son güncelleme:** 2026-11-16T17:05:00Z (BETA **güncelleme takibi — yalnız YEREL özel cihaz test derlemesi**, köprü `ce6f9141`, yalnız belge; sürüm değişmedi **v0.99.92**): `dee61f95` köprüde completed ve esasta başarılı — `39dc62c` = integ HEAD (temiz). Kapılar yeşil: check.mjs, test-free-only-mode 165/0, run-tests-guarded 110/110 BLOCK_ 0. Yerel derleme `D:\AI-Codes\evrf-localtest\build-0.99.92-39dc62c` üretildi ve denetlendi (§7.5). **Herkese açık Beta güncellenmedi** (D6 erişim kararı yalnız kapalı yerel test), push yok, cihazda test yok.
+> **Son güncelleme:** 2026-11-16T19:30:00Z (BETA **herkese açık ücretsiz Beta modu — yayın kapısı BLOCKED**, **v0.99.93** `c2b6c59`): kullanıcı D6'yı yalnız `https://ozdemirumit.github.io/EV-Route-Finder/` için herkese açık ücretsiz Beta olarak değiştirdi (kapılar geçerse). `build-beta --public-free`: paylaşılan sunucuya sıfır istek, ücretli sağlayıcı yok, Nominatim/overpass-api.de kapalı, cihaz başı tavan + geri çekilme; S-1/N-1 kapandı. Testler yeşil (guarded 111/111 BLOCK_ 0). **Yayımlanmadı**: kullanıcıya ait koşullar açık (§7.6, `docs/public-beta-release-gate.md`). Push yok, cihazda test yok.
+>
+> Önceki: 2026-11-16T17:05:00Z (BETA **güncelleme takibi — yalnız YEREL özel cihaz test derlemesi**, köprü `ce6f9141`, yalnız belge; sürüm değişmedi **v0.99.92**): `dee61f95` köprüde completed ve esasta başarılı — `39dc62c` = integ HEAD (temiz). Kapılar yeşil: check.mjs, test-free-only-mode 165/0, run-tests-guarded 110/110 BLOCK_ 0. Yerel derleme `D:\AI-Codes\evrf-localtest\build-0.99.92-39dc62c` üretildi ve denetlendi (§7.5). **Herkese açık Beta güncellenmedi** (D6 erişim kararı yalnız kapalı yerel test), push yok, cihazda test yok.
 
 > Önceki: 2026-11-16T16:34:06Z (BETA **yalnız ücretsiz sağlayıcı modu — kapalı cihaz testi**, köprü `dee61f95`, yerel; **v0.99.92**): taban integ `9965cfb` (418c2ff5 completed; 70bbbd9a/c3f6ff69 yayın kapıları BLOCKED kaldı, aşılmadı). Dal `feat/beta-free-only-9965cfb` (MBRP-freeonly) tek commit; yalnız tüm kapılar yeşilse integ'e `--ff-only`. **Push yok, Beta yayını yok, sunucu değişmedi, ücretli/gerçek API çağrısı yok, cihazda test edilmedi.** Ayrıntı §7.4 ve `docs/free-only-device-test.md`.
 
@@ -550,6 +552,18 @@ Açık kararlar: D-FO-1 (kendi sunucunun sağlayıcıya gitmeyen yolları da kap
 | G-DEVICE (D6) | **boş, verified DEĞİL** | `docs/free-only-device-test.md` §6 [F] listesi + §8 derleme kaydı; sonucu yalnız kullanıcı yazar. |
 
 Herkese açık Beta neden güncellenmedi: D6 erişim kararı (G-ACCESS) yalnız kapalı yerel testi (A1 `adb reverse`, A2 iOS yerel HTTPS) onaylıyor; Pages herkese açıktır. Bayraksız derleme duraklatılmıştır (G-PAUSE: rota/hava/istasyon çalışmaz), `--free-only` çıktısı tasarım gereği `ev-copilot-beta`'ya yazılamaz, G-SERVER/G-PAID/S-1/N-1 açık ve D6 koşulmadı. Açık Beta güncellemesi için önce kullanıcının D6 erişim kararını değiştirmesi gerekir (ayrıntı: `docs/free-only-device-test.md` §8.4).
+
+### 7.6 Herkese açık ücretsiz Beta (public-free) — v0.99.93 `c2b6c59`, yayın kapısı BLOCKED
+
+| Konu | Durum | Kanıt |
+|---|---|---|
+| D6 / G-ACCESS | **kullanıcı kararı değişti** | Yalnız `https://ozdemirumit.github.io/EV-Route-Finder/` için herkese açık ücretsiz Beta, güvenlik kapıları geçerse. |
+| Uygulama | **completed (yerel)** | `build-beta.mjs --public-free`: paylaşılan sunucu (`proxyBase` + `evcopilot.duckdns.org`) her yol reddi + `proxy.js` kısa devre; `PUBLIC_FREE_ENDPOINTS`; günlük tavan; yanıt geri çekilmesi; Valhalla `X-Client-Id`; UI gizleme + 11 dil atıf. Kaynak varsayılanı `paused`. |
+| D-FO-1 / D-FO-2 | **public-free'de kapandı** | Sunucu yolları kapalı; uydu düğmesi gizli. `free-only` (kapalı test) davranışı değişmedi. |
+| S-1 / S-1b / N-1 / N-1b | **kapandı (Beta kaynağı)** | test-g2b A4/A4b/A4c, B5 (tabanda 44/6 kırmızı → 50/0). D-UI-1 düğmeleri eklenmedi. |
+| Testler | **yeşil (çevrimdışı)** | test-public-beta-mode 169/0; free-only 165/0; check.mjs; i18n 11×419; run-tests-guarded 111/111 BLOCK_ 0. |
+| Yayın kapısı | **BLOCKED** | `docs/public-beta-gate.json`: G-PUB-AUTO met; G-PUB-VALHALLA, -OPENMETEO, -OVERPASS, -AGGREGATE, -DEVICE, -PUBLISH açık (kullanıcı). Kapı kapalıyken derleme git deposuna yazmaz (çıkış 2). |
+| Yayın | **yok** | Canlı Beta 0.99.61 (`4c3bd73`), üretim, canlı sunucu dokunulmadı; push yok; cihazda test yok. Geri alma planı: `docs/public-beta-release-gate.md` §6. |
 
 ## 8. Açık hatalar
 

@@ -105,9 +105,9 @@ Hepsi: Beta'da providerGate (istemci) + server/providerGate.mjs varsayılan DURA
   Sonuç: güvenilir düşük pilde `refreshNearby → checkLow → autoSearch → refreshNearby` beklemesiz döngü (sanal saatte aynı anda 26+
   arama, sınırsız fırtına); normal pilde `watch` 30 sn'de bir (120/saat). Şimdi atılan hatada üstel geri çekilme (60 sn → 2 → 4 → 8 → en
   çok 10 dk; başarı sıfırlar) `watch` ve `autoSearch` için; elle Yenile etkilenmez. Testi `scripts/test-g2b-request-budget.mjs` §A.
-- **S-1 (KNOWN-GAP, karar kullanıcıda):** arama hata DİZİSİYLE dönerse (kaynak ulaşılamadı; throw değil) `meta.at` yazılır ve güvenilir
+- **S-1 (v0.99.93 `c2b6c59` ile kapandı: 45→90→180→en çok 300 sn, S-1b son iyi liste ≤ 60 dk; test-g2b A4/A4b/A4c):** eski durum — arama hata DİZİSİYLE dönerse (kaynak ulaşılamadı; throw değil) `meta.at` yazılır ve güvenilir
   düşük pilde boş listeyle `autoSearch` 45 sn'de bir dener (≈ 80/saat). Acil durum araması olduğu için geri çekilme eklenmedi.
-- **N-1 (KNOWN-GAP, karar kullanıcıda):** `navigator.js` rotadan çıkınca yeniden rota başarısız oldukça 12 sn'de bir dener (`RETRY_MS`;
+- **N-1 (v0.99.93 `c2b6c59` ile kapandı: 12→24→48→en çok 60 sn, ses sapma başına 1; test-g2b B5):** eski durum — `navigator.js` rotadan çıkınca yeniden rota başarısız oldukça 12 sn'de bir dener (`RETRY_MS`;
   sanal 60 dk'da 277 deneme). Sürücü güvenliği ↔ istek ödünleşimi; sunucu tarafında Mapbox rota aylık sınırı (D2-T1) ve günlük hak (G2a) korur.
 
 ## 5. Takip görevleri (YAPILMADI)
@@ -125,3 +125,7 @@ Hepsi: Beta'da providerGate (istemci) + server/providerGate.mjs varsayılan DURA
 - **G3 — çalışma zamanı bütçesi ve saha doğrulaması:** istemcide merkezi istek yöneticisi (sağlayıcı başına belirteç kovası, providerGate
   ile aynı yerde) + yönetici panelinde sayaç; gerçek cihazda ağ günlüğüyle istek sayısının doğrulanması (ücretli çağrı / kota onayı ve
   cihaz gerektirir — kullanıcı kararı).
+
+## 6. Herkese açık ücretsiz Beta (public-free, v0.99.93 `c2b6c59`)
+
+Yalnız `build-beta.mjs --public-free` çıktısı: paylaşılan sunucuya sıfır istek, `PUBLIC_FREE_ENDPOINTS` (Nominatim/overpass-api.de/kumi/Valhalla `/locate` kapalı), cihaz başı saatlik+günlük tavan, yanıt tabanlı geri çekilme. Yeni çağrı noktası ya da köken eklenmedi. Kanıt `scripts/test-public-beta-mode.mjs`; kapı ve politika kaynakları `docs/public-beta-release-gate.md`.
