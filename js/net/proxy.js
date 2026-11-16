@@ -2,14 +2,15 @@
 // Mapbox, OpenChargeMap ve Overpass istekleri sunucudan geçer, anahtarlar sunucuda durur. Eski yöntem (yönetici erişim kodu) gelişmiş ayar olarak durur.
 // Hesap yoksa ya da sunucuya ulaşılamazsa uygulama servislere doğrudan gider.
 import { load, save } from '../utils/storage.js';
-import { freeOnlyMode, publicFreeMode, ProviderPausedError } from './providerGate.js';
+import { freeOnlyMode, publicFreeMode, publicFreeAccountPath, ProviderPausedError } from './providerGate.js';
 
 export const DEFAULT_SERVER = 'https://evcopilot.duckdns.org'; // herkese açık adres (gizli değil); gelişmiş ayardan değiştirilebilir
 
 export const proxyBase = () => (String(load('proxyUrl', '') || '').trim() || DEFAULT_SERVER).replace(/\/+$/, '');
-// Herkese açık ücretsiz Beta (public-free): eski Beta'dan kalmış oturum/yönetici kodu OKUNMAZ (Premium/hesap yolu açılmaz, belirteç gönderilmez).
+// Herkese açık ücretsiz Beta (public-free): eski yönetici erişim kodu OKUNMAZ. Hesap oturumu (davet + Google girişi) v0.99.94'ten beri okunur;
+// oturumla yalnız hesap yolları (providerGate.js PUBLIC_FREE_ACCOUNT_PATHS) kullanılır, ücretli sağlayıcılar yine kapalıdır (proxyHas false).
 export const proxyCode = () => (publicFreeMode() ? '' : String(load('proxyCode', '') || '').trim());
-export const getSession = () => { if (publicFreeMode()) return null; const s = load('session', null); return s?.token ? s : null; };
+export const getSession = () => { const s = load('session', null); return s?.token ? s : null; };
 export const setSession = (s) => { save('session', s); document.dispatchEvent(new Event('account-changed')); };
 let caps = load('proxyCaps', null); // sunucunun bildirdiği özellikler: { mapbox, here, ocm, overpass, occupancy (kullanıcı Premium ise), occupancyLocked (sunucuda var ama Premium değil) }
 let plan = load('proxyPlan', null); // hesap planı: { premium, until }
@@ -40,7 +41,7 @@ export const getPlan = () => (getSession() ? plan : null);
 export const premiumAccess = () => (getSession() ? !!plan?.premium : !!proxyCode());
 
 export function proxyFetch(path, init = {}) {
-  if (publicFreeMode()) return Promise.reject(new ProviderPausedError(path, 'shared-server')); // paylaşılan sunucuya hiç gidilmez (kapı ayrıca keser)
+  if (publicFreeMode() && !publicFreeAccountPath(path)) return Promise.reject(new ProviderPausedError(path, 'shared-server')); // yalnız hesap yolları; gerisi ağa çıkmaz (kapı ayrıca keser)
   const headers = new Headers(init.headers || {});
   headers.set('X-Device-Id', deviceId());
   const s = getSession();
@@ -148,7 +149,7 @@ function pingAnon() {
 
 /** Sunucunun özelliklerini yenile (oturum varsa /v1/me, yoksa yönetici kodu varsa /health). 401'de oturum silinir. Dönüş: { ok, text, caps }. */
 export async function refreshCaps() {
-  if (publicFreeMode()) { caps = null; plan = null; return { ok: false, text: '', caps: null }; } // sunucu yok: /v1/me, /health, /v1/config sorulmaz
+  if (publicFreeMode() && !getSession()) { caps = null; plan = null; return { ok: false, text: '', caps: null }; } // oturumsuz: /health, /v1/config (anonim sayım) sorulmaz
   if (!hasCreds()) { caps = null; save('proxyCaps', null); pingAnon(); return { ok: false, text: '', caps: null }; }
   try {
     const sess = getSession();
@@ -176,7 +177,6 @@ export async function refreshCaps() {
 
 /** Hesap planı ve sunucu özelliklerini açılışta, uygulamaya dönünce (en çok 5 dakikada bir) ve her 30 dakikada tazele. */
 export function watchCaps() {
-  if (publicFreeMode()) return; // herkese açık ücretsiz Beta: zamanlayıcı ve görünürlük dinleyicisi kurulmaz
   let last = 0;
   const run = () => { if (Date.now() - last > 5 * 60e3) { last = Date.now(); refreshCaps(); } };
   document.addEventListener('visibilitychange', () => { if (!document.hidden) run(); });

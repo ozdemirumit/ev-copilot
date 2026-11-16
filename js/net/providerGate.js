@@ -77,6 +77,17 @@ export const FREE_ENDPOINTS = Object.freeze([
 ]);
 /** Paylaşılan canlı sunucu (üretime de hizmet eder). public-free modda proxyBase ne olursa olsun bu ana makineye istek gitmez. */
 export const SHARED_SERVER_HOSTS = Object.freeze(['evcopilot.duckdns.org']);
+/**
+ * public-free modda paylaşılan sunucuda İZİNLİ tek yollar (v0.99.94, kullanıcı kararı: herkese açık Beta'da hesap/Google girişi geri gelir).
+ * Yalnız hesap ve hesaba bağlı, üst sağlayıcıya GİTMEYEN yollar: giriş yoklaması/çıkış, hesap (plan), ayar/geçmiş eşitleme, fiyat ve varlık bildirimi.
+ * /v1/config (anonim cihaz sayımı), /health, istasyon bilgisi/fotoğraf, tarife ve TÜM sağlayıcı yolları (PAUSED_PROXY_PATHS) kesik kalır.
+ * Ücretli sağlayıcılar giriş yapılsa da kapalıdır (freeOnlyMode → proxyHas false). Google girişi tarayıcı sekmesinde açılır (fetch değil).
+ */
+export const PUBLIC_FREE_ACCOUNT_PATHS = Object.freeze([
+  /^\/v1\/auth\/(?:poll|logout)$/, /^\/v1\/me$/, /^\/v1\/sync(?:\/[A-Za-z0-9_.-]{1,64})?$/, /^\/v1\/history\/[A-Za-z0-9_-]{1,32}$/, /^\/v1\/price$/, /^\/v1\/presence$/,
+]);
+/** Yol (sorgu hariç) public-free modda paylaşılan sunucuya gidebilir mi. */
+export const publicFreeAccountPath = (path) => { const p = String(path || '').split('?')[0]; return PUBLIC_FREE_ACCOUNT_PATHS.some((re) => re.test(p)); };
 /** Valhalla demo sunucusu, son kullanıcıya yayımlanan uygulamalardan tanıtıcı X-Client-Id başlığı ister (valhalla/valhalla README). */
 export const PUBLIC_CLIENT_ID = 'EV-Route-Finder-Beta (ozdemirumit.github.io/EV-Route-Finder)';
 const byId = (id) => FREE_ENDPOINTS.find((e) => e.id === id);
@@ -147,7 +158,11 @@ export function blockedReason(input, { origin = 'http://localhost', proxyBase = 
   if (u.protocol === 'data:' || u.protocol === 'blob:') return null;
   let pb = null;
   try { pb = proxyBase ? new URL(proxyBase) : null; } catch { pb = null; }
-  if (publicFreeMode() && (SHARED_SERVER_HOSTS.includes(u.hostname) || (pb && u.origin === pb.origin && u.origin !== new URL(origin).origin))) return 'shared-server';
+  if (publicFreeMode() && (SHARED_SERVER_HOSTS.includes(u.hostname) || (pb && u.origin === pb.origin && u.origin !== new URL(origin).origin))) {
+    // v0.99.94: hesap/giriş geri geldi — yalnız paylaşılan sunucunun (https, standart port) HESAP yolları geçer; sağlayıcı/diğer yollar kesik kalır
+    const acct = u.protocol === 'https:' && u.port === '' && !u.username && !u.password && SHARED_SERVER_HOSTS.includes(u.hostname) && publicFreeAccountPath(u.pathname);
+    return acct ? null : 'shared-server';
+  }
   if (pb && u.origin === pb.origin) {
     const base = pb.pathname.replace(/\/+$/, '');
     const path = base && u.pathname.startsWith(base) ? u.pathname.slice(base.length) || '/' : u.pathname;

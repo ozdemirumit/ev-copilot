@@ -107,9 +107,15 @@ for (const [u, m, why] of NOT_ALLOWED) ok(`C2 ret not-allowlisted: ${why}`, R(u,
 const PAID = ['https://api.mapbox.com/directions/v5/x', 'https://events.mapbox.com/x', 'https://maps.googleapis.com/maps/api/js', 'https://places.googleapis.com/v1/x', 'https://www.google.com/x',
   'https://fonts.gstatic.com/x', 'https://api.tomtom.com/routing/1/x', 'https://router.hereapi.com/v8/x', 'https://api.iternio.com/1/tlm/send', 'https://server.arcgisonline.com/ArcGIS/rest/x', 'https://api.openchargemap.io/v3/poi/'];
 for (const u of PAID) ok(`C3 ret paid-provider: ${new URL(u).host}`, R(u) === 'paid-provider' && R(u, 'POST') === 'paid-provider', String(R(u)));
-const SHARED_PATHS = ['/v1/config?v=1', '/v1/me', '/health', '/v1/sync', '/v1/auth/poll', '/v1/auth/logout', '/v1/history/x', '/v1/station/info', '/v1/station/photo/1', '/v1/price', '/v1/tariffs',
-  '/v1/occupancy', '/v1/speedlimits', '/v1/tesla', '/v1/map/config', '/mapbox/x', '/overpass', '/ocm/poi', '/tomtom/route', '/google/stations', '/here/stations', '/'];
+// v0.99.94 (kullanıcı kararı: herkese açık Beta'da hesap/Google girişi geri gelir): paylaşılan sunucuda YALNIZ hesap yolları izinli.
+const ACCOUNT_PATHS = ['/v1/auth/poll?nonce=x', '/v1/auth/logout', '/v1/me', '/v1/sync', '/v1/sync/places', '/v1/history/trips', '/v1/history/charges', '/v1/price', '/v1/presence'];
+for (const p of ACCOUNT_PATHS) ok(`C4a hesap yolu izinli: ${p}`, R(SHARED + p, 'GET') === null && R(SHARED + p, 'POST') === null, String(R(SHARED + p)));
+const SHARED_PATHS = ['/v1/config?v=1', '/health', '/v1/station/info', '/v1/station/photo/1', '/v1/station/rate', '/v1/tariffs', '/v1/providers', '/v1/status',
+  '/v1/occupancy', '/v1/speedlimits', '/v1/tesla', '/v1/map/config', '/mapbox/x', '/overpass', '/ocm/poi', '/tomtom/route', '/google/stations', '/here/stations', '/',
+  '/admin', '/admin/login', '/v1/me/x', '/v1/auth/poll/x', '/v1/sync/a/b', '/v1/history', '/v1/history/../mapbox', '/x/v1/me', '/v1/pricex'];
 for (const p of SHARED_PATHS) ok(`C4 ret shared-server: ${p}`, R(SHARED + p, 'GET') === 'shared-server' && R(SHARED + p, 'POST') === 'shared-server', String(R(SHARED + p)));
+ok('C4b hesap yolu yalnız https + standart port: http / :8443 / kimlik bilgili adres reddedilir', R('http://evcopilot.duckdns.org/v1/me') === 'shared-server' && R(SHARED + ':8443/v1/me') === 'shared-server' && R('https://u:p@evcopilot.duckdns.org/v1/me') === 'shared-server');
+ok('C4c kullanıcı ayarlı başka ara sunucuda hesap yolu da reddedilir (yalnız paylaşılan ana makine)', R('https://my-proxy.example.invalid/v1/me', 'GET', 'https://my-proxy.example.invalid') === 'shared-server');
 ok('C5 kullanıcı ayarlı başka ara sunucu kökeni de shared-server (yol fark etmez)', R('https://my-proxy.example.invalid/v1/config', 'GET', 'https://my-proxy.example.invalid') === 'shared-server');
 ok('C6 proxyBase boş olsa da paylaşılan ana makine reddedilir', R(SHARED + '/v1/config', 'GET', '') === 'shared-server');
 ok('C7 çözümlenemeyen adres reddedilir (fail-closed)', blockedReason({ url: 'http://[bozuk' }, { origin: ORIGIN }) !== null);
@@ -129,26 +135,46 @@ installProviderGate(globalThis, { getOrigin: () => ORIGIN, getProxyBase: () => S
 const sharedCalls = () => innerCalls.filter((c) => { try { return new URL(c.url).hostname === 'evcopilot.duckdns.org'; } catch { return false; } });
 {
   const proxy = await import('../js/net/proxy.js');
-  ok('D1 eski oturum/yönetici kodu okunmaz: getSession null, proxyCode boş, premiumAccess false, proxyReady false', proxy.getSession() === null && proxy.proxyCode() === '' && proxy.premiumAccess() === false && proxy.proxyReady() === false);
+  ok('D1 hesap oturumu okunur (giriş geri geldi), eski yönetici erişim kodu yine okunmaz', proxy.getSession()?.token === 'FAKE-SESSION-TOKEN' && proxy.proxyCode() === '' && proxy.proxyReady() === true);
   for (const c of ['mapbox', 'here', 'ocm', 'overpass', 'occupancy', 'occupancyLocked', 'tomtom', 'googleStations']) ok(`D2 proxyHas('${c}') false`, proxy.proxyHas(c) === false);
   innerCalls.length = 0;
-  let e1 = null; try { await proxy.proxyFetch('/v1/sync', { method: 'POST', body: '{}' }); } catch (e) { e1 = e; }
-  ok('D3 proxyFetch ağa çıkmadan ProviderPausedError(shared-server) ile reddedilir', e1 instanceof ProviderPausedError && e1.reason === 'shared-server' && innerCalls.length === 0, String(e1?.message));
+  for (const p of ['/v1/station/info', '/v1/tariffs', '/v1/occupancy', '/v1/speedlimits', '/v1/tesla', '/v1/map/config', '/overpass', '/mapbox/x', '/health', '/v1/config']) {
+    let e1 = null; try { await proxy.proxyFetch(p, { method: 'POST', body: '{}' }); } catch (e) { e1 = e; }
+    ok(`D3 hesap dışı yol ${p}: proxyFetch ağa çıkmadan ProviderPausedError(shared-server)`, e1 instanceof ProviderPausedError && e1.reason === 'shared-server' && innerCalls.length === 0, String(e1?.message));
+  }
+  await proxy.proxyFetch('/v1/sync', { method: 'POST', body: '{}' });
+  const sc0 = innerCalls[0];
+  ok('D3b hesap yolu /v1/sync oturum belirteciyle gider; yönetici kodu başlığı gönderilmez', innerCalls.length === 1 && sc0.url === SHARED + '/v1/sync' && sc0.headers.authorization === 'Bearer FAKE-SESSION-TOKEN' && !('x-access-code' in sc0.headers), JSON.stringify(sc0?.headers));
+  innerCalls.length = 0;
   let e2 = null; try { await proxy.proxyFetchRetry('/overpass', { method: 'POST' }, { retries: 3, delayMs: 1, jitterMs: 0, sleep: async () => {} }); } catch (e) { e2 = e; }
   ok('D4 proxyFetchRetry yeniden deneme turu başlatmaz, istek 0', e2?.reason === 'shared-server' && innerCalls.length === 0);
   ok('D5 serverConfig() → null, /v1/config sorulmaz (anonim cihaz sayımı yok)', (await proxy.serverConfig()) === null && innerCalls.length === 0);
   const rc = await proxy.refreshCaps();
-  ok('D6 refreshCaps(): /v1/me, /health, /v1/config sorulmaz', rc.ok === false && innerCalls.length === 0);
-  const tBefore = timersSet.length, lBefore = docListeners.length;
+  ok('D6 refreshCaps() oturumla yalnız /v1/me sorar (/health, /v1/config yok)', rc.ok === false && innerCalls.length === 1 && innerCalls[0].url === SHARED + '/v1/me', innerCalls.map((c) => c.url).join(' '));
+  for (const c of ['mapbox', 'here', 'ocm', 'overpass', 'occupancy', 'tomtom', 'googleStations']) ok(`D6b oturum + sunucu yetenekleri olsa da proxyHas('${c}') false (ücretli sağlayıcı kapalı)`, proxy.proxyHas(c) === false);
+  const sess = stored.get('evcp.session');
+  stored.delete('evcp.session');
+  innerCalls.length = 0;
+  const rc2 = await proxy.refreshCaps();
+  ok('D6c oturumsuz refreshCaps(): istek 0 (anonim /v1/config sayımı ve /health yok), premiumAccess false', rc2.ok === false && innerCalls.length === 0 && proxy.premiumAccess() === false);
+  stored.set('evcp.session', sess);
+  innerCalls.length = 0;
+  const tBefore = timersSet.length;
   proxy.watchCaps();
-  ok('D7 watchCaps(): zamanlayıcı ve görünürlük dinleyicisi kurulmaz', timersSet.length === tBefore && docListeners.length === lBefore);
+  await new Promise((r) => setTimeout(r, 20));
+  ok('D7 watchCaps(): plan tazelemesi kurulur ve yalnız /v1/me sorar', timersSet.length === tBefore + 1 && innerCalls.every((c) => c.url === SHARED + '/v1/me'), innerCalls.map((c) => c.url).join(' '));
+  innerCalls.length = 0;
   stored.set('evcp.proxyUrl', JSON.stringify('https://my-proxy.example.invalid'));
   const tp = await proxy.testProxy('https://my-proxy.example.invalid', 'FAKE');
   ok('D8 gelişmiş ayarla girilen sunucu da sınanmaz (istek 0)', tp.ok === false && innerCalls.length === 0);
   stored.delete('evcp.proxyUrl');
   // ham fetch ile paylaşılan sunucu (auth.js /v1/auth/poll gibi) kapıda kesilir
-  let e3 = null; try { await fetch(SHARED + '/v1/auth/poll', { method: 'POST' }); } catch (e) { e3 = e; }
-  ok('D9 ham fetch(paylaşılan sunucu) kapıda kesilir, alttaki fetch\'e ulaşmaz', e3?.reason === 'shared-server' && innerCalls.length === 0);
+  let e3 = null; try { await fetch(SHARED + '/v1/config?v=1'); } catch (e) { e3 = e; }
+  let e4 = null; try { await fetch(SHARED + '/v1/station/info', { method: 'POST' }); } catch (e) { e4 = e; }
+  ok('D9 ham fetch(paylaşılan sunucu, hesap dışı yol) kapıda kesilir, alttaki fetch\'e ulaşmaz', e3?.reason === 'shared-server' && e4?.reason === 'shared-server' && innerCalls.length === 0);
+  await fetch(SHARED + '/v1/auth/poll?nonce=x');
+  ok('D9b giriş yoklaması (auth.js ham fetch /v1/auth/poll) kapıdan geçer', innerCalls.length === 1 && innerCalls[0].url === SHARED + '/v1/auth/poll?nonce=x');
+  innerCalls.length = 0;
   // sunucu kaynaklı veri modülleri: tarife, Tesla, doluluk, hız limiti spanları → istek 0
   const prov = await import('../js/providers/index.js');
   const tr = await prov.fetchTrafficAhead({ lat: 39.92, lon: 32.85 }, { lat: 41.01, lon: 28.97 }).catch((e) => e);
@@ -300,8 +326,8 @@ const hostsOf = (list = innerCalls) => [...new Set(list.map((c) => { try { retur
 
 // tüm A–H boyunca
 const ALLOWED_HOSTS = new Set(gate.PUBLIC_FREE_ENDPOINTS.flatMap((e) => e.hosts));
-const leaked = allCalls.filter((u) => { try { return !ALLOWED_HOSTS.has(new URL(u).hostname); } catch { return true; } });
-ok(`Z1 testin TAMAMINDA alttaki fetch'e yalnız herkese açık izin listesindeki ana makineler ulaştı (${allCalls.length} istek; ücretli / paylaşılan sunucu / Nominatim / overpass-api.de 0)`, allCalls.length > 0 && leaked.length === 0, leaked.join(' '));
+const leaked = allCalls.filter((u) => { try { const x = new URL(u); return !ALLOWED_HOSTS.has(x.hostname) && !(x.origin === SHARED && gate.publicFreeAccountPath(x.pathname)); } catch { return true; } });
+ok(`Z1 testin TAMAMINDA alttaki fetch'e yalnız herkese açık izin listesindeki ana makineler ve paylaşılan sunucunun HESAP yolları ulaştı (${allCalls.length} istek; ücretli / sunucu sağlayıcı yolu / Nominatim / overpass-api.de 0)`, allCalls.length > 0 && leaked.length === 0, leaked.join(' '));
 
 // ================================================================================================ I) herkese açık derleme + yayın kapısı
 {
@@ -349,7 +375,9 @@ ok(`Z1 testin TAMAMINDA alttaki fetch'e yalnız herkese açık izin listesindeki
   ok('J1 providerGateInstall: public-free\'de <html class="public-free"> konur', /publicFreeMode\(\)\) globalThis\.document\?\.documentElement\?\.classList\.add\('public-free'\)/.test(inst));
   const css = read('css/styles.css');
   const html = read('index.html');
-  for (const id of ['fab-sat', 'account-card', 'own-keys', 'data-src-note', 'bd-abrp', 'bd-traffic', 'premium-hint'])
+  ok('J2a #account-card (davet + Google girişi, Ücretsiz/Premium) herkese açık Beta\'da GİZLENMEZ', html.includes('id="account-card"') && html.includes('id="acc-google"') && !/html\.public-free #account-card\b/.test(css));
+  ok('J2b atıf satırı artık "hesap yoktur" demez', !/Bu sürümde hesap/.test(html));
+  for (const id of ['fab-sat', 'own-keys', 'data-src-note', 'bd-abrp', 'bd-traffic', 'premium-hint'])
     ok(`J2 #${id}: index.html'de var ve herkese açık Beta'da gizli`, html.includes(`id="${id}"`) && new RegExp(`html\\.public-free #${id}\\b`).test(css));
   ok('J3 trafik kartı (t-level) gizli', html.includes('id="t-level"') && /html\.public-free \.card:has\(> dl #t-level\)/.test(css));
   ok('J4 kaynak/atıf satırı yalnız herkese açık Beta\'da görünür', /class="small muted public-free-only" id="pub-src-note"/.test(html) && /\.public-free-only \{ display: none !important; \}/.test(css) && /html\.public-free \.public-free-only \{ display: block !important; \}/.test(css));
@@ -358,7 +386,7 @@ ok(`Z1 testin TAMAMINDA alttaki fetch'e yalnız herkese açık izin listesindeki
   ok('J6 istasyon kartı: herkese açık Beta\'da doluluk/puan/fotoğraf (sunucu) yüklenmez, giriş istemi yok', /if \(publicFreeMode\(\)\) \{ live\.classList\.add\('hidden'\); info\.classList\.add\('hidden'\); return; \}/.test(sc));
   const se = strip(read('js/osm/search.js'));
   ok('J7 arama: Nominatim dalı publicFreeMode ile kapalı', /if \(onMore && !publicFreeMode\(\)\)/.test(se));
-  ok('J8 sürüm 0.99.93', /self\.APP_VERSION = '0\.99\.93';/.test(read('version.js')));
+  ok('J8 sürüm 0.99.94', /self\.APP_VERSION = '0\.99\.94';/.test(read('version.js')));
 }
 
 console.log(`\n${pass} geçti, ${fail} başarısız`);
