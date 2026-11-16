@@ -23,6 +23,11 @@ export { probeStopAccess } from '../osm/accessProbe.js'; // şarj durağına yol
 
 /** TomTom rotası: sunucuda TomTom anahtarı var, hesap Premium ve açık harita TomTom ise (TomTom sonuçları yalnızca TomTom haritasında gösterilir). */
 const tomtomRouteOn = () => proxyHas('tomtom') && premiumAccess() && activeMap() === 'tomtom';
+/**
+ * Mapbox rotası (D2-T1): sunucu anahtarıyla yalnız Premium (sunucu Free'ye 402 döner; boşuna istek atılmaz, Valhalla kullanılır).
+ * Kullanıcının kendi mbKey anahtarı (sunucuda Mapbox yokken) eskisi gibi plandan bağımsız kullanılır — ürün kararı bekliyor.
+ */
+const mapboxRouteOn = () => !!mapboxKey() && (!proxyHas('mapbox') || premiumAccess());
 
 /**
  * Seçilen rotaya kaynak üst verisi (routeMeta) ekler: provider = rotayı GERÇEKTEN veren sağlayıcı (harita sağlayıcısı değil).
@@ -50,7 +55,7 @@ export async function fetchRoute(...a) {
       skipped = `TomTom rotası alınamadı (${err.message}); `;
     }
   }
-  if (!mapboxKey()) return tagRoute(skipped ? { ...(await osmRoute(...a)), note: skipped + 'ücretsiz rota kullanıldı, trafik yok' } : await osmRoute(...a), 'osm');
+  if (!mapboxRouteOn()) return tagRoute(skipped ? { ...(await osmRoute(...a)), note: skipped + 'ücretsiz rota kullanıldı, trafik yok' } : await osmRoute(...a), 'osm');
   let r;
   try {
     r = await mapboxRoute(...a);
@@ -72,7 +77,7 @@ export async function fetchTrafficAhead(from, to) {
     try { rt = await tomtomRoute(from, to); } catch { rt = null; }
     if (rt) trafficSource = 'tomtom';
   }
-  if (!rt && mapboxKey()) {
+  if (!rt && mapboxRouteOn()) {
     rt = await mapboxRoute(from, to);
     if (rt) trafficSource = 'mapbox';
   }

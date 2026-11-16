@@ -62,11 +62,17 @@ ok('geocoding / tiles / matrix izinli değil', !ruleOf('/geocoding/v5/mapbox.pla
 ok('koordinat dışı karakterli rota yolu izinli değil', !ruleOf('/directions/v5/mapbox/driving/29.01,41.02;29.10,41.11.json') && !ruleOf('/directions/v5/mapbox/driving/abc'));
 ok('kategori araması 1 sa, kategori listesi 24 sa önbellek', ruleOf('/search/searchbox/v1/category/ev_charging_station')?.[1] === 3600e3 && ruleOf('/search/searchbox/v1/list/category')?.[1] === 24 * 3600e3);
 
-// ---- 3) BL-P3-01 bilinen boşluklar (bugünkü davranış; düzeltme ayrı görev + kullanıcı kararı) ----
-knownGap('M1', 'mapbox() Premium kapısı yok (premiumOk/isPremium çağrılmıyor) → Free hesap trafikli Mapbox rotası alabilir', !/premiumOk\(|isPremium\(/.test(mb));
-knownGap('M1b', "dağıtıcı /mapbox/ satırında da Premium kapısı yok", !/premiumOk\(|isPremium\(/.test(dispatch));
-knownGap('M2', 'aylık MB_CAP (402) yalnızca aramaya uygulanır; rota istekleri aylık sınırsız (yalnız günlük kullanıcı hakkı)', /if \(isSearch && mbUsage\(\)\.n >= MB_CAP\)/.test(mb) && !/!isSearch[^\n]*MB_CAP/.test(mb));
-knownGap('M2b', 'aylık sayaç (mbUsage().n++) yalnızca aramada artar; rota sayılmaz', /if \(isSearch\) \{ mbUsage\(\)\.n\+\+/.test(mb) && (mb.match(/mbUsage\(\)\.n\+\+/g) || []).length === 1);
+// ---- 3) BL-P3-01 boşlukları — D2-T1 (R4 feb985dc) ile KAPANDI: KNOWN-GAP satırları kabul denetimine çevrildi ----
+// Davranış testi: scripts/test-mapbox-premium-gate.mjs (sunucu alt süreç + sahte üst sunucu). Burada kaynak düzeni sabitlenir.
+const gateAt = mb.indexOf('routeGate({'), dailyAt = mb.indexOf("overQuota(id, 'mapbox')"), upAt = mb.indexOf('await once(key');
+ok('M1 kapandı: mapbox() rota yolunda Premium kapısı routeGate({ premium: premiumOk(id), … }) → 402', /if \(!isSearch\) \{[^\n]*\n\s*const g = routeGate\(\{ premium: premiumOk\(id\), premiumOnly: MB_ROUTE_PREMIUM_ONLY,/.test(mb) && /if \(!g\.allow\) return json\(res, g\.status, \{ error: g\.error \}\);/.test(mb));
+ok('M1 kapandı: kapı günlük haktan (overQuota) ve üst sunucu isteğinden ÖNCE', gateAt > 0 && dailyAt > gateAt && upAt > dailyAt, `${gateAt}/${dailyAt}/${upAt}`);
+ok('M1b kapandı: dağıtıcı tüm /mapbox/ yollarını kapılı mapbox()\'a verir (ayrı dağıtıcı kapısı gerekmez; arama Free\'ye açık kalır — D2 kapsamı yalnız rota)', /^\s*if \(p\.startsWith\('\/mapbox\/'\)\) return await mapbox\(req, res, url, id\);\s*$/.test(dispatch) && gateAt > 0);
+ok('M1/M2 kapısı varsayılan açık: MAPBOX_ROUTE_PREMIUM_ONLY parseFlag(…, true)', /const MB_ROUTE_PREMIUM_ONLY = parseFlag\(env\.MAPBOX_ROUTE_PREMIUM_ONLY, true\);/.test(PROXY));
+ok('M2 kapandı: rota aylık sınırı MB_ROUTE_CAP = parseCap(env.MAPBOX_ROUTE_MONTHLY_CAP) (geçersiz → 0, fail-closed) routeGate\'e verilir', /const MB_ROUTE_CAP_CFG = parseCap\(env\.MAPBOX_ROUTE_MONTHLY_CAP\);/.test(PROXY) && /used: mbRouteUsage\(\)\.n, cap: MB_ROUTE_CAP \}/.test(mb));
+ok('M2: arama aylık sınırı (MB_CAP, 402 mapbox_cap) değişmedi', /if \(isSearch && mbUsage\(\)\.n >= MB_CAP\) return json\(res, 402, \{ error: 'mapbox_cap' \}\)/.test(mb));
+ok('M2b kapandı: üst sunucuya giden rota ayrı aylık sayaçta (mbRouteUsage().n++) sayılır; arama sayacı yalnız aramada', /if \(isSearch\) \{ mbUsage\(\)\.n\+\+; store\.save\(\); \} else \{ mbRouteUsage\(\)\.n\+\+; store\.save\(\); \}/.test(mb) && (mb.match(/mbUsage\(\)\.n\+\+/g) || []).length === 1);
+ok('M2b: rota sayacı db.json counters.mapboxRoute (ay değişince 0)', /c\.mapboxRoute = \{ month: ym, n: 0 \}/.test(fnBody(PROXY, 'mbRouteUsage')));
 // Karşılaştırma: aynı dosyadaki diğer ücretli rota/veri yolları Premium kapılı (tutarsızlığın kanıtı; bunlar değişirse tanı güncellenmeli).
 ok('karşılaştırma: tomtomRouteRoute premiumOk(id) ile kapılı', /premiumOk\(id\)/.test(tt));
 ok('karşılaştırma: googleStationsRoute premiumOk(id) ile kapılı', /premiumOk\(id\)/.test(gs));
@@ -74,6 +80,6 @@ ok('premiumOk tanımı: hesapsız eski erişim kodu Premium, hesaplı kullanıc�
 
 ok('ağ çağrısı yapılmadı', fetchCalls === 0, String(fetchCalls));
 
-console.log(`\nözet: bilinen boşluk ${gaps} (BL-P3-01, açık)`);
+console.log(`\nözet: bilinen boşluk ${gaps} (BL-P3-01 M1/M1b/M2/M2b D2-T1 ile kapandı)`);
 console.log(`${pass} geçti, ${fail} kaldı`);
 if (fail) process.exit(1);

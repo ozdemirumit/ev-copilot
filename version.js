@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.85';
+self.APP_VERSION = '0.99.86';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.86', date: '2026-11-16',
+    notes: [
+      'Trafikli Mapbox rotası sunucu üzerinden artık yalnız Premium hesaplara verilir; ücretsiz hesapta rota sorulmadan ücretsiz (OpenStreetMap / Valhalla) rota kullanılır. Sunucuda Mapbox rotaları için ayrı bir aylık sayaç ve isteğe bağlı aylık sınır var; sınır dolunca da ücretsiz rotaya geçilir. Mapbox Premium gerektirdiğinde ileti artık yanlışlıkla "aylık hak doldu" demez. Kendi Mapbox anahtarını giren kullanıcının davranışı değişmedi; istasyon araması değişmedi.',
+    ],
+  },
   {
     v: '0.99.85', date: '2026-11-16',
     notes: [

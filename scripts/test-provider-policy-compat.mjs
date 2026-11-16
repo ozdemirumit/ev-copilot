@@ -90,7 +90,8 @@ const ev = {
   tomtomRouteServerPremiumGated: /premiumOk\(id\)/.test(tomtomRouteFn),
   tomtomRouteOnlyOnTomtomMap: /activeMap\(\) === 'tomtom'/.test(IDX) && /premiumAccess\(\)/.test(IDX),
   osmRouteFallbackAfterTomtom: /skipped = `TomTom rotası alınamadı/.test(fetchRouteFn) && /osmRoute\(\.\.\.a\)/.test(fetchRouteFn),
-  mapboxRouteNoActiveMapGate: /mapboxKey\(\)/.test(fetchRouteFn) && !/activeMap\(\) === 'mapbox'/.test(IDX),
+  // D2-T1 (v0.99.86): fetchRoute Mapbox kararını mapboxRouteOn() ile verir (mapboxKey() + sunucu anahtarında Premium); aktif haritaya yine bakılmaz.
+  mapboxRouteNoActiveMapGate: /mapboxRouteOn\(\)/.test(fetchRouteFn) && /const mapboxRouteOn = \(\) => !!mapboxKey\(\) && \(!proxyHas\('mapbox'\) \|\| premiumAccess\(\)\);/.test(IDX) && !/activeMap\(\) === 'mapbox'/.test(IDX),
   googleStationsPremiumGated: /premiumOk\(id\)/.test(googleStationsFn),
 };
 for (const [k, v] of Object.entries(ev)) ok(`kanıt: ${k}`, v === true);

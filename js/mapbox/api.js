@@ -39,10 +39,12 @@ export async function mbfetch(path, params = {}, { timeoutMs = 25000, retry = fa
     throw new MapboxError(viaProxy ? 'Ara sunucuya ulaşılamadı' : msg, { fatal: viaProxy }); // sunucu yanıt vermezse Mapbox'sız (Valhalla/Overpass) sürer
   }
   if (res.ok) return res.json();
-  let msg = '';
-  try { msg = (await res.json()).message || ''; } catch { /* gövde yok */ }
+  let msg = '', code = '';
+  try { const j = await res.json(); msg = j?.message || ''; code = j?.error || ''; } catch { /* gövde yok */ }
   if (viaProxy && res.status === 401) throw new MapboxError('Sunucu erişim kodu geçersiz', { fatal: true, status: 401 });
-  if (viaProxy && res.status === 402) throw new MapboxError('Mapbox aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor', { fatal: true, status: 402 });
+  if (viaProxy && res.status === 402) { // sunucu kodu: premium_required (rota yalnız Premium) | mapbox_route_cap / mapbox_cap (aylık hak)
+    throw new MapboxError(code === 'premium_required' ? 'Mapbox rotası Premium gerektirir: ücretsiz kaynaklar kullanılıyor' : 'Mapbox aylık hakkı doldu: ücretsiz kaynaklar kullanılıyor', { fatal: true, status: 402 });
+  }
   if (viaProxy && res.status === 501) throw new MapboxError('Sunucuda Mapbox anahtarı yok', { fatal: true, status: 501 });
   if (res.status === 401) throw new MapboxError('Mapbox anahtarı geçersiz veya süresi dolmuş', { fatal: true, status: 401 });
   if (res.status === 403) throw new MapboxError('Mapbox erişimi reddetti: anahtarın kapsamını (Directions, Search) veya URL kısıtını kontrol et', { fatal: true, status: 403 });

@@ -27,6 +27,7 @@ import { createStationInfo, MAX_PHOTO_BYTES } from './stationinfo.mjs';
 import { createTesla } from './tesla.mjs';
 import { createMaps } from './maps.mjs';
 import { buildCatalog } from './providerCatalog.mjs';
+import { parseCap, parseFlag, routeGate } from './mapboxGate.mjs';
 import { makeScrub } from './scrub.mjs';
 import { providerPaused, installServerFetchGuard, pausedRoute } from './providerGate.mjs';
 import { parsePoints, pointsKey, hereSpeedLimits, createLru, MAX_CACHE_ITEM } from './speedlimits.mjs';
@@ -226,6 +227,7 @@ function adminSummary() {
     },
     invites: inv,
     mapbox: { month: mbUsage().month, used: mbUsage().n, cap: MB_CAP },
+    mapboxRoute: { month: mbRouteUsage().month, used: mbRouteUsage().n, cap: MB_ROUTE_CAP, premiumOnly: MB_ROUTE_PREMIUM_ONLY },
     here: { month: hereUsage().month, used: hereUsage().n, cap: HERE_CAP },
     devices: devices.stats(),
     map: { default: maps.getDefault() },
@@ -288,6 +290,19 @@ function mbUsage() {
   }
   return c.mapbox;
 }
+// D2-T1 Mapbox ROTA kapısı (server/mapboxGate.mjs): rota yalnız Premium'a (MAPBOX_ROUTE_PREMIUM_ONLY, varsayılan açık; 0 kapatır) ve
+// isteğe bağlı aylık rota sınırına (MAPBOX_ROUTE_MONTHLY_CAP; boş = sınır yok, geçersiz = 0 / fail-closed) tabidir. Ret 402 → uygulama ücretsiz
+// Valhalla (OSM) rotasına düşer. Rota sayacı arama sayacından ayrıdır (counters.mapboxRoute, db.json'da kalıcı); yalnız üst sunucuya giden rota sayılır.
+const MB_ROUTE_CAP_CFG = parseCap(env.MAPBOX_ROUTE_MONTHLY_CAP);
+const MB_ROUTE_CAP = MB_ROUTE_CAP_CFG.cap;
+const MB_ROUTE_PREMIUM_ONLY = parseFlag(env.MAPBOX_ROUTE_PREMIUM_ONLY, true);
+if (!MB_ROUTE_CAP_CFG.valid) console.log('MAPBOX_ROUTE_MONTHLY_CAP geçersiz (yalnız tam sayı): Mapbox rotası kapalı (sınır 0)');
+function mbRouteUsage() {
+  const ym = new Date().toISOString().slice(0, 7);
+  const c = (store.data.counters ||= {});
+  if (c.mapboxRoute?.month !== ym) { c.mapboxRoute = { month: ym, n: 0 }; store.save(); }
+  return c.mapboxRoute;
+}
 async function mapbox(req, res, url, id) {
   if (!MAPBOX) return json(res, 501, { error: 'Sunucuda Mapbox anahtarı yok' });
   const path = url.pathname.slice('/mapbox'.length);
@@ -300,13 +315,17 @@ async function mapbox(req, res, url, id) {
   const key = `mb:${path}?${q}`;
   const hit = rule[1] ? cget(key) : null;
   if (hit) return reply(res, hit, { 'X-Cache': 'hit' });
-  if (overQuota(id, 'mapbox')) return json(res, 429, { error: 'günlük Mapbox hakkı doldu' }, { 'Retry-After': '3600' });
   const isSearch = path.startsWith('/search/');
+  if (!isSearch) { // rota: Premium + aylık rota sınırı, günlük hak harcanmadan önce (ret günlük sayacı artırmaz)
+    const g = routeGate({ premium: premiumOk(id), premiumOnly: MB_ROUTE_PREMIUM_ONLY, used: mbRouteUsage().n, cap: MB_ROUTE_CAP });
+    if (!g.allow) return json(res, g.status, { error: g.error });
+  }
+  if (overQuota(id, 'mapbox')) return json(res, 429, { error: 'günlük Mapbox hakkı doldu' }, { 'Retry-After': '3600' });
   if (isSearch && mbUsage().n >= MB_CAP) return json(res, 402, { error: 'mapbox_cap' }); // aylık hak doldu: ücretli kullanıma geçmesin
   const u = await once(key, () => {
     const real = new URLSearchParams(q);
     real.set('access_token', MAPBOX);
-    if (isSearch) { mbUsage().n++; store.save(); }
+    if (isSearch) { mbUsage().n++; store.save(); } else { mbRouteUsage().n++; store.save(); }
     costs.add(id, isSearch ? 'mapbox_search' : 'mapbox'); // üst sunucuya giden istek (önbellek isabeti ve ret buraya gelmez); rota ve arama fiyatı farklı olduğu için ayrı türler
     return upstream(`${MAPBOX_BASE}${path}?${real}`);
   });

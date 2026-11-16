@@ -227,7 +227,8 @@ knownGap('Q-SOC-2', 'nearby.js checkLow(): düşük pil (kaynak denetimsiz) → 
 knownGap('Q-SRV-1', 'overQuota sayacı reddedilen istekte de artar (n+1 yazılır, sonra karşılaştırılır)', /usage\.set\(k, n\);[\s\S]*return n > DAILY\[kind\];/.test(overQ));
 knownGap('Q-SRV-2', 'MAPBOX_MONTHLY_CAP / HERE_MONTHLY_CAP geçersizse NaN → n >= NaN false → sınır kapanmaz (fail-open)', /Number\(env\.MAPBOX_MONTHLY_CAP \|\| 4800\)/.test(PROXY) && Number('abc') !== Number('abc') && !(5 >= Number('abc')));
 knownGap('Q-SRV-3', 'günlük kullanıcı sayacı (overQuota) bellekte (usage Map); sunucu yeniden başlarsa günlük hak sıfırlanır (aylık mbUsage/hereUsage kalıcı)', /const usage = new Map\(\)/.test(PROXY));
-knownGap('Q-CLI-1', 'mapbox/api.js: her sunucu 402 (premium_required dahil) "Mapbox aylık hakkı doldu" iletisi', /res\.status === 402\) throw new MapboxError\('Mapbox aylık hakkı doldu/.test(src('js/mapbox/api.js')));
+// Q-CLI-1 D2-T1 (R4 feb985dc) ile KAPANDI → kabul denetimi; davranış testi scripts/test-mapbox-premium-gate.mjs D bölümü.
+ok('Q-CLI-1 kapandı: mapbox/api.js sunucu 402 premium_required → "Premium gerektirir", diğer 402 → "aylık hakkı doldu"', /code === 'premium_required' \? 'Mapbox rotası Premium gerektirir/.test(src('js/mapbox/api.js')) && !/res\.status === 402\) throw new MapboxError\('Mapbox aylık hakkı doldu/.test(src('js/mapbox/api.js')));
 
 ok('gerçek ağ çağrısı yapılmadı', realNetCalls === 0, String(realNetCalls));
 console.log(`\nözet: envanter ${INVENTORY.length} koruma sabiti; bilinen boşluk ${gaps} (D2, açık); kota değerleri kaynak varsayılanıdır, doğrulanmadı`);
