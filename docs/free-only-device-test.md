@@ -133,3 +133,52 @@ paylaşılmaz. Kanıtlar depoya commit edilmez.
 `node scripts/test-free-only-mode.mjs` — A varsayılan değişmedi · B mod ayrıştırma fail-closed · C izin/ret tablosu · D kota (sanal saat) ve
 ücretli istek 0 · E harita (OpenFreeMap, Esri yok, `/v1/map/config` yok) · F gerçek rota/istasyon/hava/yükselti modülleri sahte `fetch` ile ·
 G `build-beta --free-only` geçici klasörde (yayın deposu ve git deposu reddi) · H kaynak değişmezleri · I yerel sunucu aracı.
+
+## 8. Yerel özel derleme kaydı (köprü `ce6f9141`, 2026-11-16) — YAYIN DEĞİL
+
+Durum: **derlendi ve dosya düzeyinde denetlendi; CİHAZDA TEST EDİLMEDİ.** D6 fiziksel cihaz kabulü `verified` değildir; yalnız kullanıcı işaretler.
+
+### 8.1 Derleme kimliği
+
+| Alan | Değer |
+|---|---|
+| Kaynak | `integ/beta-2026-11-14` @ `39dc62ccb3cd84b521355b9ffeb3320ddf49b952` (MBRP-integ, temiz çalışma kopyası) |
+| Sürüm | `APP_VERSION = '0.99.92'` (F0 satırında bu değer görülmeli) |
+| Komut | `node scripts/build-beta.mjs --free-only "D:/AI-Codes/evrf-localtest/build-0.99.92-39dc62c"` (çıkış 0) |
+| Çıktı | `D:\AI-Codes\evrf-localtest\build-0.99.92-39dc62c` — 206 dosya, ~15 MB, depo dışı, `.git` yok |
+| Dosya denetimi | `FREE-ONLY-LOCAL-TEST.txt` var; başlık "EV Route Finder (Beta – yerel ücretsiz test)"; çıktıda `PROVIDER_MODE_BUILD = 'free-only'`, kaynakta `'paused'` (kaynak değişmedi, `git status` temiz); `server/` ve `.env*` yok; anahtar deseni taraması (Google/Mapbox belirteç biçimleri) 0 eşleşme |
+| Yerel sunucu | `serve-local-test.mjs` yalnız 127.0.0.1 duman testi 7/7: `/` 200 + başlık, `/version.js` 0.99.92, `providerGate.js` free-only, `sw.js` JS türü, klasör dışı yol reddi, POST 405, `0.0.0.0` reddi |
+| Testler (@39dc62c) | `node scripts/check.mjs` tamam (187 dosya); `node scripts/test-free-only-mode.mjs` 165/0; `node scripts/run-tests-guarded.mjs` 110/110, BLOCK_ 0 — hepsi çevrimdışı/sahte veri |
+
+Bu klasör yalnız bu bilgisayarda durur; kopyalamayın, push etmeyin, herhangi bir sunucuya yüklemeyin. Test bitince silinebilir.
+
+### 8.2 Bu bilgisayara özgü notlar
+
+- `adb` PATH'te değil; Android SDK içinde: `%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe`. §3 komutlarını bu tam yolla çalıştırın
+  (Git Bash: `"/c/Users/<kullanıcı>/AppData/Local/Android/Sdk/platform-tools/adb.exe" reverse tcp:8080 tcp:8080`). Yeni kurulum gerekmez.
+- `openssl` Git Bash içinde mevcut (§4 iOS sertifikası için yeterli). Sertifika klasörü derleme klasörünün DIŞINDA tutulmalı (ör. `D:/AI-Codes/evrf-localtest/cert`).
+- Sunucu klasör olarak §8.1 çıktısını alır: `node "D:/AI-Codes/Claude Code/MBRP-integ/scripts/serve-local-test.mjs" "D:/AI-Codes/evrf-localtest/build-0.99.92-39dc62c"`.
+
+### 8.3 Bilinen sınırlar (karar bekleyen)
+
+- **D-FO-1 / canlı sunucu teması:** free-only istemci, varsayılan ara sunucuya (`evcopilot.duckdns.org`, üretime de hizmet eder) sağlayıcıya gitmeyen
+  istekler (`/v1/config`, istasyon bilgisi, eşitleme vb.) göndermeye çalışır. Depodaki `server/proxy.mjs` `ALLOW_ORIGINS` varsayılanı köken için tam eşleşme
+  yapar ve `http://localhost:8080` ya da `https://<LAN-IP>:8443` içermez; köken reddi her işleyiciden (OPTIONS dahil) önce 403 döner → beklenen etki: canlı
+  sunucu günlüğünde reddedilmiş istek satırları, veri yazımı yok, sağlayıcı çağrısı yok. Canlı sunucunun gerçek `ALLOW_ORIGINS` ortam değeri gizli dosyada
+  olduğundan okunmadı → **doğrulanmadı**; F3 satırında durum kodları kaydedilmeli. Tamamen kesmek kod değişikliği ister (D-FO-1 kararı).
+- Uydu düğmesi görünür ama etkisiz (D-FO-2); OpenFreeMap Worker karoları sayılmaz (D-FO-3); adil kullanım tavanları sabit (D-FO-4).
+- Trafik, doluluk, hız limiti (sunucu), ABRP telemetrisi bu derlemede bilerek yok; T8a (G-SERVER) koşulamaz, T8c uygulanamaz.
+
+### 8.4 Herkese açık Beta neden güncellenmedi
+
+"Beta'yı güncelle" isteği bu görevde yalnız yerel özel derleme olarak karşılandı. Herkese açık Beta (`ozdemirumit/EV-Route-Finder` GitHub Pages) güncellenemez, çünkü:
+
+1. **D6 erişim kararı (G-ACCESS):** onaylanan yöntem KAPALI cihaz testidir (A1 Android `adb reverse`, A2 iOS yerel HTTPS). Pages internete açıktır;
+   oraya konan her derleme herkesçe açılabilir. Bu, onaylı erişim kararının dışındadır.
+2. **G-PAUSE:** bayraksız `build-beta.mjs` çıktısı duraklatılmış moddadır (rota/hava/istasyon/karo ağa çıkmaz); yayımlanırsa canlı Beta 0.99.61'den daha az çalışır.
+3. **Free-only yayımlanamaz:** `--free-only` çıktısı tasarım gereği `ev-copilot-beta`'ya ve git deposuna yazılamaz; açık yayında topluluk servislerine
+   (OpenFreeMap, Valhalla, Nominatim, Overpass) kontrolsüz kullanıcı trafiği gider ve D-FO-1 canlı sunucu teması herkese açılır.
+4. **Açık kapılar:** G-SERVER, G-PAID, S-1, N-1 çözülmedi; D6 [F] listesi boş.
+
+Açık Beta için gereken kullanıcı kararı (biri): (a) D6 erişim kararını "herkese açık free-only Beta"ya genişletmek + D-FO-1..4 ve sağlayıcı adil kullanım
+riskinin kabulü; (b) erişim denetimli bir barındırma (yeni servis — ayrıca onay ister); (c) önce D6 [F] testini yerelde koşup sonucu kaydetmek, sonra karar.

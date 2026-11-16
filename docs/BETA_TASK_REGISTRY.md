@@ -2,7 +2,9 @@
 
 > **Kapsam:** Yalnızca Beta, kaynak dalı `design/modern-ui-soc`. `main` / üretim (v0.86.1) bu kaydın dışında.
 > **Makine okunur kopya:** [`docs/beta-task-registry.json`](beta-task-registry.json). İki dosya birlikte güncellenir. Çelişki olursa JSON esas alınır.
-> **Son güncelleme:** 2026-11-16T16:34:06Z (BETA **yalnız ücretsiz sağlayıcı modu — kapalı cihaz testi**, köprü `dee61f95`, yerel; **v0.99.92**): taban integ `9965cfb` (418c2ff5 completed; 70bbbd9a/c3f6ff69 yayın kapıları BLOCKED kaldı, aşılmadı). Dal `feat/beta-free-only-9965cfb` (MBRP-freeonly) tek commit; yalnız tüm kapılar yeşilse integ'e `--ff-only`. **Push yok, Beta yayını yok, sunucu değişmedi, ücretli/gerçek API çağrısı yok, cihazda test edilmedi.** Ayrıntı §7.4 ve `docs/free-only-device-test.md`.
+> **Son güncelleme:** 2026-11-16T17:05:00Z (BETA **güncelleme takibi — yalnız YEREL özel cihaz test derlemesi**, köprü `ce6f9141`, yalnız belge; sürüm değişmedi **v0.99.92**): `dee61f95` köprüde completed ve esasta başarılı — `39dc62c` = integ HEAD (temiz). Kapılar yeşil: check.mjs, test-free-only-mode 165/0, run-tests-guarded 110/110 BLOCK_ 0. Yerel derleme `D:\AI-Codes\evrf-localtest\build-0.99.92-39dc62c` üretildi ve denetlendi (§7.5). **Herkese açık Beta güncellenmedi** (D6 erişim kararı yalnız kapalı yerel test), push yok, cihazda test yok.
+
+> Önceki: 2026-11-16T16:34:06Z (BETA **yalnız ücretsiz sağlayıcı modu — kapalı cihaz testi**, köprü `dee61f95`, yerel; **v0.99.92**): taban integ `9965cfb` (418c2ff5 completed; 70bbbd9a/c3f6ff69 yayın kapıları BLOCKED kaldı, aşılmadı). Dal `feat/beta-free-only-9965cfb` (MBRP-freeonly) tek commit; yalnız tüm kapılar yeşilse integ'e `--ff-only`. **Push yok, Beta yayını yok, sunucu değişmedi, ücretli/gerçek API çağrısı yok, cihazda test edilmedi.** Ayrıntı §7.4 ve `docs/free-only-device-test.md`.
 
 > Önceki: 2026-11-16T16:08:15Z (BETA **kayıt + yayın engeli uzlaştırması**, köprü `418c2ff5`, yalnız belge, yerel; sürüm değişmedi v0.99.91): integ `08a3cde` = `origin/beta/verified-integration-2026-11-16` `08a3cded6ec382f64143c63d540a4841c5a2844f` (`git ls-remote`); zincir `e090676` → `8d0c522` (e44a5b81) → `8625735` D6 hazırlık (8858f5da) → `2c06f69` S-1/N-1 (4b7c802d; push 1d356223) → `08a3cde` v0.99.91 üst bar (fa065b60; push 16859cbd). Salt okunur denetim 2b3f7ae4 completed. **Yayın yok:** 70bbbd9a ve c3f6ff69 köprüde completed/çıkış 0 ama esasta **BLOCKED** (D6/G-ACCESS, G-PAUSE, G-SERVER, G-PAID). Canlı Beta **0.99.61** (EV-Route-Finder main `4c3bd73`, 2026-11-13; bu görev curl + ls-remote ile okudu), üretim 0.86.1. Hiçbiri cihazda doğrulanmadı. Ayrıntı §7.2, kapılar ve önerilen karar matrisi §7.3. Bu belge commit'i push EDİLMEDİ.
 
@@ -536,6 +538,18 @@ F1 onaylanırsa: ayrı görev, yalıtılmış worktree, önce başarısız test,
 | G-DEVICE | **boş** | `docs/free-only-device-test.md` §6 T1–T11 + F0–F3 [F] kanıt listesi; `verified` yalnız kullanıcı. |
 
 Açık kararlar: D-FO-1 (kendi sunucunun sağlayıcıya gitmeyen yolları da kapatılsın mı), D-FO-2 (uydu düğmesi gizlensin mi), D-FO-3 (OpenFreeMap Worker karo sayacı), D-FO-4 (adil kullanım sınır değerleri). G-SERVER, G-PAID, S-1, N-1 değişmedi.
+
+### 7.5 Yerel özel cihaz test derlemesi (2026-11-16, ce6f9141, v0.99.92) — yayın DEĞİL
+
+| Konu | Durum | Kanıt |
+|---|---|---|
+| dee61f95 sonucu | **completed, esasta başarılı** | Köprü tasks.json `completed`; `39dc62c` integ/beta-2026-11-14 HEAD (`git merge-base --is-ancestor`), MBRP-integ ve MBRP-freeonly temiz. |
+| Kapılar | **yeşil (çevrimdışı)** | check.mjs v0.99.92 187 dosya; test-free-only-mode 165/0 (A1–A4 kaynak duraklatılmış, C2/D1 ücretli ana makineler ret + ağa çıkmadı, C4/D1b ara sunucu sağlayıcı yolları ret); run-tests-guarded 110/110 BLOCK_ 0 (D:/AI-Codes/ce6f9141-logs/guarded-pre). |
+| Yerel derleme | **üretildi (yalnız bu bilgisayarda)** | `D:\AI-Codes\evrf-localtest\build-0.99.92-39dc62c` — 206 dosya; FREE-ONLY-LOCAL-TEST.txt; başlık "(Beta – yerel ücretsiz test)"; çıktıda `PROVIDER_MODE_BUILD = 'free-only'`, kaynakta `'paused'`; `.git`/`server/`/`.env` yok; anahtar deseni taraması 0. serve-local-test 127.0.0.1 duman testi 7/7. |
+| Yayın | **yok** | Push yok; GitHub Pages / EV-Route-Finder / ev-copilot-beta, üretim, canlı sunucu dokunulmadı; ücretli API çağrısı yok; ajan cihaza/adb'ye dokunmadı. |
+| G-DEVICE (D6) | **boş, verified DEĞİL** | `docs/free-only-device-test.md` §6 [F] listesi + §8 derleme kaydı; sonucu yalnız kullanıcı yazar. |
+
+Herkese açık Beta neden güncellenmedi: D6 erişim kararı (G-ACCESS) yalnız kapalı yerel testi (A1 `adb reverse`, A2 iOS yerel HTTPS) onaylıyor; Pages herkese açıktır. Bayraksız derleme duraklatılmıştır (G-PAUSE: rota/hava/istasyon çalışmaz), `--free-only` çıktısı tasarım gereği `ev-copilot-beta`'ya yazılamaz, G-SERVER/G-PAID/S-1/N-1 açık ve D6 koşulmadı. Açık Beta güncellemesi için önce kullanıcının D6 erişim kararını değiştirmesi gerekir (ayrıntı: `docs/free-only-device-test.md` §8.4).
 
 ## 8. Açık hatalar
 
