@@ -401,7 +401,7 @@ harici API çağrısı, Playwright ve sunucu başlatma yapılmadı. Makine okunu
 | K2 | NDW **0/N doğrulanmamışsa "Bilinmiyor"** (dolu sayılmaz). | §7.3 K2 | — |
 | K4 | TomTom dahil sağlayıcı doluluk verisi **ingest edilir** (alınır/normalize edilir), fakat zaman damgası yoksa K1 gereği **doğrulanmış canlı doluluk gösterilmez**. | §7.3 K4 | ingest kapsamı D3-T2'de |
 | AGE | **15 dakikadan eski** doluluk verisi **"Bilinmiyor"** sayılır. | §6.3-2, §7.3 aging | bugünkü biçimlendirici `OCC_THRESHOLDS` 15 dk–2 sa aralığını "aging" durumu ile gösterir; D3-T1/T4'te bu karara göre bilinçli uyarlanır (test gevşetilmez) |
-| K3 | **Topluluk bildirimi resmî doluluktan ayrı** veri; resmî doluluk durumunu belirlemez/üzerine yazmaz. | §6.3-3 | planlayıcıyı etkileyip etkilemeyeceği bu kararda ayrıca belirtilmedi → D3-T3'te teyit |
+| K3 | **Topluluk bildirimi resmî doluluktan ayrı** veri; resmî doluluk durumunu belirlemez/üzerine yazmaz. | §6.3-3 | planlayıcıyı etkileyip etkilemeyeceği bu kararda ayrıca belirtilmedi → D3-T3 veri ayrımını yaptı (§8.6), planlayıcıyı DEĞİŞTİRMEDİ; planlayıcı etkisi AÇIK (ayrı karar) |
 | K5 | Arayüz **üç durum**: **Müsait / Dolu / Bilinmiyor**. | §6.3-4 | uygulama yolu (`slotEl` düzeltme / `occupancyView` bağlama + `sw.js` SHELL) D3-T4'te |
 | K6 | **"Canlı" etiketi yalnız doğrulanmış güncel fiyat** verisine. | §6.3-5 | "doğrulanmış güncel fiyat" ölçütü D3-T5'te testle sabitlenir (BL-P2-10 ile ilişkili) |
 
@@ -414,8 +414,8 @@ Bu sonuç gerçek sağlayıcı yanıtıyla doğrulanmadı (yalnız ayrıştırı
 | Sıra | Görev | Kapsam | Kararlar | Bağımlı | Durum |
 |---|---|---|---|---|---|
 | 1 | **D3-T1** | Saf `occupancyDecision` + zaman damgası / 15 dk testleri (eski R3-a; çağıran yok, sentetik fikstür, `now` parametresi, ağ yok; `test-occupancy-consistency-contract` 12/12 KNOWN-GAP değişmez; `js/` değişirse sürüm artışı) | K1, K2, K4, AGE | — | COMPLETED — yerel entegre (`c759f62`, `ec585e43`, v0.99.81; §8.4) |
-| 2 | **D3-T2** | NDW / TomTom bağdaştırıcısı: ingest, zaman damgası yoksa doğrulanmamış (sunucu değişirse canlıya alma = sunucu yeniden başlatma onayı, eski R3-e) | K1, K2, K4 | D3-T1 | RUNNING → yerel commit + `--ff-only` integ (`ddb92ce9`; sunucu bağdaştırıcısı bağlı, istemci/UI bağlı değil; §8.5) |
-| 3 | **D3-T3** | Topluluk bildirimi ayrı veri | K3 | D3-T1 | PLANNED |
+| 2 | **D3-T2** | NDW / TomTom bağdaştırıcısı: ingest, zaman damgası yoksa doğrulanmamış (sunucu değişirse canlıya alma = sunucu yeniden başlatma onayı, eski R3-e) | K1, K2, K4 | D3-T1 | COMPLETED — yerel entegre (`045a257`, `ddb92ce9`; sunucu bağdaştırıcısı bağlı, istemci/UI bağlı değil; §8.5) |
+| 3 | **D3-T3** | Topluluk bildirimi ayrı veri | K3 | D3-T1 | RUNNING → yerel commit + `--ff-only` integ (`aa4c329c`, v0.99.82; veri modeli, bağlı değil, planlayıcı değişmedi; §8.6) |
 | 4 | **D3-T4** | Üç durum arayüz Müsait / Dolu / Bilinmiyor (eski R3-d; nav/planlayıcı hizalaması R3-b/R3-c ile ilişkili; i18n değişirse `i18n-validate`) | K5, AGE | D3-T1, D3-T2, D3-T3 | PLANNED |
 | 5 | **D3-T5** | Fiyat "Canlı" etiketi yalnız doğrulanmış güncel fiyata | K6 | D3-T1 | PLANNED |
 | 6 | **D3-T6** | Regresyon: `run-tests-guarded` tam paket + D3 sözleşme testleri | tümü | D3-T1..T5 | PLANNED |
@@ -463,3 +463,16 @@ Temel: `integ/beta-2026-11-14` @`c759f62` (görev başında temiz; D3-T1 köprü
 - **Not:** sunucu açılışında Node bir kez `MODULE_TYPELESS_PACKAGE_JSON` uyarısı basar (`js/` dosyası ESM olarak yeniden ayrıştırılır); `package.json` değiştirilmedi.
 - **Doğrulama durumu:** yalnız çevrimdışı/sahte fikstür; gerçek NDW/TomTom yanıtıyla ve gerçek cihazda doğrulanmadı; canlıya alma = sunucu yeniden başlatma (ayrı onay, yapılmadı); push/yayın yok. Tarayıcı ağ riskinin sıfır olduğu iddia edilmez.
 - **Sıradaki:** D3-T3 (topluluk ayrı veri) ya da D3-T5; D3-T4 D3-T2 + D3-T3'e bağlı.
+
+### 8.6 D3-T3 uygulandı — topluluk bildirimi ayrı veri (2026-11-16, köprü `aa4c329c`; v0.99.82)
+
+Temel: `integ/beta-2026-11-14` @`045a257` (görev başında temiz; D3-T2 köprüde completed/çıkış 0 ve integ HEAD olarak doğrulandı), yalıtılmış worktree `MBRP-d3t3`, dal `feat/community-reports-d3-t3`.
+
+- **Veri modeli (K3):** yeni saf `js/routing/communityReport.js` `communityReport(slots|community, { now })` → `{ kind: 'community', official: false, verified: false, busy, report: { status: 'full'|'free', at, ageMin } | null }` ya da `null`.
+  Resmî karar alanlarını (`trusted`/`state`/`available`/`total`/`source`) taşımaz; bildirim en fazla 60 dk (sunucu `REPORT_MS`), zamansız/gelecek (> 1 dk) bildirim yok sayılır. Çağıran yok (bağlama D3-T4).
+- **Resmî karar koruması:** `js/routing/occupancyDecision.js` `source: 'community'` (büyük/küçük harf, boşluk dahil) → `unknown` / `community-not-official`. Diğer resmî olmayan kaynaklar zaten `unknown-source`. `community` alanı resmî kararı değiştirmez (aynı çıktı testle sabit): topluluk "Boş" bildirimi doğrulanmış resmî "Müsait"e dönüşemez; topluluk "Dolu" resmî "Müsait"i ezmez.
+- **Rota planlaması DEĞİŞMEDİ:** `js/routing/slots.js` `slotKind` mevcut kuralı (resmî sayı yoksa taze topluluk "Dolu" < 20 dk → `full`; topluluk "Boş" asla `free`; resmî sayı varsa topluluk yok sayılır) aynen korunur ve testle kilitlendi; planlayıcı/nav modülleri yeni modeli içe aktarmaz. **Açık karar:** topluluk bildirimi planlayıcıyı etkilesin mi (koru / kaldır / yalnız uyarı) — ayrı kullanıcı kararı gerekir.
+- **Test:** `scripts/test-community-separation.mjs` 66/0 — sentetik; global `fetch` hata fırlatan sahte (0 çağrı); sunucu açılmaz. Uygulamadan önce modül yok → FAIL; mutasyonlar (koruma kaldırma; `official: true` + yaş penceresi 2×) 3/3 FAIL yakalandı.
+- **Dokunulmadı:** `server/` (topluluk özeti zaten `{ busy, report }`, kullanıcı kimliği yok — testle doğrulandı), UI, i18n, `sw.js`, planlayıcı. 12/12 KNOWN-GAP değişmedi.
+- **Doğrulama durumu:** yalnız çevrimdışı/sentetik; gerçek cihazda doğrulanmadı; push/yayın yok. Tarayıcı ağ riskinin sıfır olduğu iddia edilmez.
+- **Sıradaki:** D3-T4 (üç durum arayüz; D3-T2 + D3-T3 tamamlandıktan sonra) ya da D3-T5.

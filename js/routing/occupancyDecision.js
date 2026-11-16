@@ -34,6 +34,8 @@ export function occupancyDecision(input, { now } = {}) {
   let a = input;
   if (isObj(a) && a.source === undefined && isObj(a.availability)) a = a.availability;
   if (!isObj(a) || a.source === undefined) return unknown('no-data');
+  // K3 (D3-T3): topluluk bildirimi resmî doluluk değildir; resmî biçimde gelse bile doğrulanmış duruma dönüşemez.
+  if (typeof a.source === 'string' && a.source.trim().toLowerCase() === 'community') return unknown('community-not-official');
 
   const d = formatOccupancy(a, { now, thresholds: THRESHOLDS });
   if (d.freshness === 'unverified' && d.reason === 'unverified-time') return unknown('no-timestamp', d.source);
