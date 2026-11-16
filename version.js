@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.86';
+self.APP_VERSION = '0.99.87';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.87', date: '2026-11-16',
+    notes: [
+      'Hava durumu alınamadığında (internet yok, servis yanıt vermiyor) uygulama artık her saniye yeniden denemez: önce 1 dakika, sonra 2, 4, 8 dakika, en çok 10 dakikada bir dener. İnternet dönünce hava bilgisi en geç 10 dakika içinde yenilenir; normal 15 dakika / 25 km yenileme kuralı değişmedi. Gereksiz veri ve pil kullanımı azalır.',
+    ],
+  },
   {
     v: '0.99.86', date: '2026-11-16',
     notes: [

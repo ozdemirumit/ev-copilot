@@ -284,20 +284,58 @@ ok(`D3 14 dk park, ABRP kapalı: hava ≤ 1, başka istek yok: ${JSON.stringify(
 moving = true;
 
 // =====================================================================================================================
-// E) KNOWN-GAP — kanıtlanan gereksiz istek yolları (G1 düzeltir; kararlar kullanıcıda değil, düzeltme ayrı görev)
+// E) KNOWN-GAP — kanıtlanan gereksiz istek yolları (W-1 G1a'da kapandı → kabul denetimleri; yeni boşluk knownGap ile eklenir)
 // =====================================================================================================================
-// W-1: rangeEngine.maybeRefreshWeather hata yolunda weather.at = (önceki || 0) yazar; hiç başarı yoksa at = 0 → koruma
-// (w.at && …) atlanır ve 1 sn'lik her menzil tick'i yeni bir Open-Meteo isteği atar (geri çekilme yok). Ağ yok / 429 / DNS
-// hatasında dakikada ~60 istek. Not: Beta'da sağlayıcı duraklatması (providerGate) açıkken istek ağa çıkmaz ama yine her sn denenir.
+// W-1 (G1a ile KAPANDI): rangeEngine.maybeRefreshWeather hata yolunda eskiden weather.at = (önceki || 0) yazıyordu; hiç başarı yoksa
+// at = 0 → koruma (w.at && …) atlanıyor ve 1 sn'lik her menzil tick'i yeni Open-Meteo isteği atıyordu (60 sn'de 60 istek).
+// Şimdi: ardışık hatada üstel geri çekilme (60 sn → 2 → 4 → 8 dk, en çok 10 dk); başarı sayacı sıfırlar; 15 dk / 25 km tazelik aynı.
+// Aşağıdaki denetimler sanal saatle (gerçek ağ yok) bu kabul ölçütlerini kanıtlar.
 const { clearCache } = await import('../js/utils/cache.js');
+const { wxRetryDelayMs, WX_RETRY_MIN_MS, WX_RETRY_MAX_MS } = await import('../js/physics/rangeEngine.js');
+ok('W-1 geri çekilme sabitleri: en az 60 sn, en çok 10 dk', WX_RETRY_MIN_MS === 60e3 && WX_RETRY_MAX_MS === 10 * 60e3);
+ok('W-1 wxRetryDelayMs: 0 hata → 0; 1..5 → 60/120/240/480/600 sn; 50 → 600 sn (taşma yok)',
+  typeof wxRetryDelayMs === 'function' && wxRetryDelayMs(0) === 0 && [1, 2, 3, 4, 5].map(wxRetryDelayMs).join() === [60e3, 120e3, 240e3, 480e3, 600e3].join() && wxRetryDelayMs(50) === 600e3 && wxRetryDelayMs(1e6) === 600e3,
+  typeof wxRetryDelayMs === 'function' ? [0, 1, 2, 3, 4, 5, 50].map(wxRetryDelayMs).join() : 'yok');
 clearCache();
 weatherMode = 'fail';
+moving = true;
 patch('weather', { temp: null, rain: null, at: 0, lat: null, lon: null });
+const wxCalls = (from) => calls.slice(from).filter((c) => c.host === 'api.open-meteo.com');
 const c3 = calls.length;
 await advance(60e3);
-const storm = calls.slice(c3).filter((c) => c.host === 'api.open-meteo.com').length;
-knownGap('W-1', 'rangeEngine hava tazeleme hiç başarı yokken hata sonrası her 1 sn tick\'te yeniden Open-Meteo ister (geri çekilme yok)', storm >= 30, `60 sn'de ${storm} istek`);
+const storm = wxCalls(c3).length;
+ok(`W-1 hiç başarı yokken hata: 60 sn'de en çok 2 Open-Meteo isteği (eskiden 60): ${storm}`, storm >= 1 && storm <= 2, String(storm));
+// 30 dk kesinti, araç hareketli (≈ 45 km, 25 km eşiği defalarca aşılır): istek sayısı üstel takvimle sınırlı
+const c4 = calls.length;
+await advance(30 * 60e3);
+const out30 = wxCalls(c4);
+const gaps30 = out30.slice(1).map((c, i) => c.t - out30[i].t);
+ok(`W-1 30 dk kesinti + hareket: Open-Meteo ≤ 6 istek (eskiden ~1800): ${out30.length}`, out30.length >= 2 && out30.length <= 6, String(out30.length));
+ok(`W-1 ardışık hata istekleri arası ≥ 60 sn ve azalmayan (üstel), ≤ 10 dk + 1 tick: ${gaps30.slice(0, 12).map((g) => g / 1e3).join('/')} sn`,
+  gaps30.every((g, i) => g >= 60e3 && g <= 10 * 60e3 + 1e3 && (i === 0 || g >= gaps30[i - 1])), gaps30.slice(0, 12).join() + (gaps30.length > 12 ? ` … (+${gaps30.length - 12})` : ''));
+// tekilleştirme: aynı anda yalnız bir istek (wxBusy) — aynı tick zamanına iki hava isteği düşmez
+const tAll = wxCalls(c3).map((c) => c.t);
+ok('W-1 tekilleştirme: aynı anda iki hava isteği yok', new Set(tAll).size === tAll.length);
+// ağ döner: tazelik korunur — en geç bir geri çekilme süresi (≤ 10 dk) içinde yeniden istenir ve başarı kaydedilir
 weatherMode = 'ok';
+const c5 = calls.length; const tBack = now;
+await advance(10 * 60e3 + 2e3);
+const rec = wxCalls(c5);
+ok(`W-1 ağ dönünce ≤ 10 dk içinde hava yeniden alınır (tazelik): ${rec.length} istek, ilk ${rec[0] ? (rec[0].t - tBack) / 1e3 + ' sn' : '-'}`, rec.length >= 1 && rec[0].t - tBack <= 10 * 60e3 + 1e3);
+ok('W-1 başarı weather.at alanını yazar', getState('weather').at >= tBack);
+// başarı sonrası sayaç sıfırlanır: yeni tek hata yine 60 sn bekletir (10 dk değil), sonra normal 15 dk / 25 km koruması işler
+moving = false;
+const tOk = getState('weather').at;
+clearCache(); // 30 dk hücre önbelleği tazelemeyi ağsız karşılamasın: 15 dk dolunca istek gerçekten sahte ağa gider (ve düşer)
+weatherMode = 'fail';
+const c6 = calls.length;
+await advance(17 * 60e3 - (now - tOk)); // tOk + 15 dk: tazeleme hatası → 60 sn bekleme → tOk + 16 dk: ikinci hata → 120 sn
+const after = wxCalls(c6).map((c) => c.t);
+const aGaps = after.slice(1).map((t, i) => t - after[i]);
+ok(`W-1 başarıdan sonra ilk hata yeniden 60 sn'den başlar (sayaç sıfırlandı; ilk hata tOk + 15 dk): ${aGaps.slice(0, 12).map((g) => g / 1e3).join('/')} sn`, after.length >= 2 && after[0] - tOk >= 15 * 60e3 && after[0] - tOk <= 15 * 60e3 + 1e3 && aGaps[0] >= 60e3 && aGaps[0] <= 61e3, `${after.length} istek`);
+ok(`W-1 bayat hava ile hata: 15 dk koruma dolduktan sonra her tick yerine geri çekilme (2 dk içinde ≤ 2 istek): ${after.length}`, after.length <= 2, String(after.length));
+weatherMode = 'ok';
+moving = true;
 
 console.warn = realWarn;
 ok('gerçek ağ çağrısı yok: tüm istekler sahte fetch\'e gitti, XHR/WebSocket/EventSource denenmedi', !calls.some((c) => ['XMLHttpRequest', 'WebSocket', 'EventSource'].includes(c.host)));

@@ -20,6 +20,16 @@ let odo = 0;
 let altRef = null;
 let lastStatsAt = null;
 let wxBusy = false;
+let wxFails = 0; // ardışık hava tazeleme hatası (başarı sıfırlar)
+let wxFailAt = 0; // son hatanın duvar saati (ms)
+
+/** Hava tazeleme hatasında geri çekilme: 60 sn, sonra her hatada iki katı, en çok 10 dk (ağ yok / 429 / 5xx'te her sn istek atılmaz). */
+export const WX_RETRY_MIN_MS = 60e3;
+export const WX_RETRY_MAX_MS = 10 * 60e3;
+export function wxRetryDelayMs(fails) {
+  if (!(fails > 0)) return 0;
+  return Math.min(WX_RETRY_MAX_MS, WX_RETRY_MIN_MS * 2 ** Math.min(fails - 1, 10));
+}
 
 /**
  * Model "ne biliyor?" sorusu: rota planlıysa rota profilindeki tahmin koşulları (hava servisi + rakım),
@@ -50,11 +60,15 @@ async function maybeRefreshWeather(e) {
   const w = getState('weather');
   const moved = w.lat == null ? Infinity : haversineKm({ lat: w.lat, lon: w.lon }, { lat: e.lat, lon: e.lon });
   if (w.at && Date.now() - w.at < 15 * 60e3 && moved < 25) return;
+  if (wxFails && Date.now() - wxFailAt < wxRetryDelayMs(wxFails)) return; // son hatadan sonra geri çekilme süresi dolmadı
   wxBusy = true;
   try {
     const [r] = await fetchWeather([{ lat: e.lat, lon: e.lon, t: Date.now() }]);
     patch('weather', { ...r, at: Date.now(), lat: e.lat, lon: e.lon });
+    wxFails = 0;
   } catch (err) {
+    wxFails++;
+    wxFailAt = Date.now();
     console.warn('Hava durumu alınamadı:', err.message);
     patch('weather', { at: w.at || 0 });
   } finally {

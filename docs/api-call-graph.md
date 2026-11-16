@@ -6,7 +6,7 @@ sınırlayan koruma. Taban: `integ/beta-2026-11-14` @`cab7756` (v0.99.86, R4 D2-
 duraklatma kapıları, sunucu sayaçları — burada tekrarlanmaz). **Hiçbir API çağrısı varsayılmadı**: her satır kaynakta bulunan bir
 çağrı noktasına ya da testte sayılan bir isteğe dayanır. Gerçek ağ / gerçek anahtar / cihaz kullanılmadı; cihazda DOĞRULANMADI.
 
-Uygulama kodu bu adımda **değişmedi** (sürüm v0.99.86 kalır). Bulunan boşluk (W-1) KNOWN-GAP olarak sabitlendi; düzeltme G1.
+Uygulama kodu bu adımda **değişmedi** (sürüm v0.99.86 kalır). Bulunan boşluk (W-1) KNOWN-GAP olarak sabitlendi; düzeltme G1. **G1a (v0.99.87) W-1'i kapattı** — aşağıdaki W-1 satırı.
 
 ## 1. Özet bulgular
 
@@ -18,7 +18,7 @@ Uygulama kodu bu adımda **değişmedi** (sürüm v0.99.86 kalır). Bulunan boş
 | F4 | ABRP telemetrisi açıkken (Premium + kullanıcı token'ı) 10 dk'da **10 istek** (60 sn); GPS 1 Hz / OCR 5 sn sıklığı artırmaz. | test §D2 |
 | F5 | Park (hız 0) 14 dk: en çok 1 hava isteği, başka istek yok. | test §D3 |
 | F6 | Hesap eşitlemesi (kendi sunucu `/v1/sync`, yalnız oturum açıkken, 4 sn gecikmeli) sürüşte yalnız `kCal` (SOC %1 düşüş kenarında, 30 dk'da 5) ve `hist` (≥ 5 km pencere, 2) ile tetiklenir; SOC tahmini ve son konum kayıtları sessizdir. Ücretli sağlayıcı değil. | test §D1, §B |
-| **W-1** | **Gereksiz istek:** `rangeEngine.maybeRefreshWeather` hiç başarı yokken hata alırsa `weather.at` 0 kalır (`js/physics/rangeEngine.js:59`), koruma (`w.at && …`, `:51`) atlanır ve 1 sn'lik her tick (`:177`, `:194`) yeni Open-Meteo isteği atar: **60 sn'de 60 istek**. Ağ yok / DNS / 429 / 5xx'te geçerli. Beta'da sağlayıcı duraklatması açıkken istek ağa çıkmaz ama her saniye denenir. | test §E `KNOWN-GAP W-1` |
+| **W-1** | **Gereksiz istek:** `rangeEngine.maybeRefreshWeather` hiç başarı yokken hata alırsa `weather.at` 0 kalır (`js/physics/rangeEngine.js:59`), koruma (`w.at && …`, `:51`) atlanır ve 1 sn'lik her tick (`:177`, `:194`) yeni Open-Meteo isteği atar: **60 sn'de 60 istek**. Ağ yok / DNS / 429 / 5xx'te geçerli. Beta'da sağlayıcı duraklatması açıkken istek ağa çıkmaz ama her saniye denenir. **Kapandı (G1a, v0.99.87):** ardışık hatada geri çekilme `wxRetryDelayMs` 60 sn → 2 → 4 → 8 dk, en çok 10 dk; başarı sayacı sıfırlar; 15 dk / 25 km tazelik ve `wxBusy` tekilleştirme aynı. Sanal saatle: 60 sn'de 1 istek, 30 dk kesinti + hareket 5 istek (eskiden 60 / 1800). | test §E `W-1` kabul denetimleri (`ok`) |
 
 ## 2. Ağ çağrı noktaları (sink manifestosu — test §A ile iki yönlü eşit)
 
@@ -46,7 +46,7 @@ iletir) ve `providerGate.js` (duraklatmada isteği alttaki fetch'e hiç iletmez)
 | `js/osm/elevation.js` | fetch 1 | yükselti servisi | açık | rota planı / zenginleştirme |
 | `js/osm/search.js` | fetch 2 | photon.komoot.io, Nominatim | açık | kullanıcı yazınca; ters adres yalnız haritaya dokunuşta |
 | `js/osm/valhalla.js` | fetch 1 | valhalla1.openstreetmap.de | açık | rota, durak erişim sorgusu (tekilleştirilmiş, 120 sn tekrar), hız limiti (20 sn / 1 km, hata öncesi `lastQ`) |
-| `js/osm/weather.js` | fetch 1 | api.open-meteo.com | açık | `rangeEngine` (15 dk / 25 km; **W-1**), `ahead` (10/20 dk, hata dahil `wxAt`/`pwAt` güncellenir), plan; 11 km hücre 30 dk önbellek |
+| `js/osm/weather.js` | fetch 1 | api.open-meteo.com | açık | `rangeEngine` (15 dk / 25 km; hata: 60 sn→10 dk geri çekilme, W-1 kapandı), `ahead` (10/20 dk, hata dahil `wxAt`/`pwAt` güncellenir), plan; 11 km hücre 30 dk önbellek |
 | `js/routing/occupancyClient.js` | proxyFetch 1 | `/v1/occupancy` | sunucu→sağlayıcı | `livePlan` 30 sn zamanlayıcı (Free 5 dk / Premium 2 dk / kritik 1 dk; `lastAvail` istekten önce), `nearby` 60 sn, kart |
 | `js/routing/tariffs.js` | proxyFetch 1 | `/v1/tariffs` | kendi (önbellek) | açılış |
 | `js/routing/tesla.js` | proxyFetch 1 | `/v1/tesla` | sunucu→sağlayıcı | istasyon kaynağı |
@@ -68,7 +68,7 @@ GPS watchPosition ──► gps.onPosition ──► patch('live')  ── (ağ 
                                                      └─► defaultStart ─► mapApi.setPoint(start) ─► controller.refresh (plan yoksa dön; yerel computePlan)
 OCR çevrimi (5 sn) ─► ocr.js kabul ─► patch('ocr') + patch('live'.soc) ── (ağ YOK) ──► socEstimate (sessiz kayıt)
 Zamanlayıcılar (konum/SOC'yi OKUR, olay başına istek atmaz):
-  rangeEngine 1 sn ─► maybeRefreshWeather ─► Open-Meteo   [15 dk / 25 km; W-1 hata yolu her sn]
+  rangeEngine 1 sn ─► maybeRefreshWeather ─► Open-Meteo   [15 dk / 25 km; hata: 60 sn→10 dk geri çekilme (W-1 kapandı)]
                    └► tracker SOC kenarı ─► save('kCal') ─► sync.js 4 sn ─► /v1/sync (oturum varsa)
   telemetry 60 sn  ─► api.iternio.com (+ webhook)         [Premium + açık + token]
   livePlan 5 sn    ─► replanFrom (yerel) ─► applyPlan ─► verifyStopAccess ─► Valhalla [tekil; 120 sn tekrar]
@@ -84,7 +84,7 @@ Hepsi: Beta'da providerGate (istemci) + server/providerGate.mjs varsayılan DURA
 
 ## 4. Bilinen boşluklar (açık) ve kapsam dışı gözlemler
 
-- **W-1 (yeni, G1):** yukarıda. Kabul ölçütü önerisi: hata sonrası en az 60 sn (ya da üstel) bekleme; test §E satırı `ok(...)`'a çevrilir.
+- **W-1 (G1a ile kapandı, v0.99.87):** hata sonrası en az 60 sn, üstel, en çok 10 dk bekleme; test §E KNOWN-GAP satırı `ok(...)` kabul denetimlerine çevrildi.
 - D2-T0'dan açık: **Q-SOC-1** (`advisor/fallback.js` SOC tabanlı `replanFrom` güven denetimsiz), **Q-SOC-2** (`nearby.checkLow` kaynak
   denetimsiz arama/doluluk), **Q-SRV-1/2/3** (sunucu sayacı reddedilende artar, aylık sınır NaN'da açık, günlük sayaç bellekte).
 - Harita karoları MapLibre Web Worker'ından yüklenir: `fetch` sarmalayıcısı ve bu manifest onları görmez (`providerGate.js:8`);
