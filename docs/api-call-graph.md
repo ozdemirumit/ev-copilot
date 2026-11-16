@@ -89,7 +89,10 @@ Hepsi: Beta'da providerGate (istemci) + server/providerGate.mjs varsayılan DURA
   arama/doluluk (`checkLow` refreshOccupancy + autoSearch, `watch` düşük pil sıklığı) yalnızca `socTrusted` (live/manual/Test Modu sim)
   ile; güvenilmeyen pilde uyarı, ses ve eko-hız tavsiyesi sürer, elle Yenile ve normal sürüş tazelemesi değişmedi. Davranış testi
   `scripts/test-soc-request-gates.mjs`; `test-d2-quota-inventory` KNOWN-GAP satırları `ok(...)` kabul denetimine çevrildi.
-- D2-T0'dan açık: **Q-SRV-1/2/3** (sunucu sayacı reddedilende artar, aylık sınır NaN'da açık, günlük sayaç bellekte).
+- **Q-SRV-1/2/3 (G2a ile kapandı, sunucu):** reddedilen istek (429 günlük / 402 aylık sınır) günlük kullanıcı hakkını harcamaz ve
+  aylık sınırlar günlük haktan önce denetlenir; `MAPBOX_MONTHLY_CAP` / `HERE_MONTHLY_CAP` geçersizse sınır 0 (fail-closed), boşsa
+  eski varsayılan; günlük kullanıcı sayacı `db.json` (`dailyUsage`, `server/quotaCounters.mjs`) içinde kalıcı. Davranış testi
+  `scripts/test-server-quota.mjs`; `test-d2-quota-inventory` KNOWN-GAP satırları `ok(...)` kabul denetimine çevrildi.
 - Harita karoları MapLibre Web Worker'ından yüklenir: `fetch` sarmalayıcısı ve bu manifest onları görmez (`providerGate.js:8`);
   takip kamerası GPS ile kaydıkça karo isteği oluşabilir. Duraklatmada yerel boş stil kullanılır. Sayılmadı → G2.
 - `nearby.refreshNearby` hata (throw) yolunda `meta.at` güncellenmez; `autoSearch` 45 sn bekler. `fetchAround` sağlayıcı hatalarını
@@ -100,8 +103,8 @@ Hepsi: Beta'da providerGate (istemci) + server/providerGate.mjs varsayılan DURA
 - **G1 — istemci düzeltmeleri:** YAPILDI — G1a W-1 (v0.99.87), G1b Q-SOC-1 / Q-SOC-2 (v0.99.88); `test-api-call-graph` D1–D3
   sınırları korundu.
 - **G2 — kapsam genişletme:** navigasyon açıkken tam simülasyon (navigator/ahead/speedLimit/nearby/livePlan/roadWarnings birlikte, plan
-  yüklü, ücretli sağlayıcı sahte) ile sağlayıcı başına saatlik istek bütçesi; harita karosu sayımı; `nearby` throw yolu; sunucu
-  Q-SRV-1/2/3.
+  yüklü, ücretli sağlayıcı sahte) ile sağlayıcı başına saatlik istek bütçesi; harita karosu sayımı; `nearby` throw yolu. Sunucu
+  Q-SRV-1/2/3 YAPILDI (G2a).
 - **G3 — çalışma zamanı bütçesi ve saha doğrulaması:** istemcide merkezi istek yöneticisi (sağlayıcı başına belirteç kovası, providerGate
   ile aynı yerde) + yönetici panelinde sayaç; gerçek cihazda ağ günlüğüyle istek sayısının doğrulanması (ücretli çağrı / kota onayı ve
   cihaz gerektirir — kullanıcı kararı).

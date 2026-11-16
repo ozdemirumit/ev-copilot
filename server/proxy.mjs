@@ -28,6 +28,7 @@ import { createTesla } from './tesla.mjs';
 import { createMaps } from './maps.mjs';
 import { buildCatalog } from './providerCatalog.mjs';
 import { parseCap, parseFlag, routeGate } from './mapboxGate.mjs';
+import { createDailyUsage, parseMonthlyCap } from './quotaCounters.mjs';
 import { makeScrub } from './scrub.mjs';
 import { providerPaused, installServerFetchGuard, pausedRoute } from './providerGate.mjs';
 import { parsePoints, pointsKey, hereSpeedLimits, createLru, MAX_CACHE_ITEM } from './speedlimits.mjs';
@@ -146,6 +147,7 @@ const once = (k, fn) => {
 
 // ---------- kullanıcı başına günlük kota (Mapbox faturasını ve ortak Overpass'i korur) ----------
 const DAILY = { mapbox: Number(env.MAPBOX_DAILY_PER_USER || 400), ocm: Number(env.OCM_DAILY_PER_USER || 200), overpass: Number(env.OVERPASS_DAILY_PER_USER || 300), occupancy: Number(env.OCCUPANCY_DAILY_PER_USER || 600), google: Number(env.GOOGLE_DAILY_PER_USER || 40), gsearch: Number(env.GOOGLE_STATIONS_DAILY_PER_USER || 60), here: Number(env.HERE_DAILY_PER_USER || 800), price: 20, presence: 60, status: 30, sinfo: 600, srate: 60, sfac: 120, sphoto: 15, sreport: 10, map: Number(env.MAP_DAILY_PER_USER || 100), slimit: Number(env.SPEEDLIMIT_DAILY_PER_USER || 40), tomtom: Number(env.TOMTOM_ROUTE_DAILY_PER_USER || 150) };
+for (const [kind, n] of Object.entries(DAILY)) if (!Number.isFinite(n)) console.log(`günlük kullanıcı hakkı geçersiz (${kind}): bu tür hesaplı kullanıcıya kapalı (fail-closed)`);
 const MAP_TOTAL = Number(env.MAP_DAILY_TOTAL || 3000); // tüm kullanıcılar için günlük harita anahtarı verme tavanı (Mapbox/Google faturasını korur)
 let mapToday = { d: '', n: 0 };
 /** Harita anahtarı döndürmeden önce: toplam ve kullanıcı başı günlük hak. Yalnızca anahtar dönen çağrılar sayılır (osm sayılmaz). */
@@ -177,25 +179,23 @@ function googleStationsAllowed(id) {
   gsToday.n++;
   return true;
 }
-const usage = new Map();
 const today = () => new Date().toISOString().slice(0, 10);
 /** Hesaplı (yönetici olmayan) kullanıcının günlük hakkı bittiyse true. Eski erişim kodu ve yönetici sınırsızdır, ama onların istekleri de
- *  (yönetim Özet'inde görünsün diye) sayılır: yönetici kodu/belirteci adres başına değil tek 'code' kovasında. */
+ *  (yönetim Özet'inde görünsün diye) sayılır: yönetici kodu/belirteci adres başına değil tek 'code' kovasında.
+ *  G2a: yalnız izin verilen istek sayılır (Q-SRV-1: ret sayacı artırmaz); sınır sayı değilse (NaN) hesaplı kullanıcı reddedilir (fail-closed);
+ *  sayaç db.json'da kalıcıdır, sunucu yeniden başlasa da o günün hakkı korunur (Q-SRV-3, server/quotaCounters.mjs). */
 function overQuota(id, kind) {
   if (!id) return false;
-  const k = `${id.kind === 'user' ? id.key : 'code'}|${today()}|${kind}`;
-  const n = (usage.get(k) || 0) + 1;
-  usage.set(k, n);
-  if (id.kind !== 'user' || id.admin) return false;
-  return n > DAILY[kind];
+  const key = id.kind === 'user' ? id.key : 'code';
+  const limited = id.kind === 'user' && !id.admin;
+  if (limited && !(dailyUsage.get(key, kind) < DAILY[kind])) return true;
+  dailyUsage.add(key, kind);
+  return false;
 }
 /** Bugünkü kota sayacı kişi başına: [{ id, who (e-posta ya da "yönetici kodu"), admin, kinds, total }], toplama göre azalan. Adres (IP) yok. */
 function usageByUser() {
-  const d = today();
   const rows = new Map();
-  for (const [k, n] of usage) {
-    const [key, kd, kind] = k.split('|');
-    if (kd !== d) continue;
+  for (const [key, kind, n] of dailyUsage.entries()) {
     let r = rows.get(key);
     if (!r) {
       const u = store.data.users[key];
@@ -212,7 +212,7 @@ function adminSummary() {
   const now = Date.now();
   const users = Object.values(store.data.users);
   const byKind = {};
-  for (const [k, n] of usage) { const [, d, kind] = k.split('|'); if (d === today()) byKind[kind] = (byKind[kind] || 0) + n; }
+  for (const [, kind, n] of dailyUsage.entries()) byKind[kind] = (byKind[kind] || 0) + n;
   const invites = Object.values(store.data.invites || {});
   const inv = { open: 0, used: 0, expired: 0, revoked: 0 };
   for (const i of invites) { if (i.revoked) inv.revoked++; else if (i.usedBy) inv.used++; else if (i.expiresAt < now) inv.expired++; else inv.open++; }
@@ -240,7 +240,6 @@ function adminSummary() {
     providers: { kinds: costs.kinds, totals: costs.totals() }, // üst sağlayıcıya giden istekler (kalıcı sayaç, server/costs.mjs): tür başına bugün / bu ay / toplam
   };
 }
-setInterval(() => { const d = today(); for (const k of usage.keys()) if (!k.includes(`|${d}|`)) usage.delete(k); }, 3600e3).unref();
 
 async function readJson(req, max) {
   const chunks = [];
@@ -279,7 +278,9 @@ const MB_PATHS = [
 ];
 // Mapbox aylık arama sınırı (ücretsiz katman ≈ 5000 istek): sunucu yalnızca önbellekte olmayan, Mapbox'a giden arama (/search/) isteklerini sayar ve sınırda 402 döner;
 // uygulama o durumda istasyonları Overpass/OpenChargeMap'ten alır. Sayaç db.json'da kalıcıdır. MAPBOX_MONTH_USED_SEED="2026-11:4899" ayın başlangıç sayısını verir.
-const MB_CAP = Number(env.MAPBOX_MONTHLY_CAP || 4800);
+const MB_CAP_CFG = parseMonthlyCap(env.MAPBOX_MONTHLY_CAP, 4800); // G2a Q-SRV-2: boş → 4800 (eski varsayılan), geçersiz → 0 (fail-closed; eskiden NaN → sınırsız)
+const MB_CAP = MB_CAP_CFG.cap;
+if (!MB_CAP_CFG.valid) console.log('MAPBOX_MONTHLY_CAP geçersiz (yalnız tam sayı): Mapbox araması kapalı (sınır 0)');
 function mbUsage() {
   const ym = new Date().toISOString().slice(0, 7);
   const c = (store.data.counters ||= {});
@@ -320,8 +321,8 @@ async function mapbox(req, res, url, id) {
     const g = routeGate({ premium: premiumOk(id), premiumOnly: MB_ROUTE_PREMIUM_ONLY, used: mbRouteUsage().n, cap: MB_ROUTE_CAP });
     if (!g.allow) return json(res, g.status, { error: g.error });
   }
+  if (isSearch && mbUsage().n >= MB_CAP) return json(res, 402, { error: 'mapbox_cap' }); // aylık hak doldu: ücretli kullanıma geçmesin; günlük haktan önce (ret onu harcamaz, Q-SRV-1)
   if (overQuota(id, 'mapbox')) return json(res, 429, { error: 'günlük Mapbox hakkı doldu' }, { 'Retry-After': '3600' });
-  if (isSearch && mbUsage().n >= MB_CAP) return json(res, 402, { error: 'mapbox_cap' }); // aylık hak doldu: ücretli kullanıma geçmesin
   const u = await once(key, () => {
     const real = new URLSearchParams(q);
     real.set('access_token', MAPBOX);
@@ -335,7 +336,9 @@ async function mapbox(req, res, url, id) {
 
 // ---------- HERE (istasyon listesi + doluluk) ----------
 // HERE kullanımı aylık sayılır (HERE_MONTHLY_CAP, varsayılan 20000 istek); sınırda 402 döner, uygulama Mapbox/Overpass'e düşer. Sayaç db.json'da kalıcıdır.
-const HERE_CAP = Number(env.HERE_MONTHLY_CAP || 20000);
+const HERE_CAP_CFG = parseMonthlyCap(env.HERE_MONTHLY_CAP, 20000); // G2a Q-SRV-2: boş → 20000 (eski varsayılan), geçersiz → 0 (fail-closed)
+const HERE_CAP = HERE_CAP_CFG.cap;
+if (!HERE_CAP_CFG.valid) console.log('HERE_MONTHLY_CAP geçersiz (yalnız tam sayı): HERE kapalı (sınır 0)');
 function hereUsage() {
   const ym = new Date().toISOString().slice(0, 7);
   const c = (store.data.counters ||= {});
@@ -354,8 +357,8 @@ async function hereStations(req, res, url, id) {
   const key = `here:${lat.toFixed(3)},${lon.toFixed(3)}:${r}`;
   const hit = cget(key);
   if (hit) return reply(res, hit, { 'X-Cache': 'hit' });
+  if (!hereAllowed()) return json(res, 402, { error: 'here_cap' }); // aylık sınır günlük haktan önce (ret onu harcamaz, Q-SRV-1)
   if (overQuota(id, 'here')) return json(res, 429, { error: 'günlük HERE hakkı doldu' }, { 'Retry-After': '3600' });
-  if (!hereAllowed()) return json(res, 402, { error: 'here_cap' });
   const u = await once(key, async () => {
     hereCount();
     costs.add(id, 'here');
@@ -406,8 +409,8 @@ async function speedLimitsRoute(req, res, id) {
   const key = pointsKey(pts);
   const hit = slCache.get(key);
   if (hit) return send(res, 200, hit, { 'Content-Type': 'application/json; charset=utf-8', 'X-Cache': 'hit' });
+  if (!hereAllowed()) return json(res, 402, { error: 'here_cap' }); // aylık sınır günlük haktan önce (ret onu harcamaz, Q-SRV-1)
   if (overQuota(id, 'slimit')) return json(res, 429, { error: 'günlük hız limiti hakkı doldu' }, { 'Retry-After': '3600' });
-  if (!hereAllowed()) return json(res, 402, { error: 'here_cap' });
   const out = await once(key, async () => {
     hereCount();
     costs.add(id, 'slimit');
@@ -642,6 +645,7 @@ const clientIp = (req) => {
 
 process.on('unhandledRejection', (err) => console.error('yakalanmamış söz reddi:', scrub(String(err?.message || err)))); // tek bir hatalı istek süreci düşürmesin
 const store = openStore(env.DATA_DIR || join(here, 'data'));
+const dailyUsage = createDailyUsage(store); // kullanıcı başına günlük kota sayacı, db.json'da kalıcı (overQuota)
 const maps = createMaps(store, env);
 const priceBook = createPriceBook(store);
 const veri = createVeriApi({ key: env.VERIAPI_KEY || '', store }); // işletmeci kWh tarifeleri (anahtar yoksa pasif)

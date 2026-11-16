@@ -205,8 +205,9 @@ for (const [kind, envName] of [['mapbox', 'MAPBOX_DAILY_PER_USER'], ['ocm', 'OCM
   ok(`günlük kullanıcı hakkı ${kind} ortamdan ayarlanabilir (${envName})`, new RegExp(`${kind}: Number\\(env\\.${envName} \\|\\| \\d+\\)`).test(daily));
 }
 const overQ = fnBody(PROXY, 'overQuota');
-ok('overQuota: yönetici ve eski erişim kodu sayılır ama engellenmez', /if \(id\.kind !== 'user' \|\| id\.admin\) return false;/.test(overQ));
-ok('aylık sayaçlar kalıcı: MAPBOX_MONTHLY_CAP (mbUsage), HERE_MONTHLY_CAP (hereUsage)', /const MB_CAP = Number\(env\.MAPBOX_MONTHLY_CAP \|\| \d+\);/.test(PROXY) && /const HERE_CAP = Number\(env\.HERE_MONTHLY_CAP \|\| \d+\);/.test(PROXY));
+// G2a: overQuota biçimi değişti (ret sayılmaz); yönetici/kod "sayılır ama engellenmez" kuralı aynı güçte sabitlenir (davranış: test-server-quota B1, test-map-provider 11b)
+ok('overQuota: yönetici ve eski erişim kodu sayılır ama engellenmez', /const limited = id\.kind === 'user' && !id\.admin;/.test(overQ) && /if \(limited && [^\n]*\) return true;\s*dailyUsage\.add\(key, kind\);\s*return false;/.test(overQ));
+ok('aylık sayaçlar kalıcı: MAPBOX_MONTHLY_CAP (mbUsage), HERE_MONTHLY_CAP (hereUsage)', /const MB_CAP_CFG = parseMonthlyCap\(env\.MAPBOX_MONTHLY_CAP, \d+\);/.test(PROXY) && /const HERE_CAP_CFG = parseMonthlyCap\(env\.HERE_MONTHLY_CAP, \d+\);/.test(PROXY) && /c\.mapbox = \{ month: ym/.test(PROXY) && /c\.here = \{ month: ym, n: 0 \}; store\.save\(\);/.test(PROXY));
 for (const fn of ['tomtomRouteRoute', 'googleStationsRoute']) ok(`${fn} premiumOk(id) ile kapılı`, /premiumOk\(id\)/.test(fnBody(PROXY, fn)));
 ok('duraklatma 503, Mapbox dağıtıcısından önce', PROXY.indexOf('pausedRoute(') > 0 && PROXY.indexOf('pausedRoute(') < PROXY.indexOf('return await mapbox(req, res, url, id)'));
 {
@@ -231,9 +232,19 @@ ok('Q-SOC-2 kapandı: nearby.js checkLow() refreshOccupancy + her autoSearch yal
     && calls.length === 3 && calls.every((l) => /socOk\)? (?:&&[^;]*\) )?autoSearch\(|if \(socOk\) autoSearch\(/.test(l))
     && /const lowNow = inTrouble\(e, nav\) && socTrusted\(e\.source === 'sim' \? 'sim' : socSource\(\)\);/.test(fnBody(NEAR, 'watch'));
 })());
-knownGap('Q-SRV-1', 'overQuota sayacı reddedilen istekte de artar (n+1 yazılır, sonra karşılaştırılır)', /usage\.set\(k, n\);[\s\S]*return n > DAILY\[kind\];/.test(overQ));
-knownGap('Q-SRV-2', 'MAPBOX_MONTHLY_CAP / HERE_MONTHLY_CAP geçersizse NaN → n >= NaN false → sınır kapanmaz (fail-open)', /Number\(env\.MAPBOX_MONTHLY_CAP \|\| 4800\)/.test(PROXY) && Number('abc') !== Number('abc') && !(5 >= Number('abc')));
-knownGap('Q-SRV-3', 'günlük kullanıcı sayacı (overQuota) bellekte (usage Map); sunucu yeniden başlarsa günlük hak sıfırlanır (aylık mbUsage/hereUsage kalıcı)', /const usage = new Map\(\)/.test(PROXY));
+// Q-SRV-1/2/3 G2a ile KAPANDI → kabul denetimi; davranış testi scripts/test-server-quota.mjs (alt süreç sunucu, sahte üst sunucu, yeniden başlatma, gün sınırı).
+ok('Q-SRV-1 kapandı: overQuota önce denetler, yalnız izin verilen isteği sayar (ret sayacı artırmaz); aylık sınırlar günlük haktan önce', (() => {
+  const chk = overQ.indexOf('dailyUsage.get(key, kind) < DAILY[kind]'), add = overQ.indexOf('dailyUsage.add(key, kind)');
+  const order = (fn, a, b) => { const f = fnBody(PROXY, fn); return f.indexOf(a) > 0 && f.indexOf(b) > f.indexOf(a); };
+  return chk > 0 && add > chk && !/usage\.set\(/.test(overQ)
+    && order('mapbox', 'mbUsage().n >= MB_CAP', "overQuota(id, 'mapbox')") && order('hereStations', 'hereAllowed()', "overQuota(id, 'here')") && order('speedLimitsRoute', 'hereAllowed()', "overQuota(id, 'slimit')");
+})());
+ok('Q-SRV-2 kapandı: MAPBOX_MONTHLY_CAP / HERE_MONTHLY_CAP parseMonthlyCap (boş → eski varsayılan 4800 / 20000, geçersiz → 0 fail-closed)', await (async () => {
+  const { parseMonthlyCap } = await import('../server/quotaCounters.mjs');
+  return /const MB_CAP_CFG = parseMonthlyCap\(env\.MAPBOX_MONTHLY_CAP, 4800\);/.test(PROXY) && /const HERE_CAP_CFG = parseMonthlyCap\(env\.HERE_MONTHLY_CAP, 20000\);/.test(PROXY)
+    && !/Number\(env\.(MAPBOX|HERE)_MONTHLY_CAP/.test(PROXY) && parseMonthlyCap('', 4800).cap === 4800 && parseMonthlyCap('abc', 4800).cap === 0 && 5 >= parseMonthlyCap('abc', 4800).cap;
+})());
+ok('Q-SRV-3 kapandı: günlük kullanıcı sayacı bellekte değil, db.json\'da (createDailyUsage(store) → dailyUsage)', !/const usage = new Map\(\)/.test(PROXY) && /const dailyUsage = createDailyUsage\(store\);/.test(PROXY) && /store\.data\.dailyUsage/.test(src('server/quotaCounters.mjs')));
 // Q-CLI-1 D2-T1 (R4 feb985dc) ile KAPANDI → kabul denetimi; davranış testi scripts/test-mapbox-premium-gate.mjs D bölümü.
 ok('Q-CLI-1 kapandı: mapbox/api.js sunucu 402 premium_required → "Premium gerektirir", diğer 402 → "aylık hakkı doldu"', /code === 'premium_required' \? 'Mapbox rotası Premium gerektirir/.test(src('js/mapbox/api.js')) && !/res\.status === 402\) throw new MapboxError\('Mapbox aylık hakkı doldu/.test(src('js/mapbox/api.js')));
 

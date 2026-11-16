@@ -2101,10 +2101,10 @@ const line = (n, lat = 39.9, lon0 = 32.8, step = 0.001) => Array.from({ length: 
     // /admin/summary: kota sayacı yöneticileri de sayar, kullanıcı başına görünüm, sağlayıcı toplamları
     const s = (await A.call('GET', '/admin/summary', { auth: 'code' })).json;
     ok('(11b) /admin/summary eski alanlar yerinde (google, usageToday, mapbox, here)', typeof s.google?.callsToday === 'number' && typeof s.google?.usd?.month === 'number' && typeof s.usageToday === 'object' && typeof s.mapbox?.used === 'number' && typeof s.here?.used === 'number');
-    ok('(11b) usageToday yönetici trafiğini de içerir (ocm: 2 kullanıcı + 3 yönetici + 2 kod = 7)', s.usageToday.ocm === 7 && s.usageToday.here === 7);
+    ok('(11b) usageToday yönetici trafiğini de içerir (ocm: 1 kullanıcı + 3 yönetici + 2 kod = 6; kullanıcının 429 alan 2. isteği sayılmaz — G2a Q-SRV-1)', s.usageToday.ocm === 6 && s.usageToday.here === 6);
     const ub = s.usageByUser || [];
     const uCode = ub.find((x) => x.who === 'yönetici kodu'), uAdm = ub.find((x) => x.who === 'adm@test.invalid'), uPrem = ub.find((x) => x.who === 'prem@test.invalid');
-    ok('(11b) usageByUser: yönetici kodu ve yönetici hesabı satırları var, adres (IP) yok', !!uCode && !!uAdm && uAdm.admin === true && uCode.kinds.ocm === 2 && uAdm.kinds.ocm === 3 && uPrem?.kinds.ocm === 2 && !JSON.stringify(ub).includes('127.0.0.1') && !JSON.stringify(ub).includes('c:'));
+    ok('(11b) usageByUser: yönetici kodu ve yönetici hesabı satırları var, adres (IP) yok', !!uCode && !!uAdm && uAdm.admin === true && uCode.kinds.ocm === 2 && uAdm.kinds.ocm === 3 && uPrem?.kinds.ocm === 1 && !JSON.stringify(ub).includes('127.0.0.1') && !JSON.stringify(ub).includes('c:'));
     ok('(11b) usageByUser toplama göre azalan sıralı, total = türlerin toplamı', ub.every((x, i) => i === 0 || ub[i - 1].total >= x.total) && ub.every((x) => x.total === Object.values(x.kinds).reduce((a, b) => a + b, 0)));
     ok('(11b) /admin/summary providers: kinds + totals (/admin/costs ile aynı)', JSON.stringify(s.providers?.kinds) === JSON.stringify(KINDS) && JSON.stringify(s.providers?.totals) === JSON.stringify(c.totals));
 
