@@ -7,7 +7,8 @@
 //     at, timestampKind: 'provider'|'fetched', ageMs, staleness: 'fresh'|'aging'|'stale'|'unknown' }
 //   timestampKind 'fetched': sağlayıcı güncellenme zamanı vermiyor, `at` okuma anıdır (gerçek tazelik bilinmez).
 //   simulated: true yalnızca test fikstürü (mock) için; mock sağlayıcı lookupAll'a bağlı DEĞİLDİR, kullanıcıya gerçek veri diye gösterilmez.
-// Bu modül başka sunucu modülünü içe aktarmaz (döngü olmasın).
+// Bu modül başka sunucu modülünü içe aktarmaz (döngü olmasın). Tek içe aktarım: saf karar modülü js/routing/occupancyDecision.js (D3-T2).
+import { occupancyDecision } from '../js/routing/occupancyDecision.js';
 
 export const EVSE_STATUS = Object.freeze({
   AVAILABLE: 'AVAILABLE', CHARGING: 'CHARGING', RESERVED: 'RESERVED', BLOCKED: 'BLOCKED',
@@ -139,6 +140,18 @@ export function fromMockFixture(fx, { now = Date.now() } = {}) {
   if (!fx || !Array.isArray(fx.evses)) return null;
   const evses = fx.evses.map((e) => ({ uid: e.uid, status: normalizeStatus('ocpi', e.status), powerKw: e.powerKw, at: e.at })).filter((e) => e.status);
   return buildAvailability({ source: 'mock', evses, now, fetchedAt: now, simulated: true });
+}
+
+// ---------- D3-T2: bağdaştırıcı çıktısı → saf doluluk kararı ----------
+/**
+ * Sağlayıcı sonucuna (eski alanlar + `availability`) ek `decision` alanı ekler: js/routing/occupancyDecision.js kararı.
+ * Veri ingest edilir (sonuç ve eski alanlar aynen kalır); `decision` yalnız "doğrulanmış canlı doluluk" sorusunun cevabıdır.
+ * K1/K4: TomTom ve NDW zaman damgası vermez (timestampKind 'fetched') → decision 'unknown' ('no-timestamp'). K2: NDW 0/N → 'unknown'.
+ * Saf: girdiyi değiştirmez, saat okumaz (now parametre). result null/nesne değilse aynen döner. Arayüz bu alanı henüz okumaz (D3-T4).
+ */
+export function withOccupancyDecision(result, now) {
+  if (!result || typeof result !== 'object' || Array.isArray(result)) return result;
+  return { ...result, decision: occupancyDecision(result.availability ?? null, { now }) };
 }
 
 // ---------- Sağlayıcı kaydı ----------

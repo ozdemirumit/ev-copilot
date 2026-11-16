@@ -166,13 +166,15 @@ ok('UNKNOWN EVSE varken boş yok → unknown (dolu değil)', UNKNOWN(dec(av({ so
   const imports = [...code.matchAll(/import\s[^;]*?from\s+['"]([^'"]+)['"]/g)].map((m) => m[1]);
   ok('yalnız occupancyLabel.js içe aktarılır', JSON.stringify(imports) === JSON.stringify(['./occupancyLabel.js']), JSON.stringify(imports));
 }
-// Bağlı DEĞİL (D3-T1 kapsamı: UI/adapter'a dokunulmaz): hiçbir çalışma zamanı dosyası ve sw.js içe aktarmaz.
+// Bağlantı kapsamı. D3-T1: hiç çağıran yoktu. D3-T2: TEK çağıran sunucu bağdaştırıcı yardımcısı server/availability.mjs
+// (withOccupancyDecision; ndwLookup/tomtomLookup onu kullanır). İstemci/UI (js/), sw.js ve index.html hâlâ bağlı DEĞİL (D3-T4 işi).
 {
   const walk = (dir) => readdirSync(join(root, dir), { withFileTypes: true }).filter((e) => !['data', 'node_modules'].includes(e.name)).flatMap((e) => e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]);
   const users = [...walk('js'), ...walk('server'), 'sw.js', 'index.html']
     .filter((f) => /\.(m?js|html)$/.test(f) && !f.replace(/\\/g, '/').endsWith(MOD))
-    .filter((f) => readFileSync(join(root, f), 'utf8').includes('occupancyDecision'));
-  ok('çalışma zamanında çağıran yok (bağlı değil)', users.length === 0, JSON.stringify(users));
+    .filter((f) => readFileSync(join(root, f), 'utf8').includes('occupancyDecision'))
+    .map((f) => f.replace(/\\/g, '/'));
+  ok('çalışma zamanı çağıranı yalnız server/availability.mjs (D3-T2); istemci/sw.js/index.html bağlı değil', JSON.stringify(users) === JSON.stringify(['server/availability.mjs']), JSON.stringify(users));
 }
 
 console.log(`test-occupancy-decision: ${pass} passed, ${fail} failed`);

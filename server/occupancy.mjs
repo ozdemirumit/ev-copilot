@@ -8,7 +8,7 @@
 import { gunzipSync } from 'node:zlib';
 import { hereLookup } from './here.mjs';
 import { tomtomLookup } from './tomtom.mjs';
-import { fromNdwAvailabilities, fromGoogleAggregation } from './availability.mjs';
+import { fromNdwAvailabilities, fromGoogleAggregation, withOccupancyDecision } from './availability.mjs';
 
 const NDW_BBOX = process.env.NDW_BBOX_URL || 'https://dotnl.ndw.nu/api/rest/geojson/dynamic-road-status/charge-point-data/v1/features';
 const NDW_TARIFFS = process.env.NDW_TARIFFS_URL || 'https://opendata.ndw.nu/charging_point_tariffs_ocpi.json.gz';
@@ -132,7 +132,8 @@ export async function ndwLookup(st, { fetchImpl = fetch, at = new Date() } = {})
     }
   }
   if (price) price.src = 'ndw';
-  return { src: 'ndw', total, available, out: null, at: Date.now(), price, availability: fromNdwAvailabilities(conns) }; // last_updated son DEĞİŞİMİ gösterir; veri AFIR gereği 1 dk içinde tazedir → okuma anı
+  const r = { src: 'ndw', total, available, out: null, at: Date.now(), price, availability: fromNdwAvailabilities(conns) }; // last_updated son DEĞİŞİMİ gösterir; veri AFIR gereği 1 dk içinde tazedir → okuma anı
+  return withOccupancyDecision(r, r.at); // D3-T2: zaman damgası yok (fetched) → canlı doluluk Bilinmiyor; 0/N de Bilinmiyor (K1/K2/K4)
 }
 
 // ---------- Adaptör: Google Places (Yeni) ----------

@@ -413,8 +413,8 @@ Bu sonuç gerçek sağlayıcı yanıtıyla doğrulanmadı (yalnız ayrıştırı
 
 | Sıra | Görev | Kapsam | Kararlar | Bağımlı | Durum |
 |---|---|---|---|---|---|
-| 1 | **D3-T1** | Saf `occupancyDecision` + zaman damgası / 15 dk testleri (eski R3-a; çağıran yok, sentetik fikstür, `now` parametresi, ağ yok; `test-occupancy-consistency-contract` 12/12 KNOWN-GAP değişmez; `js/` değişirse sürüm artışı) | K1, K2, K4, AGE | — | RUNNING → yerel commit + `--ff-only` integ (`ec585e43`, v0.99.81; bağlı değil; §8.4) |
-| 2 | **D3-T2** | NDW / TomTom bağdaştırıcısı: ingest, zaman damgası yoksa doğrulanmamış (sunucu değişirse canlıya alma = sunucu yeniden başlatma onayı, eski R3-e) | K1, K2, K4 | D3-T1 | PLANNED |
+| 1 | **D3-T1** | Saf `occupancyDecision` + zaman damgası / 15 dk testleri (eski R3-a; çağıran yok, sentetik fikstür, `now` parametresi, ağ yok; `test-occupancy-consistency-contract` 12/12 KNOWN-GAP değişmez; `js/` değişirse sürüm artışı) | K1, K2, K4, AGE | — | COMPLETED — yerel entegre (`c759f62`, `ec585e43`, v0.99.81; §8.4) |
+| 2 | **D3-T2** | NDW / TomTom bağdaştırıcısı: ingest, zaman damgası yoksa doğrulanmamış (sunucu değişirse canlıya alma = sunucu yeniden başlatma onayı, eski R3-e) | K1, K2, K4 | D3-T1 | RUNNING → yerel commit + `--ff-only` integ (`ddb92ce9`; sunucu bağdaştırıcısı bağlı, istemci/UI bağlı değil; §8.5) |
 | 3 | **D3-T3** | Topluluk bildirimi ayrı veri | K3 | D3-T1 | PLANNED |
 | 4 | **D3-T4** | Üç durum arayüz Müsait / Dolu / Bilinmiyor (eski R3-d; nav/planlayıcı hizalaması R3-b/R3-c ile ilişkili; i18n değişirse `i18n-validate`) | K5, AGE | D3-T1, D3-T2, D3-T3 | PLANNED |
 | 5 | **D3-T5** | Fiyat "Canlı" etiketi yalnız doğrulanmış güncel fiyata | K6 | D3-T1 | PLANNED |
@@ -447,3 +447,19 @@ Temel: `integ/beta-2026-11-14` @`f984e70` (görev başında temiz; `f984e70` int
 - **Dokunulmadı:** `slots.js`, `occupancyLabel.js`, `occupancyView.js`, `occupancyClient.js`, sunucu bağdaştırıcıları, UI, i18n, `sw.js`. `test-occupancy-consistency-contract` 12/12 KNOWN-GAP değişmedi (bağlı olmadığı için hiçbir G kapanmaz).
 - **Doğrulama durumu:** yalnız çevrimdışı/sentetik; gerçek sağlayıcı yanıtıyla ve gerçek cihazda doğrulanmadı; push/yayın yok. Tarayıcı ağ riskinin sıfır olduğu iddia edilmez.
 - **Sıradaki:** D3-T2 (NDW/TomTom bağdaştırıcısı; sunucu değişirse canlıya alma = sunucu yeniden başlatma onayı).
+
+### 8.5 D3-T2 uygulandı — NDW/TomTom bağdaştırıcısı → saf karar (2026-11-16, köprü `ddb92ce9`; sürüm değişmedi)
+
+Temel: `integ/beta-2026-11-14` @`c759f62` (görev başında temiz; D3-T1 köprüde completed/çıkış 0 ve integ HEAD olarak doğrulandı), yalıtılmış worktree `MBRP-d3t2`, dal `feat/occupancy-adapter-d3-t2`.
+
+- **Bağlama:** `server/availability.mjs` `withOccupancyDecision(result, now)` — sonuca ek `decision` alanı (`occupancyDecision(result.availability, { now })`); saf, girdiyi değiştirmez.
+  `ndwLookup` (`now` = sonucun `at`'i) ve `tomtomLookup` (`now` parametresi) bunu kullanır. Tek çalışma zamanı içe aktarıcısı `server/availability.mjs`.
+  - K4: veri **ingest edilir** — sonuç null değil, eski alanlar (`src/total/available/out/at/price`) ve `availability` aynen.
+  - K1: TomTom ve NDW sağlayıcı zamanı vermez (`fetched`) → `decision` `unknown` / `no-timestamp` (0/4 "dolu", hepsi arızalı "arızalı" denmez).
+  - K2: NDW 0/N → `unknown` (sağlayıcı zamanlı varsayımsal kayıtta `ndw-zero-unverified`).
+  - Kural kaynağa değil zaman damgasına bağlı: TomTom ileride sağlayıcı zamanı verirse taze kayıt güvenilir olur (testte varsayımsal fikstür).
+- **Test:** `scripts/test-occupancy-adapter.mjs` 37/0 — yalnız sahte `fetchImpl` fikstürleri, global `fetch` hata fırlatan sahteyle değiştirildi (0 çağrı), sahte anahtar. `test-occupancy-decision` "çağıran yok" denetimi → "çağıran tam olarak `server/availability.mjs`; istemci/`sw.js`/`index.html` bağlı değil" (gevşetme değil, kesin liste).
+- **Dokunulmadı:** istemci (`occupancyClient.js` `decision`'ı taşımaz → tarayıcı henüz almaz/okumaz, D3-T4), UI, i18n, `sw.js`, `version.js`, fiyat/tarife kodu, HERE/Google aramaları, `tomtomSlots` belirsiz→null kuralı. 12/12 KNOWN-GAP değişmedi.
+- **Not:** sunucu açılışında Node bir kez `MODULE_TYPELESS_PACKAGE_JSON` uyarısı basar (`js/` dosyası ESM olarak yeniden ayrıştırılır); `package.json` değiştirilmedi.
+- **Doğrulama durumu:** yalnız çevrimdışı/sahte fikstür; gerçek NDW/TomTom yanıtıyla ve gerçek cihazda doğrulanmadı; canlıya alma = sunucu yeniden başlatma (ayrı onay, yapılmadı); push/yayın yok. Tarayıcı ağ riskinin sıfır olduğu iddia edilmez.
+- **Sıradaki:** D3-T3 (topluluk ayrı veri) ya da D3-T5; D3-T4 D3-T2 + D3-T3'e bağlı.

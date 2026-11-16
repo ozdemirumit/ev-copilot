@@ -3,7 +3,7 @@
 // İki adım: (1) istasyonun ≤150 m çevresinde EV araması → doluluk kimliği (kimlik 24 saat saklanır), (2) kimlikle canlı durum.
 // Not: yanıtta "güncellenme zamanı" alanı YOK; bu yüzden zaman okuma anı sayılır (NDW gibi). Anahtar yalnızca isteğe eklenir, hata iletileri anahtarı içermez.
 const base = () => process.env.TOMTOM_BASE || 'https://api.tomtom.com'; // ortam değişkenleri çağrı anında okunur
-import { fromTomTom } from './availability.mjs';
+import { fromTomTom, withOccupancyDecision } from './availability.mjs';
 const EV_CATEGORY = '7309'; // TomTom POI kategorisi: elektrikli araç şarj istasyonu
 const MATCH_M = 150; // marka bilinmiyorsa en çok bu uzaklık
 const BRAND_MATCH_M = 400; // marka da tutuyorsa en çok bu uzaklık
@@ -106,7 +106,8 @@ export async function tomtomLookup(st, key, { fetchImpl = fetch, now = Date.now(
   if (!hit.id) return null; // bu istasyonun canlı beslemesi yok
   const av = await getJson('/search/2/chargingAvailability.json', { chargingAvailability: hit.id }, key, fetchImpl);
   const s = tomtomSlots(av, st.dc);
-  return s ? { src: 'tomtom', ...s, at: now, price: null, availability: fromTomTom(av, { dcOnly: st.dc, now }) } : null;
+  // D3-T2: veri ingest edilir ama TomTom zaman damgası vermez → decision 'unknown' (K1/K4); eski alanlar aynen.
+  return s ? withOccupancyDecision({ src: 'tomtom', ...s, at: now, price: null, availability: fromTomTom(av, { dcOnly: st.dc, now }) }, now) : null;
 }
 export const _clearIds = () => idCache.clear();
 
