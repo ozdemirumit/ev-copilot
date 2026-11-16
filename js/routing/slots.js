@@ -105,13 +105,44 @@ export function slotEl(s, lead = ' · ') {
   return first ? null : wrap;
 }
 
-/** Canlı kWh fiyatı: { text: "€0.42/kWh (canlı)", extra: ek ücret (oturum/süre) var mı } ya da null. */
-export function livePrice(s) {
-  const p = s.slots?.price;
-  if (!p || p.kwh == null) return null;
+// D3-T5 (K6): "canlı" fiyat etiketi yalnız bağımsız olarak doğrulanmış, güncel, resmî fiyata verilir.
+export const PRICE_LIVE_SOURCES = Object.freeze(['ndw', 'ocpi']); // resmî açık veri (AFIR / OCPI); topluluk (user), VeriApi.Pro tarifesi, diğerleri değil
+export const PRICE_LIVE_MAX_AGE_MS = 6 * 3600e3; // sağlayıcı zamanı en çok bu kadar eski (sunucunun OCPI tarife önbelleği süresi)
+const PRICE_SKEW_MS = 2 * 60e3; // saat kayması payı (gelecekteki zaman damgası)
+const toMs = (v) => (typeof v === 'number' ? v : typeof v === 'string' && v.trim() ? Date.parse(v) : NaN);
+
+/**
+ * Fiyat "canlı" gösterilebilir mi? Kaynak adına güvenmeden istemcide denetlenir: resmî kaynak, kWh > 0, geçerli para birimi,
+ * SAĞLAYICI zaman damgası price.at (doluluk okuma anı slots.at / slots.checked sayılmaz), gelecekte değil, ≤ PRICE_LIVE_MAX_AGE_MS
+ * ve sağlayıcının verdiği geçerlilik sonu (expires / validUntil) geçmemiş. Açıkça verified:false ise canlı değil. Şüphede false.
+ */
+export function isLivePrice(p, now = Date.now()) {
+  if (!p || typeof p !== 'object' || Array.isArray(p) || !Number.isFinite(now)) return false;
+  if (!PRICE_LIVE_SOURCES.includes(p.src) || p.verified === false) return false;
+  if (typeof p.kwh !== 'number' || !Number.isFinite(p.kwh) || p.kwh <= 0) return false;
+  if (typeof p.currency !== 'string' || !/^[A-Z]{3}$/i.test(p.currency.trim())) return false;
+  const at = toMs(p.at);
+  if (!Number.isFinite(at) || at <= 0 || at - now > PRICE_SKEW_MS || now - at > PRICE_LIVE_MAX_AGE_MS) return false;
+  for (const k of ['expires', 'validUntil']) {
+    if (p[k] == null) continue;
+    const end = toMs(p[k]);
+    if (!Number.isFinite(end) || end <= now) return false;
+  }
+  return true;
+}
+
+/**
+ * kWh fiyat metni: { text, extra: ek ücret (oturum/süre) var mı, live: "canlı" mı } ya da null.
+ * "(canlı)" yalnız isLivePrice; kullanıcı bildirimi "(bildirilen)"; VeriApi.Pro tarifesi atıflı; diğerleri (zaman damgasız / eski /
+ * bilinmeyen kaynak) niteleyicisiz fiyat — asla "canlı" değil.
+ */
+export function livePrice(s, now = Date.now()) {
+  const p = s?.slots?.price;
+  if (!p || typeof p.kwh !== 'number' || !Number.isFinite(p.kwh)) return null;
   const sym = p.currency === 'EUR' ? '€' : p.currency === 'TRY' ? '₺' : `${p.currency} `;
-  const how = p.src === 'user' ? 'bildirilen' : p.src === 'veriapi' ? 'tarife · VeriApi.Pro' : 'canlı'; // NDW/OCPI canlı; kullanıcı bildirimi (fiyat defteri) son bilinen; VeriApi.Pro: işletmecinin yayımladığı genel tarife (atıf ücretsiz planda şart)
-  return { text: `${sym}${p.kwh.toFixed(2)}/kWh (${how})`, extra: !!(p.flat || p.hour || p.parkingHour) };
+  const live = isLivePrice(p, now);
+  const how = live ? 'canlı' : p.src === 'user' ? 'bildirilen' : p.src === 'veriapi' ? 'tarife · VeriApi.Pro' : null; // VeriApi.Pro: işletmecinin yayımladığı genel tarife (atıf ücretsiz planda şart)
+  return { text: `${sym}${p.kwh.toFixed(2)}/kWh` + (how ? ` (${how})` : ''), extra: !!(p.flat || p.hour || p.parkingHour), live };
 }
 
 /** Planlama için doluluk bilgisi doğrulanmış ve güncel mi? (sağlayıcı zamanı ≤ 15 dk; okuma anı `checked` tazelik sayılmaz) */

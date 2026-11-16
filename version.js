@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.84';
+self.APP_VERSION = '0.99.85';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.85', date: '2026-11-16',
+    notes: [
+      'Fiyatlarda \'canlı\' etiketi artık yalnız resmî kaynaktan (NDW / OCPI) gelen, sağlayıcı zaman damgası olan, 6 saatten eski olmayan ve geçerlilik süresi dolmamış fiyata yazılır. Zaman damgası olmayan, eski ya da kaynağı bilinmeyen fiyat etiketsiz gösterilir; kullanıcı bildirimi \'bildirilen\', VeriApi.Pro tarifesi kendi adıyla kalır.',
+    ],
+  },
   {
     v: '0.99.84', date: '2026-11-16',
     notes: [
