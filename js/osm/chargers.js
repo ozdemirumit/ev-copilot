@@ -134,14 +134,18 @@ export async function overpass(query, pref = 0) {
       lastErr = new Error(res.status === 429 ? 'Overpass istek sınırı (429)' : `Overpass HTTP ${res.status}`);
       if (res.status === 429 || res.status === 406) await sleep(2500);
     } catch (err) {
-      if (err.name === 'TimeoutError' || err.name === 'TypeError') deadUntil.set(url, Date.now() + DEAD_MS); // ağ hatası / zaman aşımı
-      lastErr = err.name === 'TimeoutError' ? new Error('Overpass zaman aşımı') : err;
+      // WebKit (iOS/Safari) AbortSignal.timeout dolunca "AbortError: Fetch is aborted" verir; burada dış iptal yok, yani bu da zaman aşımıdır
+      const timedOut = err.name === 'TimeoutError' || err.name === 'AbortError';
+      if (timedOut || err.name === 'TypeError') deadUntil.set(url, Date.now() + DEAD_MS); // ağ hatası / zaman aşımı
+      lastErr = timedOut ? new Error('Overpass zaman aşımı') : err;
     }
   }
   throw Object.assign(lastErr || new Error('Overpass yanıt vermedi'), { unreachable: !reached });
 }
 
 const fmt = (p) => `${p.lat.toFixed(5)},${p.lon.toFixed(5)}`;
+// Son başarılı parça sonucu: taze önbellek (6 sa) bittikten sonra Overpass ulaşılamazsa, eski olduğu söylenerek en çok bu kadar eski sonuç kullanılır
+const LAST_GOOD_MS = 3 * 24 * 3600e3;
 
 /**
  * İstasyonsuz kesimler: rotaya ≤ NEAR_KM uzakta olan istasyonların rotadaki km'leri alınır; ardışık iki istasyon (başlangıç ve varış dahil)
@@ -190,6 +194,16 @@ function segments(pts) {
 
 const overpassQuery = (around) => `[out:json][timeout:60];nwr["amenity"="charging_station"](around:${around});out tags center;`;
 
+/** Koridor dışı / yinelenen elenmeleri özete yazmak için (finalize sessizce eler): hangi ham kayıtlar listeye girmedi. */
+function countFinalDrops(raw, stations, profile, drop) {
+  const keptIds = new Set(stations.map((s) => s.id));
+  for (const s of raw) {
+    if (keptIds.has(s.id)) continue;
+    const why = profile.project(s.lat, s.lon).offKm > PLANNER.corridorM / 1000 + 0.5 ? 'rota koridoru dışı' : 'yinelenen';
+    drop[why] = (drop[why] || 0) + 1;
+  }
+}
+
 function parseOverpass(elements) {
   const drop = {};
   const out = elements.map((el) => fromOsm(el, drop)).filter(Boolean);
@@ -231,6 +245,8 @@ export async function fetchChargers(pts, profile) {
   const errors = [];
   const found = new Map();
   let failed = 0;
+  let segTotal = 0;
+  let stale = 0;
   let lastErr = '';
   const take = (r) => { ctx.raw += r.raw; addDrop(ctx.drop, r.drop); r.out.forEach((s) => found.set(s.id, s)); };
 
@@ -265,24 +281,30 @@ export async function fetchChargers(pts, profile) {
     let nextSeg = 0;
     let dead = false;
     let lastStart = 0;
+    segTotal += segs.length;
     const segWorker = async () => {
-      while (nextSeg < segs.length && !dead) {
+      while (nextSeg < segs.length) {
         const idx = nextSeg++;
         const seg = segs[idx];
         const key = `ovp:${fmt(seg[0])}:${seg.length}:${fmt(seg.at(-1))}`;
         try {
+          if (dead) { const hit = cacheGet(key); if (hit === undefined) throw new Error('atlandı'); take(hit); continue; } // sunucular düşük: yalnız taze önbellek, ağ yok
           const r = await cached(key, TTL.long, async () => {
             const slot = Math.max(Date.now(), lastStart + (publicFreeMode() ? PUBLIC_OVERPASS.gapMs + 100 : 600)); // başlangıçlar en az 600 ms arayla (herkese açık Beta: kova aralığı)
             lastStart = slot;
             if (slot > Date.now()) await sleep(slot - Date.now());
             ctx.calls++;
-            return parseOverpass(await overpass(overpassQuery(`${AROUND_M},${seg.map((p) => fmt(p)).join(',')}`), idx));
+            const res = parseOverpass(await overpass(overpassQuery(`${AROUND_M},${seg.map((p) => fmt(p)).join(',')}`), idx));
+            cacheSet('last:' + key, res, LAST_GOOD_MS);
+            return res;
           });
           take(r);
         } catch (err) {
-          failed++;
-          lastErr = err.message;
-          if (err.unreachable) dead = true; // hiçbir sunucuya ulaşılamıyor: kalan parçaları denemenin anlamı yok
+          failed++; // kesintide atlanan parça da alınamamış sayılır (yalnız ilk düşeni saymak sorunu küçük gösterirdi)
+          if (!dead) lastErr = err.message;
+          if (err.unreachable) dead = true; // hiçbir sunucuya ulaşılamıyor: kalan parçalar için ağa gidilmez
+          const last = cacheGet('last:' + key);
+          if (last !== undefined) { stale++; take(last); }
         }
       }
     };
@@ -298,7 +320,8 @@ export async function fetchChargers(pts, profile) {
       await overpassSegs(segments(pts).filter((seg) => holes.some((h) => seg.at(-1).km > h.from && seg[0].km < h.to)));
     }
   }
-  if (failed) errors.push(`Overpass: ${failed} parça alınamadı${lastErr ? ' — ' + lastErr : ''}`);
+  if (failed) errors.push(`Overpass: ${failed}/${segTotal} parça alınamadı${lastErr ? ' — ' + lastErr : ''}`);
+  if (stale) errors.push(`Overpass: ${stale} parça son başarılı aramadan (en çok 3 gün eski; istasyon değişmiş olabilir)`);
 
   // Google Places (ücretli, yalnızca Premium): ek kaynak; yinelenenleri dedupe eler (önce gelen kayıt kalır), hata olursa öteki kaynaklarla sürülür
   if (googleOn()) {
@@ -337,8 +360,10 @@ export async function fetchChargers(pts, profile) {
   tesla.forEach((s) => found.set(s.id, s));
 
   const stations = finalize([...customRaw(), ...found.values()], profile);
-  if (!found.size && failed && !usedMapbox) errors.unshift('İstasyon kaynağına ulaşılamadı: internet veya Overpass sunucusu');
-  return { stations, errors, cached: ctx.calls === 0 && found.size > 0, summary: summarize(stations, profile, ctx) };
+  countFinalDrops([...found.values()], stations, profile, ctx.drop);
+  const sourceDown = !found.size && failed > 0 && !usedMapbox; // ağ kesintisi: "istasyon yok" değil, "alınamadı" (geçerli sıfırdan ayrı)
+  if (sourceDown) errors.unshift('İstasyon kaynağına ulaşılamadı: internet veya Overpass sunucusu');
+  return { stations, errors, cached: ctx.calls === 0 && found.size > 0, summary: summarize(stations, profile, ctx), sourceDown, stale };
 }
 
 const NEAR_TTL_MS = 20 * 60e3;

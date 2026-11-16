@@ -2,7 +2,7 @@ import { getState, patch, subscribe, effective } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { kvDel } from '../utils/idb.js';
 import { fetchRoute, fetchChargers, fetchElevations, fetchWeather, probeStopAccess } from '../providers/index.js';
-import { reprice, reproject } from './chargerSource.js';
+import { keepLastGood, reprice, reproject } from './chargerSource.js';
 import { planRoute, rankStations, shown } from './planner.js';
 import { resampleRoute, buildProfile } from '../physics/routeProfile.js';
 import { densityFromRatio, speedFactor } from '../physics/traffic.js';
@@ -178,8 +178,10 @@ async function runAccess() {
 
 /** İstasyonları getir ve plan durumuna yaz; hata/önbellek bilgisi İstasyon sekmesinde kalıcı gösterilir. */
 async function loadStations(pts, profile, stale = () => false) {
-  const { stations, errors, cached, summary } = await fetchChargers(pts, profile, cacheKey);
+  const res = await fetchChargers(pts, profile, cacheKey);
   if (stale()) return; // araya yeni planlama girdi: eski rotanın istasyonları yeni planı ezmez
+  const { cached, summary } = res;
+  const { stations, errors } = keepLastGood(getState('plan').stations, res); // kaynak kesikse aynı rotanın önceki listesi silinmez
   if (errors.length) toast(errors.join(' · '), 7000);
   if (cached) toast('İstasyonlar önbellekten alındı');
   patch('plan', { stations, stationInfo: { errors, cached, summary } });

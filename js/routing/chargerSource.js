@@ -119,6 +119,15 @@ export function summarize(stations, profile, ctx) {
   };
 }
 
+/**
+ * İstasyon kaynağına ulaşılamadıysa (sourceDown) ve elde aynı rotaya izdüşmüş önceki liste varsa o korunur ("Yeniden ara" kesintide listeyi silmez).
+ * Geçerli sıfır sonuç (kaynak yanıt verdi, istasyon yok) önceki listeyi korumaz. Dönüş: { stations, errors, kept }.
+ */
+export function keepLastGood(prev, res) {
+  if (!res.sourceDown || !prev?.length) return { stations: res.stations, errors: res.errors, kept: false };
+  return { stations: prev, errors: [...res.errors, `Önceki istasyon listesi korunuyor (${prev.length}); yeniden aramayı sonra dene.`], kept: true };
+}
+
 /** Rota değişti (yeniden rota): mevcut istasyonları yeni rotaya izdüşür, koridor dışını ele. Ağ çağrısı yok. */
 export function reproject(stations, profile) {
   const out = [];

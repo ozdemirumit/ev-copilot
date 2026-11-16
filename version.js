@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.95';
+self.APP_VERSION = '0.99.96';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.96', date: '2026-11-16',
+    notes: [
+      'Şarj istasyonu araması: Overpass (OpenStreetMap) sunucuları yanıt vermediğinde iPhone\'daki "Fetch is aborted" artık "Overpass zaman aşımı" olarak gösterilir ve alınamayan tüm parçalar sayılır (ör. 4/4); "istasyon yok" ile "istasyonlar alınamadı" ayrıldı.',
+      'Kesintide son 3 gün içindeki başarılı arama sonucu, eski olduğu belirtilerek kullanılır; "Yeniden ara" kesintide mevcut listeyi silmez.',
+      'İstasyon özetinde rota koridoru dışında kalan ve yinelenen kayıtlar da elenme nedeni olarak gösterilir (ör. "3 kayıt → 0 aday (rota koridoru dışı 3)"). Koridor genişliği değişmedi.',
+    ],
+  },
   {
     v: '0.99.95', date: '2026-11-16',
     notes: [
