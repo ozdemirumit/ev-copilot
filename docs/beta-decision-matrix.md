@@ -179,3 +179,88 @@ Salt okunur inceleme, integ @`8e2399f`. Kod değiştirilmedi. Gerçek sağlayıc
 - **Kabul:** yeni test — Google benzeri sağlayıcı zamanlı taze kayıt `trusted:true` + `free`/`busy`/`out` aynen (A6); NDW `fetched` 2/4 ve 0/4 → `trusted:false, state:'unknown'` (K1/K2); TomTom `fetched` → `unknown` (K4); 3 sa eski → `unknown`; `availability` yok → `unknown` (A7); `checked` tek başına tazelik sayılmaz (A1); `Date.now` yerine `now` parametresi kullanılır. `test-occupancy-consistency-contract` 34/0 ve **12/12 KNOWN-GAP değişmeden** (R3-a bağlı olmadığı için hiçbir G kapanmaz; kapanırsa `GAP CLOSED` = hata); `test-occupancy-label`, `test-availability`, `test-near-sort`, `test-charge-pick`, `test-stop-swap`, `test-route-options`, `check.mjs`, tüm `scripts/test-*.mjs` 0 FAIL (ağ engelleyiciyle); ağ çağrısı yok; i18n değişmez.
 - **Kapsam dışı:** R3-b planlayıcı / R3-c nav / R3-d görüntü bağlama, `sw.js`, sunucu (R3-e), gerçek sağlayıcı çağrısı, push/yayın. Yalıtılmış dal, yalnız `--ff-only`.
 - **Sonrası (ayrı görevler, sırayla):** R3-b (G5 → ACCEPT), R3-c (G1/G2/G4 → ACCEPT), R3-d (K5 kararı + G3/G6), canlı doğrulama yalnız ücretli çağrı/kota onayı ve cihaz testiyle.
+
+## 6. D3-T0 — salt okunur doluluk karar modeli hazırlığı ve test güvenliği denetimi (2026-11-16, köprü `531d536f`; yalnız belge)
+
+Temel: `integ/beta-2026-11-14` @`dca5a47` (v0.99.80), yalıtılmış worktree `MBRP-d3t0`. Kod, test, `version.js`, sunucu değişmedi.
+Gerçek sağlayıcı çağrısı yapılmadı; kullanıcı ücretsiz sağlayıcı kotalarının dolduğunu bildirdi. Aşağıdakilerin tümü kaynak okumasıdır
+(sentetik/çevrimdışı); gerçek sağlayıcı yanıtıyla ya da cihazda doğrulanmadı.
+
+### 6.1 K1/K2/K4 durumu — DOĞRULANMIŞ SAYILMAZ
+
+- K1 (NDW "AFIR ≤1 dk" tazelik varsayımı), K2 (NDW 0/N), K4 (TomTom zaman damgası yok) **kullanıcı tarafından teyit edilmedi**.
+  §5'teki "K1 = hayır, K2 = bilinmiyor, K4 = aynı" yalnız **öneridir**; D3 onayının ("yalnız doğrulanmış ve güncel") lafzına en yakın
+  fail-closed eşlemedir ama karar yerine geçmez. Teyit gelmeden D3-T1 (R3-a) dahil hiçbir D3 kodu yazılmaz.
+- Varsayımların hiçbiri gerçek veriyle sınanmadı: NDW ve TomTom yanıtlarında sağlayıcı zamanı olmadığı yalnız mevcut ayrıştırıcı
+  kodundan (`server/availability.mjs` `fromNdwAvailabilities`, `fromTomTom` → `timestampKind:'fetched'`) ve `PROVIDERS` kaydından
+  okunur; gerçek, temizlenmiş sağlayıcı fikstürü yok (D5). "NDW 0/N ayrıntısız" da yalnız ayrıştırıcıdan çıkarımdır.
+
+### 6.2 Veri kaynağı / tazelik kuralları (kaynak okuması, @`dca5a47`)
+
+Eşikler: biçimlendirici `OCC_THRESHOLDS` (`js/routing/occupancyLabel.js:15`) fresh ≤15 dk, aging ≤2 sa, stale >2 sa, gelecek sapma
+>2 dk → `unverified`; `confirmed` yalnız `fresh` + `timestampKind:'provider'` + bilinen kaynak + `simulated:false`. Bugünkü
+nav/planlayıcı eşiği `slots.js:4` `FRESH_MS` 15 dk, ama `isFresh` (`slots.js:89`) **okuma anı `checked`**'e bakar (G1 kökü).
+
+| Kaynak | `timestampKind` | Durum | Biçimlendirici bugün | `slots.js` bugün | D3-T1 önerisi (teyit bekler) | Bağlı karar |
+|---|---|---|---|---|---|---|
+| Google (`fromGoogleAggregation`) | `provider` (`availabilityLastUpdateTime`) | canlı; TR'de veri yok (kayıt: "ölçüldü"), yalnız düşük pil | fresh → free/busy/out + confirmed; aging → durum, confirmed değil; stale → unknown | `checked` tazeliği | fresh → `trusted:true`, durum aynen (A6) | — |
+| NDW (`fromNdwAvailabilities`) | `fetched` (`last_updated` son değişim, tazelik değil) | canlı, NL, yalnız sayı | her zaman `unknown` (`unverified-time`) | taze/dolu/boş sayar (G1/G2/G5) | `trusted:false, state:'unknown'` | K1, K2 |
+| TomTom (`fromTomTom`) | `fetched` | canlı, TR dahil kısmi; bugün kota koruması altında duraklatılmış | her zaman `unknown` | taze sayar | `trusted:false, state:'unknown'` | K4 |
+| HERE (`fromHereItem`) | `provider` (`last_updated`) | `providerPolicy` ile kapalı, lisans `unverified` | — (veri gelmez) | — | Google ile aynı kural; açılması D5'e bağlı | D5 |
+| OCPI | `provider` | bağlı besleme yok (`live:false`) | — | — | Google ile aynı kural | — |
+| mock | `provider` ama `simulated:true` | yalnız test | her zaman `unknown` (`simulated`) | — | `unknown`, asla trusted | — |
+| Topluluk "Dolu bildirildi" | `availability` yok | `slots.js:5` 20 dk planı etkiler | kapsamaz | `full` | R3-a'da `unknown` (A7); planlayıcı etkisi R3-b'de | K3 |
+| `availability` alanı yok (eski sunucu, `book`/`veriapi`) | — | — | `unknown` (`no-data`) | `checked` ile taze | `unknown` (A7) | — |
+
+Sonuç (öneri teyit edilirse): Türkiye'de bugünkü kaynaklarla nav/planlayıcıda **güvenilir doluluk pratikte kalmaz** (Google TR'de veri
+vermiyor, TomTom/NDW `fetched`); NL'de NDW'ye dayalı boş/dolu eleme ve "dolu" uyarısı kaybolur. Bu, D3 onayının bilinen ürün
+sonucudur ve K1/K4 teyidinde kullanıcıya açıkça söylenmelidir.
+
+### 6.3 Kararsız noktalar (kullanıcı; D3-T1 öncesi ya da ilgili aşamadan önce)
+
+1. **K1 / K2 / K4 teyidi** (D3-T1 önkoşulu). K1 = evet seçilirse R3-a değişir: biçimlendiricide ayrı güven sınıfı (ör. `fetched-trusted`)
+   gerekir, `test-occupancy-label` beklentileri bilinçli güncellenir ve K2 (0/N dolu mu) ancak o zaman anlam kazanır; K1 = hayır iken
+   0/N zaten `unknown`.
+2. **Aging (15 dk–2 sa) kaydı:** karar katmanında (planlayıcı/nav) `unknown` mu (D3 lafzı; öneri), yoksa yalnız görüntüde "X dk önce"
+   ile gösterilsin mi? Görüntü tarafı K5/R3-d ile birlikte karara bağlanır; R3-a yalnız `trusted` bayrağını sabitler.
+3. **K3** topluluk bildirimi planlayıcıyı etkilesin mi (R3-b/R3-c). R3-a bunu değiştirmez.
+4. **K5** `slotEl` düzelt / `occupancyView` bağla (+`sw.js` SHELL) — R3-d.
+5. **K6** NDW fiyatının "(canlı)" etiketi — ayrı görev mi (BL-P2-10 ile ilişkili).
+6. **R3-e** sunucu NDW eski `at` alanı — sunucu yeniden başlatma onayı.
+7. **Canlı doğrulama yolu:** kota dolu; gerçek yanıt yalnız G-PAID + kota yenilenmesi + temizlenmiş fikstür (D5) ile; cihaz D6.
+
+### 6.4 Test koruma riskleri (salt okunur analiz; bu testler engelleyicisiz çalıştırılmamalı)
+
+- **Kök neden:** `server/proxy.mjs:778` açılışta `tesla.get()` çağırır; `server/tesla.mjs:7` `SOURCE` sabit
+  (`https://supercharge.info/service/supercharge/allSites`, ortam değişkeniyle yönlendirilemez); `DATA_DIR`'de `tesla.json` yoksa
+  (`tesla.mjs:23-25`, TTL 24 sa) hemen gerçek istek atılır. Kota koruması (`server/providerGate.mjs`, `proxy.mjs:51-52`) bunu normalde
+  keser, fakat `scripts/test-map-provider.mjs` (4 `spawn` yeri: satır 138, 1166, 1613, 1994) ve `scripts/test-providers-endpoint.mjs`
+  (satır 57-59) alt sunucuyu `PROVIDER_REQUESTS_PAUSED: '0'` ile başlatır ve geçici `DATA_DIR`'e `tesla.json` koymaz → her sunucu
+  açılışında `supercharge.info` denemesi. Önceki engelleyicili koşularda 20 deneme durduruldu (17 + 3; kayıt `4bc2adc1`, `a0fa9e93`).
+  Bu testlerde diğer sağlayıcılar yerel sahte üst sunucuya (`127.0.0.1:18799/18809/18860`) yönlendirilmiş; okumada bulunan tek sızıntı Tesla.
+- `supercharge.info` anahtarsız topluluk verisidir (ücretli değil) ama yine de **harici istektir** ve engellenmelidir.
+- **Mevcut engelleyici:** depo dışı `D:/AI-Codes/netguard-tmp/netguard.mjs` (`NODE_OPTIONS=--import=…`, `NETGUARD_LOG`). `fetch` ve
+  `net.Socket.prototype.connect`'i yerel olmayan ana makine için reddeder; alt süreçlere `...process.env` ile geçer. Sınırları:
+  `dgram`/UDP kapsanmaz (testlerde kullanım bulunmadı); depo dışında olduğu için CI/başka makinede yok.
+- **Engelleyici açığı (bu görevde bulundu, çevrimdışı öz-sınama):** `net.connect(port, host)` / `http(s).request` Node içinde
+  `socket.connect([options, cb])` dizi biçimine normalleşir; `netguard-tmp/netguard.mjs` ana makine adını diziyi açmadan okuduğu için
+  bu yolu **engellemez** (öz-sınamada `.invalid` adı DNS'e kadar gitti) ve DNS çözümlemesini hiç engellemez. Güvenilir kesilen yollar:
+  global `fetch` ve nesne biçimli `tls.connect`. Depoda fetch dışı tek ağ yolu `server/mailer.mjs:26` (SMTP; testlerde SMTP anahtarı
+  boş). Bu görev ortak dosyayı değiştirmedi; koşu, depo dışı düzeltilmiş kopya `D:/AI-Codes/d3t0-logs/netguard-fixed.mjs` ile yapıldı
+  (dizi açma + yerel olmayan DNS reddi; öz-sınamada fetch/net/https/tls/dns yerel olmayan 5/5 engellendi, yerel fetch ve http geçti).
+  Sonraki koşular bu kopyayı ya da aynı düzeltmeyi kullanmalı.
+- **Önerilen test-yalnız düzeltme (ayrı görev T-SAFE-1, ürün kararı gerektirmez, başlatılmadı):** iki testte her `start()` öncesi geçici
+  `DATA_DIR`'e `tesla.json = { at: Date.now(), sites: [] }` yazmak (TTL içinde → `refresh()` çağrılmaz). Dosyalar yalnız
+  `scripts/test-map-provider.mjs`, `scripts/test-providers-endpoint.mjs`; çalışma zamanı değişmez, sürüm artmaz, denetim sayısı aynı
+  kalır (bu testlerde `/v1/tesla` denetlenmiyor). Kabul: engelleyici günlüğü bu iki test için 0 satır; geçen/başarısız sayıları önceki koşuyla aynı.
+  Alternatif `TESLA_SOURCE` ortam değişkeni sunucu değişikliğidir (ayrı onay).
+- **D3-T1 testine özgü kural:** `occupancyDecision` testi `Date.now` yerine `now` parametresi kullanmalı, yalnız sentetik fikstür okumalı,
+  sunucu başlatmamalı, `fetch` çağırmamalı. `test-occupancy-consistency-contract` 12/12 KNOWN-GAP sayısı R3-a ile **değişmemeli**.
+
+### 6.5 Uygulama bağımlılık sırası (D3)
+
+1. **T-SAFE-1** (karar gerektirmez; önerilen ilk iş): iki testin Tesla sızıntısını test içinde kapat → tüm paket engelleyicide 0 blok.
+2. **Kullanıcı:** K1/K2/K4 teyidi (+ aging kuralı, §6.3-2).
+3. **D3-T1 = R3-a** (§5 tanımı; K1 = evet seçilirse kapsam yeniden yazılır): saf `occupancyDecision`, çağıran yok, `version.js` artışı.
+4. **R3-b** planlayıcı (K3 gerekir) → **R3-c** nav kararları → **R3-d** görüntü (K5) → **R3-e** sunucu (yeniden başlatma onayı).
+5. Canlı doğrulama: kota/G-PAID onayı + temizlenmiş fikstür (D5) + cihaz (D6). `verified` yalnız kullanıcı.

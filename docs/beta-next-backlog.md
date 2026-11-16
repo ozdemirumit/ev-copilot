@@ -25,6 +25,19 @@ Kapı gösterimi: **G-HEAD** = görev başında integ HEAD beklenen sha'da ve te
 
 Not: A2 yeni çalışma zamanı dosyası eklediği için "yalnız test" değildir; ayrı görev ve sürüm artışı gerekir.
 
+### 1a. D3-T0 sonrası sıra (2026-11-16, köprü `531d536f`, temel `dca5a47`; yalnız belge, ayrıntı: karar matrisi §6)
+
+| Sıra | İş | Kapsam | Kapı | Kabul |
+|---|---|---|---|---|
+| 1 | **T-SAFE-1** test ağ sızıntısı: `test-map-provider` / `test-providers-endpoint` alt sunucuyu `PROVIDER_REQUESTS_PAUSED: '0'` ile açıyor, `server/proxy.mjs:778` açılış `tesla.get()` → `supercharge.info` (sabit `SOURCE`, `server/tesla.mjs:7`) | yalnız bu iki test: geçici `DATA_DIR`'e taze boş `tesla.json` yaz | G-HEAD, G-SUITE (engelleyiciyle); ürün kararı gerekmez; sürüm artmaz | engelleyici günlüğü 0 satır; denetim/geçen sayıları aynı |
+| 2 | K1/K2/K4 teyidi + aging (15 dk–2 sa) kuralı | — | G-USER | **teyit yok → doğrulanmış sayılmaz** |
+| 3 | D3-T1 = R3-a saf `occupancyDecision` (matris §5) | `js/routing/slots.js` yalnız yeni dışa aktarım, yeni test, `version.js` | 2 tamam, G-HEAD, G-SUITE | 12/12 KNOWN-GAP değişmez; ağ yok |
+| 4 | R3-b → R3-c → R3-d → R3-e | planner / nearby+nearSort+livePlan / görüntü / sunucu | K3, K5, sunucu yeniden başlatma onayı | ilgili G → ACCEPT |
+
+Engelleyicisiz tüm paket koşulmaz; T-SAFE-1 sonrasında da engelleyici kalır. `D:/AI-Codes/netguard-tmp/netguard.mjs`
+`net.connect(port, host)`/`http(s).request` yolunu ve DNS'i kesmiyor (matris §6.4); bunun yerine düzeltilmiş depo dışı kopya
+`D:/AI-Codes/d3t0-logs/netguard-fixed.mjs` kullanılmalı.
+
 ## 2. Kullanıcı kararı bekleyenler (G-USER) — karar verilmeden kod yazılmaz
 
 Güncel bağımlılık/karar matrisi (D1–D7, tümü AÇIK, seçenek + kabul ölçütü): [`docs/beta-decision-matrix.md`](beta-decision-matrix.md).
