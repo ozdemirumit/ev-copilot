@@ -2,7 +2,9 @@
 
 > **Kapsam:** Yalnızca Beta, kaynak dalı `design/modern-ui-soc`. `main` / üretim (v0.86.1) bu kaydın dışında.
 > **Makine okunur kopya:** [`docs/beta-task-registry.json`](beta-task-registry.json). İki dosya birlikte güncellenir. Çelişki olursa JSON esas alınır.
-> **Son güncelleme:** 2026-11-16T13:25:00Z (BETA **push sonrası kayıt uzlaştırması**, köprü `e44a5b81`, yalnız belge, yerel; sürüm değişmedi v0.99.90): uzak dal `origin/beta/verified-integration-2026-11-16` = `e09067613b84f06d713bd5cdd63397a584f2112a` (`git ls-remote`) = yerel `integ/beta-2026-11-14` HEAD `e090676`; zincir `5a7db55` → `fb064ef` G1a → `708d87c` G1b → `03e0fa5` G2a kurtarma → `7fcdfbc` G2b → `e090676` tek yeşil konum noktası (geodot), birleştirme commit'i yok. Köprü `tasks.json` (salt okunur): G1a `b5154ae4`, G1b `dfe79c32`, G2b `278b6c24`, geodot `8e9ac846`, push `53093aa1` completed/çıkış 0; **eski G2a `15364d5f` failed (zaman aşımı, çıkış 1, 12:17:15Z, sonuç boş, commit yok)** → kurtarma `4c983ab4` completed → `03e0fa5`. G2b `running` → **completed / yerel entegre**; geodot ve push yeni kayıt. Guarded: geodot ve push görevleri 109/109 PASS, 0 FAIL, BLOCK_ 0 (günlükler denetlendi). Bu görev: Bu görevin kendi koşusu @e090676 (belge düzenlemesinden önce, MBRP-regrec17): run-tests-guarded 109/109 PASS, 0 FAIL, BLOCK_ 0 (D:/AI-Codes/regrec17-logs/pre). **completed ≠ verified:** hiçbiri cihazda / kullanıcı kabulüyle doğrulanmadı; Beta'ya yayımlanmadı (canlı 0.99.61, EV-Route-Finder main `4c3bd73`); `design/modern-ui-soc` (uzak `132d610`) ve `main` değişmedi; sunucu yeniden başlatılmadı. Bu belge commit'i push EDİLMEDİ.
+> **Son güncelleme:** 2026-11-16T16:08:15Z (BETA **kayıt + yayın engeli uzlaştırması**, köprü `418c2ff5`, yalnız belge, yerel; sürüm değişmedi v0.99.91): integ `08a3cde` = `origin/beta/verified-integration-2026-11-16` `08a3cded6ec382f64143c63d540a4841c5a2844f` (`git ls-remote`); zincir `e090676` → `8d0c522` (e44a5b81) → `8625735` D6 hazırlık (8858f5da) → `2c06f69` S-1/N-1 (4b7c802d; push 1d356223) → `08a3cde` v0.99.91 üst bar (fa065b60; push 16859cbd). Salt okunur denetim 2b3f7ae4 completed. **Yayın yok:** 70bbbd9a ve c3f6ff69 köprüde completed/çıkış 0 ama esasta **BLOCKED** (D6/G-ACCESS, G-PAUSE, G-SERVER, G-PAID). Canlı Beta **0.99.61** (EV-Route-Finder main `4c3bd73`, 2026-11-13; bu görev curl + ls-remote ile okudu), üretim 0.86.1. Hiçbiri cihazda doğrulanmadı. Ayrıntı §7.2, kapılar ve önerilen karar matrisi §7.3. Bu belge commit'i push EDİLMEDİ.
+
+> Önceki: 2026-11-16T13:25:00Z (BETA **push sonrası kayıt uzlaştırması**, köprü `e44a5b81`, yalnız belge, yerel; sürüm değişmedi v0.99.90): uzak dal `origin/beta/verified-integration-2026-11-16` = `e09067613b84f06d713bd5cdd63397a584f2112a` (`git ls-remote`) = yerel `integ/beta-2026-11-14` HEAD `e090676`; zincir `5a7db55` → `fb064ef` G1a → `708d87c` G1b → `03e0fa5` G2a kurtarma → `7fcdfbc` G2b → `e090676` tek yeşil konum noktası (geodot), birleştirme commit'i yok. Köprü `tasks.json` (salt okunur): G1a `b5154ae4`, G1b `dfe79c32`, G2b `278b6c24`, geodot `8e9ac846`, push `53093aa1` completed/çıkış 0; **eski G2a `15364d5f` failed (zaman aşımı, çıkış 1, 12:17:15Z, sonuç boş, commit yok)** → kurtarma `4c983ab4` completed → `03e0fa5`. G2b `running` → **completed / yerel entegre**; geodot ve push yeni kayıt. Guarded: geodot ve push görevleri 109/109 PASS, 0 FAIL, BLOCK_ 0 (günlükler denetlendi). Bu görev: Bu görevin kendi koşusu @e090676 (belge düzenlemesinden önce, MBRP-regrec17): run-tests-guarded 109/109 PASS, 0 FAIL, BLOCK_ 0 (D:/AI-Codes/regrec17-logs/pre). **completed ≠ verified:** hiçbiri cihazda / kullanıcı kabulüyle doğrulanmadı; Beta'ya yayımlanmadı (canlı 0.99.61, EV-Route-Finder main `4c3bd73`); `design/modern-ui-soc` (uzak `132d610`) ve `main` değişmedi; sunucu yeniden başlatılmadı. Bu belge commit'i push EDİLMEDİ.
 
 > Önceki: 2026-11-16T13:30:00Z (BETA **G2b**, köprü `278b6c24`, yerel; v0.99.89): önkoşul G2a esaslı commit `03e0fa5` (kurtarma köprüsü `4c983ab4` completed; asıl köprü `15364d5f` failed/zaman aşımı) integ HEAD'de, integ temiz, guarded 107/107 PASS, BLOCK_ 0 → G2a **completed / yerel entegre**. G2b: yeni `scripts/test-g2b-request-budget.mjs` 45/0 — navigasyon açıkken sağlayıcı başına saatlik istek sayımı (sanal 60 dk, ağ sahte), istasyon hata yolları, harita yükleme/karo kod değişmezleri; düzeltme S-0 `js/nav/nearby.js` atılan arama hatasında üstel geri çekilme (önce beklemesiz döngü). KNOWN-GAP S-1 / N-1 kullanıcı kararı. Gerçek karo sayısı ve faturalama doğrulanmadı (G3). Cihazda DOĞRULANMADI; push/yayın yok.
 
@@ -177,8 +179,10 @@ Daha eski sürümler (v0.40–v0.99.38) için tek kaynak `git log` ve `js/versio
 | `7364b795-aef5-4866-9783-82c0756fe743` | `blocked` (köprü: completed, çıkış 0; esas: BLOCKED, dosya değişmedi) | Tüm sağlayıcı API istek yönetişimi | D2-T1 `a8ea7d4d` başarılı değil | yok | R5 `f6b36d78` onaylı, başlamadı |
 | `5aa198cb-d9f8-4bf4-b300-b4fae3edfd18` | `blocked` (köprü: completed, çıkış 0; esas: BLOCKED, dosya değişmedi) | Yalnız kaynak GitHub push (yayın yok) | Önceki kuyruk görevleri esasta başarısız + push hedefi belirsiz (tek uzak `origin` = ev-copilot) | yok | Push yapılmadı; hedef kullanıcıdan teyit edilmeli |
 | `13c62ce7-2d8a-455a-895c-a676f554709b` | `blocked` (köprü: completed, çıkış 0; esas: BLOCKED, dosya değişmedi) | Koşullu kapalı test Beta yayın kapısı | Push yok, D6 kapalı erişim yöntemi açık, gerçek cihaz testi yok (BL-P0-07) | yok | Yayın yok (canlı Beta 0.99.61) |
+| `70bbbd9a-9ee8-497d-9f60-d32b79d09549` | `blocked` (köprü: completed, çıkış 0; esas: BLOCKED, dosya değişmedi) | Canlı Beta yayın isteği + üst bar denetimi | Denetim teslim edildi (üst bar @2c06f69 sabit altı metrik; guarded 109/109); yayın durdu: D6 kapalı erişim yok, T1–T11 boş, istemci duraklatması açık | üst bar: fa065b60 → `08a3cde` v0.99.91 | Yayın yok (canlı 0.99.61) |
+| `c3f6ff69-fe19-45f2-a283-f6a2aedc7afa` | `blocked` (köprü: completed, çıkış 0; esas: BLOCKED, dosya değişmedi) | v0.99.91 canlı Beta yayın kapısı (EV-Route-Finder) | Kaynak push ve guarded 109/109 doğru; G-ACCESS/D6, G-PAUSE, G-SERVER, G-PAID karşılanmadı; build/push/etiket yok; geri alma noktası yalnız kayıt: `4c3bd73` | yok | Yayın yok (canlı 0.99.61); kapılar §7.3 |
 
-R0 notu: `blocked` kimlikler (yukarıdaki on bir satır; tam UUID, oluşturma/bitiş saatleri köprü `tasks.json`'dan) JSON'da yalnız `bridge_vs_substantive_status.previous_failed_or_blocked_ids` içinde tutulur (üst düzey `tasks[]` kaydı değil): `scripts/beta-tracker.mjs` `TASK_STATES` listesinde `blocked` yok, bu yüzden pano onları gizlerdi ve `test-beta-tracker` başarısız olurdu. Araç değişikliği R0 kapsamı dışında — açık madde.
+R0 notu: `blocked` kimlikler (yukarıdaki on üç satır; tam UUID, oluşturma/bitiş saatleri köprü `tasks.json`'dan) JSON'da yalnız `bridge_vs_substantive_status.previous_failed_or_blocked_ids` içinde tutulur (üst düzey `tasks[]` kaydı değil): `scripts/beta-tracker.mjs` `TASK_STATES` listesinde `blocked` yok, bu yüzden pano onları gizlerdi ve `test-beta-tracker` başarısız olurdu. Araç değişikliği R0 kapsamı dışında — açık madde.
 
 ## 5. Ürün yol haritası (henüz görev verilmemiş olanlar dahil)
 
@@ -475,6 +479,48 @@ Uzak: `origin/beta/verified-integration-2026-11-16` = `e09067613b84f06d713bd5cdd
 | Kaynak push | `53093aa1` completed / 0 | push `e090676` (guarded 109/109, BLOCK_ 0) | — | yeni dal | hayır | — |
 
 Açık: S-1 / N-1 kullanıcı kararı; G3 gerçek karo / faturalama sayımı; D6 kapalı gerçek cihaz kabulü (BL-P0-07; hazırlık belgesi `docs/d6-device-acceptance.md`, köprü `8858f5da`, sonuç yok); Beta yayını ayrı onay; sunucu yeniden başlatma ayrı onay. Hiçbir satır `verified` değildir.
+
+### 7.2 Yayın kapısı sonrası uzlaştırma: köprü tamamlandı ≠ yayımlandı (2026-11-16, 418c2ff5)
+
+Uzak: `origin/beta/verified-integration-2026-11-16` = `08a3cded6ec382f64143c63d540a4841c5a2844f` (`git ls-remote`, 16859cbd itti; önce 1d356223 `2c06f69`). Beta önizlemesi EV-Route-Finder main `4c3bd7316dce` (2026-11-13T20:31Z), canlı `version.js` **0.99.61** (bu görevde okundu); üretim `ev-copilot` main `31a6ef5`, canlı 0.86.1; `design/modern-ui-soc` uzak `132d610` — hiçbiri değişmedi.
+
+| İş | Köprü süreci | Esaslı sonuç (git) | Yerel integ | Uzak (yalnız kaynak) | Beta | Cihazda doğrulandı |
+|---|---|---|---|---|---|---|
+| Kayıt uzlaştırması @e090676 | `e44a5b81` completed / 0 | `8d0c522` (yalnız belge) | ata | ata | — | — |
+| D6 cihaz kabul hazırlığı | `8858f5da` completed / 0 | `8625735` (yalnız belge; T1–T11 sonuçları boş) | ata | ata | — | **hayır** |
+| S-1/N-1 risk değerlendirmesi | `4b7c802d` completed / 0 | `2c06f69` (yalnız belge; öneri onaylanmadı) | ata | ata | — | — |
+| Kaynak push 2c06f69 | `1d356223` completed / 0 | push `e090676..2c06f69` (guarded 109/109) | — | ata | hayır | — |
+| Yayın isteği + üst bar denetimi | `70bbbd9a` completed / 0 | **BLOCKED**, dosya yok | — | — | **hayır** | — |
+| Üst bar v0.99.91 | `fa065b60` completed / 0 | `08a3cde` (9 dosya; guarded 109/109, BLOCK_ 0) | HEAD | = uzak SHA | **hayır** | **hayır** |
+| Üst bar sonrası güvenlik/sağlayıcı denetimi | `2b3f7ae4` completed / 0 | salt okunur rapor, NO-CHANGE (guarded 109/109) | — | — | — | — |
+| Kaynak push 08a3cde | `16859cbd` completed / 0 | push `2c06f69..08a3cde` (guarded 109/109, BLOCK_ 0) | — | yeni SHA | hayır | — |
+| Canlı Beta yayın kapısı | `c3f6ff69` completed / 0 | **BLOCKED**, dosya/commit/push yok | — | — | **hayır (0.99.61)** | — |
+
+Üst bar açıkları (cihazda bakılmalı): 360–375 px'te sonraki şarj alt satırı "…", varış kalan km kırpılabilir, uzun mesafe ikinci satıra geçer, talimat/yol adı ~14 karakter/satır; dar ekran sayıları model tahmini, tarayıcı ölçümü değil.
+
+### 7.3 Yayın kapıları (çözülmedi) ve önerilen karar matrisi (2026-11-16, 418c2ff5)
+
+| Kapı | Durum | Kanıt |
+|---|---|---|
+| G-ACCESS (D6) | **çözülmedi** | Herkese açık Pages ≠ kapalı Beta; 70bbbd9a/c3f6ff69 bu yüzden durdu. Kuyruktaki `dee61f95` "kullanıcı kapalı cihaz test yöntemini onayladı" diyor ama yöntemi adlandırmıyor → çözüldü sayılmadı. |
+| G-PAUSE | **çözülmedi** | `js/net/providerGate.js:11` `PROVIDER_REQUESTS_PAUSED_DEFAULT = true`: ücretsizler dahil tüm dış istekler kesik; 0.99.91 rota/harita yapamaz. |
+| G-SERVER | **çözülmedi** | `03e0fa5` sayaçları ve `e2620bc` Mapbox Premium kapısı yeniden başlatma olmadan etkisiz; canlı vekil ana kopyadan çalışıyor ve üretime de hizmet ediyor (2b3f7ae4). |
+| G-PAID | **çözülmedi** | Gerçek sağlayıcı trafiği ve kota değeri onayı yok (`MAPBOX_ROUTE_MONTHLY_CAP` boş = aylık Mapbox rota sınırı yok). |
+| G-BUILD (D7) | **çözülmedi** | 0.99.62–0.99.91 için `build-beta.mjs` koşmadı; cihaz testi için hangi sha derleneceği seçilmedi. |
+| G-DEVICE (D6) | **çözülmedi** | `docs/d6-device-acceptance.md` T1–T11 boş; `verified` yalnız kullanıcı. |
+| S-1 / N-1 | **çözülmedi** | `docs/s1-n1-retry-assessment.md` önerisi onaylanmadı/uygulanmadı; "ücretli rota başarılı, sonraki adım başarısız → 12 sn yeniden deneme" yolu denenmedi. |
+
+**Önerilen karar matrisi — ÖNERİ, onaylı değil; kod, kota, sunucu veya yayın değişikliği yapılmadı:**
+
+| # | Soru | Seçenekler | Öneri | Kapı |
+|---|---|---|---|---|
+| P-ACCESS | Özel cihaz testi erişimi (G-ACCESS) | A1 Android USB: depo dışı geçici klasöre `build-beta.mjs`, PC'de sun, `adb reverse tcp:8080 tcp:8080` → telefonda `http://localhost:8080` (güvenli bağlam, konum çalışır, yeni servis yok) · A2 iOS: HTTPS gerekir — cihazda güvenilen yerel sertifika ya da tünel/erişim katmanı (yeni harici servis → ayrı onay) · A3 bilinen cihazlara APK · A4 herkese açık Pages için D6'yı kaldırmak (açık kullanıcı kararı; önerilmez) | Önce A1; iOS için A2/A3 ayrıca seçilir | G-USER |
+| P-FREE | Yalnız ücretsiz Beta istemci modu (G-PAUSE) | F0 duraklatma kalsın (yalnız duman testi; T3/T4/T8c/T9/T10 koşulamaz) · F1 yalnız Beta derlemesinde izin listesi: OpenFreeMap, Valhalla, Photon/Nominatim, Open-Meteo, Overpass, ücretsiz yükselti; Mapbox/Google/TomTom/HERE/Iternio/ArcGIS ve ücretli vekil yolları kapalı; harita `/v1/map/config` sormadan osm · F2 duraklatmayı kaldır (G-SERVER + G-PAID gerekir) | F1, yalnız kapalı cihaz testi için (ücretli maliyet tasarım gereği 0; Nominatim 1 istek/sn gibi adil kullanım sınırlarına uyulur); üretim derlemesi ve canlı sunucu değişmez | G-USER |
+| P-SERVER | Sunucu yeniden başlatma / ücretli trafik | S0 ertele · S1 yeni kodla yeniden başlat (üretim etkisi kabul) + küçük açık `MAPBOX_ROUTE_MONTHLY_CAP` | S0 (F1 kullanılırken) | G-USER, G-PAID |
+| P-BUILD | Cihaza giden derleme (G-BUILD) | B1 `08a3cde` olduğu gibi (duraklatılmış, büyük ölçüde işlevsiz) · B2 F1 derlemesi commit edilip yeşil olunca | B2; yalnız yerel, EV-Route-Finder'a push yok | G-SUITE, G-ACCESS |
+| P-RETRY | S-1 / N-1 yeniden deneme | R0 kapalı testte olduğu gibi (yalnız gözlem) · R1 sınırlı üstel geri çekilme + anında elle yenileme | Herkese açık yayından önce karar; F1 ile ücretli risk 0 ama ücretsiz servis hız sınırları geçerli | G-USER |
+
+F1 onaylanırsa: ayrı görev, yalıtılmış worktree, önce başarısız test, sürüm artışı (CLAUDE.md §8); kuyruktaki `dee61f95` bunu hedefliyor. Bu kayıt hiçbir kapıyı açmaz.
 
 ## 8. Açık hatalar
 
