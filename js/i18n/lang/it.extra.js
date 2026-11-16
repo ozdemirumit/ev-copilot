@@ -415,4 +415,6 @@ export default {
   "Koyu": "Scuro",
   "Otomatik (sistem ayarı)": "Automatico (impostazione di sistema)",
   "Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.": "Automatico segue l'impostazione chiaro/scuro del telefono. Le tessere della mappa non cambiano in questa versione.",
+  "🟢 Müsait": "🟢 Disponibile",
+  "⚪ Bilinmiyor": "⚪ Sconosciuto",
 };

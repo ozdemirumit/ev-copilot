@@ -2,7 +2,7 @@
 // diğer yerlerde sunucuda Google Places anahtarı varsa o. Sunucu yoksa ya da veri yoksa boş döner (istasyon "bilinmiyor" kalır).
 import { proxyFetch, proxyHas } from '../net/proxy.js';
 
-/** stations (en çok `max`) → Map(id → slots). slots: { total, available, out, at, checked, src, price } */
+/** stations (en çok `max`) → Map(id → slots). slots: { total, available, out, at, checked, src, price, community, availability, decision } */
 export async function fetchAvailability(stations, max = 2, soc = null) {
   const out = new Map();
   if (!proxyHas('occupancy')) return out;
@@ -15,7 +15,7 @@ export async function fetchAvailability(stations, max = 2, soc = null) {
     for (const [id, r] of Object.entries(results || {})) {
       if (!r) continue; // veri yok: istasyon bilinmiyor kalır
       // total/available null olabilir (yalnızca fiyat biliniyor): istasyon doluluk bakımından "bilinmiyor" kalır, fiyat gösterilir
-      out.set(id, { total: r.total, available: r.available, out: r.out ?? 0, at: r.at, checked: Date.now(), src: r.src, price: r.price || null, community: r.community || null, availability: r.availability || null }); // availability: normalize EVSE durumu (server/availability.mjs), arayüz henüz kullanmıyor
+      out.set(id, { total: r.total, available: r.available, out: r.out ?? 0, at: r.at, checked: Date.now(), src: r.src, price: r.price || null, community: r.community || null, availability: r.availability || null, decision: r.decision && typeof r.decision === 'object' && !Array.isArray(r.decision) ? r.decision : null }); // availability: normalize EVSE durumu (server/availability.mjs); decision: sunucunun doluluk kararı (availability.mjs) aynen (D3-T4; eski sunucuda null, uydurulmaz)
     }
   } catch (err) {
     console.warn('Doluluk alınamadı:', err.message);

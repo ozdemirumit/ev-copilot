@@ -91,6 +91,29 @@ if (!pw) {
       ok(`${tag}: X kartın ve ekranın içinde`, m.x[0] >= m.card[0] && m.x[1] <= m.card[1] && m.x[1] <= m.vw && m.x[2] >= m.card[2], JSON.stringify(m.x));
       ok(`${tag}: X dokunma alanı >= 44x44`, m.x[4] >= 44 && m.x[5] >= 44, JSON.stringify(m.x));
       ok(`${tag}: X noktasında üstte başka öğe yok`, m.hit);
+      // D3-T4: doluluk üç durumu (Müsait / Dolu / Bilinmiyor) kartta taşmadan çizilir. Sentetik slots, sayfa içi modül; ağ yok.
+      const occ = await p.evaluate(async () => {
+        const { slotEl } = await import('/js/routing/slots.js');
+        const now = Date.now();
+        const counts = (c) => ({ AVAILABLE: 0, CHARGING: 0, RESERVED: 0, BLOCKED: 0, OUTOFORDER: 0, INOPERATIVE: 0, UNKNOWN: 0, ...c });
+        const av = (c, kind, ago) => { const k = counts(c); const total = Object.values(k).reduce((a, b) => a + b, 0); return { source: 'tomtom', simulated: false, granularity: 'counts', total, available: k.AVAILABLE, counts: k, evses: null, at: now - ago * 60e3, timestampKind: kind }; };
+        const sl = (a, community = null) => ({ slots: { total: a.total, available: a.available, out: 0, at: a.at, checked: now, src: 'tomtom', price: null, community, availability: a } });
+        const box = document.createElement('div');
+        box.className = 'live-slots occ-test';
+        const fx = [sl(av({ AVAILABLE: 3, CHARGING: 1 }, 'provider', 2)), sl(av({ CHARGING: 4 }, 'provider', 0)), sl(av({ AVAILABLE: 2, CHARGING: 2 }, 'fetched', 0), { busy: 12, report: { status: 'full', at: now - 5 * 60e3 } }), sl(av({ AVAILABLE: 1 }, 'provider', 16))];
+        for (const s of fx) { const d = document.createElement('div'); d.append(slotEl(s, '')); box.append(d); }
+        const card = document.getElementById('station-card');
+        card.querySelector('.sc-head').after(box);
+        await new Promise((r) => setTimeout(r, 150)); // çeviri gözlemcisi
+        const states = [...box.querySelectorAll('.occ-state')].map((e) => e.textContent);
+        const res = { lang: document.documentElement.lang, states, text: box.textContent, sw: card.scrollWidth, cw: card.clientWidth, bw: box.scrollWidth, bcw: box.clientWidth };
+        box.remove();
+        return res;
+      });
+      const L = occ.lang === 'tr' ? ['🟢 Müsait', '🔴 Dolu', '⚪ Bilinmiyor', '⚪ Bilinmiyor'] : occ.lang === 'en' ? ['🟢 Available', '🔴 Full', '⚪ Unknown', '⚪ Unknown'] : null;
+      ok(`${tag}: doluluk üç durum (${occ.lang}) Müsait/Dolu/Bilinmiyor/Bilinmiyor(16 dk)`, L && JSON.stringify(occ.states) === JSON.stringify(L), JSON.stringify(occ.states));
+      ok(`${tag}: doluluk eski metinleri yok (boş/dolu (0/N)/arızalı)`, !/boş\b|dolu \(|arızalı/.test(occ.text), occ.text);
+      ok(`${tag}: doluluk satırı kartı yatay taşırmaz`, occ.sw <= occ.cw + 1 && occ.bw <= occ.bcw + 1, JSON.stringify(occ));
       await p.evaluate(() => { const c = document.getElementById('station-card'); c.scrollTop = c.scrollHeight; });
       await p.waitForTimeout(100);
       const m2 = await measure();

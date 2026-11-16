@@ -415,4 +415,6 @@ export default {
   "Koyu": "Dunkel",
   "Otomatik (sistem ayarı)": "Automatisch (Systemeinstellung)",
   "Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.": "Automatisch folgt der Hell-/Dunkel-Einstellung des Telefons. Die Kartenkacheln ändern sich in dieser Version nicht.",
+  "🟢 Müsait": "🟢 Verfügbar",
+  "⚪ Bilinmiyor": "⚪ Unbekannt",
 };

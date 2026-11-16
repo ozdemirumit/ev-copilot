@@ -147,7 +147,7 @@ const ST_NL = { id: 'nl1', lat: 52.37, lon: 4.9, dc: false };
   const clientUsers = [...walk('js'), 'sw.js', 'index.html']
     .filter((f) => /\.(m?js|html)$/.test(f) && f !== 'js/routing/occupancyDecision.js')
     .filter((f) => /occupancyDecision|withOccupancyDecision/.test(readFileSync(join(root, f), 'utf8')));
-  ok('istemci/UI/sw.js/index.html karara bağlı değil (D3-T4 işi)', clientUsers.length === 0, JSON.stringify(clientUsers));
+  ok('istemci tarafında karar yalnız js/routing/slots.js (D3-T4 arayüz) + sw.js SHELL; index.html bağlı değil', JSON.stringify(clientUsers) === JSON.stringify(['js/routing/slots.js', 'sw.js']), JSON.stringify(clientUsers));
 }
 
 ok('gerçek fetch hiç çağrılmadı', realFetchCalls === 0, String(realFetchCalls));

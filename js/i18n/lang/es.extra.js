@@ -415,4 +415,6 @@ export default {
   "Koyu": "Oscuro",
   "Otomatik (sistem ayarı)": "Automático (ajuste del sistema)",
   "Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.": "Automático sigue el ajuste claro/oscuro del teléfono. Las teselas del mapa no cambian en esta versión.",
+  "🟢 Müsait": "🟢 Disponible",
+  "⚪ Bilinmiyor": "⚪ Desconocido",
 };

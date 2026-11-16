@@ -415,4 +415,6 @@ export default {
   "Koyu": "Ciemny",
   "Otomatik (sistem ayarı)": "Automatyczny (ustawienie systemu)",
   "Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.": "Tryb automatyczny podąża za ustawieniem jasny/ciemny telefonu. Kafelki mapy nie zmieniają się w tej wersji.",
+  "🟢 Müsait": "🟢 Dostępne",
+  "⚪ Bilinmiyor": "⚪ Nieznane",
 };

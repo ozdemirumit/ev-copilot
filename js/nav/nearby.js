@@ -23,7 +23,7 @@ import { measuredSoc, socSource } from '../physics/socEstimate.js';
 import { socTrusted } from '../routing/socTrust.js';
 import { paintMore } from '../ui/moreToggle.js';
 import { pickEmergency, priceText, isFast, PICK_TITLES, ROUTE_OFF_KM, ROUTE_NEAR_KM, ALERT_PAGE, alertList, alertPage, priceStatus } from './chargePick.js';
-import { sortNearby, sortNote, availability, priceLabel, powerLabel, NEAR_SORTS } from './nearSort.js';
+import { sortNearby, sortNote, priceLabel, powerLabel, NEAR_SORTS } from './nearSort.js';
 
 const $ = (id) => document.getElementById(id);
 const BAT = VEHICLE.batteryNetKwh;
@@ -240,8 +240,7 @@ function render() {
     const meta2 = cell('div', 'meta', t('~{0} km yol', fmtKm(s.roadKm))
       + (s.arrive != null ? ' ' + t('· varışta %{0}', Math.max(0, s.arrive).toFixed(0)) : '')
       + ' ' + (s.foreign || !known ? t("· %{0}'e ≈ {1} dk", CHARGE_TO, Math.round(s.minutes)) : t("· %{0}'e ≈ {1} dk, {2} TL", CHARGE_TO, Math.round(s.minutes), s.cost.toFixed(0)))); // parçalar ayrı çevrilir (tek dizge olarak desen eşleşmez) // doluluk verisi yalnızca gelen istasyonda gösterilir (altta slotEl)
-    const av = availability(s);
-    const slotNode = av === 'stale' ? cell('span', '', ' · ⚪ doluluk bilgisi eski') : slotEl(s); // eski veri "boş"/"dolu" diye gösterilmez
+    const slotNode = slotEl(s); // D3-T4: eski / zaman damgasız veri slotEl'de "⚪ Bilinmiyor" (boş/dolu diye gösterilmez)
     if (slotNode) meta2.append(slotNode);
     const lp = livePrice(s);
     if (lp) meta2.append(' · ', cell('span', '', lp.text));

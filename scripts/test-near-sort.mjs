@@ -99,7 +99,8 @@ const fresh = (available, total = 4, extra = {}) => ({ slots: { available, total
   ok('liste render sortNearby ile sıralanır', /sortNearby\(visible\(\), nearSort\)/.test(nb));
   ok('düşük pil önerisi sıralamadan etkilenmez (rankNearby değişmedi)', /function rankNearby[\s\S]*?visible\(\{ power: false, brand: !anyBrand \}\)/.test(nb) && !/rankNearby[^\n]*nearSort/.test(nb));
   ok('seçim kaydedilir', /save\('nearSort', nearSort\)/.test(nb) && /load\('nearSort', 'near'\)/.test(nb));
-  ok('eski doluluk "boş" gösterilmez', /av === 'stale' \?/.test(nb));
+  // D3-T4: eski / zaman damgasız doluluk slotEl içinde "⚪ Bilinmiyor" olur (davranış: test-occupancy-ui); ayrı "eski" etiketi yok
+  ok('eski doluluk "boş" gösterilmez (liste slotEl, ayrı "eski" etiketi yok)', /const slotNode = slotEl\(s\);/.test(nb) && !/doluluk bilgisi eski/.test(nb) && /occupancyDecision\(sl, \{ now \}\)/.test(read('js/routing/slots.js')));
   ok('bilinmeyen fiyatta TL maliyet yazılmaz', /s\.foreign \|\| !known \?/.test(nb));
   const card = html.slice(html.indexOf('id="near-card"'), html.indexOf('id="filter-card"'));
   ok('Yakınımdaki kartında 3 sıralama düğmesi', ['near', 'cheap', 'fast'].every((k) => card.includes(`data-nearsort="${k}"`)) && card.includes('id="near-sort-note"'));

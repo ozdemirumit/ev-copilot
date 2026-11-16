@@ -415,4 +415,6 @@ export default {
   "Koyu": "Întunecat",
   "Otomatik (sistem ayarı)": "Automat (setarea sistemului)",
   "Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.": "Automat urmează setarea luminos/întunecat a telefonului. Plăcile de hartă nu se schimbă în această versiune.",
+  "🟢 Müsait": "🟢 Disponibil",
+  "⚪ Bilinmiyor": "⚪ Necunoscut",
 };

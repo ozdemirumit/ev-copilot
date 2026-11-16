@@ -112,11 +112,14 @@ const station = (id, slots, extra = {}) => ({ id, name: id, slots, distKm: 1, kw
   // G2: slotKind NDW 0/4'ü 'full' sayar (formatter: unknown; boş olmayanların durumu bilinmiyor).
   knownGap('G2', "slotKind(NDW fetched 0/4) === 'full' (formatter: unknown)", slotKind(sB) === 'full');
   knownGap('G2b', "slotKind(NDW fetched 2/4) === 'free' (formatter: unknown)", slotKind(sF) === 'free');
-  // G3: liste/kart görüntüsü (slotEl/slotLabel) "boş"/"dolu" + "şimdi" yazar; formatter "doluluk bilgisi yok" der.
+  // G3/G3b/G3c KAPANDI (D3-T4, v0.99.83): liste/kart görüntüsü (slotEl/slotLabel) saf occupancyDecision kararıyla yalnız
+  // Müsait / Dolu / Bilinmiyor gösterir → NDW fetched kayıtta "⚪ Bilinmiyor"; sayı, yaş, "boş"/"dolu" yazılmaz (ACCEPT).
   const elF = slotEl(sF)?.textContent || '', elB = slotEl(sB)?.textContent || '';
-  knownGap('G3', 'slotEl(NDW fetched) "🟢 2/4 boş · şimdi" gösterir', /2\/4 boş/.test(elF) && /şimdi/.test(elF), elF);
-  knownGap('G3b', 'slotEl(NDW fetched 0/4) "🔴 dolu (0/4)" gösterir', /dolu \(0\/4\)/.test(elB), elB);
-  knownGap('G3c', 'slotLabel(NDW fetched 2/4) "boş · şimdi" döner', /2\/4 boş · şimdi/.test(slotLabel(sF)), slotLabel(sF));
+  ok('ACCEPT G3 (D3-T4): slotEl(NDW fetched 2/4) → "⚪ Bilinmiyor", sayı/yaş yok', elF === ' · ⚪ Bilinmiyor', elF);
+  ok('ACCEPT G3b (D3-T4): slotEl(NDW fetched 0/4) → "⚪ Bilinmiyor", asla dolu', elB === ' · ⚪ Bilinmiyor', elB);
+  ok('ACCEPT G3c (D3-T4): slotLabel(NDW fetched 2/4) → "⚪ Bilinmiyor"', slotLabel(sF) === '⚪ Bilinmiyor', slotLabel(sF));
+  ok('ACCEPT (D3-T4): sağlayıcı zamanlı taze kayıtta görüntü korunur (Müsait/Dolu + sayı)', /^ · 🟢 Müsait · 3\/4 · 3 dk önce/.test(slotEl(station('p', PROV_FREE))?.textContent || '') && /^ · 🔴 Dolu · 0\/4 · 3 dk önce/.test(slotEl(station('p', PROV_FULL))?.textContent || ''), slotEl(station('p', PROV_FREE))?.textContent);
+  ok('ACCEPT (D3-T4): 3 sa eski kayıt → "⚪ Bilinmiyor"', slotEl(station('p', PROV_STALE))?.textContent === ' · ⚪ Bilinmiyor', slotEl(station('p', PROV_STALE))?.textContent);
   // G4: Yakın istasyonlar sıralaması (nearSort) NDW kaydını taze free/full sayar; 0/4 sona atılır.
   knownGap('G4', "nearSort.availability(NDW fetched 0/4) === 'full'", nearAvail(sB, NOW) === 'full');
   const near = sortNearby([station('ndwB', NDW_FULL, { distKm: 1 }), station('none', null, { distKm: 5 })], 'near', NOW);
@@ -141,17 +144,24 @@ const station = (id, slots, extra = {}) => ({ id, name: id, slots, distKm: 1, kw
   ok("kontrol: usable(NDW fetched) — NDW 'out' üretmez", usable(sB) === true);
 }
 
-// ---------- 3) KNOWN-GAP: kaynak denetimi — çalışma zamanı fail-closed biçimlendiriciye bağlı değil ----------
+// ---------- 3) KNOWN-GAP: kaynak denetimi — nav/planlayıcı KARAR yolu fail-closed karara bağlı değil ----------
 {
   const files = { nearby: read('js/nav/nearby.js'), routePanel: read('js/ui/routePanel.js'), planner: read('js/routing/planner.js'), livePlan: read('js/routing/livePlan.js'), slots: read('js/routing/slots.js'), sw: read('sw.js') };
-  const usesFormatter = Object.entries(files).filter(([k]) => k !== 'sw').filter(([, src]) => /occupancyLabel|formatOccupancy|occupancyView/.test(src)).map(([k]) => k);
-  knownGap('G6', 'nearby/routePanel/planner/livePlan/slots hiçbiri occupancyLabel/occupancyView kullanmıyor', usesFormatter.length === 0, usesFormatter.join());
-  knownGap('G6b', 'sw.js SHELL listesinde occupancyLabel.js yok (biçimlendirici yayında yüklenmez)', !/occupancyLabel\.js/.test(files.sw));
+  // D3-T4: GÖRÜNTÜ yolu (slots.js slotEl/slotLabel) saf occupancyDecision'a bağlandı; planlayıcı/nav KARAR yolu (slotKind/isFresh,
+  // planner, livePlan, nearby gone()) hâlâ bağlı değil (R3-b/R3-c, ayrı görev). G6 artık yalnız karar yolunu sayar.
+  const decide = (src) => /occupancyLabel|formatOccupancy|occupancyView|occupancyDecision/.test(src);
+  const slotsDecision = files.slots.replace(/\/\/.*$/gm, '').split(/\nexport /).filter((b) => /^(function slotKind|const isFresh|function slotsOf)/.test(b));
+  const usesFormatter = [...Object.entries(files).filter(([k]) => !['sw', 'slots'].includes(k)).filter(([, src]) => decide(src)).map(([k]) => k), ...(slotsDecision.length === 3 && slotsDecision.some(decide) ? ['slots(slotKind/isFresh)'] : [])];
+  ok('kaynak: slots.js karar gövdeleri (slotKind/isFresh/slotsOf) bulundu', slotsDecision.length === 3, String(slotsDecision.length));
+  knownGap('G6', 'nav/planlayıcı karar yolu (nearby/routePanel/planner/livePlan, slots slotKind/isFresh) fail-closed kararı kullanmıyor', usesFormatter.length === 0, usesFormatter.join());
+  // G6b KAPANDI (D3-T4): karar + biçimlendirici yayında yüklenir.
+  ok('ACCEPT G6b (D3-T4): sw.js SHELL occupancyDecision.js + occupancyLabel.js + communityReport.js içerir', ['occupancyDecision', 'occupancyLabel', 'communityReport'].every((m) => files.sw.includes(`'./js/routing/${m}.js'`)));
+  ok('ACCEPT (D3-T4): slots.js görüntü yolu occupancyDecision kullanır', /import \{ occupancyDecision \} from '\.\/occupancyDecision\.js'/.test(files.slots) && /occupancyDecision\(sl, \{ now \}\)/.test(files.slots));
   // Bağlantı noktaları bugün eski yolu kullanıyor (gelecekteki düzeltmenin dokunacağı yerler):
   ok('kaynak: planner usable/waitMin/fullNear isFresh+slotKind kullanır', /usable = \(s\) => meetsPower\(s\) && !\(isFresh\(s\) && slotKind\(s\) === 'out'\)/.test(files.planner)
     && /waitMin = \(s, fromKm\) => \(isFresh\(s\) && slotKind\(s\) === 'full'/.test(files.planner) && /fullNear = [^\n]*isFresh\(s\) && slotKind\(s\) === 'full'/.test(files.planner));
   ok('kaynak: nearby gone() isFresh+slotKind kullanır', /const gone = \(s\) => \{ const k = slotKind\(s\); return k === 'out' \|\| \(premium && k === 'full' && isFresh\(s\)\); \}/.test(files.nearby));
-  ok('kaynak: nearby liste/uyarı slotEl kullanır', /slotEl\(s\)/.test(files.nearby) && /slotEl\(s, ''\)/.test(files.nearby));
+  ok('kaynak: nearby liste/uyarı slotEl kullanır (D3-T4: ayrı "eski" etiketi yok)', /const slotNode = slotEl\(s\);/.test(files.nearby) && /slotEl\(s, ''\)/.test(files.nearby) && !/doluluk bilgisi eski/.test(files.nearby));
   ok('kaynak: routePanel durak satırı slotEl kullanır', /slotEl\(s\.station\)/.test(files.routePanel));
   ok('kaynak: livePlan slotKind ile "şu an boş yuva yok" söyler', /slotKind\(worse\) === 'out' \? 'şarj üniteleri arızalı' : 'şu an boş yuva yok'/.test(files.livePlan));
   ok("kaynak: slots.isFresh 'checked' (okuma anı) üzerinden", /isFresh = \(s\) => !!s\.slots && Date\.now\(\) - \(s\.slots\.checked \|\| 0\) < FRESH_MS/.test(files.slots));

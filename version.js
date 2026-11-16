@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.82';
+self.APP_VERSION = '0.99.83';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.83', date: '2026-11-16',
+    notes: [
+      'İstasyon doluluğu artık yalnız üç durumla gösterilir: 🟢 Müsait, 🔴 Dolu, ⚪ Bilinmiyor. Sağlayıcı zaman damgası olmayan ya da 15 dakikadan eski doluluk "boş" veya "dolu" gösterilmez, "Bilinmiyor" yazar (ayrı "eski bilgi" etiketi kaldırıldı). Sunucu doluluğu doğrulanmamış bulduysa da Bilinmiyor yazar. Topluluk bildirimleri ayrı satırda, eskisi gibi. Rota planlaması değişmedi. Yeni sağlayıcı isteği yok.',
+    ],
+  },
   {
     v: '0.99.82', date: '2026-11-16',
     notes: [

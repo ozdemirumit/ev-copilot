@@ -415,4 +415,6 @@ export default {
   "Koyu": "Σκοτεινό",
   "Otomatik (sistem ayarı)": "Αυτόματο (ρύθμιση συστήματος)",
   "Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.": "Το Αυτόματο ακολουθεί τη φωτεινή/σκοτεινή ρύθμιση του τηλεφώνου. Τα πλακίδια χάρτη δεν αλλάζουν σε αυτή την έκδοση.",
+  "🟢 Müsait": "🟢 Διαθέσιμο",
+  "⚪ Bilinmiyor": "⚪ Άγνωστο",
 };

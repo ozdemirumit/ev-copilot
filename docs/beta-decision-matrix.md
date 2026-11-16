@@ -402,7 +402,7 @@ harici API çağrısı, Playwright ve sunucu başlatma yapılmadı. Makine okunu
 | K4 | TomTom dahil sağlayıcı doluluk verisi **ingest edilir** (alınır/normalize edilir), fakat zaman damgası yoksa K1 gereği **doğrulanmış canlı doluluk gösterilmez**. | §7.3 K4 | ingest kapsamı D3-T2'de |
 | AGE | **15 dakikadan eski** doluluk verisi **"Bilinmiyor"** sayılır. | §6.3-2, §7.3 aging | bugünkü biçimlendirici `OCC_THRESHOLDS` 15 dk–2 sa aralığını "aging" durumu ile gösterir; D3-T1/T4'te bu karara göre bilinçli uyarlanır (test gevşetilmez) |
 | K3 | **Topluluk bildirimi resmî doluluktan ayrı** veri; resmî doluluk durumunu belirlemez/üzerine yazmaz. | §6.3-3 | planlayıcıyı etkileyip etkilemeyeceği bu kararda ayrıca belirtilmedi → D3-T3 veri ayrımını yaptı (§8.6), planlayıcıyı DEĞİŞTİRMEDİ; planlayıcı etkisi AÇIK (ayrı karar) |
-| K5 | Arayüz **üç durum**: **Müsait / Dolu / Bilinmiyor**. | §6.3-4 | uygulama yolu (`slotEl` düzeltme / `occupancyView` bağlama + `sw.js` SHELL) D3-T4'te |
+| K5 | Arayüz **üç durum**: **Müsait / Dolu / Bilinmiyor**. | §6.3-4 | D3-T4: `slotEl` düzeltildi (`occupancyView` bağlanmadı) + `sw.js` SHELL (§8.7); açık: doğrulanmış "hepsi arızalı" → Dolu gösterilir |
 | K6 | **"Canlı" etiketi yalnız doğrulanmış güncel fiyat** verisine. | §6.3-5 | "doğrulanmış güncel fiyat" ölçütü D3-T5'te testle sabitlenir (BL-P2-10 ile ilişkili) |
 
 Sonuç (bilinen ürün etkisi, §6.2): bugünkü kaynaklarla NDW ve TomTom kayıtları `fetched` (sağlayıcı zamanı yok) olduğundan K1/K4 gereği
@@ -415,8 +415,8 @@ Bu sonuç gerçek sağlayıcı yanıtıyla doğrulanmadı (yalnız ayrıştırı
 |---|---|---|---|---|---|
 | 1 | **D3-T1** | Saf `occupancyDecision` + zaman damgası / 15 dk testleri (eski R3-a; çağıran yok, sentetik fikstür, `now` parametresi, ağ yok; `test-occupancy-consistency-contract` 12/12 KNOWN-GAP değişmez; `js/` değişirse sürüm artışı) | K1, K2, K4, AGE | — | COMPLETED — yerel entegre (`c759f62`, `ec585e43`, v0.99.81; §8.4) |
 | 2 | **D3-T2** | NDW / TomTom bağdaştırıcısı: ingest, zaman damgası yoksa doğrulanmamış (sunucu değişirse canlıya alma = sunucu yeniden başlatma onayı, eski R3-e) | K1, K2, K4 | D3-T1 | COMPLETED — yerel entegre (`045a257`, `ddb92ce9`; sunucu bağdaştırıcısı bağlı, istemci/UI bağlı değil; §8.5) |
-| 3 | **D3-T3** | Topluluk bildirimi ayrı veri | K3 | D3-T1 | RUNNING → yerel commit + `--ff-only` integ (`aa4c329c`, v0.99.82; veri modeli, bağlı değil, planlayıcı değişmedi; §8.6) |
-| 4 | **D3-T4** | Üç durum arayüz Müsait / Dolu / Bilinmiyor (eski R3-d; nav/planlayıcı hizalaması R3-b/R3-c ile ilişkili; i18n değişirse `i18n-validate`) | K5, AGE | D3-T1, D3-T2, D3-T3 | PLANNED |
+| 3 | **D3-T3** | Topluluk bildirimi ayrı veri | K3 | D3-T1 | COMPLETED — yerel entegre (`15be974`, `aa4c329c`, v0.99.82; veri modeli, planlayıcı değişmedi; §8.6) |
+| 4 | **D3-T4** | Üç durum arayüz Müsait / Dolu / Bilinmiyor (eski R3-d; nav/planlayıcı hizalaması R3-b/R3-c ile ilişkili; i18n değişirse `i18n-validate`) | K5, AGE | D3-T1, D3-T2, D3-T3 | RUNNING → yerel commit + `--ff-only` integ (`0a472ebc` failed/max turns → `b26c3790` kurtarma, v0.99.83; yalnız arayüz, planlayıcı değişmedi; §8.7) |
 | 5 | **D3-T5** | Fiyat "Canlı" etiketi yalnız doğrulanmış güncel fiyata | K6 | D3-T1 | PLANNED |
 | 6 | **D3-T6** | Regresyon: `run-tests-guarded` tam paket + D3 sözleşme testleri | tümü | D3-T1..T5 | PLANNED |
 
@@ -476,3 +476,20 @@ Temel: `integ/beta-2026-11-14` @`045a257` (görev başında temiz; D3-T2 köprü
 - **Dokunulmadı:** `server/` (topluluk özeti zaten `{ busy, report }`, kullanıcı kimliği yok — testle doğrulandı), UI, i18n, `sw.js`, planlayıcı. 12/12 KNOWN-GAP değişmedi.
 - **Doğrulama durumu:** yalnız çevrimdışı/sentetik; gerçek cihazda doğrulanmadı; push/yayın yok. Tarayıcı ağ riskinin sıfır olduğu iddia edilmez.
 - **Sıradaki:** D3-T4 (üç durum arayüz; D3-T2 + D3-T3 tamamlandıktan sonra) ya da D3-T5.
+
+### 8.7 D3-T4 uygulandı — üç durum arayüz (2026-11-16, köprü `0a472ebc` WIP → `b26c3790` kurtarma; v0.99.83)
+
+Temel: `integ/beta-2026-11-14` @`15be974` (görev başında temiz; D3-T3 köprüde completed/çıkış 0 ve integ HEAD olarak doğrulandı), ilk deneme `0a472ebc` (worktree `MBRP-d3t4`, dal `feat/occupancy-ui-d3-t4`) commit etmeden "Reached max turns (80)" ile failed; WIP salt okunur patch olarak alındı, commit yalıtılmış worktree `MBRP-d3t4r`, dal `feat/occupancy-ui-d3-t4-r2` (`b26c3790`).
+
+- **İstemci aktarımı (`b26c3790`):** `js/routing/occupancyClient.js` `server/availability.mjs` `decision` alanını aynen taşır (eski sunucu / nesne değil → `null`, uydurulmaz). `slots.js`: sunucu kararı varsa ve `trusted !== true` ise fail-closed **Bilinmiyor**; sunucu kararı tek başına Müsait/Dolu yapmaz (istemci kararı, saat ve AGE ayrıca gerekir). Test `scripts/test-occupancy-client-decision.mjs` 18/0 (önce 6 FAIL).
+
+- **Arayüz (K5, AGE):** `js/routing/slots.js` `slotEl`/`slotLabel` resmî doluluğu yalnız saf `occupancyDecision(slots, { now: Date.now() })` kararıyla gösterir: **🟢 Müsait** / **🔴 Dolu** / **⚪ Bilinmiyor**.
+  - Sağlayıcı zaman damgası yok (TomTom/NDW `fetched`), 15 dk'dan eski (tam 15 dk dahil güncel), gelecekte, simüle, tanınmayan kaynak, tutarsız sayı, normalize `availability` yok, NDW 0/N, kaynak `community` → **Bilinmiyor**; sayı, yaş ve sağlayıcı atfı yazılmaz.
+  - Doğrulanmış durumda sayı ve yaş korunur ("🟢 Müsait · 3/4 · 2 dk önce · TomTom"); doğrulanmış "hepsi arızalı" üç durum kuralı gereği **Dolu** (ayrı "arızalı" etiketi yok — kullanıcı farklı isterse ayrı karar).
+  - Hiç resmî doluluk verisi gelmediyse (yalnız fiyat ya da hiç veri) bölüm eskisi gibi gizli; topluluk satırları (`communityReport`, ≤ 60 dk) ayrı ve metinleri aynı, resmî durumu değiştirmez (K3).
+  - `js/nav/nearby.js` dördüncü etiket "⚪ doluluk bilgisi eski" kaldırıldı (eski veri artık `slotEl`'de Bilinmiyor). `stationCard`/`stationsView`/`routePanel` aynı `slotEl`'i kullanır; düzen/CSS değişmedi.
+  - Çeviri: yeni anahtarlar "🟢 Müsait", "⚪ Bilinmiyor" (11 dil, `keys.extra.json`); "🔴 Dolu" mevcut anahtar. `sw.js` SHELL + `occupancyDecision.js`, `occupancyLabel.js`, `communityReport.js`.
+- **Planlayıcı DEĞİŞMEDİ:** `slotKind`/`isFresh`/`nearSort.availability`/`planner`/`livePlan` eski kuralda (G1/G2/G4/G5/G7 açık = R3-b/R3-c, ayrı görev). Bilinen tutarsızlık: liste "Bilinmiyor" derken düşük pil notu ("N dolu istasyon elendi"), yakın liste sıralaması ve sesli "şu an boş yuva yok" eski karara göre çalışabilir.
+- **Test:** `scripts/test-occupancy-ui.mjs` 111/0 (yeni; uygulamadan önce 32/77 FAIL; 4 mutasyon yakalandı). `test-occupancy-consistency-contract` 42/0: G3/G3b/G3c/G6b → ACCEPT (kesin metin beklentisi), G6 karar yoluna daraltıldı, 8/8 KNOWN-GAP. Bağlama kapsamı denetimleri "çağıran yok" → kesin çağıran listesi (`slots.js` + `sw.js`). Playwright (`test-station-card-layout`, yalnız izinli betik) 76/0: Chromium + WebKit, 320/360/390 px, üç durum çevrili (sayfa dili en), yatay taşma yok; dış istekler route ile 404. `i18n-validate` 11 dil çıkış 0. `run-tests-guarded` (`b26c3790`, `MBRP-d3t4r`) 100/100 PASS, 0 FAIL, 0 BLOCK (`0a472ebc`'nin önceki 99/99 koşusu commit edilmemişti).
+- **Doğrulama durumu:** yalnız çevrimdışı/sentetik; gerçek sağlayıcı yanıtıyla ve gerçek cihazda doğrulanmadı; push/yayın yok. Tarayıcı ağ riskinin sıfır olduğu iddia edilmez.
+- **Sıradaki:** D3-T5 (fiyat "Canlı" etiketi) ya da planlayıcı hizalaması (R3-b/R3-c; ayrı görev, topluluk-planlayıcı K3 açık kararıyla ilişkili); D3-T6 D3-T5'ten sonra.

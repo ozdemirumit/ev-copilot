@@ -415,4 +415,6 @@ export default {
   "Koyu": "Тъмна",
   "Otomatik (sistem ayarı)": "Автоматично (системна настройка)",
   "Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.": "Автоматично следва светлата/тъмната настройка на телефона. Плочките на картата не се променят в тази версия.",
+  "🟢 Müsait": "🟢 Свободно",
+  "⚪ Bilinmiyor": "⚪ Неизвестно",
 };

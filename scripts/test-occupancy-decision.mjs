@@ -166,15 +166,16 @@ ok('UNKNOWN EVSE varken boş yok → unknown (dolu değil)', UNKNOWN(dec(av({ so
   const imports = [...code.matchAll(/import\s[^;]*?from\s+['"]([^'"]+)['"]/g)].map((m) => m[1]);
   ok('yalnız occupancyLabel.js içe aktarılır', JSON.stringify(imports) === JSON.stringify(['./occupancyLabel.js']), JSON.stringify(imports));
 }
-// Bağlantı kapsamı. D3-T1: hiç çağıran yoktu. D3-T2: TEK çağıran sunucu bağdaştırıcı yardımcısı server/availability.mjs
-// (withOccupancyDecision; ndwLookup/tomtomLookup onu kullanır). İstemci/UI (js/), sw.js ve index.html hâlâ bağlı DEĞİL (D3-T4 işi).
+// Bağlantı kapsamı. D3-T1: hiç çağıran yoktu. D3-T2: sunucu bağdaştırıcı yardımcısı server/availability.mjs
+// (withOccupancyDecision; ndwLookup/tomtomLookup onu kullanır). D3-T4: istemcide YALNIZ js/routing/slots.js (slotEl/slotLabel
+// arayüz durumu) + sw.js SHELL girdisi. Planlayıcı/nav modülleri ve index.html bağlı DEĞİL (kesin liste).
 {
   const walk = (dir) => readdirSync(join(root, dir), { withFileTypes: true }).filter((e) => !['data', 'node_modules'].includes(e.name)).flatMap((e) => e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]);
   const users = [...walk('js'), ...walk('server'), 'sw.js', 'index.html']
     .filter((f) => /\.(m?js|html)$/.test(f) && !f.replace(/\\/g, '/').endsWith(MOD))
     .filter((f) => readFileSync(join(root, f), 'utf8').includes('occupancyDecision'))
     .map((f) => f.replace(/\\/g, '/'));
-  ok('çalışma zamanı çağıranı yalnız server/availability.mjs (D3-T2); istemci/sw.js/index.html bağlı değil', JSON.stringify(users) === JSON.stringify(['server/availability.mjs']), JSON.stringify(users));
+  ok('çalışma zamanı çağıranları tam olarak js/routing/slots.js (D3-T4) + server/availability.mjs (D3-T2) + sw.js SHELL', JSON.stringify(users) === JSON.stringify(['js/routing/slots.js', 'server/availability.mjs', 'sw.js']), JSON.stringify(users));
 }
 
 console.log(`test-occupancy-decision: ${pass} passed, ${fail} failed`);

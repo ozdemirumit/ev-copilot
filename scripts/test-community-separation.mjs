@@ -132,18 +132,24 @@ ok('COMMUNITY_REPORT_MAX_AGE_MS = 60 dk (server/community.mjs REPORT_MS ile ayn�
   ok('isFresh topluluğa bakmaz (checked yok → bayat)', isFresh(s({ available: null, community: { busy: 1, report: { status: 'free', at: realNow } } })) === false);
 }
 {
-  // Planlayıcı / planla ilgili modüller yeni topluluk modelini ya da occupancyDecision'ı içe aktarmaz (bu görevde bağlanmadı)
-  const PLAN = ['js/routing/planner.js', 'js/routing/slots.js', 'js/routing/livePlan.js', 'js/routing/routeOptions.js', 'js/routing/controller.js', 'js/nav/nearSort.js', 'js/nav/nearby.js', 'js/nav/chargePick.js'];
+  // Planlayıcı / planla ilgili modüller yeni topluluk modelini ya da occupancyDecision'ı içe aktarmaz. D3-T4: slots.js yalnız
+  // ARAYÜZ (slotEl/slotLabel) için içe aktarır; planlayıcı kararları (slotKind/isFresh/slotsOf) bunlara dokunmaz.
+  {
+    const sl = readFileSync(join(root, 'js/routing/slots.js'), 'utf8').replace(/\/\/.*$/gm, '');
+    const body = (n) => { const i = sl.indexOf(`export ${n.startsWith('isFresh') ? 'const' : 'function'} ${n}`); const j = sl.indexOf('\nexport ', i + 1); return i < 0 ? '' : sl.slice(i, j < 0 ? undefined : j); };
+    ok('slots.js slotKind/isFresh/slotsOf communityReport/occupancyDecision kullanmaz (planlayıcı değişmedi)', ['slotKind', 'isFresh', 'slotsOf'].every((n) => body(n).length > 20 && !/communityReport|occupancyDecision/.test(body(n))));
+  }
+  const PLAN = ['js/routing/planner.js', 'js/routing/livePlan.js', 'js/routing/routeOptions.js', 'js/routing/controller.js', 'js/nav/nearSort.js', 'js/nav/nearby.js', 'js/nav/chargePick.js'];
   for (const f of PLAN) {
     const src = readFileSync(join(root, f), 'utf8');
     ok(`${f} communityReport/occupancyDecision kullanmaz`, !/communityReport|occupancyDecision/.test(src));
   }
-  // communityReport hiçbir çalışma zamanı modülünce içe aktarılmaz (bağlama D3-T4 işi)
+  // communityReport çağıranları kesin liste: yalnız js/routing/slots.js (D3-T4 arayüz) + sw.js SHELL girdisi
   const walk = (d) => readdirSync(join(root, d), { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(join(d, e.name)) : [join(d, e.name)]);
   const users = [...walk('js'), ...walk('server').filter((f) => !/[\\/]data[\\/]/.test(f) && /\.m?js$/.test(f)), 'sw.js', 'index.html']
     .filter((f) => !/communityReport\.js$/.test(f) && /\.(m?js|html)$/.test(f))
-    .filter((f) => /communityReport/.test(readFileSync(join(root, f), 'utf8')));
-  ok('communityReport çalışma zamanına bağlı değil (çağıran yok)', users.length === 0, JSON.stringify(users));
+    .filter((f) => /communityReport/.test(readFileSync(join(root, f), 'utf8'))).map((f) => f.split('\\').join('/'));
+  ok('communityReport çağıranları tam olarak js/routing/slots.js + sw.js (D3-T4)', JSON.stringify(users) === JSON.stringify(['js/routing/slots.js', 'sw.js']), JSON.stringify(users));
   const mod = readFileSync(join(root, 'js/routing/communityReport.js'), 'utf8');
   ok('communityReport saf: Date.now / fetch / document / localStorage yok', !/Date\.now|fetch\(|document\.|localStorage|import\(/.test(mod));
 }

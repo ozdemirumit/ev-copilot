@@ -415,4 +415,6 @@ export default {
   "Koyu": "Donker",
   "Otomatik (sistem ayarı)": "Automatisch (systeeminstelling)",
   "Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.": "Automatisch volgt de licht/donker-instelling van de telefoon. De kaarttegels veranderen in deze versie niet.",
+  "🟢 Müsait": "🟢 Beschikbaar",
+  "⚪ Bilinmiyor": "⚪ Onbekend",
 };

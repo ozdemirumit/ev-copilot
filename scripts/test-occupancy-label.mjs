@@ -141,7 +141,8 @@ const noStatusWords = (s) => !/boş|dolu \(|arızalı|canlı/.test(s);
   for (const re of banned) ok(`kaynakta yasaklı kullanım yok: ${re}`, !re.test(src));
   const sw = readFileSync(join(root, 'sw.js'), 'utf8');
   const users = ['js/ui/stationCard.js', 'js/ui/stationsView.js', 'js/routing/occupancyClient.js', 'js/app.js'].filter((f) => { try { return readFileSync(join(root, f), 'utf8').includes('occupancyLabel'); } catch { return false; } });
-  ok('aşama 1: uygulamaya bağlı değil (sw.js ve arayüz içe aktarmaz)', !sw.includes('occupancyLabel') && users.length === 0, users.join(','));
+  // D3-T4: occupancyLabel yalnız saf occupancyDecision üzerinden (slots.js arayüzü) yüklenir → sw.js SHELL'de olmalı; arayüz dosyaları doğrudan içe aktarmaz
+  ok('arayüz dosyaları doğrudan içe aktarmaz; sw.js SHELL occupancyLabel.js içerir (D3-T4, occupancyDecision bağımlılığı)', sw.includes("'./js/routing/occupancyLabel.js'") && users.length === 0, users.join(','));
 }
 
 // ---------- 9) Yerelleştirme: şablonlar keys.json'da ve 11 dilde çevrili, yer tutucular korunur ----------
