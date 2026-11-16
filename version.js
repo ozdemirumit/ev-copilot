@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.88';
+self.APP_VERSION = '0.99.89';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.89', date: '2026-11-16',
+    notes: [
+      'Yakındaki istasyon araması hata verdiğinde (ör. sunucunun harita/arama hakkı dolduğunda) uygulama artık aynı aramayı arka arkaya tekrar tekrar göndermez: önce 1 dakika, sonra 2, 4, 8 dakika, en çok 10 dakikada bir yeniden dener. Arama başarılı olunca normale döner; İstasyonlar\'da Yenile\'ye dokunmak her zaman hemen arar. Düşük pil uyarısı ve sesli öneri aynen sürer.',
+    ],
+  },
   {
     v: '0.99.88', date: '2026-11-16',
     notes: [

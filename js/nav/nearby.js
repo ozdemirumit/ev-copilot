@@ -35,6 +35,12 @@ const LOW_REFRESH_MS = 5 * 60e3;
 const CHARGE_TO = 80;
 const OCC_EVERY_MS = 60e3; // kritik pilde (Premium) aday istasyonların canlı doluluğu bu aralıkla yenilenir (sunucu önbelleği 90 sn)
 const OCC_BATCH = 6; // sunucu bir istekte en çok 6 istasyon alır
+// Arama atılan hatayla bittiyse (ör. sunucu Mapbox 402/401 → kategori sorgusu fatal) meta.at yazılmaz: otomatik yeniden arama
+// (watch / düşük pil autoSearch) üstel geri çekilir (60 sn → 2 → 4 → 8 → en çok 10 dk); başarı sıfırlar. Elle Yenile etkilenmez (G2b).
+const RETRY_MIN_MS = 60e3;
+const RETRY_MAX_MS = 10 * 60e3;
+let failN = 0;
+let retryAt = 0;
 
 let all = []; // son sorgu sonucu (fetchAround)
 let meta = { at: 0, lat: null, lon: null, errors: [], cached: false };
@@ -113,8 +119,12 @@ export async function refreshNearby({ force = false, silent = false } = {}) {
       if (visible().length || res.errors.length) break; // hata varsa genişletmenin anlamı yok (aynı sunucu)
     }
     meta = { at: Date.now(), lat: e.lat, lon: e.lon, errors: res.errors, cached: res.cached };
+    failN = 0;
+    retryAt = 0;
   } catch (err) {
     meta = { ...meta, errors: ['Arama başarısız: ' + err.message] };
+    failN++;
+    retryAt = Date.now() + Math.min(RETRY_MAX_MS, RETRY_MIN_MS * 2 ** (failN - 1));
   } finally {
     busy = false;
   }
@@ -401,7 +411,7 @@ function inTrouble(e, nav) {
 
 /** Veri yoksa/eskiyse kendiliğinden ara (45 sn'de bir; başarısız denemeler döngüye girmesin). */
 function autoSearch(widen = false) {
-  if (busy || Date.now() - meta.at < 45000) return;
+  if (busy || Date.now() < retryAt || Date.now() - meta.at < 45000) return;
   if (widen && radiusSetting !== 'auto' && radius < 50) { radiusSetting = 50; radius = 50; save('nearRadiusMode', radiusSetting); $('near-radius').value = '50'; }
   refreshNearby({ silent: true, force: true });
 }
@@ -476,7 +486,7 @@ function watch() {
   const moved = meta.lat == null ? Infinity : haversineKm({ lat: meta.lat, lon: meta.lon }, e);
   const lowNow = inTrouble(e, nav) && socTrusted(e.source === 'sim' ? 'sim' : socSource()); // düşük pil sıklığı (5 dk arama, 1 dk doluluk) yalnızca güvenilir pilde (Q-SOC-2)
   const wanted = moving && (all.length || nav.active) || lowNow;
-  if (wanted && !busy && (age > (lowNow ? LOW_REFRESH_MS : REFRESH_MS) || moved > REFRESH_KM)) refreshNearby({ silent: true });
+  if (wanted && !busy && Date.now() >= retryAt && (age > (lowNow ? LOW_REFRESH_MS : REFRESH_MS) || moved > REFRESH_KM)) refreshNearby({ silent: true });
   else { if (meta.at) render(); checkLow(); }
   if (all.length && (lowNow || moving)) refreshOccupancy({ every: lowNow ? OCC_EVERY_MS : 2 * 60e3 }); // Premium: sürerken 2 dk, kritik pilde 1 dk
 }

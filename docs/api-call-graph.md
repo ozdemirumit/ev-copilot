@@ -95,16 +95,28 @@ Hepsi: Beta'da providerGate (istemci) + server/providerGate.mjs varsayılan DURA
   `scripts/test-server-quota.mjs`; `test-d2-quota-inventory` KNOWN-GAP satırları `ok(...)` kabul denetimine çevrildi.
 - Harita karoları MapLibre Web Worker'ından yüklenir: `fetch` sarmalayıcısı ve bu manifest onları görmez (`providerGate.js:8`);
   takip kamerası GPS ile kaydıkça karo isteği oluşabilir. Duraklatmada yerel boş stil kullanılır. Sayılmadı → G2.
-- `nearby.refreshNearby` hata (throw) yolunda `meta.at` güncellenmez; `autoSearch` 45 sn bekler. `fetchAround` sağlayıcı hatalarını
-  `errors` dizisine topladığı için throw yolu nadir; davranış testi yazılmadı (G2'de doğrulanmalı, iddia edilmez).
+- **S-0 (G2b ile kapandı, v0.99.89):** `nearby.refreshNearby` atılan hata (throw) yolunda `meta.at` yazılmıyordu. `fetchAround` reddi
+  gerçek: sunucu Mapbox 402/401/501 ya da sunucuya ulaşılamaması `categoryId` içinde fatal olarak yeniden atılır (`mapbox/chargers.js`).
+  Sonuç: güvenilir düşük pilde `refreshNearby → checkLow → autoSearch → refreshNearby` beklemesiz döngü (sanal saatte aynı anda 26+
+  arama, sınırsız fırtına); normal pilde `watch` 30 sn'de bir (120/saat). Şimdi atılan hatada üstel geri çekilme (60 sn → 2 → 4 → 8 → en
+  çok 10 dk; başarı sıfırlar) `watch` ve `autoSearch` için; elle Yenile etkilenmez. Testi `scripts/test-g2b-request-budget.mjs` §A.
+- **S-1 (KNOWN-GAP, karar kullanıcıda):** arama hata DİZİSİYLE dönerse (kaynak ulaşılamadı; throw değil) `meta.at` yazılır ve güvenilir
+  düşük pilde boş listeyle `autoSearch` 45 sn'de bir dener (≈ 80/saat). Acil durum araması olduğu için geri çekilme eklenmedi.
+- **N-1 (KNOWN-GAP, karar kullanıcıda):** `navigator.js` rotadan çıkınca yeniden rota başarısız oldukça 12 sn'de bir dener (`RETRY_MS`;
+  sanal 60 dk'da 277 deneme). Sürücü güvenliği ↔ istek ödünleşimi; sunucu tarafında Mapbox rota aylık sınırı (D2-T1) ve günlük hak (G2a) korur.
 
 ## 5. Takip görevleri (YAPILMADI)
 
 - **G1 — istemci düzeltmeleri:** YAPILDI — G1a W-1 (v0.99.87), G1b Q-SOC-1 / Q-SOC-2 (v0.99.88); `test-api-call-graph` D1–D3
   sınırları korundu.
-- **G2 — kapsam genişletme:** navigasyon açıkken tam simülasyon (navigator/ahead/speedLimit/nearby/livePlan/roadWarnings birlikte, plan
-  yüklü, ücretli sağlayıcı sahte) ile sağlayıcı başına saatlik istek bütçesi; harita karosu sayımı; `nearby` throw yolu. Sunucu
-  Q-SRV-1/2/3 YAPILDI (G2a).
+- **G2 — kapsam genişletme:** Sunucu Q-SRV-1/2/3 YAPILDI (G2a). G2b YAPILDI (v0.99.89, `scripts/test-g2b-request-budget.mjs`): navigasyon
+  modüllerinin gerçek kodu (ağ uçları sahte, sanal 60 dk, 90 km/h, plan yüklü) sağlayıcı başarılı / ağ hatası / fatal modlarında sayıldı —
+  saatlik: Open-Meteo (yağış + plan havası) 8, trafik rota isteği 6, doluluk ücretsiz 12 / Premium 30 / Premium düşük pil 60, yeniden plan
+  (25 km) 4, yol limiti 86 (fatalde 6), hız kamerası rota başına 1, yakın arama başarılı 9 / hata yolu 9 (önce 120 ve fırtına).
+  Modüller ayrı ayrı çalıştırıldı (birlikte tek süreçte değil); toplam saatlik bütçe bunların toplamıdır. Harita karoları Worker'da
+  yüklendiği için SAYILMADI: §C yalnız kod değişmezlerini kilitler (tek harita nesnesi, kendiliğinden yeniden açılış yok, kimlik
+  hatasında oturum boyu OpenFreeMap + en çok bir yenileme, uydu = setStyle, durunca kamera hareketsiz, duraklatmada yerel stil).
+  Gerçek karo sayısı ve sağlayıcı faturalama modeli (harita yüklemesi / karo) doğrulanmadı → G3 (cihaz).
 - **G3 — çalışma zamanı bütçesi ve saha doğrulaması:** istemcide merkezi istek yöneticisi (sağlayıcı başına belirteç kovası, providerGate
   ile aynı yerde) + yönetici panelinde sayaç; gerçek cihazda ağ günlüğüyle istek sayısının doğrulanması (ücretli çağrı / kota onayı ve
   cihaz gerektirir — kullanıcı kararı).
