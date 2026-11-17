@@ -13,7 +13,8 @@ import { buildTrack, locate, headingAt, pointAtKm } from './track.js';
 import { bearing, haversineKm } from '../utils/geo.js';
 import { icon, setManeuverIcon } from '../ui/icons.js';
 import { currentLimit } from './speedLimit.js';
-import { speedOver, pickSlot, nextChargeView, topMetrics, nextChargeText, NO_STOP, ALERT_MS } from './panelLogic.js';
+import { speedOver, pickSlot, nextChargeView, topMetrics, nextChargeText, NO_STOP, ALERT_MS, FLAG_TEXT } from './panelLogic.js';
+import { stopFlag } from '../routing/onRoute.js';
 import { liveRemainH } from './trafficGuard.js';
 import { socSource } from '../physics/socEstimate.js';
 import { stopRecenter } from './freeDrive.js';
@@ -278,15 +279,17 @@ function blankTrip(plan, e) {
  * (her tick araç km'sinden), durakta varış pili (yalnızca güvenilir pil kaynağında; değilse --) ve süre. Durak yoksa '--': hücre dönüşümde atlanır.
  */
 function paintCharge(plan, km, nextStop, e, reliable = true) {
-  const v = reliable ? nextChargeView(nextStop, km, e.source === 'sim' ? 'sim' : socSource()) : null;
+  const v0 = reliable ? nextChargeView(nextStop, km, e.source === 'sim' ? 'sim' : socSource()) : null;
+  const v = v0 && { ...v0, flag: stopFlag(nextStop, plan.routeStatus) }; // v0.99.97: rota üstü doğrulanmadı / rota dışı işareti
   const txt = nextChargeText(v, { ready: plan.status === 'ready', reliable });
   $('ne-next').textContent = txt === NO_STOP ? t(NO_STOP) : txt;
   $('ne-next').classList.toggle('none', txt === NO_STOP);
-  $('ne-next-n').textContent = v?.name ? ` · ${v.name}` : '';
+  $('ne-next-n').textContent = v?.name ? ` · ${v.flag ? '⚠ ' : ''}${v.name}` : (v?.flag ? ' · ⚠' : ''); // işaretli: rota üstü doğrulanmadı / rota dışı
   // Dar hücre (v0.99.59 altı metrik): alt satır durakta varış pili · süre; "Varışta" etiketi hücre başlığında (title)
   const sub = v ? `${v.soc == null ? '--' : pct(v.soc)} · ${fmtMin(Math.max(1, Math.round(plan.profile.timeBetween(km, nextStop.km) * 60)))}` : '';
   $('ne-next-t').textContent = sub;
-  $('ne-next-box').title = v ? `${v.name ? v.name + ' · ' : ''}${t('Varışta')} ${sub}` : '';
+  $('ne-next-box').title = v ? `${v.name ? v.name + ' · ' : ''}${t('Varışta')} ${sub}${v.flag ? ' · ⚠ ' + t(FLAG_TEXT[v.flag]) : ''}` : '';
+  $('ne-next-box').classList.toggle('flagged', !!v?.flag);
 }
 
 /** Güncel hız aşımı (hız, limit ve uyarı metni aynı kaynaktan: effective().speed); veri yoksa null. */

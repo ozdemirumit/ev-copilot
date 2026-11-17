@@ -1065,6 +1065,7 @@ body.navmode .mapsoc, body.sheet-open .mapsoc { display: none; }
 .nb-speed .ne-nolim { display: grid; place-items: center; width: 30px; height: 30px; border: 2px dashed var(--line); border-radius: 50%; color: var(--muted); }
 .nb-metrics b.approx::before { content: '≈'; font-size: .7em; font-weight: 600; color: var(--muted); }
 #ne-next.none { font-size: 13px; font-weight: 700; line-height: 1.15; white-space: normal; }
+#ne-next-box.flagged .ne-name, #ne-next-box.flagged .ne-v b { color: var(--warn); } /* v0.99.97: durak rota üstünde doğrulanmadı/rota dışı */
 .nb-metrics .ne-name { font-weight: 700; color: var(--text); }
 @media (max-height: 520px) {
   .nb-metrics .nb-cell { min-height: 40px; }

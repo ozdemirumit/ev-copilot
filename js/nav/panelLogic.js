@@ -53,6 +53,13 @@ export function nextChargeView(stop, km, source) {
   return { name, km: Math.max(0, stop.km - km), soc };
 }
 
+/** v0.99.97 Sonraki şarj işaretinin (routing/onRoute.js stopFlag) açıklaması (Türkçe kaynak metin; sözlükte çevrilir). */
+export const FLAG_TEXT = {
+  unverified: 'Erişim yol ağıyla doğrulanmadı',
+  off: 'Rota dışı: rota bu istasyondan geçmiyor',
+  blocked: 'Karşı yönde/erişilemez olabilir',
+};
+
 // --- v0.99.59 üst bar: altı sabit metrik (Hız | Limit | Pil | Menzil | Sonraki şarj | Varışta). Değerler mevcut hesaplardan gelir
 // (effective().soc, engine.totalRangeKm, plan.totals.arriveSoc, plan.stops[].km − locate(track).km); burada yalnızca güvene göre süzülür.
 

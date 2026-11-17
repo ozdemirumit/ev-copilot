@@ -2,8 +2,10 @@
 // 1) Saf yardımcı js/routing/stopVia.js: tam çözünürlüklü rota çizgisine uzaklık, ara nokta listesi (sıra, eşik, sınır).
 // 2) Sağlayıcı katmanı (js/providers/index.js): TomTom → Mapbox → Valhalla yedeğinde ara noktalar değişmeden geçer.
 // 3) Sağlayıcı istek biçimleri: Valhalla locations, Mapbox koordinat dizisi, TomTom pts — ara nokta istekte var.
-// 4) Denetleyici (js/routing/controller.js planTrip): otoyoldan ~1,5 km uzaktaki DC istasyon plana girince rota o istasyon
-//    ÜZERİNDEN yeniden alınır; yol üstündeki istasyonda ikinci rota isteği yapılmaz; ikinci istek başarısızsa ilk plan korunur.
+// 4) Denetleyici (js/routing/controller.js planTrip): otoyoldan ~1,5 km uzaktaki DC istasyon (tek aday) — v0.99.97'den beri rota
+//    KULLANICI ONAYI olmadan değişmez: istasyon üzerinden seçenek rotası hesaplanıp sorulur; onayda rota o istasyondan geçer (aynı rota,
+//    ikinci istek yok), İptal'de özgün rota ve durak seçilmemiş plan kalır; seçenek rotası alınamazsa "kullanılamıyor" denir, ölçü uydurulmaz.
+//    Yol üstündeki istasyonda ikinci rota isteği yapılmaz ve soru sorulmaz.
 // Ağ engellidir, anahtar/sır yoktur; tüm sağlayıcılar bellek içi sahtedir.
 import { registerHooks } from 'node:module';
 
@@ -18,6 +20,7 @@ globalThis.localStorage = { getItem: (k) => stored.get(k) ?? null, setItem: (k, 
 // ---------- Ortak sahte modüller ----------
 const S = (globalThis.__svStub = {
   calls: [], toasts: [], route: null, // route(start, end, via) → rota | throw
+  asks: [], choose: () => null, // rota değişikliği onayı sahtesi (choose(result) → seçenek | null = İptal)
   tomtomOn: false, mbKey: '', tomtom: null, mapbox: null, osm: null, provCalls: [],
   valhallaBody: null, mbPath: null, ttPath: null,
 });
@@ -36,6 +39,7 @@ const PARENT_STUBS = {
     '../ui/recentDest.js': 'export const rememberDest = () => {};',
     '../utils/idb.js': 'export const kvDel = () => {};',
     '../physics/socEstimate.js': 'export const setManual = () => {};',
+    '../ui/routeChoice.js': `export const askRouteChoice = async (r) => { ${g}.asks.push(r); return ${g}.choose(r); };`,
   },
   // sağlayıcı yedeği testleri
   '/js/providers/index.js': {
@@ -186,40 +190,54 @@ const reset = (station) => {
 };
 
 const offFar = { id: 'farDC', name: 'Otoyol dışı DC', lat: LAT + 0.0135, lon: 29.0 }; // ≈ 1,5 km kuzey, ~85. km
-reset(offFar);
+// a) İptal: rota değişmez, rota dışı istasyon sessizce "sonraki şarj" olmaz
+reset(offFar); S.asks = []; S.choose = () => null;
 let res = await C.planTrip();
 let p = getState('plan');
-ok('planTrip başarılı ve istasyon durak', res === true && p.status === 'ready' && p.stops.some((s) => s.station.id === 'farDC'), `${res} ${p.status} ${p.text}`);
-ok('otoyol dışı durak: rota İKİNCİ kez, istasyon ara nokta olarak istenir', S.calls.length === 2 && S.calls[1][2]?.some((w) => w.lat === offFar.lat && w.lon === offFar.lon), JSON.stringify(S.calls.map((c) => c[2])));
+ok('İptal: planTrip biter, rota dışı istasyon durak olarak SEÇİLMEZ', res === true && p.status === 'infeasible' && p.stops.length === 0, `${res} ${p.status} ${p.stops.map((s) => s.station.id)}`);
+ok('İptal: kullanıcıya bir kez soruldu, tek seçenek (o istasyon)', S.asks.length === 1 && S.asks[0].choices.length === 1 && S.asks[0].choices[0].station.id === 'farDC', JSON.stringify(S.asks.map((a) => a.choices.length)));
+const ch = S.asks[0]?.choices[0]?.summary || {};
+ok('seçenek ölçüleri gerçek rotadan: ek km > 0, ek dk > 0, durakta varış pili ve hedefte pil sayı', ch.addKm > 2 && ch.addMin > 0 && Number.isFinite(ch.arriveStopSoc) && Number.isFinite(ch.arriveEndSoc), JSON.stringify(ch));
+ok('seçenek rotası istasyonu ara nokta olarak ister (2. istek)', S.calls.length === 2 && S.calls[1][2]?.some((w) => w.lat === offFar.lat && w.lon === offFar.lon), JSON.stringify(S.calls.map((c) => c[2])));
+ok('İptal: çizilen rota özgün rota (istasyondan geçmez)', S.drawn && V.offRouteKm(S.drawn, offFar) > 1 && V.offRouteKm(p.route.coords, offFar) > 1, S.drawn && V.offRouteKm(S.drawn, offFar));
+ok('İptal: "mevcut rota korundu" bildirilir', S.toasts.some((t) => /korundu/.test(t)), JSON.stringify(S.toasts));
+ok('İptal: plan metni rota üstü durak olmadığını ve onay gerektiğini söyler', /rota üzerinde/i.test(p.text) && /onay/i.test(p.text), p.text);
+
+// b) Onay: rota istasyon üzerinden (onaylanan aynı rota, üçüncü istek yok)
+reset(offFar); S.asks = []; S.choose = (r) => r.choices[0];
+res = await C.planTrip();
+p = getState('plan');
+ok('Onay: planTrip başarılı ve istasyon durak', res === true && p.status === 'ready' && p.stops.some((s) => s.station.id === 'farDC'), `${res} ${p.status} ${p.text}`);
+ok('Onay: onaylanan seçenek rotası kullanılır (yeni istek yok: 2 istek)', S.calls.length === 2, S.calls.length);
 ok('çizilen mavi rota istasyondan geçer (≤ 50 m)', S.drawn && V.offRouteKm(S.drawn, offFar) <= 0.05, S.drawn && V.offRouteKm(S.drawn, offFar));
 ok('plan.route istasyon üzerinden olan rota', p.route && V.offRouteKm(p.route.coords, offFar) <= 0.05);
 const farStop = p.stops.find((s) => s.station.id === 'farDC');
 ok('durak artık rotada (offKm ≈ 0: sapma ikinci kez sayılmaz)', farStop && farStop.station.offKm < 0.1, farStop?.station.offKm);
-ok('durak zorunlu kalır (sonraki yeniden hesapta düşmez)', (p.pinIds || []).includes('farDC'));
+ok('durak zorunlu ilk durak kalır (sonraki yeniden hesapta düşmez)', p.forceFirstId === 'farDC' && C.replanFrom({ km: 5, soc: 29, maxFirstStopKm: Infinity }) && getState('plan').stops[0]?.station.id === 'farDC');
 ok('ağ çağrısı yok', netCalls === 0);
 
 const onRoad = { id: 'roadDC', name: 'Yol üstü DC', lat: LAT + 0.0003, lon: 29.0 };
-reset(onRoad);
+reset(onRoad); S.asks = [];
 res = await C.planTrip();
 p = getState('plan');
 ok('yol üstündeki durak: tek rota isteği (davranış aynı)', res === true && S.calls.length === 1 && p.stops.some((s) => s.station.id === 'roadDC'), `${S.calls.length} ${p.status}`);
-ok('yol üstündeki durak zorunlu yapılmaz (pinIds boş)', (p.pinIds || []).length === 0);
+ok('yol üstündeki durak zorunlu yapılmaz (pinIds boş) ve soru sorulmaz', (p.pinIds || []).length === 0 && S.asks.length === 0);
 
-reset(offFar);
+// c) Seçenek rotası alınamadı (sağlayıcı hatası): ölçü uydurulmaz, özgün rota kalır
+reset(offFar); S.asks = []; S.choose = (r) => r.choices[0] || null;
 S.route = (s, e, v = []) => { if (v.length) throw new Error('Valhalla HTTP 502'); return routeVia(s, e, v); };
 res = await C.planTrip();
 p = getState('plan');
-ok('ikinci istek başarısız: ilk plan korunur (hazır, aynı durak)', res === true && p.status === 'ready' && p.stops.some((s) => s.station.id === 'farDC'), `${p.status} ${p.text}`);
-ok('ikinci istek başarısız: kullanıcı uyarılır (sessiz geçmez)', S.toasts.some((t) => /istasyon/i.test(t) && /geçirilemedi|alınamadı/i.test(t)), JSON.stringify(S.toasts));
-ok('ikinci istek başarısız: pinIds değişmez', (p.pinIds || []).length === 0);
+ok('seçenek alınamadı: soru "kullanılamıyor" olarak gelir, seçenek/ölçü yok', S.asks.length === 1 && S.asks[0].unavailable === true && S.asks[0].choices.length === 0 && /502/.test(S.asks[0].failures[0]?.error), JSON.stringify(S.asks[0]));
+ok('seçenek alınamadı: kullanıcı uyarılır (sessiz geçmez)', S.toasts.some((t) => /hesaplanamadı/.test(t) && /korundu/.test(t)), JSON.stringify(S.toasts));
+ok('seçenek alınamadı: rota dışı durak seçilmez, rota özgün', p.stops.length === 0 && V.offRouteKm(p.route.coords, offFar) > 1 && (p.pinIds || []).length === 0);
 
-// Yeniden rota (navigasyonda rotadan çıkış, from verilir): aynı kural
-reset(offFar);
-await C.planTrip();
-S.calls = [];
+// Yeniden rota (navigasyonda rotadan çıkış, from verilir): aynı kural (onayla istasyon üzerinden)
+reset(offFar); S.choose = (r) => r.choices[0];
+S.calls = []; S.asks = [];
 res = await C.planTrip({ lat: LAT, lon: 28.2, label: 'Konumum' });
 p = getState('plan');
-ok('yeniden rota: otoyol dışı durak yine ara nokta', res === true && S.calls.some((c) => c[2]?.some((w) => w.lat === offFar.lat)), JSON.stringify(S.calls.map((c) => c[2])));
+ok('yeniden rota: otoyol dışı durak yalnızca onayla ara nokta', res === true && S.asks.length === 1 && S.calls.some((c) => c[2]?.some((w) => w.lat === offFar.lat)), JSON.stringify(S.calls.map((c) => c[2])));
 ok('yeniden rota: çizgi istasyondan geçer', p.route && V.offRouteKm(p.route.coords, offFar) <= 0.05);
 
 console.log(`\n${pass} geçti, ${fail} başarısız`);

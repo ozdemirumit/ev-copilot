@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.96';
+self.APP_VERSION = '0.99.97';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.97', date: '2026-11-17',
+    notes: [
+      'Şarj durağı artık yalnızca AKTİF ROTANIN ÜZERİNDEKİ istasyonlardan otomatik seçilir: rota çizgisine yakın olmalı ve gidiş yönünden girişi yol ağıyla (karşı şerit değil) doğrulanmalı. Navigasyon sırasındaki yeniden planlamalar (pil sapması, trafik/hava, doluluk) da rotadan km\'lerce uzak bir istasyonu "Sonraki şarj" yapamaz.',
+      'Rota üzerinde uygun şarj yoksa rotadan ayrılan istasyonlar için rota sağlayıcısından gerçek seçenek rotaları hesaplanır (en çok 3): ek km/dakika, durakta varış pili, şarj süresi ve hedefte pil gösterilir. Rota yalnızca seçeneği onaylarsan değişir; "Mevcut rotada kal" ile özgün rota aynen kalır. Sağlayıcı rota veremezse seçenek uydurulmaz, "hesaplanamadı" denir.',
+      'Yol ağıyla doğrulanamayan durak (ör. sorgu sunucusu yanıt vermedi) "Sonraki şarj" hücresinde ⚠ ile işaretlenir ve rota onun üzerinden değiştirilmez.',
+    ],
+  },
   {
     v: '0.99.96', date: '2026-11-16',
     notes: [
