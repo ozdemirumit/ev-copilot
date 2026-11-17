@@ -24,6 +24,8 @@ import { socTrusted } from '../routing/socTrust.js';
 import { paintMore } from '../ui/moreToggle.js';
 import { pickEmergency, priceText, isFast, PICK_TITLES, ROUTE_OFF_KM, ROUTE_NEAR_KM, ALERT_PAGE, alertList, alertPage, priceStatus } from './chargePick.js';
 import { sortNearby, sortNote, priceLabel, powerLabel, NEAR_SORTS } from './nearSort.js';
+import { createSearchGate, emptyListText, locationErrorText } from './nearSearch.js';
+import { locateOnce } from '../sensors/gps.js';
 
 const $ = (id) => document.getElementById(id);
 const BAT = VEHICLE.batteryNetKwh;
@@ -52,6 +54,7 @@ let goodAt = 0; // son istasyonlu sonucun zamanı
 let all = []; // son sorgu sonucu (fetchAround)
 let meta = { at: 0, lat: null, lon: null, errors: [], cached: false };
 let busy = false;
+const gate = createSearchGate(); // arama sürerken gelen elle Ara/süzgeç isteği yutulmaz: bitince bir kez çalışır
 let occBusy = false;
 let occAt = 0;
 let occDone = 0; // son doluluk sorgusunun bittiği an
@@ -109,9 +112,12 @@ const visible = ({ power = true, brand = true } = {}) => {
 export async function refreshNearby({ force = false, silent = false } = {}) {
   const e = effective();
   if (e.lat == null) { if (!silent) toast('Konum yok: üstteki 📍 ile GPS\'i aç (veya Test Modu)', 3500); return; }
-  if (busy) return;
+  const g = gate.begin({ force, silent });
+  if (!g.start) { if (g.kind === 'queued') paintStatus('Arama sürüyor; bitince seçili süzgeçlerle yeniden aranacak…'); return; }
   busy = true;
+  paintBusy(true);
   paintStatus('Yakındaki istasyonlar aranıyor…');
+  let next = null;
   try {
     const old = new Map(all.map((x) => [x.id, x.slots]));
     const prev = all;
@@ -143,10 +149,39 @@ export async function refreshNearby({ force = false, silent = false } = {}) {
     retryAt = Date.now() + Math.min(RETRY_MAX_MS, RETRY_MIN_MS * 2 ** (failN - 1));
   } finally {
     busy = false;
+    next = gate.end();
+    paintBusy(false);
   }
   render();
   checkLow();
+  if (next) return refreshNearby(next); // arama sürerken elle istenen (Ara / yarıçap) arama: seçili süzgeçlerle tam bir kez
   if (proxyHas('occupancy')) refreshOccupancy({ force: true }); // Premium: liste her yenilendiğinde en yakın istasyonların canlı doluluğu ve fiyatı da gelir
+}
+
+/** Ara düğmesinde yükleniyor durumu (dokunuş çalışmıyor sanılmasın). */
+function paintBusy(on) {
+  const b = $('near-refresh');
+  if (!b) return;
+  b.classList.toggle('busy', on);
+  b.setAttribute('aria-busy', String(on));
+}
+
+/** Ara'ya dokunuş: konum yoksa tek seferlik konum istenir (iOS izin sorusu dokunuşta çıkar), sonra seçili süzgeçlerle bir arama. */
+export async function searchFromButton() {
+  if (effective().lat == null) {
+    paintStatus('Konum alınıyor…');
+    paintBusy(true);
+    try {
+      await locateOnce();
+    } catch (err) {
+      paintBusy(false);
+      paintStatus(locationErrorText(err?.code));
+      return;
+    }
+    paintBusy(false);
+    if (effective().lat == null) { paintStatus(locationErrorText(0)); return; }
+  }
+  return refreshNearby({ force: true });
 }
 
 /**
@@ -245,7 +280,8 @@ function render() {
   paintPowerNote($('near-power-note'), powerInfo);
 
   list.replaceChildren();
-  if (meta.at && !items.length) list.append(cell('p', 'small muted', showAc ? 'Bu çevrede istasyon bulunamadı.' : 'Bu çevrede hızlı (DC) istasyon bulunamadı; yavaş AC olanlar için "AC de göster"i aç.'));
+  const empty = items.length ? '' : emptyListText({ searched: !!meta.at, errors: meta.errors, showAc }); // kaynak hatasında "istasyon yok" denmez
+  if (empty) list.append(cell('p', 'small muted', empty));
 
   paintMore($('near-more'), shown.length, NEAR_LIMIT, nearOpen);
   (nearOpen ? shown : shown.slice(0, NEAR_LIMIT)).forEach((s) => {
@@ -535,7 +571,7 @@ export function initNearby() {
   const ac = $('near-ac');
   ac.checked = showAc;
   ac.addEventListener('change', () => { showAc = ac.checked; save('nearAc', showAc); render(); });
-  $('near-refresh').addEventListener('click', () => refreshNearby({ force: true }));
+  $('near-refresh').addEventListener('click', () => { searchFromButton(); });
   // En az kW süzgeci değişince: otomatik yarıçapta yeniden ara (liste boşalırsa 10 → 25 → 50 km'ye genişler), sabit yarıçapta yalnızca yenile
   document.addEventListener('powerfilter', () => { if (radiusSetting === 'auto' && !busy) refreshNearby({ silent: true }); else render(); });
   let brandSig = (PLANNER.brands || []).join(',');

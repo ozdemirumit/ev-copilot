@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.104';
+self.APP_VERSION = '0.99.105';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.105', date: '2026-11-17',
+    notes: [
+      'İstasyonlar > Filtre > Ara düzeltildi: sekme açılınca başlayan otomatik arama sürerken Ara\'ya dokunmak ya da yarıçapı değiştirmek artık yok sayılmaz; arama bitince seçili süzgeçlerle tam bir kez yeniden aranır (art arda dokunuşlar çift arama yapmaz)',
+      'Konum yokken Ara\'ya dokununca tek seferlik konum istenir (iPhone izin sorusu dokunuşta çıkar) ve hemen aranır; izin kapalıysa ne yapılacağı yazılır (eski mesaj artık olmayan üst 📍 düğmesini gösteriyordu)',
+      'Arama sürerken Ara düğmesi yükleniyor durumundadır; istasyon kaynağına ulaşılamadığında ya da kota/sınır (429/402) dolduğunda liste "istasyon bulunamadı" demez, sorunun kaynakta olduğu yazılır',
+    ],
+  },
   {
     v: '0.99.104', date: '2026-11-17',
     notes: [
