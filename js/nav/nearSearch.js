@@ -48,6 +48,16 @@ export function emptyListText({ searched = false, errors = [], showAc = false } 
   return showAc ? 'Bu çevrede istasyon bulunamadı.' : 'Bu çevrede hızlı (DC) istasyon bulunamadı; yavaş AC olanlar için "AC de göster"i aç.';
 }
 
+/**
+ * İstasyonlar > Filtre kartında Ara düğmesinin hemen altındaki durum satırı. Asıl durum/sonuç yukarıdaki "Yakınımdaki istasyonlar"
+ * kartına yazılır; o kart ekran dışında ya da kapalıyken dokunuş hiçbir görünür yanıt almıyordu. at: son elle aramanın bitiş anı —
+ * sonuç aynı olsa bile her dokunuşta saat değişir. extra: boş liste / kaynak hatası metni.
+ */
+export function filterStatusText(status, { extra = '', at = 0 } = {}) {
+  const t = at ? new Date(at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
+  return [status, extra].filter(Boolean).join(' — ') + (t ? ` (${t})` : '');
+}
+
 /** Ara'ya dokunuşta istenen tek seferlik konum alınamazsa gösterilecek metin. code: GeolocationPositionError.code */
 export function locationErrorText(code) {
   if (code === 1) return 'Konum izni kapalı: tarayıcı/telefon ayarlarından bu siteye konum izni ver, sonra "Ara"ya dokun.';

@@ -24,7 +24,7 @@ import { socTrusted } from '../routing/socTrust.js';
 import { paintMore } from '../ui/moreToggle.js';
 import { pickEmergency, priceText, isFast, PICK_TITLES, ROUTE_OFF_KM, ROUTE_NEAR_KM, ALERT_PAGE, alertList, alertPage, priceStatus } from './chargePick.js';
 import { sortNearby, sortNote, priceLabel, powerLabel, NEAR_SORTS } from './nearSort.js';
-import { createSearchGate, emptyListText, locationErrorText } from './nearSearch.js';
+import { createSearchGate, emptyListText, locationErrorText, filterStatusText } from './nearSearch.js';
 import { locateOnce } from '../sensors/gps.js';
 
 const $ = (id) => document.getElementById(id);
@@ -54,6 +54,7 @@ let goodAt = 0; // son istasyonlu sonucun zamanı
 let all = []; // son sorgu sonucu (fetchAround)
 let meta = { at: 0, lat: null, lon: null, errors: [], cached: false };
 let busy = false;
+let manualAt = 0; // son elle (Ara / yarıçap) aramanın bitiş anı: Filtre kartındaki durum satırında saat olarak görünür
 const gate = createSearchGate(); // arama sürerken gelen elle Ara/süzgeç isteği yutulmaz: bitince bir kez çalışır
 let occBusy = false;
 let occAt = 0;
@@ -149,6 +150,7 @@ export async function refreshNearby({ force = false, silent = false } = {}) {
     retryAt = Date.now() + Math.min(RETRY_MAX_MS, RETRY_MIN_MS * 2 ** (failN - 1));
   } finally {
     busy = false;
+    if (!silent) manualAt = Date.now();
     next = gate.end();
     paintBusy(false);
   }
@@ -212,9 +214,11 @@ async function refreshOccupancy({ force = false, every = OCC_EVERY_MS } = {}) {
   checkLow();
 }
 
-function paintStatus(text) {
+function paintStatus(text, { extra = '', at = 0 } = {}) {
   const el = $('near-status');
   if (el) el.textContent = text;
+  const f = $('near-filter-status'); // Ara'nın hemen altında: üstteki kart ekran dışında/kapalıyken de dokunuş görünür yanıt alır
+  if (f) f.textContent = filterStatusText(text, { extra, at });
 }
 
 /**
@@ -271,16 +275,16 @@ function render() {
   mapApi.drawNearby(shown, focusId);
 
   const age = meta.at ? Math.round((Date.now() - meta.at) / 60000) : null;
+  const empty = items.length ? '' : emptyListText({ searched: !!meta.at, errors: meta.errors, showAc }); // kaynak hatasında "istasyon yok" denmez
   paintStatus(meta.at
     ? `${items.length} istasyon · ${radius} km çevre · ${age < 1 ? 'şimdi' : age + ' dk önce'} güncellendi${meta.cached ? ' (önbellek)' : ''}`
-    : 'Henüz aranmadı. Konumunu açıp "Ara"ya dokun.');
+    : 'Henüz aranmadı. Konumunu açıp "Ara"ya dokun.', { extra: empty, at: manualAt });
   const warn = $('near-warn');
   warn.textContent = meta.errors.join(' · ');
   warn.classList.toggle('hidden', !meta.errors.length);
   paintPowerNote($('near-power-note'), powerInfo);
 
   list.replaceChildren();
-  const empty = items.length ? '' : emptyListText({ searched: !!meta.at, errors: meta.errors, showAc }); // kaynak hatasında "istasyon yok" denmez
   if (empty) list.append(cell('p', 'small muted', empty));
 
   paintMore($('near-more'), shown.length, NEAR_LIMIT, nearOpen);

@@ -104,6 +104,9 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); ou
 .btn.ghost { background: transparent; }
 .btn.sel { border-color: var(--accent); color: var(--accent); }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.busy { opacity: .7; cursor: progress; } /* arama sürüyor (aria-busy) */
+#near-refresh { touch-action: manipulation; } /* iOS: çift dokunuş yakınlaştırma beklemesi yok */
+#near-refresh:active { transform: scale(.96); filter: brightness(.9); } /* dokunuş vurgusu kapalı: basılma görünür olsun */
 
 input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; }
 .slider-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; }

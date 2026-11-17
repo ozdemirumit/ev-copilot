@@ -93,5 +93,31 @@ ok('yok olan "üstteki 📍" düğmesine yönlendirmez', ![1, 2, 3, 0].some((c) 
   ok('Ara düğmesi type=button (form gönderimi/sayfa yenilemesi yok)', /<button class="btn primary" id="near-refresh" type="button">/.test(html));
 }
 
+// ---- v0.99.106: Ara'ya her dokunuş düğmenin YANINDA görünür yanıt alır ----
+// Kök neden (WebKit/Chromium dokunuş denetimi): dokunuş düğmeye ulaşıyor ve işleyici çalışıyordu, ama durum/sonuç yalnızca yukarıdaki
+// "Yakınımdaki istasyonlar" kartına yazılıyordu (liste uzunsa ekran dışında, kart kapalıysa 0×0), .busy sınıfının CSS'i yoktu,
+// dokunuş vurgusu kapalı ve :active stili yoktu → aynı sonuçta ekranda HİÇBİR şey değişmiyor, düğme "tıklanmıyor" sanılıyordu.
+{
+  const { filterStatusText } = await import('../js/nav/nearSearch.js');
+  ok('filterStatusText var', typeof filterStatusText === 'function');
+  if (typeof filterStatusText === 'function') {
+    const at = new Date(2026, 10, 17, 9, 5, 7).getTime();
+    ok('özet + saat (aynı sonuçta bile her dokunuş değişir)', filterStatusText('0 istasyon · 1 km çevre · şimdi güncellendi', { at }) === '0 istasyon · 1 km çevre · şimdi güncellendi (09:05:07)');
+    ok('boş/hata metni özete eklenir', filterStatusText('0 istasyon', { extra: 'İstasyon kaynağına şu an ulaşılamadı', at }) === '0 istasyon — İstasyon kaynağına şu an ulaşılamadı (09:05:07)');
+    ok('saat yoksa yalnız metin (aranıyor / konum hatası)', filterStatusText('Yakındaki istasyonlar aranıyor…') === 'Yakındaki istasyonlar aranıyor…');
+  }
+  const html = read('index.html');
+  const card = html.slice(html.indexOf('id="filter-card"'), html.indexOf('id="brand-card"'));
+  ok('filtre kartında Ara\'nın yanında canlı durum satırı', /id="near-refresh"[\s\S]{0,120}<\/div>\s*<p class="small muted" id="near-filter-status" role="status" aria-live="polite"/.test(card));
+  const src = read('js/nav/nearby.js');
+  const ps = src.slice(src.indexOf('function paintStatus'), src.indexOf('function paintStatus') + 400);
+  ok('paintStatus filtre satırına da yazar', /\$\('near-filter-status'\)/.test(ps) && /filterStatusText\(/.test(ps));
+  ok('elle arama bitince saat damgası (manualAt) güncellenir', /if \(!silent\) manualAt = Date\.now\(\);/.test(src));
+  const css = read('css/styles.css');
+  ok('Ara basılma geri bildirimi (:active)', /#near-refresh:active\s*\{[^}]*transform/.test(css));
+  ok('yükleniyor durumu görünür (.btn.busy)', /\.btn\.busy\s*\{[^}]*opacity/.test(css));
+  ok('iOS çift dokunuş yakınlaştırma gecikmesi yok (touch-action: manipulation)', /#near-refresh[^{]*\{[^}]*touch-action:\s*manipulation/.test(css));
+}
+
 console.log(`\n${pass} geçti, ${fail} başarısız`);
 process.exit(fail ? 1 : 0);
