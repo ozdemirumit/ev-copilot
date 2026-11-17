@@ -85,6 +85,20 @@ const rbx = mbx.match(/\broundabout_exits\b[^,\n]*/g) || [];
 ok('mapbox: roundabout_exits yalnızca istek parametresi', rbx.every((s) => /^roundabout_exits\s*:\s*'true'\s*$/.test(s)), rbx.join(' | '));
 ok('mapbox: .roundabout_exits / [\'roundabout_exits\'] yanıt erişimi yok', !/[.[]\s*'?roundabout_exits/.test(mbx));
 
+// ---- 4. v0.99.102: Valhalla yol olayı ayrıştırıcısı (js/nav/valhallaRoadEvents.js) — BL-P2-06 kabulü yalnız osm için ----
+// Gerçek kayıt (anahtarsız, ücretsiz FOSSGIS sunucusu, halka açık otoyol) zorunludur; yalnız kayıtta görülen iki alan okunabilir.
+{
+  const rec = JSON.parse(read('scripts/fixtures/road-events/osm-valhalla-bolu-recorded.json'));
+  const ints = rec.response.routes[0].legs.flatMap((l) => l.steps.flatMap((st) => st.intersections || []));
+  ok('gerçek kayıt: _synthetic değil, sağlayıcı osm, tarihli', rec._synthetic !== true && rec._recorded?.provider === 'osm' && /^\d{4}-\d{2}-\d{2}$/.test(rec._recorded.date));
+  ok('gerçek kayıt: classes tunnel/toll ve toll_collection içerir', ints.some((i) => (i.classes || []).includes('tunnel')) && ints.some((i) => (i.classes || []).includes('toll')) && ints.some((i) => i.toll_collection));
+  const vre = scan(read('js/nav/valhallaRoadEvents.js'));
+  ok('valhallaRoadEvents: yalnız classes + toll_collection okunur (exits/destinations/bannerInstructions yok)', JSON.stringify(vre.sort()) === JSON.stringify(['classes', 'toll_collection']), vre.join(', '));
+  const vcode = strip(read('js/nav/valhallaRoadEvents.js'));
+  ok('valhallaRoadEvents: yalnız tunnel/toll sınıfları adlandırılır', JSON.stringify([...new Set(vcode.match(/includes\('([a-z_]+)'\)/g) || [])].sort()) === JSON.stringify(["includes('toll')", "includes('tunnel')"]));
+  ok('valhallaRoadEvents: köprü/alt geçit/üst geçit üretmez', !/'(bridge|underpass|overpass|exit|sign)'/.test(vcode));
+}
+
 ok('ağ çağrısı yapılmadı', netCalls === 0);
 console.log(`\n${pass} geçti, ${fail} başarısız`);
 if (fail) process.exit(1);

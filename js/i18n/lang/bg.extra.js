@@ -433,4 +433,8 @@ export default {
   "Aşağıdaki seçenekler rotadan ayrılmayı gerektirir. Seçmezsen mevcut rota aynen kalır.": "Опциите по-долу изискват излизане от маршрута. Ако не избереш, текущият маршрут остава същият.",
   "bilinmiyor": "неизвестно",
   "aday yok": "няма кандидати",
+  "{0} ileride tünel, uzunluğu {1}.": "След {0} тунел, дълъг {1}.",
+  "{0} ileride ücretli yol.": "След {0} платен път.",
+  "🚇 Tünel {0} ileride ({1})": "🚇 Тунел след {0} ({1})",
+  "💰 Ücretli yol {0} ileride": "💰 Платен път след {0}",
 };

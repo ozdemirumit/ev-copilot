@@ -433,4 +433,8 @@ export default {
   "Aşağıdaki seçenekler rotadan ayrılmayı gerektirir. Seçmezsen mevcut rota aynen kalır.": "Voor de opties hieronder moet je de route verlaten. Kies je niets, dan blijft de huidige route ongewijzigd.",
   "bilinmiyor": "onbekend",
   "aday yok": "geen kandidaten",
+  "{0} ileride tünel, uzunluğu {1}.": "Over {0} een tunnel, {1} lang.",
+  "{0} ileride ücretli yol.": "Over {0} een tolweg.",
+  "🚇 Tünel {0} ileride ({1})": "🚇 Tunnel over {0} ({1})",
+  "💰 Ücretli yol {0} ileride": "💰 Tolweg over {0}",
 };

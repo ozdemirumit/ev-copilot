@@ -184,12 +184,16 @@ ok('tarama çalışma zamanı dosyalarını kapsar', runtime.length > 20 && runt
 const importersOf = (re, self) => runtime.filter((p) => rel(p) !== self && re.test(readFileSync(p, 'utf8'))).map(rel);
 const adaptImp = importersOf(/roadEventsAdapt/, 'js/nav/roadEventsAdapt.js');
 ok('roadEventsAdapt hiçbir çalışma zamanı dosyasına bağlı değil', adaptImp.length === 0, adaptImp.join(', '));
-const evImp = importersOf(/nav\/roadEvents\.js|\.\/roadEvents\.js/, 'js/nav/roadEvents.js');
-ok('roadEvents.js hiçbir çalışma zamanı dosyasına bağlı değil', evImp.length === 0, evImp.join(', '));
+// v0.99.102: roadEvents.js yalnız Valhalla (osm) tünel/gişe yoluna bağlıdır; TomTom yolunda hiçbir bağlantı yoktur (dar izin listesi).
+const evImp = importersOf(/nav\/roadEvents\.js|\.\/roadEvents\.js/, 'js/nav/roadEvents.js').sort();
+ok('roadEvents.js yalnız roadAlerts + valhallaRoadEvents (+ sw.js kabuğu) tarafından içe aktarılır; TomTom yolu yok', J(evImp) === J(['js/nav/roadAlerts.js', 'js/nav/valhallaRoadEvents.js', 'sw.js']), evImp.join(', '));
 const speakers = runtime.filter((p) => /\bspeak\s*\(/.test(strip(readFileSync(p, 'utf8'))));
 ok('sesli uyarı çağıranlar bulundu (tarama boş değil)', speakers.length > 0);
-const roadSpeakers = speakers.filter((p) => /roadEvents|roadEventsAdapt|tomtom\/route\.js|exitNumber|signpost|roundaboutExitNumber/.test(readFileSync(p, 'utf8'))).map(rel);
-ok('hiçbir sesli uyarı modülü yol olayı / TomTom rota alanı okumaz', roadSpeakers.length === 0, roadSpeakers.join(', '));
+const roadSpeakers = speakers.filter((p) => /roadEventsAdapt|tomtom\/route\.js|exitNumber|signpost|roundaboutExitNumber/.test(readFileSync(p, 'utf8'))).map(rel);
+ok('hiçbir sesli uyarı modülü TomTom rota alanı / bağdaştırıcı okumaz', roadSpeakers.length === 0, roadSpeakers.join(', '));
+// v0.99.102: yol olayı modelini konuşan TEK modül roadWarnings (Valhalla tünel/gişe); TomTom adı geçmez.
+const evSpeakers = speakers.filter((p) => /roadEvents/.test(readFileSync(p, 'utf8'))).map(rel);
+ok('yol olayı sesli uyarısı yalnız roadWarnings.js (TomTom alanı okumaz)', J(evSpeakers) === J(['js/nav/roadWarnings.js']) && !/tomtom/i.test(strip(read('js/nav/roadWarnings.js'))), evSpeakers.join(', '));
 const rbUsers = runtime.filter((p) => /roundaboutExitNumber/.test(readFileSync(p, 'utf8'))).map(rel);
 ok('roundaboutExitNumber yalnızca js/tomtom/route.js içinde', J(rbUsers) === J(['js/tomtom/route.js']), rbUsers.join(', '));
 

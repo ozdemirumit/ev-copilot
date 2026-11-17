@@ -4,6 +4,7 @@ import { getLang, langInfo } from '../i18n/index.js';
 import { cached, TTL } from '../utils/cache.js';
 import { valhalla } from './valhalla.js';
 import { TURN_TR } from '../nav/steps.js';
+import { fromValhallaOsrm } from '../nav/valhallaRoadEvents.js';
 
 /** Valhalla/OSRM kodlu çizgi (hassasiyet 1e6, [lat, lon]) → GeoJSON sırası [lon, lat] dizisi. */
 export function decodePolyline6(str) {
@@ -86,12 +87,14 @@ async function routeFromValhalla(start, end, via) {
   });
   for (let i = steps.length - 1; i >= 0; i--) if (steps[i].type === 'arrive') steps.splice(i, 1);
   steps.push({ type: 'arrive', modifier: null, text: 'Varış noktasına ulaştınız', distM: 0 });
+  const coords = decodePolyline6(r.geometry);
   return {
-    coords: decodePolyline6(r.geometry),
+    coords,
     intervals: [], // trafik verisi yok
     distanceKm: (r.distance || 0) / 1000,
     durationH: (r.duration || 0) / 3600,
     trafficRatio: 1,
     steps,
+    roadEvents: fromValhallaOsrm(json, coords), // tünel + ücretli yol (yalnız bu yanıttan; v0.99.102)
   };
 }

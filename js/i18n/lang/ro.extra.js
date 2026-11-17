@@ -433,4 +433,8 @@ export default {
   "Aşağıdaki seçenekler rotadan ayrılmayı gerektirir. Seçmezsen mevcut rota aynen kalır.": "Opțiunile de mai jos necesită ieșirea de pe rută. Dacă nu alegi, ruta curentă rămâne la fel.",
   "bilinmiyor": "necunoscut",
   "aday yok": "niciun candidat",
+  "{0} ileride tünel, uzunluğu {1}.": "Tunel în {0}, lung de {1}.",
+  "{0} ileride ücretli yol.": "Drum cu taxă în {0}.",
+  "🚇 Tünel {0} ileride ({1})": "🚇 Tunel în {0} ({1})",
+  "💰 Ücretli yol {0} ileride": "💰 Drum cu taxă în {0}",
 };

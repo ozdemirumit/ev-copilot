@@ -228,9 +228,14 @@ const rel = (p) => relative(root, p).replace(/\\/g, '/');
 const runtime = [...walk(join(root, 'js')), ...walk(join(root, 'server')).filter((p) => !/[\\/](node_modules|data)[\\/]/.test(p)), join(root, 'index.html'), join(root, 'sw.js')]
   .filter((p) => /\.(js|mjs|html)$/.test(p) && rel(p) !== 'js/nav/roadEvents.js');
 ok('tarama çalışma zamanı dosyalarını kapsar', runtime.length > 20 && runtime.some((p) => rel(p) === 'js/nav/routeMeta.js') && runtime.some((p) => rel(p) === 'sw.js') && runtime.some((p) => rel(p).startsWith('server/')));
-const importers = runtime.filter((p) => /roadEvents/.test(readFileSync(p, 'utf8'))).map(rel);
-ok('hiçbir çalışma zamanı dosyası roadEvents içe aktarmaz (js/server/index.html/sw.js)', importers.length === 0, importers.join(', '));
-ok('sw.js SHELL roadEvents içermez', !/roadEvents/.test(read('sw.js')));
+// v0.99.102: model yalnızca gerçek kayıtla doğrulanan Valhalla tünel/gişe yoluna bağlandı (scripts/test-road-alerts.mjs).
+// Bağlantı DAR izin listesiyle sabitlenir: yeni bir çalışma zamanı dosyası (ör. Mapbox/TomTom ayrıştırıcısı, sunucu) modeli kullanırsa bu test kırılır.
+const ROAD_EVENTS_USERS = ['js/nav/roadAlerts.js', 'js/nav/roadWarnings.js', 'js/nav/valhallaRoadEvents.js', 'js/osm/route.js', 'sw.js'];
+const importers = runtime.filter((p) => /roadEvents/.test(readFileSync(p, 'utf8'))).map(rel).sort();
+ok('roadEvents yalnızca izinli çalışma zamanı dosyalarında geçer (js/server/index.html/sw.js)', J(importers) === J(ROAD_EVENTS_USERS), importers.join(', '));
+const direct = runtime.filter((p) => /from '\.\/roadEvents\.js'|nav\/roadEvents\.js'/.test(readFileSync(p, 'utf8'))).map(rel).sort();
+ok('roadEvents.js modülünü yalnız roadAlerts + valhallaRoadEvents içe aktarır (sw.js çevrimdışı kabuk)', J(direct) === J(['js/nav/roadAlerts.js', 'js/nav/valhallaRoadEvents.js', 'sw.js']), direct.join(', '));
+ok('sunucu (server/) roadEvents kullanmaz', !importers.some((p) => p.startsWith('server/')));
 {
   const rm = read('scripts/test-route-meta.mjs');
   const ex = [...rm.matchAll(/ROAD_EVENTS_EXEMPT = '([^']+)'/g)].map((m) => m[1]);

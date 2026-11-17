@@ -432,5 +432,9 @@
  "Rotadan ayrılan şarj seçeneği için rota sağlayıcısından rota alınamadı ({0}). Mevcut rota değişmedi.",
  "Aşağıdaki seçenekler rotadan ayrılmayı gerektirir. Seçmezsen mevcut rota aynen kalır.",
  "bilinmiyor",
- "aday yok"
+ "aday yok",
+ "{0} ileride tünel, uzunluğu {1}.",
+ "{0} ileride ücretli yol.",
+ "🚇 Tünel {0} ileride ({1})",
+ "💰 Ücretli yol {0} ileride"
 ]

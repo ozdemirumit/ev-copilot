@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.101';
+self.APP_VERSION = '0.99.102';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.102', date: '2026-11-17',
+    notes: [
+      'Navigasyonda tünel ve ücretli yol uyarısı: ücretsiz (OpenStreetMap/Valhalla) rotada, rotanın kendi verisinden tünel (100 m ve üstü) ve ücretli yol girişi/gişesi ~1 km ve ~300 m kala bir kez sesli söylenir; üst barın sağ uyarı satırında kalan mesafe konum güncellendikçe azalır, 500 m kala bu uyarı öne alınır.',
+      'Uyarı yalnızca seçilen rotanın üzerindeki (doğru şeritteki) olay için verilir; geçilen olay düşer, rota değişince sıfırlanır, aynı tünel yeniden rota alınınca tekrar söylenmez. Rotadan çıkınca, GPS aranırken ya da konum sıçradığında uyarı verilmez. Ek internet isteği yapılmaz.',
+      'Köprü, alt geçit ve üst geçit uyarısı YOKTUR: hiçbir rota sağlayıcısında bu veri doğrulanmadı, tahminle uyarı üretilmez. Mapbox/TomTom (Premium) rotasında tünel/gişe verisi henüz bağlanmadı; o rotalarda bu uyarılar çıkmaz.',
+    ],
+  },
   {
     v: '0.99.101', date: '2026-11-17',
     notes: [

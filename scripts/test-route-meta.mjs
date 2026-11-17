@@ -178,13 +178,19 @@ const srcFiles = runtime.filter((p) => /\.m?js$/.test(p) && !p.startsWith('js/i1
 // BL-P2-03: DAR muafiyet — yalnızca saf, bağlanmamış yol olayları modeli (tür adları sabit olarak geçer, veri kaynağı değildir).
 // Hiçbir çalışma zamanı dosyasının onu içe aktarmadığı scripts/test-road-events.mjs'te denetlenir; diğer tüm dosyalar taranmaya devam eder.
 const ROAD_EVENTS_EXEMPT = 'js/nav/roadEvents.js';
+// v0.99.102: TÜNEL yalnız gerçek kayıtla doğrulanan Valhalla yolunda (ayrıştırıcı + uyarı mantığı + ses/gösterim) geçebilir
+// (dar izin listesi; scripts/test-road-alerts.mjs). Köprü/brunnel/alt geçit veri kaynağı hâlâ hiçbir dosyada yok.
+const TUNNEL_OK = ['js/nav/roadAlerts.js', 'js/nav/roadWarnings.js', 'js/nav/valhallaRoadEvents.js'];
 const hits = [];
+const tunnelHits = [];
 for (const p of srcFiles) {
   if (p === ROAD_EVENTS_EXEMPT) continue;
   const c = read(p).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1');
-  if (/\b(tunnels?|bridges?|brunnel|underpass)\b/i.test(c)) hits.push(p);
+  if (/\b(bridges?|brunnel|underpass)\b/i.test(c)) hits.push(p);
+  if (/\btunnels?\b/i.test(c)) tunnelHits.push(p);
 }
-ok('çalışma zamanında tünel/köprü veri kaynağı yok', hits.length === 0, hits.join(', '));
+ok('çalışma zamanında köprü/alt geçit veri kaynağı yok', hits.length === 0, hits.join(', '));
+ok('tünel yalnız Valhalla tünel yolunda (izin listesi)', tunnelHits.every((p) => TUNNEL_OK.includes(p)) && tunnelHits.includes('js/nav/valhallaRoadEvents.js'), tunnelHits.join(', '));
 ok('şerit verisi yalnızca mapbox rotasında ayrıştırılır', srcFiles.filter((p) => /parseLanes\(/.test(read(p)) && p !== 'js/nav/lanes.js').join() === 'js/mapbox/route.js');
 
 ok('ağ çağrısı yapılmadı', netCalls === 0);

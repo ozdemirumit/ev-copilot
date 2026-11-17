@@ -433,4 +433,8 @@ export default {
   "Aşağıdaki seçenekler rotadan ayrılmayı gerektirir. Seçmezsen mevcut rota aynen kalır.": "Οι παρακάτω επιλογές απαιτούν έξοδο από τη διαδρομή. Αν δεν επιλέξεις, η τρέχουσα διαδρομή μένει ίδια.",
   "bilinmiyor": "άγνωστο",
   "aday yok": "κανένας υποψήφιος",
+  "{0} ileride tünel, uzunluğu {1}.": "Σε {0} σήραγγα, μήκους {1}.",
+  "{0} ileride ücretli yol.": "Σε {0} δρόμος με διόδια.",
+  "🚇 Tünel {0} ileride ({1})": "🚇 Σήραγγα σε {0} ({1})",
+  "💰 Ücretli yol {0} ileride": "💰 Διόδια σε {0}",
 };

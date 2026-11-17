@@ -18,6 +18,7 @@ import { stopFlag } from '../routing/onRoute.js';
 import { liveRemainH } from './trafficGuard.js';
 import { socSource } from '../physics/socEstimate.js';
 import { stopRecenter } from './freeDrive.js';
+import { orderAlerts } from './roadAlerts.js';
 
 const $ = (id) => document.getElementById(id);
 const THEN_MAX_M = 500; // sonraki manevra panelde yalnızca bu kadar yakınsa gösterilir
@@ -306,7 +307,7 @@ function paintSpeed(e) {
 
 let alertTick = 0;
 /**
- * Üst barın son satırı: yalnızca gerçek uyarılar (pil/varış planı uyarısı, trafik, yağış, dik eğim) 3 sn aralıkla dönüşümlü; yoksa satır gizli.
+ * Üst barın son satırı: yalnızca gerçek uyarılar (tünel/ücretli yol, pil/varış planı uyarısı, trafik, yağış, dik eğim) 3 sn aralıkla dönüşümlü; yoksa satır gizli.
  * Altı metrik sabittir, dönmez (v0.99.59). Hız aşımı (ahead.js 5 sn bekletmesi + şu anki hız hâlâ limit üstünde) öncelikli: her ikinci adımda
  * gösterilir. step=true sırayı ilerletir.
  */
@@ -314,7 +315,9 @@ function paintAlert(step) {
   const nav = getState('nav');
   const a = nav.ahead;
   const adv = getState('advisor');
-  const alerts = nav.active ? [adv.level === 'warn' || adv.level === 'bad' ? adv.text : null, a.traffic, a.rain, a.grade].filter((x) => typeof x === 'string' && x.trim()) : [];
+  // Tünel/ücretli yol (v0.99.102) başa girer; 500 m'den yakınsa dönüşümde yalnız o gösterilir (hız aşımı yine araya girer)
+  const base = nav.active ? [adv.level === 'warn' || adv.level === 'bad' ? adv.text : null, a.traffic, a.rain, a.grade].filter((x) => typeof x === 'string' && x.trim()) : [];
+  const alerts = nav.active ? orderAlerts(base, a.road, !!a.roadSoon) : [];
   const slots = alerts.map((_, i) => 'alert:' + i);
   const e = effective();
   const over = a.speed ? overNow(e) : null;

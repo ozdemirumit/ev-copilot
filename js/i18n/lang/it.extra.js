@@ -433,4 +433,8 @@ export default {
   "Aşağıdaki seçenekler rotadan ayrılmayı gerektirir. Seçmezsen mevcut rota aynen kalır.": "Le opzioni seguenti richiedono di lasciare il percorso. Se non scegli, il percorso attuale resta invariato.",
   "bilinmiyor": "sconosciuto",
   "aday yok": "nessun candidato",
+  "{0} ileride tünel, uzunluğu {1}.": "Galleria tra {0}, lunga {1}.",
+  "{0} ileride ücretli yol.": "Strada a pedaggio tra {0}.",
+  "🚇 Tünel {0} ileride ({1})": "🚇 Galleria tra {0} ({1})",
+  "💰 Ücretli yol {0} ileride": "💰 Pedaggio tra {0}",
 };
