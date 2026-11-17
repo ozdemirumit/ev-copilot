@@ -886,7 +886,7 @@ main { background: var(--bg); box-shadow: 0 10px 44px rgba(15, 39, 68, .35); }
   .rp-soc-num input[type=number] { width: 50px; padding: 4px 2px; }
 }
 
-/* Kompakt rota planlama: dar aralıklar, 44 px dokunma alanı, açılır son hedefler. Planla/Git uzun sayfada altta sabit; telefonda sayfanın üstünde harita görünür kalır. */
+/* Kompakt rota planlama: dar aralıklar, 44 px dokunma alanı. Planla/Git uzun sayfada altta sabit; telefonda sayfanın üstünde harita görünür kalır. */
 #tab-route .sheet-body { gap: 8px; padding: 8px 8px 0; } /* alt boşluk yok: sabit Planla/Git çubuğunun altından içerik görünmesin */
 #route-adv { margin-bottom: 8px; }
 #tab-route .card { padding: 10px; }
@@ -897,17 +897,10 @@ main { background: var(--bg); box-shadow: 0 10px 44px rgba(15, 39, 68, .35); }
 #tab-route .summary div { padding: 6px 2px; }
 .rp-tools { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, .9fr); gap: 6px; }
 .rp-tools .btn { min-width: 0; padding: 4px; font-size: 12.5px; line-height: 1.15; white-space: normal; overflow-wrap: anywhere; }
-.recent-fold > summary { display: flex; align-items: center; gap: 8px; min-height: 44px; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; list-style: none; }
-.recent-fold > summary::-webkit-details-marker { display: none; }
-.recent-fold > summary::after { content: '▾'; margin-left: auto; padding: 0 8px; font-size: 26px; line-height: 1; color: var(--text); transition: transform .15s; }
-.recent-fold[open] > summary::after { transform: rotate(180deg); }
-.recent-count { min-width: 22px; padding: 1px 6px; border-radius: 11px; background: var(--card-2); border: 1px solid var(--line); font-size: 12px; font-variant-numeric: tabular-nums; text-align: center; }
-.recent-fold > .row { margin-top: 4px; }
 .rp-head { display: flex; align-items: center; gap: 10px; }
 .rp-head h2 { margin: 0 !important; flex: none; }
 .rp-head .place-chips { flex: 1 1 0; min-width: 0; }
 .rp-head .chip { font-size: 12px; padding: 7px 1px; }
-#tab-route .recent-chip .chip { padding-top: 0; padding-bottom: 0; }
 #tab-route .recent-chip .chip-x { min-width: 44px; min-height: 44px; padding: 0; }
 @media (min-height: 521px) {
   #plan-actions { position: sticky; bottom: 0; z-index: 3; flex: none; padding: 8px 0; background: var(--bg); }

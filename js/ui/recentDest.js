@@ -1,7 +1,7 @@
-// Son hedefler: planlanan rotaların varışları cihazda saklanır (en çok 8). Rota sayfasında Varış kutusunun altında kapalı açılır liste olarak görünür;
-// dokununca varış olarak doldurulur (Rotayı Planla ile yeniden planlanır). Açılışta eski rota kendiliğinden yüklenmez.
-// Varış kutusu boşken (odaklanınca) son hedefler öneri kutusunda (#suggest-end) da listelenir: klavye açıkken tek dokunuşla seçilir
-// (pointerdown + preventDefault: odak kaybı/düzen kayması dokunuşu yutmaz). Açılır listenin başlığı da klavye açıkken ilk dokunuşta açılır.
+// Son hedefler: planlanan rotaların varışları cihazda saklanır (en çok 8). Rota sayfasında ayrı bir bölüm olarak gösterilmez;
+// Varış kutusu boşken (odaklanınca) açılır öneri kutusunda (#suggest-end) listelenir: klavye açıkken tek dokunuşla seçilir
+// (pointerdown + preventDefault: odak kaybı/düzen kayması dokunuşu yutmaz). Favoriler sekmesinde (#recent-dest-tab) tam liste/silme.
+// Seçilen hedef varış olarak doldurulur (Rotayı Planla ile yeniden planlanır). Açılışta eski rota kendiliğinden yüklenmez.
 import { load, save } from '../utils/storage.js';
 import { haversineKm } from '../utils/geo.js';
 import { mapApi } from './mapView.js';
@@ -29,34 +29,26 @@ export function rememberDest(p) {
 }
 
 export function initRecentDest() {
-  const boxes = [document.getElementById('recent-dest'), document.getElementById('recent-dest-tab')].filter(Boolean);
+  const box = document.getElementById('recent-dest-tab'); // Favoriler sekmesi; Rota sayfasında ayrı liste yok (Varış açılır listesi yeterli)
   const el = (tag, cls, text) => Object.assign(document.createElement(tag), { className: cls || '', textContent: text ?? '' });
 
-  function fill(box, list, showEmpty) {
-    if (!showEmpty) box.classList.toggle('hidden', !list.length); // Rota sayfasında liste boşken hiç görünmez
-    const wasOpen = !!box.querySelector('details')?.open; // yeniden çizimde (ör. bir hedef silinince) açık liste kapanmasın
-    if (!list.length) {
-      box.replaceChildren(...(showEmpty ? [el('div', 'empty small muted', 'Henüz son hedef yok')] : []));
-      return;
-    }
+  function render() {
+    if (!box) return;
+    const list = read();
+    if (!list.length) { box.replaceChildren(el('div', 'empty small muted', 'Henüz son hedef yok')); return; }
     const head = el('div', 'row between');
-    head.append(el('span', 'small muted', '')); // başlık: Favoriler sekmesinde kartın kendisi, Rota sayfasında açılır listenin satırı
+    head.append(el('span', 'small muted', ''));
     const clear = el('button', 'btn ghost sm', '🧹 Listeyi temizle');
     clear.type = 'button';
     clear.addEventListener('click', () => { save(KEY, []); render(); });
     head.append(clear);
     const chips = el('div', 'recent-chips');
-    if (!showEmpty) Object.assign(chips.style, { maxHeight: '30dvh', overflowY: 'auto' }); // Rota sayfasında açık liste formu aşağı itmez, kendi içinde kayar
     list.forEach((d, i) => {
       const wrap = el('span', 'recent-chip');
       const b = el('button', 'chip', `🕘 ${d.label}`);
       b.type = 'button';
       b.title = tr('Varış yap');
-      b.addEventListener('click', () => {
-        mapApi.setPoint('end', { lat: d.lat, lon: d.lon, label: d.label }, { zoom: true });
-        const fold = b.closest('details'); // seçim yapıldı: Rota sayfasında liste yer kaplamasın
-        if (fold) fold.open = false;
-      });
+      b.addEventListener('click', () => mapApi.setPoint('end', { lat: d.lat, lon: d.lon, label: d.label }, { zoom: true }));
       const x = el('button', 'chip-x', '×');
       x.type = 'button';
       x.setAttribute('aria-label', tr('Listeden sil'));
@@ -64,30 +56,7 @@ export function initRecentDest() {
       wrap.append(b, x);
       chips.append(wrap);
     });
-    if (showEmpty) { box.replaceChildren(chips, head); return; }
-    const fold = el('details', 'recent-fold');
-    fold.open = wasOpen;
-    const sum = el('summary');
-    sum.append(el('span', '', 'Son hedefler'), el('span', 'recent-count', String(list.length)));
-    // Klavye açıkken (metin kutusu odakta) ilk dokunuş odak kaybıyla kayan düzende kaybolmasın: açma pointerdown'da yapılır, ardından gelen click yutulur.
-    let tapped = false;
-    sum.addEventListener('pointerdown', (e) => {
-      const a = document.activeElement;
-      if (!a || !/^(INPUT|TEXTAREA)$/.test(a.tagName)) return;
-      e.preventDefault();
-      fold.open = !fold.open;
-      tapped = true;
-      setTimeout(() => { tapped = false; }, 700);
-      a.blur();
-    });
-    sum.addEventListener('click', (e) => { if (tapped) { tapped = false; e.preventDefault(); } });
-    fold.append(sum, chips, head);
-    box.replaceChildren(fold);
-  }
-
-  function render() {
-    const list = read();
-    boxes.forEach((box) => fill(box, list, box.id === 'recent-dest-tab'));
+    box.replaceChildren(chips, head);
   }
   document.addEventListener('recent-dest', render);
   render();
