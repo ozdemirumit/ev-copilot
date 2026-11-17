@@ -14,7 +14,7 @@ import { bearing, haversineKm } from '../utils/geo.js';
 import { icon, setManeuverIcon } from '../ui/icons.js';
 import { currentLimit } from './speedLimit.js';
 import { speedOver, pickSlot, nextChargeView, topMetrics, nextChargeText, NO_STOP, ALERT_MS, FLAG_TEXT } from './panelLogic.js';
-import { stopFlag } from '../routing/onRoute.js';
+import { stopFlag, navGate } from '../routing/onRoute.js';
 import { liveRemainH } from './trafficGuard.js';
 import { socSource } from '../physics/socEstimate.js';
 import { stopRecenter } from './freeDrive.js';
@@ -281,7 +281,8 @@ function blankTrip(plan, e) {
  */
 function paintCharge(plan, km, nextStop, e, reliable = true) {
   const v0 = reliable ? nextChargeView(nextStop, km, e.source === 'sim' ? 'sim' : socSource()) : null;
-  const v = v0 && { ...v0, flag: stopFlag(nextStop, plan.routeStatus) }; // v0.99.97: rota üstü doğrulanmadı / rota dışı işareti
+  const viaIssue = (plan.viaIssues || []).find((x) => x.id === nextStop?.station?.id)?.reason || null; // v0.99.107: rota durağa girmiyor
+  const v = v0 && { ...v0, flag: viaIssue || stopFlag(nextStop, plan.routeStatus) }; // v0.99.97: rota üstü doğrulanmadı / rota dışı işareti
   const txt = nextChargeText(v, { ready: plan.status === 'ready', reliable });
   $('ne-next').textContent = txt === NO_STOP ? t(NO_STOP) : txt;
   $('ne-next').classList.toggle('none', txt === NO_STOP);
@@ -404,6 +405,11 @@ export async function startNav() {
   }
   const plan = getState('plan');
   if (!plan.profile || !plan.steps?.length) return toast('Önce rotayı planla');
+  // v0.99.107 güvenlik kapısı: planda görünen otomatik durak rotada ziyaret edilmiyorsa (karşı şerit, ara nokta değil) başlatılmaz;
+  // yalnız elle seçilen işaretli durakta açık uyarı ve onay istenir. Rota hiçbir zaman sessizce karşı şeride gönderilmez.
+  const gate = navGate(plan);
+  if (gate.block) return toast(t('Navigasyon başlatılmadı: rota şarj durağına girmiyor ({0}). Durağı değiştir ya da rotayı yeniden planla.', gate.names.join(', ')), 8000);
+  if (gate.confirm && typeof confirm === 'function' && !confirm(t('Elle seçtiğin şarj durağına erişim doğrulanmadı ya da rota durağa girmiyor ({0}); tesis karşı şeritte olabilir. Yine de başlatılsın mı?', gate.names.join(', ')))) return;
   const e = effective();
   if (e.lat == null) toast('Konum yok: haritadaki konum düğmesine dokun (veya Test Modu)', 4000);
   said = new Set();

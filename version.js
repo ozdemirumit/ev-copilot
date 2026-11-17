@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.106';
+self.APP_VERSION = '0.99.107';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.107', date: '2026-11-17',
+    notes: [
+      'GÜVENLİK: bölünmüş otoyolda karşı şeritteki şarj tesisi artık otomatik durak seçilmez. Yol ağıyla gidiş yönünde doğrulanamayan (sunucu sınırı, zaman aşımı) istasyon da otomatik seçilmez; plan "erişim doğrulanamadı" der, durağı istersen listeden kendin seçersin',
+      'Onaylanan her şarj durağı rotada gerçek ara noktadır: mavi çizgi tesisin girişine gider. Rota durağa girmiyorsa (ya da ancak geri dönüşle ulaşılıyorsa) durak işaretlenir ve navigasyon başlatılmaz; elle seçtiğin durakta uyarı ve onay istenir',
+    ],
+  },
   {
     v: '0.99.106', date: '2026-11-17',
     notes: [

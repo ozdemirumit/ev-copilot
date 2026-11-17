@@ -10,7 +10,9 @@ const HEADING_TOL = 45;
 export async function probeStopAccess({ a, station, b }) {
   const end = (p) => ({ lat: p.lat, lon: p.lon, type: 'break', ...(Number.isFinite(p.heading) ? { heading: p.heading, heading_tolerance: HEADING_TOL } : {}) });
   const json = await valhalla('/route', {
-    locations: [end(a), { lat: station.lat, lon: station.lon, type: 'break', preferred_side: 'same' }, end(b)],
+    // v0.99.107 search_filter: istasyon noktası otoyol/ana yol (motorway, trunk ve bağlantı kolları) kenarına OTURTULMAZ. Aksi halde
+    // karşı şerit tesisinin koordinatı rotanın kendi şeridine oturur, A → "istasyon" → B düz geçer ve sapma ≈ 0 ("erişilebilir") çıkardı.
+    locations: [end(a), { lat: station.lat, lon: station.lon, type: 'break', preferred_side: 'same', search_filter: { max_road_class: 'primary' } }, end(b)],
     costing: 'auto',
     directions_type: 'none',
   }, TIMEOUT_MS);

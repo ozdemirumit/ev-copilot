@@ -148,7 +148,7 @@ reset([onRoad, offCheap], 30);
 let res = await C.planTrip();
 let p = getState('plan');
 ok('A: ilk plan rota üstündeki istasyonu seçer (rota dışı ucuz olan seçilmez)', res === true && p.status === 'ready' && ids(p) === 'onA', `${p.status} ${ids(p)} ${p.text}`);
-ok('A: rota dışı istasyon için rota isteği/soru yok (rota üstü zincir var)', S.calls.length === 1 && S.asks.length === 0 && !viaReq(offCheap));
+ok('A: rota dışı istasyon için rota isteği/soru yok; ikinci istek yalnız yol üstü durak ÜZERİNDEN (v0.99.107 ara nokta)', S.calls.length === 2 && S.asks.length === 0 && !viaReq(offCheap) && viaReq(onRoad));
 ok('A: plan.routeStatus: yol üstü on, kasaba off', p.routeStatus.onA === 'on' && p.routeStatus.offB === 'off', JSON.stringify(p.routeStatus));
 // Navigasyonda pil beklenenden düşük: km 20'de %13 — rota üstü istasyona (85 km) yetmez, rota dışı (34 km) yeter
 const before = ids(getState('plan'));
@@ -194,10 +194,10 @@ detour = { unv: 'throw' };
 reset([unv], 30);
 await C.planTrip();
 p = getState('plan');
-ok('D: durak seçilir ama "doğrulanmadı" işaretli', p.status === 'ready' && ids(p) === 'unv' && p.routeStatus.unv === 'unverified', `${p.status} ${ids(p)} ${JSON.stringify(p.routeStatus)}`);
+ok('D (v0.99.107 fail-closed): doğrulanamayan durak OTOMATİK SEÇİLMEZ, durumu unverified', p.status === 'infeasible' && ids(p) === '' && p.routeStatus.unv === 'unverified', `${p.status} ${ids(p)} ${JSON.stringify(p.routeStatus)}`);
 ok('D: doğrulanmamış durak için rota değiştirilmez (tek rota isteği)', S.calls.length === 1 && !viaReq(unv), S.calls.length);
 ok('D: kullanıcı uyarılır (erişim doğrulanamadı)', S.toasts.some((t) => /doğrulanamadı/.test(t)), JSON.stringify(S.toasts));
-ok('D: Sonraki şarj işareti unverified', O.stopFlag(p.stops[0], p.routeStatus) === 'unverified');
+ok('D: plan metni "erişim doğrulanamadı" + istasyon adı + elle seçme seçeneği', /erişim doğrulanamadı \(Doğrulanamayan DC\)/.test(p.text) && /kendin seç/.test(p.text) && (p.accessFailed || []).includes('Doğrulanamayan DC'), p.text);
 
 // E) Seçenek yok: tek aday karşı yönde → soru yok, plan kurulamaz (neden açıklanır), rota değişmez
 detour = { north: 36 };

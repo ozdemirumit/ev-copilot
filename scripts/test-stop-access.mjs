@@ -168,8 +168,9 @@ reset([opp, right]);
 S.probe = () => { throw new Error('ağ yok'); };
 await C.planTrip();
 let p = getState('plan');
-ok('hata koşulu yeniden üretildi: yol ağı olmadan planlayıcı karşı yön tesisini seçer (sapma ≈ 0 sanılır)', p.stops[0]?.station.id === 'opp' && p.stops[0].station.offKm < 0.1, p.stops.map((s) => s.station.id).join());
-ok('sorgu başarısız: plan korunur, kullanıcı uyarılır (doğrulanamadı)', p.status === 'ready' && S.toasts.some((t) => /doğrulanamadı/.test(t)), JSON.stringify(S.toasts));
+// v0.99.107 (Yunanistan A1 karşı şerit EKO): eskiden yol ağı yokken karşı yön tesisi düz çizgi yakınlığıyla SEÇİLİYORDU. Artık fail-closed.
+ok('yol ağı yokken (sorgu başarısız) karşı yön tesisi ve doğrulanmamış hiçbir istasyon otomatik durak OLMAZ (fail-closed)', !p.stops.some((s) => s.station.id === 'opp') && p.stops.length === 0 && p.status === 'infeasible', p.stops.map((s) => s.station.id).join() + ' ' + p.status);
+ok('sorgu başarısız: "erişim doğrulanamadı" plan metninde ve uyarıda; düz çizgi yakınlığı doğrulama sayılmaz', /erişim doğrulanamadı/.test(p.text) && S.toasts.some((t) => /doğrulanamadı/.test(t)) && p.routeStatus.opp === 'unverified', p.text + ' ' + JSON.stringify(S.toasts));
 
 reset([opp, right]);
 let res = await C.planTrip();

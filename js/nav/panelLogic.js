@@ -58,6 +58,10 @@ export const FLAG_TEXT = {
   unverified: 'Erişim yol ağıyla doğrulanmadı',
   off: 'Rota dışı: rota bu istasyondan geçmiyor',
   blocked: 'Karşı yönde/erişilemez olabilir',
+  // v0.99.107 ara nokta tutarsızlığı (routing/stopVia.js viaCheck; metinler onRoute.js VIA_ISSUE_TEXT ile aynı)
+  novia: 'Rota bu şarj durağına girmiyor (ara nokta değil)',
+  noreach: 'Rota şarj durağının girişine ulaşmıyor',
+  uturn: 'Durağa ancak geri dönüşle (karşı şerit) ulaşılıyor',
 };
 
 // --- v0.99.59 üst bar: altı sabit metrik (Hız | Limit | Pil | Menzil | Sonraki şarj | Varışta). Değerler mevcut hesaplardan gelir

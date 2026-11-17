@@ -16,9 +16,9 @@ import { setManual } from '../physics/socEstimate.js';
 import { rememberDest } from '../ui/recentDest.js';
 import { projectSteps } from '../nav/steps.js';
 import { t as tpl } from '../i18n/index.js';
-import { stopWaypoints, offRouteKm, VIA_OFF_KM } from './stopVia.js';
-import { createAccessBook, applyAccess, verifyStops, lineKm, locateOnLine } from './stopAccess.js';
-import { splitByRoute, altCandidates, buildAlternatives, consentFlow } from './onRoute.js';
+import { stopWaypoints, offRouteKm, viaCheck } from './stopVia.js';
+import { createAccessBook, applyAccess, verifyStops, lineKm, locateOnLine, travelDir } from './stopAccess.js';
+import { splitByRoute, altCandidates, buildAlternatives, consentFlow, autoExclude, ACCESS_PENDING_TEXT, ACCESS_FAILED_TEXT } from './onRoute.js';
 import { askRouteChoice } from '../ui/routeChoice.js';
 import { sanitizeLeaveSocs, planDiff, targetBounds } from './stopTarget.js';
 import { remainingTotals } from './socReplan.js';
@@ -38,13 +38,17 @@ let lastGood = null; // planlama sürerken yeni bir planlama başlarsa geri dön
 let lineCache = { coords: null, cum: null, head: new Map() };
 let offerRun = null; // { key, p }: rota dışı seçenek onayı (aynı plan için tek soru; İptal edilen plan için yeniden sorulmaz)
 const offerDone = new Set(); // sorulmuş plan anahtarları (tripSeq:planId)
+let lastPlanId = 0;
+/** v0.99.107: plan kimliği tekdüze artar (aynı milisaniyede iki rota — ör. ara nokta rotası — aynı kimliği alıp eski/yeni ayrımını bozmasın). */
+const newPlanId = () => (lastPlanId = Math.max(Date.now(), lastPlanId + 1));
 
 /** Rotanın istasyondaki gidiş yönü (tam çözünürlüklü çizgiden; rota değişince yeniden hesaplanır). */
 function headingAt(s) {
   const coords = getState('plan').route?.coords;
   if (!coords) return null;
   if (lineCache.coords !== coords) lineCache = { coords, cum: lineKm(coords), head: new Map() };
-  return locAt(s, coords)?.heading ?? null;
+  const at = locAt(s, coords);
+  return at ? travelDir(coords, lineCache.cum, at.km) : null; // v0.99.107: erişim kaydıyla aynı anahtar (A → B gidiş yönü)
 }
 
 /** İstasyonun rota çizgisindeki izdüşümü (önbellekli; heading ve tam çizgiye düz çizgi uzaklığı). */
@@ -116,6 +120,9 @@ export function computePlan({ fromKm = 0, soc = startSoc, maxFirstStopKm = Infin
   // Yol ağıyla doğrulanmış sapma maliyete girer; erişilemeyen (karşı yön) istasyon aday olmaz (kullanıcının elle seçtiği hariç)
   const keep = new Set([...(pins?.pinIds ?? plan.pinIds ?? []), plan.forceFirstId].filter(Boolean));
   const acc = applyAccess(plan.stations, accessBook, headingAt, keep);
+  // v0.99.107: erişim kapısı rotaya göredir; rota çizgisi yoksa (çevrimdışı önizleme/test) navigasyon da yoktur — applyPlan'daki
+  // viaCheck çizgisiz her durağı tutarsız sayar ve navGate başlatmayı engeller.
+  const hasLine = !!plan.route?.coords?.length;
   // v0.99.97: otomatik seçilen durak AKTİF ROTANIN ÜZERİNDE olmalı (onRoute.js). Rotadan ayrılmayı gerektiren ('off') ve karşı yön
   // ('blocked') istasyonlar otomatik seçilmez; rota değişikliği yalnızca kullanıcı onayıyla (offerAlternatives). Elle seçilenler (keep) kalır.
   const split = splitByRoute(acc.stations, lineOffKm, keep);
@@ -130,17 +137,25 @@ export function computePlan({ fromKm = 0, soc = startSoc, maxFirstStopKm = Infin
     profile: plan.profile, stations, startKm: fromKm, startSoc: soc,
     minArrival: r.minArrivalSoc, mode: mode || plan.mode, k, maxFirstStopKm, forceFirstId: forced,
     mustIds: (pins?.pinIds ?? plan.pinIds ?? []).filter((id) => stations.some((s) => s.id === id && s.km > fromKm + 0.5)), // kullanıcının seçtiği duraklar; geçilmiş olanlar yok sayılır
-    excludeIds: [...(pins?.banIds ?? plan.banIds ?? []), ...acc.blocked, ...split.offIds, ...split.blockedIds], leaveSocs,
+    excludeIds: [...(pins?.banIds ?? plan.banIds ?? []), ...acc.blocked, ...(hasLine ? autoExclude(split) : [...split.offIds, ...split.blockedIds])], leaveSocs, // v0.99.107: doğrulanmamış da otomatik seçilmez
   });
+  // v0.99.107 Doğrulama ADAYI: doğrulanmamış istasyonlarla kurulabilecek plan. ASLA uygulanmaz; yalnızca hangi istasyonların yol ağıyla
+  // sorgulanacağını belirler (runAccess). Doğrulananlar 'on' olunca kesin plana girebilir.
+  const candidate = !result.feasible && split.unverifiedIds.length ? planRoute({
+    profile: plan.profile, stations, startKm: fromKm, startSoc: soc,
+    minArrival: r.minArrivalSoc, mode: mode || plan.mode, k, maxFirstStopKm, forceFirstId: forced,
+    mustIds: (pins?.pinIds ?? plan.pinIds ?? []).filter((id) => stations.some((s) => s.id === id && s.km > fromKm + 0.5)),
+    excludeIds: [...(pins?.banIds ?? plan.banIds ?? []), ...acc.blocked, ...split.offIds, ...split.blockedIds], leaveSocs,
+  }) : null;
   // Rota üstünde zincir yoksa: rota dışı istasyonlarla (karşı yön hariç) kurulabilir miydi? Yalnızca onaylı seçenek sunmak için; uygulanmaz.
   const relaxed = !result.feasible && split.offIds.length ? planRoute({
     profile: plan.profile, stations, startKm: fromKm, startSoc: soc,
     minArrival: r.minArrivalSoc, mode: mode || plan.mode, k, maxFirstStopKm, forceFirstId: forced,
     mustIds: (pins?.pinIds ?? plan.pinIds ?? []).filter((id) => stations.some((s) => s.id === id && s.km > fromKm + 0.5)),
-    excludeIds: [...(pins?.banIds ?? plan.banIds ?? []), ...acc.blocked, ...split.blockedIds], leaveSocs,
+    excludeIds: [...(pins?.banIds ?? plan.banIds ?? []), ...acc.blocked, ...split.blockedIds, ...split.unverifiedIds], leaveSocs,
   }) : null;
   const ranking = rank ? rankStations({ profile: plan.profile, stations: all, startKm: fromKm, startSoc: soc, k, mode: plan.mode }) : [];
-  return { result, ranking, kInfo, maxFirstStopKm, relaxed, offIds: split.offIds, routeStatus: split.status, fromKm, soc, k, planId: plan.planId };
+  return { result, ranking, kInfo, maxFirstStopKm, relaxed, candidate, offIds: split.offIds, unverifiedIds: split.unverifiedIds, routeStatus: split.status, fromKm, soc, k, planId: plan.planId };
 }
 
 /**
@@ -165,6 +180,12 @@ function applyPlan(out, extra = {}) {
   const { result, ranking, kInfo } = out;
   lastOut = out;
   const offOnly = !result.feasible && !!out.relaxed?.feasible;
+  // v0.99.107: kesin plan yok ama doğrulanmamış istasyonla kurulabilirdi → otomatik durak YOK; metin "doğrulanıyor" ya da "doğrulanamadı"
+  const pend = !result.feasible && out.candidate?.feasible ? out.candidate.stops.filter((x) => (out.unverifiedIds || []).includes(x.station.id)) : [];
+  const failedAcc = pend.filter((x) => x.station.access?.verified === false);
+  const accText = pend.length ? (failedAcc.length ? tpl(ACCESS_FAILED_TEXT, failedAcc.map((x) => x.station.name).join(', ')) : tpl(ACCESS_PENDING_TEXT)) : '';
+  const plan0 = getState('plan');
+  const vc = viaCheck({ coords: plan0.route?.coords, stops: result.stops, fromKm: extra.fromKm ?? plan0.fromKm ?? 0, viaIds: plan0.viaIds || [], pinIds: (extra.pinIds ?? plan0.pinIds ?? []).filter((id) => !(plan0.viaIds || []).includes(id)) });
   patch('plan', {
     ...extra,
     kInfo,
@@ -172,7 +193,9 @@ function applyPlan(out, extra = {}) {
     status: result.feasible ? 'ready' : 'infeasible',
     offRouteOnly: offOnly, // rota dışı seçenek var (onay bekler)
     routeStatus: out.routeStatus || {}, // istasyon kimliği → 'on' | 'unverified' | 'off' | 'blocked' (Sonraki şarj işareti)
-    text: result.feasible ? '' : offOnly ? tpl(OFF_ROUTE_TEXT) : result.reason + (PLANNER.minKw > PLANNER.baseKw ? ' ' + tpl('En az şarj gücü filtresi {0} kW: düşürmeyi (AC) dene.', PLANNER.minKw) : ''),
+    accessPending: pend.length > 0 && !failedAcc.length, accessFailed: failedAcc.map((x) => x.station.name),
+    viaIssues: result.feasible ? vc.issues : [], // v0.99.107: planda görünen durak rotada ziyaret edilmiyorsa (navGate başlatmayı engeller)
+    text: result.feasible ? '' : accText || (offOnly ? tpl(OFF_ROUTE_TEXT) : result.reason) + (PLANNER.minKw > PLANNER.baseKw ? ' ' + tpl('En az şarj gücü filtresi {0} kW: düşürmeyi (AC) dene.', PLANNER.minKw) : ''),
     stops: result.stops,
     totals: result.totals || null,
     ranking,
@@ -181,7 +204,9 @@ function applyPlan(out, extra = {}) {
   const from = (pl.fromKm ?? 0) - 0.3;
   const planned = new Set(result.stops.map((x) => x.station.id));
   mapApi.drawStations(pl.stations.filter((s) => s.km > from && shown(s, planned)), result.stops); // geride kalan istasyonlar haritadan da çıkar
-  if (result.feasible && result.stops.some((x) => !x.station.access?.verified && x.km > (pl.fromKm ?? 0) + 0.5)) verifyStopAccess(); // beklenmez: elle değişiklik/mod sonrası yeni durak
+  const fromNow = (pl.fromKm ?? 0) + 0.5;
+  const toCheck = [...result.stops, ...(out.candidate?.feasible ? out.candidate.stops : [])];
+  if (toCheck.some((x) => x.km > fromNow && !x.station.access?.verified && accessBook.needs(x.station.id, headingAt(x.station) ?? 0))) verifyStopAccess(); // doğrulanmamış aday/elle seçilen durak
 }
 
 /**
@@ -205,9 +230,12 @@ async function runAccess() {
   let removed = [];
   for (let round = 0; round < ACCESS_ROUNDS; round++) {
     const pl = getState('plan');
-    if (pl.status !== 'ready' || !pl.profile || !pl.route?.coords) return;
+    if (pl.status === 'loading' || !pl.profile || !pl.route?.coords) return;
     const fromKm = pl.fromKm ?? 0;
-    const res = await verifyStops({ coords: pl.route.coords, stops: pl.stops, fromKm, book: accessBook, probe: probeStopAccess });
+    // v0.99.107: kesin plandaki duraklar + doğrulama adayının durakları (doğrulanmamış istasyon önce sorgulanır, sonra seçilebilir)
+    const cand = lastOut?.planId === pl.planId && lastOut.candidate?.feasible ? lastOut.candidate.stops : [];
+    const stops = [...pl.stops, ...cand.filter((c) => !pl.stops.some((x) => x.station.id === c.station.id))];
+    const res = await verifyStops({ coords: pl.route.coords, stops, fromKm, book: accessBook, probe: probeStopAccess });
     if (seq !== tripSeq || getState('plan').planId !== pl.planId) return; // araya yeni planlama/rota girdi
     res.failed.forEach((s) => failedNames.add(s.name));
     if (!res.checked) break;
@@ -215,7 +243,7 @@ async function runAccess() {
     const out = computePlan({ fromKm, soc: pl.fromSoc ?? startSoc, maxFirstStopKm: pl.maxFirstStopKm ?? Infinity });
     if (!out) return;
     applyPlan(out);
-    if (!out.result.feasible) break;
+    if (!out.result.feasible && !out.candidate?.feasible) break; // v0.99.107: aday (doğrulanmamış) varsa sonraki turda o sorgulanır
   }
   if (removed.length) toast(tpl('Karşı yönde/erişilemeyen şarj tesisi plandan çıkarıldı: {0}', [...new Set(removed)].join(', ')), 7000);
   if (failedNames.size) toast(tpl('Şarj durağına yol ağıyla erişim doğrulanamadı ({0}); tesis karşı yönde olabilir.', [...failedNames].join(', ')), 7000);
@@ -282,7 +310,7 @@ export async function planTrip(from = null, { via = null, extra = [], preRoute =
   const restoreSim = () => { if (resumeSim && getState('sim').enabled) patch('sim', { play: true }); };
 
   try {
-    patch('plan', { status: 'loading', text: 'Rota alınıyor…', stops: [], totals: null, ranking: [], fromKm: 0, fromSoc: null, pinIds: [], banIds: [], leaveSocs: {} }); // yeni rota: elle değiştirilen duraklar sıfırlanır
+    patch('plan', { status: 'loading', text: 'Rota alınıyor…', stops: [], totals: null, ranking: [], fromKm: 0, fromSoc: null, pinIds: [], banIds: [], leaveSocs: {}, viaIds: [], viaIssues: [] }); // yeni rota: elle değiştirilen duraklar sıfırlanır
     if (!from) {
       accessBook.clear(); // yeni yolculuk: erişim sonuçları sıfırdan (yeniden rotada aynı yöndeki sonuçlar geçerli kalır)
       mapApi.drawStations([], []); // önceki rotanın durak/istasyon işaretleri yeni plan gelene kadar haritada kalmaz
@@ -311,7 +339,7 @@ export async function planTrip(from = null, { via = null, extra = [], preRoute =
       // Ara nokta istasyonu (Git / onaylı seçenek) artık rotanın üzerinde: sapması tam çizgiye göre (2 km örnekli profil sapmayı şişirir, iki kez sayılırdı)
       const keptQ = reproject([...cur.stations, ...extra.filter((x) => !cur.stations.some((s) => s.id === x.id))], quick)
         .map((s) => (via && s.id === via.id ? { ...s, offKm: Math.min(s.offKm, offRouteKm(rt.coords, s)) } : s));
-      patch('plan', { route: rt, profile: quick, steps: projectSteps(rt.steps, quick), planId: Date.now(), wxInfo: { source: null, fallbackReason: null, error: null }, forceFirstId: via?.id ?? null, lastStopKm: null, stations: keptQ, stationInfo: cur.stationInfo, text: '' });
+      patch('plan', { route: rt, profile: quick, steps: projectSteps(rt.steps, quick), planId: newPlanId(), wxInfo: { source: null, fallbackReason: null, error: null }, forceFirstId: via?.id ?? null, viaIds: via ? [via.id] : [], lastStopKm: null, stations: keptQ, stationInfo: cur.stationInfo, text: '' });
       if (!keptQ.length) {
         cacheKey = [start, end].map((p) => `${p.lat.toFixed(2)},${p.lon.toFixed(2)}`).join('>');
         await loadStations(pts, quick, stale);
@@ -354,7 +382,7 @@ export async function planTrip(from = null, { via = null, extra = [], preRoute =
     tm.push(Date.now()); const profile = buildFromRaw();
     const pool = from ? [...getState('plan').stations, ...extra.filter((x) => !getState('plan').stations.some((s) => s.id === x.id))] : [];
     const kept = from ? reproject(pool, profile) : [];
-    patch('plan', { route: rt, profile, steps: projectSteps(rt.steps, profile), planId: Date.now(), wxInfo: { source: wxRes?.source ?? null, fallbackReason: wxRes?.fallbackReason ?? null, error: wxError }, forceFirstId: via?.id ?? null, lastStopKm: null, stations: kept, stationInfo: from ? getState('plan').stationInfo : null, text: 'Şarj istasyonları aranıyor…' });
+    patch('plan', { route: rt, profile, steps: projectSteps(rt.steps, profile), planId: newPlanId(), wxInfo: { source: wxRes?.source ?? null, fallbackReason: wxRes?.fallbackReason ?? null, error: wxError }, forceFirstId: via?.id ?? null, viaIds: via ? [via.id] : [], lastStopKm: null, stations: kept, stationInfo: from ? getState('plan').stationInfo : null, text: 'Şarj istasyonları aranıyor…' });
 
     if (!kept.length) {
       cacheKey = [start, end].map((p) => `${p.lat.toFixed(2)},${p.lon.toFixed(2)}`).join('>');
@@ -409,10 +437,12 @@ async function routeThroughStops(start, end, { elev = true } = {}) {
   const wps = stopWaypoints({
     coords: pl.route.coords, stops: pl.stops, fromKm: pl.fromKm ?? 0,
     stopover, stopoverKm: stopover ? pl.profile.project(stopover.lat, stopover.lon).km : null,
+    force: true, hasVia: (id) => (pl.viaIds || []).includes(id), // v0.99.107: her onaylı durak gerçek ara nokta (çizgiye yakın olsa da)
   });
   if (!wps) return null;
-  // v0.99.97: yol ağıyla doğrulanamamış durak çizgiden uzaksa rota onun üzerinden DEĞİŞTİRİLMEZ (karşı yön olabilir); durak işaretli kalır
-  if (pl.stops.some((s) => s.km > (pl.fromKm ?? 0) + 0.5 && pl.routeStatus?.[s.station.id] === 'unverified' && offRouteKm(pl.route.coords, s.station) > VIA_OFF_KM)) return null;
+  // v0.99.97/107: yol ağıyla doğrulanmamış ya da karşı yön/rota dışı işaretli (yalnız elle seçilebilir) durak için rota onun üzerinden SESSİZCE
+  // değiştirilmez; durak işaretli ve "rota girmiyor" (viaIssues) kalır, navigasyon ancak açık onayla başlar (navGate).
+  if (pl.stops.some((s) => s.km > (pl.fromKm ?? 0) + 0.5 && ['unverified', 'blocked', 'off'].includes(pl.routeStatus?.[s.station.id]))) return null;
   const seq = tripSeq;
   const gone = () => seq !== tripSeq || getState('plan').planId !== pl.planId; // araya yeni planlama/rota girdi
   const prev = { plan: { ...pl }, route: { ...getState('route') }, raw, sig };
@@ -445,7 +475,8 @@ async function routeThroughStops(start, end, { elev = true } = {}) {
     // sapma hem rota enerjisinde hem durak sapmasında iki kez sayılırdı.
     const pinSet = new Set(pinIds);
     const stations = reproject(pl.stations, profile).map((s) => (pinSet.has(s.id) ? { ...s, offKm: Math.min(s.offKm, offRouteKm(rt.coords, s)) } : s));
-    patch('plan', { route: rt, profile, steps: projectSteps(rt.steps, profile), planId: Date.now(), stations, pinIds });
+    const viaIds = pl.stops.filter((s) => s.km > (pl.fromKm ?? 0) + 0.5).map((s) => s.station.id); // sağlayıcıya ara nokta gönderilen duraklar
+    patch('plan', { route: rt, profile, steps: projectSteps(rt.steps, profile), planId: newPlanId(), stations, pinIds, viaIds });
     const out = computePlan({ fromKm: pl.fromKm ?? 0, soc: pl.fromSoc ?? startSoc });
     if (!out?.result.feasible) return restore(out?.result.reason || 'plan kurulamadı');
     applyPlan(out);
@@ -519,11 +550,11 @@ function evaluateAlt(rt, st, soc, k, pl) {
   const cum = lineKm(rt.coords);
   const loc = (s) => locateOnLine(rt.coords, cum, s, Number.isFinite(s.km) ? s.km : null, 8);
   const keep = new Set([st.id]);
-  const acc = applyAccess(reproject(pl.stations, prof), accessBook, (s) => loc(s)?.heading ?? null, keep);
+  const acc = applyAccess(reproject(pl.stations, prof), accessBook, (s) => { const at = loc(s); return at ? travelDir(rt.coords, cum, at.km) : null; }, keep);
   const split = splitByRoute(acc.stations, (s) => loc(s)?.offKm ?? null, keep);
   const plan = planRoute({
     profile: prof, stations: acc.stations, startKm: 0, startSoc: soc, minArrival: r.minArrivalSoc, mode: pl.mode, k,
-    forceFirstId: st.id, excludeIds: [...(pl.banIds || []), ...acc.blocked, ...split.offIds, ...split.blockedIds],
+    forceFirstId: st.id, excludeIds: [...(pl.banIds || []), ...acc.blocked, ...autoExclude(split)], // v0.99.107: sonraki duraklar da yalnız doğrulanmış
   });
   return { alt: { km: prof.totalKm, min: prof.timeBetween(0, prof.totalKm) * 60 }, plan };
 }
@@ -755,6 +786,10 @@ export function repriceAndReplan() {
 /** Dinamik fallback: mevcut konumdan, ilk durağı maxFirstStopKm'den ileri olmayacak şekilde yeniden planla. */
 export function replanFrom({ km, soc, maxFirstStopKm }) {
   const out = computePlan({ fromKm: km, soc, maxFirstStopKm });
+  if (!out?.result.feasible && out?.candidate?.feasible) { // v0.99.107: aday var ama yol ağıyla doğrulanmamış → durak YOK, önce doğrulanır
+    applyPlan(out, { fromKm: km, fromSoc: soc }); // "doğrulanıyor/doğrulanamadı" metni; doğrulama bitince runAccess bu konumdan yeniden planlar
+    return false;
+  }
   if (!out?.result.feasible) {
     if (out?.relaxed?.feasible) offerAlternatives(out); // rota üstünde zincir yok: rota değişikliği yalnızca onayla (eski plan bu arada kalır; beklenmez)
     return false;
@@ -801,7 +836,7 @@ export function clearTrip() {
   accessBook.clear();
   raw = null;
   sig = '';
-  patch('plan', { status: 'none', text: '', route: null, profile: null, wxInfo: null, stations: [], stationInfo: null, stops: [], steps: [], pinIds: [], banIds: [], leaveSocs: {}, totals: null, planId: null, fromKm: 0, fromSoc: null });
+  patch('plan', { status: 'none', text: '', route: null, profile: null, wxInfo: null, stations: [], stationInfo: null, stops: [], steps: [], pinIds: [], banIds: [], leaveSocs: {}, totals: null, planId: null, fromKm: 0, fromSoc: null, viaIds: [], viaIssues: [], accessPending: false, accessFailed: [] });
   mapApi.clearRoute();
   for (const k of ['start', 'via', 'end']) mapApi.setPoint(k, null, { fit: false });
 }

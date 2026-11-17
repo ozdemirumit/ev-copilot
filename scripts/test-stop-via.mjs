@@ -220,8 +220,9 @@ const onRoad = { id: 'roadDC', name: 'Yol üstü DC', lat: LAT + 0.0003, lon: 29
 reset(onRoad); S.asks = [];
 res = await C.planTrip();
 p = getState('plan');
-ok('yol üstündeki durak: tek rota isteği (davranış aynı)', res === true && S.calls.length === 1 && p.stops.some((s) => s.station.id === 'roadDC'), `${S.calls.length} ${p.status}`);
-ok('yol üstündeki durak zorunlu yapılmaz (pinIds boş) ve soru sorulmaz', (p.pinIds || []).length === 0 && S.asks.length === 0);
+// v0.99.107: yol üstündeki (çizgiye 33 m) onaylı durak da GERÇEK ara nokta olur — rota tesise girer; eskiden tek istekle yanından geçiyordu
+ok('yol üstündeki durak: ikinci rota isteği o istasyon ÜZERİNDEN (ara nokta) ve durak planda', res === true && S.calls.length === 2 && S.calls[1][2]?.some((w) => w.lat === onRoad.lat && w.lon === onRoad.lon) && p.stops.some((s) => s.station.id === 'roadDC'), `${S.calls.length} ${p.status}`);
+ok('yol üstündeki durak: ara nokta kaydı (viaIds) var, tutarsızlık yok, soru sorulmaz', (p.viaIds || []).includes('roadDC') && (p.viaIssues || []).length === 0 && S.asks.length === 0, JSON.stringify(p.viaIssues));
 
 // c) Seçenek rotası alınamadı (sağlayıcı hatası): ölçü uydurulmaz, özgün rota kalır
 reset(offFar); S.asks = []; S.choose = (r) => r.choices[0] || null;

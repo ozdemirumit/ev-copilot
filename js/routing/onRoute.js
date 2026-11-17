@@ -6,7 +6,8 @@
 //  - tam çözünürlüklü rota çizgisine düz çizgi uzaklığı ≤ ON_ROUTE_KM (yalnızca ön eleme; yakınlık erişim kanıtı DEĞİLDİR), ve
 //  - yol ağıyla (stopAccess.verifyStops: rotada önce A → istasyon → sonra B, gidiş yönü kısıtlı) sapma ≤ ON_ROUTE_DETOUR_KM.
 // Karşı şerit/bariyer (yol ağı sapması orantısız) → 'blocked'. Erişilebilir ama rotadan ayrılmayı gerektiren → 'off' (yalnız kullanıcı onayıyla
-// rota değişikliği seçeneği olarak sunulur). Yol ağı sorgusu yapılamadıysa → 'unverified': durak seçilebilir ama arayüzde işaretlenir.
+// rota değişikliği seçeneği olarak sunulur). Yol ağı sorgusu yapılamadıysa → 'unverified'. v0.99.107: 'unverified' artık OTOMATİK SEÇİLMEZ
+// (fail-closed; Yunanistan A1 Atina–Selanik karşı şerit EKO regresyonu); yalnız kullanıcının elle seçtiği durakta uyarı + onayla kalır.
 
 /** Ön eleme: tam rota çizgisine bundan uzak istasyon rota üstü sayılmaz (dinlenme tesisi şarjı çizgiye birkaç yüz metre). */
 export const ON_ROUTE_KM = 0.5;
@@ -36,6 +37,7 @@ export function routeStatus({ lineOffKm = null, access = null } = {}) {
 export function splitByRoute(stations, lineOff, keep = new Set()) {
   const offIds = [];
   const blockedIds = [];
+  const unverifiedIds = [];
   const status = {};
   for (const s of stations || []) {
     const st = routeStatus({ lineOffKm: lineOff(s), access: s.access });
@@ -43,9 +45,47 @@ export function splitByRoute(stations, lineOff, keep = new Set()) {
     if (!keep.has(s.id)) {
       if (st === 'off') offIds.push(s.id);
       else if (st === 'blocked') blockedIds.push(s.id);
+      else if (st === 'unverified') unverifiedIds.push(s.id);
     }
   }
-  return { status, offIds, blockedIds };
+  return { status, offIds, blockedIds, unverifiedIds };
+}
+
+/**
+ * v0.99.107 FAIL-CLOSED: otomatik planın kullanabileceği istasyonlar dışında kalanlar (planlayıcının excludeIds'i). Yalnız 'on' (yol ağıyla
+ * gidiş yönünde doğrulanmış, rota üstü) otomatik seçilebilir: 'unverified' (sorgu yok / 429 / zaman aşımı / sağlayıcı yok) düz çizgi
+ * yakınlığına bakılmaksızın OTOMATİK SEÇİLMEZ. keep (kullanıcının elle seçtikleri) splitByRoute'ta zaten listelere girmez.
+ */
+export const autoExclude = (split) => [...(split?.offIds || []), ...(split?.blockedIds || []), ...(split?.unverifiedIds || [])];
+
+/** Plan metni: otomatik durak, erişim doğrulanamadığı/doğrulanmakta olduğu için seçilmedi (Türkçe kaynak; sözlükte çevrilir). */
+export const ACCESS_PENDING_TEXT = 'Şarj durağı erişimi yol ağıyla doğrulanıyor…';
+export const ACCESS_FAILED_TEXT = 'Şarj durağına erişim doğrulanamadı ({0}): güvenlik için otomatik durak seçilmedi. İstasyonlar listesinden durağı kendin seçebilir ya da biraz sonra yeniden planlayabilirsin.';
+
+/** Ara nokta sorunu açıklamaları (stopVia.viaCheck reason → Türkçe kaynak metin). */
+export const VIA_ISSUE_TEXT = {
+  novia: 'Rota bu şarj durağına girmiyor (ara nokta değil)',
+  noreach: 'Rota şarj durağının girişine ulaşmıyor',
+  uturn: 'Durağa ancak geri dönüşle (karşı şerit) ulaşılıyor',
+};
+
+/**
+ * Navigasyon başlatma kapısı (saf). plan.viaIssues: viaCheck sorunları; plan.routeStatus: istasyon durumu; plan.pinIds: elle seçilenler.
+ * - Otomatik seçilmiş durakta tutarsızlık (rota durağa girmiyor / dönüşle) → block (başlatılmaz; durak değiştir ya da yeniden planla).
+ * - Yalnız kullanıcının elle seçtiği durakta tutarsızlık ya da doğrulanmamış/karşı yön işareti → confirm (açık uyarı ve onayla başlar).
+ * Dönüş: { block, confirm, names }.
+ */
+export function navGate(plan) {
+  const fromKm = plan?.fromKm ?? 0;
+  const ahead = (plan?.stops || []).filter((s) => s?.station && s.km > fromKm + 0.5);
+  const via = new Set(plan?.viaIds || []);
+  const pins = new Set((plan?.pinIds || []).filter((id) => !via.has(id))); // ara nokta rotası durakları zorunlu (pinIds) yapar: onlar elle seçim değildir
+  const issues = (plan?.viaIssues || []).filter((x) => ahead.some((s) => s.station.id === x.id));
+  const autoBad = issues.filter((x) => !pins.has(x.id));
+  if (autoBad.length) return { block: true, confirm: false, names: autoBad.map((x) => x.name) };
+  const flagged = ahead.filter((s) => pins.has(s.station.id) && (issues.some((x) => x.id === s.station.id) || ['unverified', 'blocked', 'off'].includes(plan?.routeStatus?.[s.station.id])));
+  if (flagged.length) return { block: false, confirm: true, names: flagged.map((s) => s.station.name || '') };
+  return { block: false, confirm: false, names: [] };
 }
 
 /**

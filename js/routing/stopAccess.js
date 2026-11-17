@@ -89,7 +89,16 @@ export function accessProbe(coords, station, { legKm = ACCESS_LEG_KM, cum = null
   const b = pointAtKm(coords, c, at.km + legKm);
   const alongKm = b.km - a.km;
   if (!(alongKm > 0.2)) return null;
-  return { a, b, alongKm, at };
+  // v0.99.107: kaydın anahtarı yerel parça yönü değil A → B gidiş yönü (istasyon ara nokta olunca çizgi istasyona sapar; yerel yön
+  // sapmanın yönü olur ve aynı yöndeki doğrulama kaydı bulunamaz, durak "doğrulanmadı"ya düşerdi)
+  return { a, b, alongKm, at: { ...at, heading: travelDir(coords, c, at.km, legKm) } };
+}
+
+/** Çizgide km çevresinde (± legKm) GİDİŞ YÖNÜ (derece): yerel sapma/ara nokta dikenlerinden etkilenmez. */
+export function travelDir(coords, cum, km, legKm = ACCESS_LEG_KM) {
+  const a = pointAtKm(coords, cum, km - legKm);
+  const b = pointAtKm(coords, cum, km + legKm);
+  return Math.round(bearing({ lat: a.lat, lon: a.lon }, { lat: b.lat, lon: b.lon }));
 }
 
 /**

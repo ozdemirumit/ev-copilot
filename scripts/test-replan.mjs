@@ -25,7 +25,7 @@ const STUBS = {
   // Sağlayıcı katmanı: gerçek uygulamadaki gibi önbellek (cached) ARKASINDA "API" çağrısı sayılır
   '../providers/index.js': `
     const k = ${k5};
-    export const fetchRoute = async (s, e, via = []) => ${g}.cached('rt:' + k(s) + '>' + k(e) + '|' + via.map(k).join(';'), ${g}.TTL.route, async () => { ${g}.routeApi++; return ${g}.route(s, e, via); }, { persist: false });
+    export const fetchRoute = async (s, e, via = []) => ${g}.cached('rt:' + k(s) + '>' + k(e) + '|' + via.map(k).join(';'), ${g}.TTL.route, async () => { if (via.length) ${g}.viaApi++; else ${g}.routeApi++; return ${g}.route(s, e, via); }, { persist: false });
     export const fetchElevations = async () => null;
     export const fetchWeather = async () => null;
     export const fetchChargers = async (pts, profile, key) => {
@@ -76,7 +76,7 @@ const lastLon = (coords) => coords?.at(-1)?.[0];
 
 const reset = () => {
   cache.clearCache();
-  Object.assign(S, { routeApi: 0, chargerApi: 0, probes: 0, toasts: [], draws: [], stationDraws: [], clears: 0, gate: null });
+  Object.assign(S, { routeApi: 0, viaApi: 0, chargerApi: 0, probes: 0, toasts: [], draws: [], stationDraws: [], clears: 0, gate: null });
   S.route = (s, e) => routeOf(s, e);
   S.chargers = () => STATIONS;
   S.probe = roadProbe;
@@ -98,7 +98,8 @@ reset();
   const p = getState('plan');
   ok('çift tıklama: ilk çağrı yerini yenisine bırakır (false), ikincisi kurar (true)', r1 === false && r2 === true, `${r1} ${r2}`);
   ok('çift tıklama: plan hazır, varış Hedef 1', p.status === 'ready' && lastLon(p.route?.coords) === END1.lon, `${p.status} ${p.text}`);
-  ok('çift tıklama: aynı rota için sağlayıcı API tek kez çağrılır (eşzamanlı istek birleşir)', S.routeApi === 1, String(S.routeApi));
+  // v0.99.107: onaylı durak gerçek ara nokta olduğundan durak üzerinden ikinci (ara noktalı) rota isteği ayrı sayılır (en çok bir)
+  ok('çift tıklama: aynı rota için sağlayıcı API tek kez çağrılır (eşzamanlı istek birleşir); ara noktalı rota en çok bir', S.routeApi === 1 && S.viaApi <= 1, `${S.routeApi} ${S.viaApi}`);
   ok('çift tıklama: "mevcut plan korundu"/"Plan hatası" uyarısı yok', !S.toasts.some((t) => /korundu|Plan hatası/.test(t)), JSON.stringify(S.toasts));
 }
 
@@ -157,7 +158,9 @@ reset();
   S.gate = gate.p; // eski planın yol ağı sorgusu bekler (plan "hazır" görünür, Rota planla yeniden dokunulabilir)
   const p1 = C.planTrip();
   for (let i = 0; i < 20 && getState('plan').status !== 'ready'; i++) await tick();
-  ok('eski plan hazır, erişim doğrulaması sürüyor', getState('plan').status === 'ready' && S.probes > 0);
+  // v0.99.107 fail-closed: doğrulama sürerken doğrulanmamış durak plana girmez ("hazır" görünmez; "doğrulanıyor" der)
+  for (let i = 0; i < 20 && !getState('plan').accessPending; i++) await tick();
+  ok('eski plan doğrulama bekliyor: durak YOK, "doğrulanıyor"', getState('plan').stops.length === 0 && getState('plan').accessPending === true && /doğrulanıyor/.test(getState('plan').text) && S.probes > 0, `${getState('plan').status} ${getState('plan').text}`);
   // Yeni yolculuk ters yönde (Hedef 1 → Ev, batıya): eski planın doğuya yön kayıtları geçersiz, yeni planın durakları kendi sorgusunu ister
   patch('route', { start: END1, end: START });
   const slowRoute = deferred();
@@ -187,7 +190,8 @@ reset();
   S.gate = gate.p;
   const p1 = C.planTrip();
   for (let i = 0; i < 20 && getState('plan').status !== 'ready'; i++) await tick();
-  ok('5b: eski plan hazır, doğrulaması bekliyor', getState('plan').status === 'ready' && S.probes > 0);
+  for (let i = 0; i < 20 && !getState('plan').accessPending; i++) await tick();
+  ok('5b: eski plan doğrulaması bekliyor: durak YOK (fail-closed)', getState('plan').stops.length === 0 && getState('plan').accessPending === true && S.probes > 0, `${getState('plan').status} ${getState('plan').text}`);
   patch('route', { start: END1, end: START }); // ters yön: eski yön kayıtları geçmez
   patch('live', { soc: 30 });
   S.gate = null; // yeni planın sorguları beklemez; eskininkiler beklemeye devam eder
