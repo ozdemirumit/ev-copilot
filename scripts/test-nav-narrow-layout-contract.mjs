@@ -28,7 +28,22 @@ const CSS_RULES = {
   bannersTop: '#banners { margin-top: 6px; }',
   bannersBase: '#banners { flex: 0 1 auto; min-height: 0; max-height: 38dvh; overflow-y: auto; }',
   banners34: '@media (min-height: 521px) and (max-height: 640px) {\n  #banners { max-height: 34dvh; }',
-  navbarFinal: '.navbar { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 6px 10px; padding: 8px 8px 6px; align-items: start; }',
+  navbarFinal: '.navbar { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 6px 10px; padding: 8px 8px 6px; align-items: start; }',
+  // v0.99.103 okunabilirlik katmanı (sol %60 / sağ %40): model aşağıdaki kurallara dayanır
+  r103Gap: '.navbar { column-gap: 8px; }',
+  r103Arrow: '.nb-man .nav-arrow { font-size: 44px; width: 52px; padding-right: 8px; }',
+  r103Dist: '.nb-man .nav-dist { font-size: 34px; font-weight: 800; line-height: 1.05; }',
+  r103Text: '.nb-man .nav-text, .nb-man .nav-road { font-size: 20px; font-weight: 700; line-height: 1.2; -webkit-line-clamp: 3; overflow-wrap: anywhere; word-break: normal; }',
+  r103Grid: '.nb-metrics { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }',
+  r103Cq: '.nb-metrics .nb-cell { container-type: inline-size; }',
+  r103Val: '.nb-metrics .ne-v b { font-size: min(21px, max(14px, 28cqi)); white-space: normal; overflow-wrap: anywhere; text-overflow: clip; }',
+  r103Next: '.nb-metrics .nb-next .ne-v b { font-size: min(21px, max(14px, 23cqi)); }',
+  r103Speed: '.nb-metrics .nb-speed .ne-v b { font-size: min(24px, max(16px, 33cqi)); }',
+  r103SpeedWrap: '.nb-metrics .nb-speed .ne-v { gap: 2px; flex-wrap: wrap; }',
+  r103Limit: '.nb-limit .limit-sign { width: 30px; height: 30px; border-width: 3px; font-size: 12px; }',
+  r103Wrap: '.nb-metrics .ne-sub, .nb-metrics .nb-cell small, #ne-next-t { white-space: normal; overflow-wrap: anywhere; text-overflow: clip; line-height: 1.15; }',
+  r103N380: '@media (max-width: 380px) {\n  .nb-man .nav-arrow { font-size: 38px; width: 44px; }\n  .nb-man .nav-dist { font-size: 30px; }\n  .nb-man .nav-text, .nb-man .nav-road { font-size: 18px; }\n}',
+  r103N360: '@media (max-width: 360px) {\n  .navbar { grid-template-columns: minmax(0, 11fr) minmax(0, 9fr); column-gap: 6px; padding-left: 6px; padding-right: 6px; }\n  .nb-man .nav-arrow { font-size: 34px; width: 40px; padding-right: 6px; }\n  .nb-man .nav-dist { font-size: 28px; }\n  .nb-man .nav-text, .nb-man .nav-road { font-size: 17px; }\n  .nb-limit .limit-sign { width: 26px; height: 26px; font-size: 11px; letter-spacing: -.6px; }\n  .nb-metrics .nb-speed .ne-v b { font-size: min(22px, max(16px, 30cqi)); }\n  .nb-metrics .nb-cell:nth-child(n+3) { padding-top: 2px; }\n}',
   right: '.nb-right { display: flex; flex-direction: column; gap: 6px; min-width: 0; }',
   manCol: '.nb-man { flex-direction: column; align-items: stretch; gap: 2px; }',
   head: '.nb-head { display: flex; align-items: center; gap: 6px; min-width: 0; }',
@@ -82,10 +97,10 @@ ok('kaynak: .nb-alert 15px kuralı ≤380 px 14px kuralından önce (dar ekranda
 // Dar ekranda bu öğeleri etkileyen yeni bir @media eklenmiş mi? (sayım sabit; değişirse gözden geçir)
 const count = (re) => (css.match(re) || []).length;
 ok('kaynak: "#ne-soc" css geçişi sayısı 1 (renk)', count(/#ne-soc\b/g) === 1, `${count(/#ne-soc\b/g)}${REVIEW}`);
-ok('kaynak: "#ne-next" (.none) ve "#ne-next-t" css\'te birer kez', count(/#ne-next(?![-\w])/g) === 1 && count(/#ne-next-t(?![-\w])/g) === 1, REVIEW);
+ok('kaynak: "#ne-next" (.none) css\'te bir kez, "#ne-next-t" iki kez (v0.99.103 sarma kuralı)', count(/#ne-next(?![-\w])/g) === 1 && count(/#ne-next-t(?![-\w])/g) === 2, REVIEW);
 ok('kaynak: "#near-alert-close" css\'te yalnızca dokunma alanı için 2 kez (position + ::after; görünür boyut .tp-head .tog)', count(/#near-alert-close/g) === 2, `${count(/#near-alert-close/g)}${REVIEW}`);
-ok('kaynak: "nb-alert" css geçişi sayısı 7', count(/nb-alert/g) === 7, `${count(/nb-alert/g)}${REVIEW}`);
-ok('kaynak: "nb-metrics" css geçişi sayısı 18', count(/nb-metrics/g) === 18, `${count(/nb-metrics/g)}${REVIEW}`);
+ok('kaynak: "nb-alert" css geçişi sayısı 8 (v0.99.103 +1)', count(/nb-alert/g) === 8, `${count(/nb-alert/g)}${REVIEW}`);
+ok('kaynak: "nb-metrics" css geçişi sayısı 31 (v0.99.103 +13)', count(/nb-metrics/g) === 31, `${count(/nb-metrics/g)}${REVIEW}`);
 ok('kaynak: ".nb-right" css\'te bir kez, ".nb-head" bir kez (iki yarı modeli)', count(/\.nb-right\b/g) === 1 && count(/\.nb-head\b/g) === 1, REVIEW);
 
 const HTML_FRAGS = [
@@ -119,27 +134,35 @@ const OPTIMISTIC = 0.88;
 const charEm = (c) => (/[0-9]/.test(c) ? EM.digit : EM[c] ?? EM.letter);
 const textW = (txt, px, ls = 0) => [...txt].reduce((w, c) => w + charEm(c) * px + ls, 0);
 const clamp = (min, vw, max, W) => Math.min(max, Math.max(min, (vw * W) / 100));
-// İçerik genişliği: W − #banners>* yatay kenar (2×10) − kenarlık (2×1) − .navbar dolgu (2×8)
-const contentW = (W) => W - 20 - 2 - 16;
-// İki yarı: sütun boşluğu 10px, sol 1fr / sağ 1.2fr. Sağda 2×2 metrik: sütun 0 (Hız, Varış) 1.1fr, sütun 1 (Pil, Sonraki şarj) 1fr.
-const HALF = [1, 1.2], GAP = 10;
-const halfW = (W, i) => ((contentW(W) - GAP) * HALF[i]) / (HALF[0] + HALF[1]);
-const FR = [1.1, 1];
+// v0.99.103 — İçerik genişliği: W − #banners>* yatay kenar (2×10, çentiksiz) − kenarlık (2×1) − .navbar dolgu (2×8; ≤360 px 2×6)
+const N360 = (W) => W <= 360;
+const contentW = (W) => W - 20 - 2 - (N360(W) ? 12 : 16);
+// İki yarı: sütun boşluğu 8px (≤360 px 6px), sol 3fr / sağ 2fr (≤360 px 11fr / 9fr). Sağda 2×2 metrik eşit sütun (1fr | 1fr).
+const HALF = (W) => (N360(W) ? [11, 9] : [3, 2]);
+const GAP = (W) => (N360(W) ? 6 : 8);
+const halfW = (W, i) => ((contentW(W) - GAP(W)) * HALF(W)[i]) / (HALF(W)[0] + HALF(W)[1]);
+const FR = [1, 1];
 const FRSUM = FR.reduce((a, b) => a + b, 0);
 const cellInner = (W, i) => (halfW(W, 1) * FR[i]) / FRSUM - 4 - (i === 0 ? 0 : 1);
+// Değer yazısı hücre genişliğine bağlı (cqi ≈ hücre iç genişliği): min(21, max(14, 0.28·hücre)); hız min(24, max(16, 0.33·hücre))
+const valPx = (W, i) => Math.min(21, Math.max(14, 0.28 * cellInner(W, i)));
+const spdPx = (W) => (N360(W) ? Math.min(22, Math.max(16, 0.30 * cellInner(W, 0))) : Math.min(24, Math.max(16, 0.33 * cellInner(W, 0))));
+const signW = (W) => (N360(W) ? 26 : 30); // limit levhası
+const nextPx = (W) => Math.min(21, Math.max(14, 0.23 * cellInner(W, 1))); // sonraki şarj değeri ("1234 km") daha küçük katsayı
 const classify = (need, avail) => (need <= avail ? 'SIĞAR' : need * OPTIMISTIC <= avail ? 'SINIRDA' : 'KESİLME-RİSKİ');
 
 const WIDTHS = [360, 375, 399, 412];
-const distPx = (W) => (W <= 380 ? 26 : 30); // .nb-man .nav-dist 30px, @media (max-width: 380px) 26px
+const distPx = (W) => (N360(W) ? 28 : W <= 380 ? 30 : 34); // v0.99.103: 34px; ≤380 px 30px; ≤360 px 28px
+const arrowW = (W) => (N360(W) ? 40 : W <= 380 ? 44 : 52); // ok kutusu genişliği
 const CASES = {
   // Pil hücresi (sütun 1): b.approx::before '≈' .7em + "%100" (tahmini/eski pil, en uzun yüzde)
-  battery: (W) => { const px = clamp(18, 5.4, 22, W); return { need: textW('≈', px * 0.7) + textW('%100', px, -0.3), avail: cellInner(W, 1), px }; },
-  // Hız hücresi (sütun 0): "199" + 4px boşluk + 38px limit levhası aynı satırda
-  speed: (W) => { const px = clamp(22, 6.6, 28, W); return { need: textW('199', px, -0.3) + 4 + 38, avail: cellInner(W, 0), px }; },
+  battery: (W) => { const px = valPx(W, 1); return { need: textW('≈', px * 0.7) + textW('%100', px, -0.3), avail: cellInner(W, 1), px }; },
+  // Hız hücresi (sütun 0): "199" + 2px boşluk + 30px limit levhası aynı satırda (v0.99.103: sığmazsa levha alt satıra kayar, flex-wrap; kesilmez)
+  speed: (W) => { const px = spdPx(W); return { need: textW('199', px, -0.3) + 2 + signW(W), avail: cellInner(W, 0), px }; },
   // Hız hücresi ortalama: "Ø199" 11px
   speedAvg: (W) => ({ need: textW('Ø199', 11) + 1, avail: cellInner(W, 0), px: 11 }),
   // Varış saati (sütun 0): "23:59"
-  eta: (W) => { const px = clamp(18, 5.4, 22, W); return { need: textW('23:59', px, -0.3), avail: cellInner(W, 0), px }; },
+  eta: (W) => { const px = valPx(W, 0); return { need: textW('23:59', px, -0.3), avail: cellInner(W, 0), px }; },
   // Varış alt satırı (sütun 0): varışta pil "≈%100" 14px kalın + " · 1234 km" 11px (kalan km sondadır; kesilirse önce o … olur)
   etaSub: (W) => ({ need: textW('≈', 14 * 0.7) + textW('%100', 14) + textW(' · 1234 km', 11), avail: cellInner(W, 0), px: 14 }),
   // Varış alt satırının yalnız varışta pil kısmı "≈%100 ·" (asıl bilgi) sığmalı
@@ -147,27 +170,29 @@ const CASES = {
   // Menzil alt satırı (Pil hücresi, sütun 1): "≈999" 14px kalın + " km" 11px
   rangeSub: (W) => ({ need: textW('≈', 14 * 0.7) + textW('999', 14) + textW(' km', 11), avail: cellInner(W, 1), px: 14 }),
   // Sonraki şarj değeri (sütun 1): uzun km "1234 km"
-  nextValue: (W) => { const px = clamp(18, 5.4, 22, W); return { need: textW('1234 km', px, -0.3), avail: cellInner(W, 1), px }; },
-  // Sonraki şarj alt satırı: "%100 · 1 sa 59 dk" 11px (… ile kesilir)
+  nextValue: (W) => { const px = nextPx(W); return { need: textW('1234 km', px, -0.3), avail: cellInner(W, 1), px }; },
+  // Sonraki şarj alt satırı: "%100 · 1 sa 59 dk" 11px (v0.99.103: sığmazsa SARAR, … ile kesilmez)
   nextSub: (W) => ({ need: textW('%100 · 1 sa 59 dk', 11), avail: cellInner(W, 1), px: 11 }),
-  // Sol yarı üst satır: ok (46px) + 6px + canlı mesafe "850 m" (kısa, tipik)
-  distShort: (W) => ({ need: 46 + 6 + textW('850 m', distPx(W)), avail: halfW(W, 0), px: distPx(W) }),
+  // Sol yarı üst satır: ok (52/44/40px) + 6px + canlı mesafe "850 m" (kısa, tipik)
+  distShort: (W) => ({ need: arrowW(W) + 6 + textW('850 m', distPx(W)), avail: halfW(W, 0), px: distPx(W) }),
   // Sol yarı üst satır: ok + "12,5 km" (uzun). Sığmazsa KESİLMEZ: boşlukta ikinci satıra kayar (nowrap/ellipsis yok) → yükseklik riski
-  distLong: (W) => ({ need: 46 + 6 + textW('12,5 km', distPx(W)), avail: halfW(W, 0), px: distPx(W) }),
+  distLong: (W) => ({ need: arrowW(W) + 6 + textW('12,5 km', distPx(W)), avail: halfW(W, 0), px: distPx(W) }),
 };
-// v0.99.91 (iki yarı) model çıktısı SABİTLENDİ (bilinen boşluklar dahil). Değişirse: model/CSS değişti → belgeyi gözden geçir.
+// v0.99.103 (sol %60 / sağ %40) model çıktısı SABİTLENDİ (bilinen boşluklar dahil). Değişirse: model/CSS değişti → belgeyi gözden geçir.
+// v0.99.103'ten beri sağ hücrelerde "KESİLME-RİSKİ"/"SINIRDA" = tek satıra SIĞMAYABİLİR → metin ikinci satıra SARAR (… ile kesilmez; hız levhası alt satıra kayar).
+// Yükseklik bedeli tarayıcıda ölçülür: scripts/test-nav-toppanel-layout.mjs (EVRF_NAV_BROWSER=1).
 const EXPECTED = {
   battery: { 360: 'SIĞAR', 375: 'SIĞAR', 399: 'SIĞAR', 412: 'SIĞAR' },
-  speed: { 360: 'SIĞAR', 375: 'SIĞAR', 399: 'SIĞAR', 412: 'SIĞAR' },
+  speed: { 360: 'SIĞAR', 375: 'SINIRDA', 399: 'SINIRDA', 412: 'SINIRDA' },
   speedAvg: { 360: 'SIĞAR', 375: 'SIĞAR', 399: 'SIĞAR', 412: 'SIĞAR' },
   eta: { 360: 'SIĞAR', 375: 'SIĞAR', 399: 'SIĞAR', 412: 'SIĞAR' },
-  etaSub: { 360: 'SINIRDA', 375: 'SINIRDA', 399: 'SINIRDA', 412: 'SIĞAR' },
+  etaSub: { 360: 'KESİLME-RİSKİ', 375: 'KESİLME-RİSKİ', 399: 'KESİLME-RİSKİ', 412: 'KESİLME-RİSKİ' },
   etaSubSoc: { 360: 'SIĞAR', 375: 'SIĞAR', 399: 'SIĞAR', 412: 'SIĞAR' },
   rangeSub: { 360: 'SIĞAR', 375: 'SIĞAR', 399: 'SIĞAR', 412: 'SIĞAR' },
   nextValue: { 360: 'SIĞAR', 375: 'SIĞAR', 399: 'SIĞAR', 412: 'SIĞAR' },
-  nextSub: { 360: 'KESİLME-RİSKİ', 375: 'KESİLME-RİSKİ', 399: 'SINIRDA', 412: 'SINIRDA' },
+  nextSub: { 360: 'KESİLME-RİSKİ', 375: 'KESİLME-RİSKİ', 399: 'KESİLME-RİSKİ', 412: 'KESİLME-RİSKİ' },
   distShort: { 360: 'SIĞAR', 375: 'SIĞAR', 399: 'SIĞAR', 412: 'SIĞAR' },
-  distLong: { 360: 'SINIRDA', 375: 'SINIRDA', 399: 'SINIRDA', 412: 'SINIRDA' },
+  distLong: { 360: 'SIĞAR', 375: 'SIĞAR', 399: 'SIĞAR', 412: 'SIĞAR' },
 };
 const table = [];
 for (const [name, fn] of Object.entries(CASES)) {
@@ -180,6 +205,7 @@ for (const [name, fn] of Object.entries(CASES)) {
 }
 // Kesilme olursa davranış: taşma komşu hücreye geçmez, … ile kırpılır (CSS kanıtı; görsel sonuç cihazda doğrulanmalı)
 ok('taşma koruması: .ne-v b overflow:hidden + ellipsis, .ne-v nowrap, hücre ve yarılar minmax(0, …)', css.includes(CSS_RULES.neVBBase) && css.includes(CSS_RULES.neVBase) && css.includes(CSS_RULES.grid) && css.includes(CSS_RULES.navbarFinal));
+ok('v0.99.103 sarma: sağ değer ve alt satırlar … ile kesilmez (white-space: normal, overflow-wrap: anywhere, text-overflow: clip; base kurallardan SONRA)', css.includes(CSS_RULES.r103Val) && css.includes(CSS_RULES.r103Wrap) && at(CSS_RULES.r103Val) > at(CSS_RULES.neVBBase) && at(CSS_RULES.r103Wrap) > at(CSS_RULES.sub), REVIEW);
 ok('canlı mesafe kesilmez: .nav-dist için nowrap/ellipsis/overflow kuralı yok (uzun değer ikinci satıra kayar)', !/\.nav-dist[^{]*\{[^}]*(white-space: nowrap|text-overflow|overflow: hidden)/.test(css), REVIEW);
 
 // ---------------------------------------------------------------------------------------------------------------------------
@@ -190,13 +216,15 @@ ok('canlı mesafe kesilmez: .nav-dist için nowrap/ellipsis/overflow kuralı yok
   const maxBanners = 0.34 * H;
   const budget = maxBanners - 6 /* #banners>* alt kenar */ - 2 /* .toppanel kenarlık */;
   // v0.99.91: iki yarı yan yana → panel yüksekliği = max(sol, sağ) (eskiden manevra + metrik + uyarı üst üste toplanırdı)
-  const navDist = 26 * 1.1, line16 = 16 * 1.2, lanes = 4 + 16 * 1.3 + 2;
-  const head = (distL) => Math.max(38, distL * navDist); // ok 38px (line-height 1) ile mesafe aynı satırda; uzun mesafe 2 satıra kayabilir
-  const valPx = clamp(18, 5.4, 22, W), spdPx = clamp(22, 6.6, 28, W);
-  const label = 11 * 1.4;
-  const speedCell = label + Math.max(spdPx * 1, 38) + 11 * 1.4; // Hız + 38px levha aynı satırda, altında Ø
-  const subCell = label + valPx * 1.1 + 14 * 1.1; // Pil/Varış: değer + 14px kalın alt satır
-  const nextCell = label + valPx * 1.1 + 11 * 1.1;
+  // v0.99.103 (≤360 px): mesafe 28px/1.05, talimat ve yol adı 17px/1.2 (en çok 3+3 satır), ok 34px
+  const navDist = 28 * 1.05, line16 = 17 * 1.2, lanes = 4 + 16 * 1.3 + 2;
+  const head = (distL) => Math.max(34, distL * navDist); // ok 34px (line-height 1) ile mesafe aynı satırda; uzun mesafe 2 satıra kayabilir
+  const vPx = valPx(W, 0), sPx = spdPx(W);
+  const label = 11 * 1.15;
+  const speedInline = CASES.speed(W).need <= cellInner(W, 0);
+  const speedCell = label + (speedInline ? Math.max(sPx, signW(W)) : sPx + signW(W)) + 11 * 1.4; // Hız + 30px levha (sığmazsa alt satırda), altında Ø
+  const subCell = label + vPx * 1.1 + 2 * 14 * 1.15; // Pil/Varış: değer + alt satır (dar sütunda 2 satıra sarar)
+  const nextCell = 2 * label + vPx * 1.1 + 2 * 11 * 1.15; // etiket + durak adı 2 satır, alt satır 2 satır
   const metrics = Math.max(44, speedCell, subCell) + 4 + 3 + 1 + Math.max(44, subCell, nextCell); // satır arası 4 + 2. satır üst dolgu 3 + çizgi 1
   const alert = (lines) => (lines ? 6 + 8 + lines * 14 * 1.2 : 0);
   const left = ({ textL, roadL, lane, distL = 1 }) => head(distL) + 2 + textL * line16 + roadL * line16 + (lane ? lanes : 0);
@@ -204,9 +232,10 @@ ok('canlı mesafe kesilmez: .nav-dist için nowrap/ellipsis/overflow kuralı yok
   const SCEN = {
     'en az (1 satır manevra, yol yok, uyarı yok)': [{ textL: 1, roadL: 0, lane: false, alertL: 0 }, 'SIĞAR'],
     'tipik + uyarı 1 satır': [{ textL: 1, roadL: 1, lane: false, alertL: 1 }, 'SIĞAR'],
-    'tipik + uyarı 3 satır': [{ textL: 1, roadL: 1, lane: false, alertL: 3 }, 'SIĞAR'],
-    'en kötü (2+2 satır, şerit, uyarı 3 satır)': [{ textL: 2, roadL: 2, lane: true, alertL: 3 }, 'SIĞAR'],
-    'en kötü + uzun mesafe 2 satır (sol yarı)': [{ textL: 2, roadL: 2, lane: true, alertL: 3, distL: 2 }, 'SIĞAR'],
+    // v0.99.103: sağ yarı %40'a daraldı, alt satırlar sarar → 3 satırlık uyarıda #banners kendi içinde kayabilir (bilinen boşluk, belge §3)
+    'tipik + uyarı 3 satır': [{ textL: 1, roadL: 1, lane: false, alertL: 3 }, 'KAYAR-RİSKİ'],
+    'en kötü (2+2 satır, şerit, uyarı 3 satır)': [{ textL: 2, roadL: 2, lane: true, alertL: 3 }, 'KAYAR-RİSKİ'],
+    'en kötü + uzun mesafe 2 satır (sol yarı)': [{ textL: 2, roadL: 2, lane: true, alertL: 3, distL: 2 }, 'KAYAR-RİSKİ'],
   };
   table.push(`  sağ yarı metrikleri ≈${metrics.toFixed(1)}px (uyarısız)`);
   table.push(`yükseklik 360x640: #banners en çok ${maxBanners.toFixed(1)}px, gezinme çubuğu bütçesi≈${budget.toFixed(1)}px`);

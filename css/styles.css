@@ -1055,7 +1055,7 @@ body.navmode .mapsoc, body.sheet-open .mapsoc { display: none; }
    Sol: dönüş oku + canlı mesafe, altında talimat ve yol adı (aynı boy). Sağ: dört sabit temel metrik 2×2
    Hız (+limit levhası, Ø) | Pil (+menzil) / Varış saati (+varışta pil · kalan km) | Sonraki şarj; altında ayrı dönüşümlü uyarı alanı (3 sn; boşsa yok).
    Metrikler dönmez, gizlenmez; taşan … ile kesilir. Renkler tema değişkenlerinden: açık ve koyu temada aynı kurallar. ===== */
-.navbar { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 6px 10px; padding: 8px 8px 6px; align-items: start; }
+.navbar { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 6px 10px; padding: 8px 8px 6px; align-items: start; } /* v0.99.103: sol %60 / sağ %40 (eskiden 1fr/1.2fr) */
 .nb-man { flex-direction: column; align-items: stretch; gap: 2px; }
 .nb-head { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .nb-man .nav-main { flex: none; min-width: 0; }
@@ -1086,6 +1086,49 @@ body.navmode .mapsoc, body.sheet-open .mapsoc { display: none; }
   .nb-metrics .ne-v b { font-size: 17px; }
   .nb-metrics .nb-speed .ne-v b { font-size: 21px; }
   .nb-limit .limit-sign { width: 32px; height: 32px; border-width: 3px; font-size: 13px; }
+}
+
+/* ===== v0.99.103 Üst panel okunabilirliği (iPhone v0.99.100 ekran görüntüsü): sol talimat bölümü ≈ %60, sağ metrikler ≈ %40.
+   Ok, mesafe, talimat ve yol adı büyük; talimat ve yol adı aynı boy/ağırlık, uzun (ör. Yunanca) adlar kelime içinde de sarar, en çok 3 satır.
+   Sağdaki tüm metrikler (hız+limit+Ø, pil+menzil, varış+varışta pil+kalan, sonraki şarj, dönüşümlü uyarı) yerinde; dar sütunda alt satırlar
+   … ile kesilmek yerine sarar. Panel yüksekliği içerikle büyür (yatay taşma yok), #banners üst sınırı aynen geçerli. ===== */
+#banners > .toppanel { margin-left: max(10px, env(safe-area-inset-left, 0px)); margin-right: max(10px, env(safe-area-inset-right, 0px)); }
+.navbar { column-gap: 8px; }
+.nb-man .nav-arrow { font-size: 44px; width: 52px; padding-right: 8px; }
+.nb-man .nav-dist { font-size: 34px; font-weight: 800; line-height: 1.05; }
+.nb-man .nav-text, .nb-man .nav-road { font-size: 20px; font-weight: 700; line-height: 1.2; -webkit-line-clamp: 3; overflow-wrap: anywhere; word-break: normal; }
+.nb-metrics { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.nb-metrics .ne-v b { font-size: clamp(17px, 5vw, 21px); }
+.nb-metrics .nb-speed .ne-v b { font-size: clamp(19px, 5.6vw, 24px); }
+/* Büyük yazı/dar hücre: değer hücre genişliğine göre küçülür, kesilmez (cqi desteklemeyen tarayıcı üstteki clamp'te kalır) */
+.nb-metrics .nb-cell { container-type: inline-size; }
+.nb-metrics .ne-v b { font-size: min(21px, max(14px, 28cqi)); white-space: normal; overflow-wrap: anywhere; text-overflow: clip; } /* en uzun değer … ile kesilmez, gerekirse sarar */
+.nb-metrics .nb-speed .ne-v b { font-size: min(24px, max(16px, 33cqi)); }
+.nb-metrics .nb-next .ne-v b { font-size: min(21px, max(14px, 23cqi)); } /* "1234 km" metni yüzdeden uzun: tek satıra sığsın */
+.nb-metrics .nb-speed .ne-v { gap: 2px; flex-wrap: wrap; }
+.nb-limit .limit-sign { width: 30px; height: 30px; border-width: 3px; font-size: 12px; }
+.nb-speed .ne-nolim { width: 24px; height: 24px; }
+.nb-metrics .ne-sub, .nb-metrics .nb-cell small, #ne-next-t { white-space: normal; overflow-wrap: anywhere; text-overflow: clip; line-height: 1.15; }
+.nb-metrics .nb-cell small { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; word-break: break-word; }
+.nb-alert { overflow-wrap: anywhere; }
+@media (max-width: 380px) {
+  .nb-man .nav-arrow { font-size: 38px; width: 44px; }
+  .nb-man .nav-dist { font-size: 30px; }
+  .nb-man .nav-text, .nb-man .nav-road { font-size: 18px; }
+}
+@media (max-width: 360px) {
+  .navbar { grid-template-columns: minmax(0, 11fr) minmax(0, 9fr); column-gap: 6px; padding-left: 6px; padding-right: 6px; }
+  .nb-man .nav-arrow { font-size: 34px; width: 40px; padding-right: 6px; }
+  .nb-man .nav-dist { font-size: 28px; }
+  .nb-man .nav-text, .nb-man .nav-road { font-size: 17px; }
+  .nb-limit .limit-sign { width: 26px; height: 26px; font-size: 11px; letter-spacing: -.6px; }
+  .nb-metrics .nb-speed .ne-v b { font-size: min(22px, max(16px, 30cqi)); }
+  .nb-metrics .nb-cell:nth-child(n+3) { padding-top: 2px; }
+}
+@media (max-height: 520px) {
+  .nb-man .nav-arrow { font-size: 34px; width: 42px; }
+  .nb-man .nav-dist { font-size: 26px; }
+  .nb-man .nav-text, .nb-man .nav-road { font-size: 16px; -webkit-line-clamp: 2; }
 }
 
 /* ===== RM-02 Koyu tema (Ayarlar > Görünüm: Koyu ya da Otomatik + sistem koyu). Yalnızca <html data-theme="dark"> altında geçerli;

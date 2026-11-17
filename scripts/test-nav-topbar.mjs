@@ -109,8 +109,8 @@ ok('yaklaşık değerler ≈ ile işaretlenir', /classList\.toggle\('approx', m\
 
 // --- 8. Mobil okunurluk ve tema (360/375/390 px): iki yarı, sağda 2×2 metrik
 const lastIdx = (re) => { let i = -1, m; const g = new RegExp(re.source, 'g'); while ((m = g.exec(css))) i = m.index; return i; };
-const halves = '.navbar { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 6px 10px; padding: 8px 8px 6px; align-items: start; }';
-ok('panel iki yarı (sol 1fr, sağ 1.2fr) ve bu son .navbar ızgara kuralı', css.includes(halves) && css.indexOf(halves) === lastIdx(/\.navbar \{ grid-template-columns:/));
+const halves = '.navbar { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 6px 10px; padding: 8px 8px 6px; align-items: start; }'; // v0.99.103: sol %60 / sağ %40
+ok('panel iki yarı (v0.99.103: sol 3fr, sağ 2fr) ve bu son üst düzey .navbar ızgara kuralı (≤ 360 px @media ayarı ayrı)', css.includes(halves) && css.indexOf(halves) === lastIdx(/(?<![ \t])\.navbar \{ grid-template-columns:/));
 ok('sağ yarı: metrikler üstte, uyarı altta (sütun)', /\.nb-right \{ display: flex; flex-direction: column; gap: 6px; min-width: 0; \}/.test(css));
 ok('metrikler 2×2 ızgara', /\.nb-metrics \{ display: grid; grid-template-columns: minmax\(0, 1\.1fr\) minmax\(0, 1fr\);/.test(css));
 ok('metrik değerleri en az 18 px, hız en az 22 px', /\.nb-metrics \.ne-v b \{ font-size: clamp\(18px, 5\.4vw, 22px\);/.test(css) && /\.nb-metrics \.nb-speed \.ne-v b \{ font-size: clamp\(22px, 6\.6vw, 28px\);/.test(css));

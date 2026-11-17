@@ -3,6 +3,16 @@
 Durum: **test + belge**; tek uygulama değişikliği RM-07 A1 (v0.99.74): `#near-alert-close` görünmez dokunma alanı 36→44px (yalnız CSS `::after`). Diğer boşluklar açık; hiçbiri cihazda "düzeltildi" sayılmaz.
 Taban: `e08b265` (v0.99.73); **v0.99.91 ile model iki yarılı tek panele güncellendi** (taban `2c06f69`). Test: `scripts/test-nav-narrow-layout-contract.mjs` (düz Node, bağımlılık yok, ağ yok).
 
+> **v0.99.103 güncellemesi (taban `61b49a0`):** üst panel sol %60 / sağ %40 (`3fr | 2fr`; ≤360 px `11fr | 9fr`), sağ 2×2 metrik eşit sütun,
+> değer yazısı hücreye göre (`min(21px, max(14px, 28cqi))`, hız 33cqi / ≤360 px 30cqi, sonraki şarj 23cqi), limit levhası 30 px (≤360 px 26 px).
+> Sağ değer ve alt satırlar artık `…` ile **kesilmez, sarar**; §3'teki sağ hücre `SINIRDA`/`KESİLME-RİSKİ` sınıfları v0.99.103'te "tek satıra sığmayabilir → ikinci satıra sarar
+> (hız levhası alt satıra kayar)" demektir. Sol: ok 52/44/40 px, mesafe 34/30/28 px, talimat ve yol adı 20/18/17 px, en çok 3+3 satır (yatayda 16 px, 2+2).
+> v0.99.103 model çıktısı testte sabitlendi: hız `199`+levha 375–412 px SINIRDA (levha alta kayar); varış alt satırı ve sonraki şarj alt satırı her genişlikte
+> KESİLME-RİSKİ (= sarar); sonraki şarj `1234 km` ve `12,5 km` her genişlikte SIĞAR. Yükseklik 360×640: en az ≈159, uyarı 1 satır ≈190 (SIĞAR),
+> **uyarı 3 satır ≈224 → KAYAR-RİSKİ** (bütçe ≈209.6; `#banners` kendi içinde kayar — bilinen boşluk; 320×568'de v0.99.102'de de kayıyordu).
+> Gerçek tarayıcı ölçümü: `EVRF_NAV_BROWSER=1 node scripts/test-nav-toppanel-layout.mjs` (Chromium + WebKit, 320/360/390/430 dikey, 844×390 yatay, zoom 1.3;
+> en uzun değerler, Yunanca yol adı, 2 satır uyarı ile 360×640 ve üstünde kaydırma yok). Aşağıdaki v0.99.91 tabloları tarihsel kayıttır. Gerçek cihazda doğrulanmadı.
+
 ## 1. Ne ölçülüyor, ne ölçülmüyor
 
 | | Bu sözleşme | Gerçek ölçüm (yapılmadı) |
