@@ -46,6 +46,8 @@ const detourMin = (s) => ((s.offKm * 2) / P.detourKmh) * 60;
  *  - maxFirstStopKm: dinamik fallback'te ilk durağın bu km'den ileride olmasını yasaklar.
  *  - forceFirstId: ilk durak bu istasyon olmak zorundadır (kullanıcı "Git" ile seçti).
  *  - mustIds: bu istasyonların hepsi plana girmek zorundadır (kullanıcı bir durağı başka istasyonla değiştirdi); excludeIds: bu istasyonlar kullanılmaz.
+ *  - leaveSocs: { istasyonId: % } kullanıcının o durak için seçtiği şarj hedefi (v0.99.98). O düğümde tek ayrılış seviyesi vardır (5'lik ızgara ve
+ *    maxChargeTo uygulanmaz, 0–100 arası); varış hedefin üstündeyse şarj yapılmaz (ayrılış = varış). Sonraki duraklar bu ayrılışa göre yeniden seçilir.
  */
 export function planRoute(args) {
   const attempt = (a) => {
@@ -62,7 +64,7 @@ export function planRoute(args) {
 /** Eşik altına düşme cezası: puan başına ≈ 7 dk veya 20 TL (hızlı modda 3 dk). */
 const dipPenalty = (mode, pts) => Math.max(0, pts) * (mode === 'fast' ? 3 : 20);
 
-function solve({ profile, stations, startKm = 0, startSoc, minArrival, mode = 'opt', k = 1, maxFirstStopKm = Infinity, forceFirstId = null, skipFull = false, mustIds = null, excludeIds = null }, minAdd) {
+function solve({ profile, stations, startKm = 0, startSoc, minArrival, mode = 'opt', k = 1, maxFirstStopKm = Infinity, forceFirstId = null, skipFull = false, mustIds = null, excludeIds = null, leaveSocs = null }, minAdd) {
   const tol = P.tolerance;
   const endKm = profile.totalKm;
   const must = new Set(mustIds || []);
@@ -78,8 +80,12 @@ function solve({ profile, stations, startKm = 0, startSoc, minArrival, mode = 'o
   const levels = [];
   for (let l = P.minChargeTo; l <= P.maxChargeTo; l += P.chargeStep) levels.push(l);
 
+  // Kullanıcının durağa koyduğu hedef: o düğümde tek seviye (0–100)
+  const lockOf = (s) => (leaveSocs && Number.isFinite(leaveSocs[s.id]) ? Math.min(100, Math.max(0, leaveSocs[s.id])) : null);
+  const nodeLevels = cands.map((s) => (lockOf(s) != null ? [lockOf(s)] : levels));
+
   // states[0] = başlangıç (tek durum), states[i] = i. istasyon × ayrılış seviyeleri
-  const states = [[{ leave: startSoc, metric: 0, prev: null }], ...cands.map(() => levels.map(() => null))];
+  const states = [[{ leave: startSoc, metric: 0, prev: null }], ...nodeLevels.map((ls) => ls.map(() => null))];
   const nodeKm = [startKm, ...cands.map((s) => s.km)];
   let best = null;
 
@@ -106,8 +112,10 @@ function solve({ profile, stations, startKm = 0, startSoc, minArrival, mode = 'o
         if (arrive < P.chargerMinArrival - tol) continue;
         const dip = dipPenalty(mode, P.chargerMinArrival - arrive);
 
-        levels.forEach((L, li) => {
-          if (L < arrive + Math.max(3, minAdd)) return;
+        const locked = lockOf(s) != null;
+        nodeLevels[j - 1].forEach((T, li) => {
+          if (!locked && T < arrive + Math.max(3, minAdd)) return;
+          const L = locked ? Math.max(T, arrive) : T; // hedef varışın altındaysa şarj yok, pil boşaltılamaz
           const mins = chargeMinutes(s.kw, arrive, L);
           const cost = (((L - arrive) / 100) * BAT / P.billedEff) * s.price;
           const m = st.metric + dip + offPref(s) + metric(mode, mins + P.stopOverheadMin + detourMin(s) + waitMin(s, startKm), cost);

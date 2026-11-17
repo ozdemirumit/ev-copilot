@@ -9,6 +9,7 @@ import { stationGaps } from '../routing/planner.js';
 import { slotEl, livePrice } from '../routing/slots.js';
 import { mapApi } from './mapView.js';
 import { openSwap, removeFromRoute } from './stopSwap.js';
+import { openTarget } from './stopTarget.js';
 import { proxyHas } from '../net/proxy.js';
 import { PLANNER } from '../config.js';
 
@@ -154,7 +155,7 @@ export function initRoutePanel() {
         const right = Object.assign(document.createElement('div'), { className: 'r', textContent: s.station.foreign ? `${Math.round(s.minutes)} dk` : `${Math.round(s.minutes)} dk · ${s.cost.toFixed(0)} TL` });
         const meta = Object.assign(document.createElement('div'), {
           className: 'm',
-          textContent: tpl('{0} km kaldı ({1} {2} km) · {3} {4}{5} kW · %{6} → %{7}', Math.max(0, s.km - here).toFixed(0), fi > 0 || p.lastStopKm != null ? 'önceki duraktan' : 'yolculuk başından', (s.km - prevKm).toFixed(0), s.station.opName, s.station.slow ? 'AC/yavaş ' : '', s.station.kw, s.arriveSoc.toFixed(0), s.leaveSoc)
+          textContent: tpl('{0} km kaldı ({1} {2} km) · {3} {4}{5} kW · %{6} → %{7}', Math.max(0, s.km - here).toFixed(0), fi > 0 || p.lastStopKm != null ? 'önceki duraktan' : 'yolculuk başından', (s.km - prevKm).toFixed(0), s.station.opName, s.station.slow ? 'AC/yavaş ' : '', s.station.kw, s.arriveSoc.toFixed(0), Math.round(s.leaveSoc))
             + (s.station.offKm > 0.3 ? ' ' + tpl('· sapma {0} km', s.station.offKm.toFixed(1)) : ''), // parçalar t() ile çevrilir (komşu {1} {2} yer tutucuları tek dizge deseninde karışır)
         });
         const show = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost sm show', textContent: '📍 Haritada' });
@@ -171,7 +172,14 @@ export function initRoutePanel() {
         const rm = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost sm remove', textContent: '🗑️ Kaldır' });
         rm.title = 'Bu durağı rotadan kaldır; gerekirse yerine alternatif seçilir';
         rm.addEventListener('click', () => removeFromRoute(s));
+        // v0.99.98: durak başına şarj hedefi (önizleme + onay); kullanıcının kilitlediği hedef 🎯 ile işaretli
+        const locked = Number.isFinite(p.leaveSocs?.[s.station.id]);
+        const tgt = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost sm target' + (locked ? ' on' : ''), textContent: `🎯 %${Math.round(s.leaveSoc)}` });
+        tgt.title = 'Bu durakta ne kadar şarj edileceğini seç; sonraki duraklar yeniden hesaplanır (onayınla)';
+        tgt.setAttribute('aria-label', `Şarj hedefi %${Math.round(s.leaveSoc)}${locked ? ' (elle seçildi)' : ''}`);
+        tgt.addEventListener('click', () => openTarget(s));
         acts.append(show, swap, rm);
+        acts.prepend(tgt);
         row.append(num, title, right, meta, ...[price, extra].filter(Boolean), acts);
         list.append(row);
       });

@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.97';
+self.APP_VERSION = '0.99.98';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.98', date: '2026-11-17',
+    notes: [
+      'Rota planında her şarj durağı için ne kadar şarj edileceğini seçebilirsin (🎯 düğmesi): varış pili, hedef (kaydırıcı ve ±5; alt sınır varış pili, üst sınır %100, ayarlardaki durak üst sınırı aşılınca uyarı), eklenecek kWh/puan, şarj eğrisinden tahmini süre; maliyet yalnızca doğrulanmış tarifede (işletmeci tarifesi ya da kendi girdiğin) gösterilir.',
+      'Hedef değişince sonraki duraklar, sıraları, her duraktaki varış pili, şarj süreleri, toplam süre/tahmini varış ve hedefte pil aynı planlayıcıyla (tüketim profili, şarj eğrisi, rota üstü/karşı yön kuralları) yeniden hesaplanır ve farklarıyla önizlenir. Plan yalnızca Onayla ile değişir; İptal mevcut planı aynen korur. Hedefle zincir kurulamıyorsa (pil yetmez, yalnız rota dışı istasyon) uygulanmaz.',
+      'Süre uygulamanın yaklaşık şarj eğrisinden hesaplanır (üretici verisi değil); yeni metinler şimdilik yalnızca Türkçe.',
+    ],
+  },
   {
     v: '0.99.97', date: '2026-11-17',
     notes: [

@@ -881,6 +881,26 @@
   <div class="swap-list" id="swap-list"></div>
 </dialog>
 
+<dialog id="target-dialog" class="sheet-dlg st-dlg" aria-labelledby="st-title">
+  <div class="dlg-head"><h2 id="st-title">Şarj hedefi</h2><button class="sheet-x" id="st-x" type="button" aria-label="Kapat"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+  <p class="small muted" id="st-sub"></p>
+  <div class="st-pick">
+    <button class="soc-step" id="st-minus" type="button" aria-label="Hedefi 5 azalt">−</button>
+    <output class="st-val" id="st-val" for="st-range" aria-live="polite"></output>
+    <button class="soc-step" id="st-plus" type="button" aria-label="Hedefi 5 artır">+</button>
+  </div>
+  <input type="range" id="st-range" class="st-range" min="0" max="100" step="1" aria-label="Ayrılışta hedef pil yüzdesi">
+  <div class="st-scale small muted"><span id="st-lo"></span><span id="st-hi"></span></div>
+  <div class="st-stats" id="st-stats"></div>
+  <div class="st-warn small muted" id="st-warn"></div>
+  <div class="st-diff small" id="st-diff" aria-live="polite"></div>
+  <div class="st-acts">
+    <button class="btn ghost sm hidden" id="st-auto" type="button">Otomatiğe dön</button>
+    <button class="btn ghost" id="st-cancel" type="button">İptal</button>
+    <button class="btn primary" id="st-apply" type="button" disabled>Onayla</button>
+  </div>
+</dialog>
+
 <dialog id="arrival-dialog" class="sheet-dlg" aria-labelledby="arrival-title">
   <div class="dlg-head"><h2 id="arrival-title">Şarj durağına vardın</h2><button class="sheet-x" id="arrival-x" type="button" aria-label="Kapat"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button></div>
   <p id="arrival-text"></p>

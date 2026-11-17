@@ -20,6 +20,8 @@ import { stopWaypoints, offRouteKm, VIA_OFF_KM } from './stopVia.js';
 import { createAccessBook, applyAccess, verifyStops, lineKm, locateOnLine } from './stopAccess.js';
 import { splitByRoute, altCandidates, buildAlternatives, consentFlow } from './onRoute.js';
 import { askRouteChoice } from '../ui/routeChoice.js';
+import { sanitizeLeaveSocs, planDiff, targetBounds } from './stopTarget.js';
+import { slotKind, isFresh } from './slots.js';
 
 const WX_STEP_KM = 50;
 let raw = null; // { pts, elevations, elevSource, wx } — profil ayarları değişince yeniden kurmak için
@@ -104,7 +106,7 @@ export function planK() {
 }
 
 /** Mevcut profil/istasyonlarla planı (yeniden) hesapla. fromKm/soc verilirse o konumdan (dinamik yeniden planlama). */
-export function computePlan({ fromKm = 0, soc = startSoc, maxFirstStopKm = Infinity, pins = null, onlyIds = null, mode = null, rank = true } = {}) { // pins: { pinIds, banIds } denemesi (kaydetmeden); onlyIds: yalnızca bu istasyonlarla planla
+export function computePlan({ fromKm = 0, soc = startSoc, maxFirstStopKm = Infinity, pins = null, onlyIds = null, mode = null, rank = true } = {}) { // pins: { pinIds, banIds, leaveSocs } denemesi (kaydetmeden); onlyIds: yalnızca bu istasyonlarla planla
   const plan = getState('plan');
   const r = getState('route');
   if (!plan.profile) return null;
@@ -120,18 +122,21 @@ export function computePlan({ fromKm = 0, soc = startSoc, maxFirstStopKm = Infin
   const stations = onlyIds ? all.filter((s) => onlyIds.includes(s.id)) : all;
   // Zorunlu ilk durak yalnızca hâlâ ilerideyse geçerlidir (geçildiyse veya listede yoksa yok sayılır)
   const forced = plan.forceFirstId && stations.some((s) => s.id === plan.forceFirstId && s.km > fromKm + 0.5) ? plan.forceFirstId : null;
+  // v0.99.98: kullanıcının durak şarj hedefleri yalnız zorunlu (elle kilitli) ve ilerideki duraklarda geçerlidir
+  const mustNow = (pins?.pinIds ?? plan.pinIds ?? []).filter((id) => stations.some((s) => s.id === id && s.km > fromKm + 0.5));
+  const leaveSocs = sanitizeLeaveSocs(pins?.leaveSocs ?? plan.leaveSocs, mustNow);
   const result = planRoute({
     profile: plan.profile, stations, startKm: fromKm, startSoc: soc,
     minArrival: r.minArrivalSoc, mode: mode || plan.mode, k, maxFirstStopKm, forceFirstId: forced,
     mustIds: (pins?.pinIds ?? plan.pinIds ?? []).filter((id) => stations.some((s) => s.id === id && s.km > fromKm + 0.5)), // kullanıcının seçtiği duraklar; geçilmiş olanlar yok sayılır
-    excludeIds: [...(pins?.banIds ?? plan.banIds ?? []), ...acc.blocked, ...split.offIds, ...split.blockedIds],
+    excludeIds: [...(pins?.banIds ?? plan.banIds ?? []), ...acc.blocked, ...split.offIds, ...split.blockedIds], leaveSocs,
   });
   // Rota üstünde zincir yoksa: rota dışı istasyonlarla (karşı yön hariç) kurulabilir miydi? Yalnızca onaylı seçenek sunmak için; uygulanmaz.
   const relaxed = !result.feasible && split.offIds.length ? planRoute({
     profile: plan.profile, stations, startKm: fromKm, startSoc: soc,
     minArrival: r.minArrivalSoc, mode: mode || plan.mode, k, maxFirstStopKm, forceFirstId: forced,
     mustIds: (pins?.pinIds ?? plan.pinIds ?? []).filter((id) => stations.some((s) => s.id === id && s.km > fromKm + 0.5)),
-    excludeIds: [...(pins?.banIds ?? plan.banIds ?? []), ...acc.blocked, ...split.blockedIds],
+    excludeIds: [...(pins?.banIds ?? plan.banIds ?? []), ...acc.blocked, ...split.blockedIds], leaveSocs,
   }) : null;
   const ranking = rank ? rankStations({ profile: plan.profile, stations: all, startKm: fromKm, startSoc: soc, k, mode: plan.mode }) : [];
   return { result, ranking, kInfo, maxFirstStopKm, relaxed, offIds: split.offIds, routeStatus: split.status, fromKm, soc, k, planId: plan.planId };
@@ -276,7 +281,7 @@ export async function planTrip(from = null, { via = null, extra = [], preRoute =
   const restoreSim = () => { if (resumeSim && getState('sim').enabled) patch('sim', { play: true }); };
 
   try {
-    patch('plan', { status: 'loading', text: 'Rota alınıyor…', stops: [], totals: null, ranking: [], fromKm: 0, fromSoc: null, pinIds: [], banIds: [] }); // yeni rota: elle değiştirilen duraklar sıfırlanır
+    patch('plan', { status: 'loading', text: 'Rota alınıyor…', stops: [], totals: null, ranking: [], fromKm: 0, fromSoc: null, pinIds: [], banIds: [], leaveSocs: {} }); // yeni rota: elle değiştirilen duraklar sıfırlanır
     if (!from) {
       accessBook.clear(); // yeni yolculuk: erişim sonuçları sıfırdan (yeniden rotada aynı yöndeki sonuçlar geçerli kalır)
       mapApi.drawStations([], []); // önceki rotanın durak/istasyon işaretleri yeni plan gelene kadar haritada kalmaz
@@ -667,6 +672,56 @@ export function addStop(newId) {
   return { ok: true, dropped };
 }
 
+/**
+ * v0.99.98 — Bir şarj durağının hedef pilini (ayrılış %) değiştirmeyi ÖNİZLE: plan/rota/harita DEĞİŞMEZ (ağ yok, kota harcanmaz).
+ * Durak ve ondan önceki ileri duraklar zorunlu (kilitli) olur; sonraki duraklar aynı planlayıcıyla (tüketim profili, k, şarj eğrisi,
+ * rota üstü/erişim/karşı yön kuralları, dışlananlar) yeniden seçilir. target null → hedef kilidi kalkar (planlayıcı yeniden seçer).
+ * Dönüş: { ok, reason, offRouteOnly, preview } — preview applyStopTarget'a verilir; İptal'de hiçbir şey yapılmaz, mevcut plan aynen kalır.
+ */
+export function previewStopTarget(stationId, target) {
+  const plan = getState('plan');
+  if (!plan.profile || plan.status !== 'ready') return { ok: false, reason: 'Rota yok' };
+  const fromKm = plan.fromKm ?? 0;
+  const soc = plan.fromSoc ?? startSoc;
+  const ahead = (plan.stops || []).filter((s) => s.km > fromKm + 0.5);
+  const idx = ahead.findIndex((s) => s.station.id === stationId);
+  if (idx < 0) return { ok: false, reason: 'Durak geride kaldı ya da planda yok' };
+  const stop = ahead[idx];
+  if (isFresh(stop.station) && slotKind(stop.station) === 'out') return { ok: false, reason: 'İstasyon kullanım dışı görünüyor (taze doluluk bilgisi); önce durağı değiştir.' };
+  const leaveSocs = { ...(plan.leaveSocs || {}) };
+  if (target == null) delete leaveSocs[stationId];
+  else {
+    const b = targetBounds(stop);
+    leaveSocs[stationId] = Math.min(b.hi, Math.max(0, Math.round(target)));
+  }
+  const upstream = ahead.slice(0, idx + 1).map((s) => s.station.id); // bu durak ve öncekiler korunur; yalnız sonrası yeniden seçilir
+  const next = {
+    pinIds: [...new Set([...(plan.pinIds || []), ...upstream])],
+    banIds: (plan.banIds || []).filter((id) => !upstream.includes(id)),
+    leaveSocs,
+  };
+  const out = computePlan({ fromKm, soc, maxFirstStopKm: plan.maxFirstStopKm ?? Infinity, pins: next, rank: true });
+  if (!out) return { ok: false, reason: 'Plan kurulamadı' };
+  if (!out.result.feasible) {
+    // Rota üstünde zincir yok: rota dışı seçenek varsa bile burada uygulanmaz (rota değişikliği yalnız ayrı onayla)
+    return { ok: false, offRouteOnly: !!out.relaxed?.feasible, reason: out.relaxed?.feasible ? OFF_ROUTE_TEXT : out.result.reason || 'Plan kurulamadı' };
+  }
+  const diff = planDiff({ stops: ahead, totals: plan.totals }, { stops: out.result.stops, totals: out.result.totals });
+  return { ok: true, preview: { out, next, diff, stationId, target, planId: plan.planId, seq: tripSeq } };
+}
+
+/**
+ * Önizlenen hedefi kullanıcı ONAYLADIKTAN sonra uygula. Önizlemeden sonra plan değiştiyse (yeni rota, yeniden planlama, başka değişiklik)
+ * eski önizleme uygulanmaz. Dönüş: { ok, reason }.
+ */
+export function applyStopTarget(preview) {
+  if (!preview?.out?.result?.feasible) return { ok: false, reason: 'Önizleme yok' };
+  const plan = getState('plan');
+  if (preview.seq !== tripSeq || preview.planId !== plan.planId || plan.status !== 'ready') return { ok: false, reason: 'Plan önizlemeden sonra değişti; yeniden dene.' };
+  applyPlan(preview.out, preview.next);
+  return { ok: true };
+}
+
 /** İstasyon fiyat/kW tablosu değişti: ağ çağrısı olmadan yeniden fiyatla ve planla. */
 export function repriceAndReplan() {
   const plan = getState('plan');
@@ -724,7 +779,7 @@ export function clearTrip() {
   accessBook.clear();
   raw = null;
   sig = '';
-  patch('plan', { status: 'none', text: '', route: null, profile: null, wxInfo: null, stations: [], stationInfo: null, stops: [], steps: [], pinIds: [], banIds: [], totals: null, planId: null, fromKm: 0, fromSoc: null });
+  patch('plan', { status: 'none', text: '', route: null, profile: null, wxInfo: null, stations: [], stationInfo: null, stops: [], steps: [], pinIds: [], banIds: [], leaveSocs: {}, totals: null, planId: null, fromKm: 0, fromSoc: null });
   mapApi.clearRoute();
   for (const k of ['start', 'via', 'end']) mapApi.setPoint(k, null, { fit: false });
 }
