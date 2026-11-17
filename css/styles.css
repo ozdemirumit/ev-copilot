@@ -441,6 +441,7 @@ body.sheet-open .mapui { display: none; }
 .station-card { position: fixed; z-index: 45; left: 12px; right: 12px; bottom: calc(var(--nav-h) + var(--safe-b) + 8px); max-width: 460px; max-height: 62vh; overflow-y: auto; margin: 0 auto; padding: 12px 14px; display: grid; gap: 6px; background: rgba(22, 31, 43, .94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, .14); border-radius: 18px; box-shadow: 0 8px 28px #000b; }
 .station-card .sc-title { font-size: 16px; }
 .station-card .sc-price, .station-card .live-price { font-weight: 600; font-variant-numeric: tabular-nums; }
+.station-card .sc-dist { font-weight: 600; font-variant-numeric: tabular-nums; } /* v0.99.104: rotadaki kalan mesafe (İstasyonlar listesiyle aynı değer) */
 .station-card .sheet-x { position: static; }
 .station-card .sc-info { margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--line); gap: 10px; }
 .station-card .sc-rate { gap: 2px; align-items: center; }

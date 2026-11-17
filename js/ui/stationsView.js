@@ -10,6 +10,7 @@ import { brandOk } from '../routing/planner.js';
 import { loosenPower, paintPowerNote, initPowerFilter } from '../routing/powerFilter.js';
 import { paintMore } from './moreToggle.js';
 import { openSwap, removeFromRoute } from './stopSwap.js';
+import { aheadKmText } from './routeDist.js';
 
 const $ = (id) => document.getElementById(id);
 const ROUTE_LIMIT = 3; // Rotadakiler: kapalıyken en çok 3 satır, "+" ile tümü
@@ -84,8 +85,8 @@ function renderList() {
     meta.append(
       text('span', 'tag ' + (n ? 'best' : ''), (n ? `Planda #${n}` : 'Aday') + (brandOk(r.station) ? '' : ' · ' + tr('tercih dışı'))),
       text('span', '', r.station.foreign
-        ? `${r.station.opName} · ${r.station.slow ? 'AC/yavaş ' : ''}${r.station.kw} kW${r.station.uncertain ? '*' : ''} · ${Math.max(0, r.station.km - here).toFixed(0)} km ileride · varış %${r.arrive.toFixed(0)}${r.noCharge ? ' · ' + tr('şarj gerekmez') : ` → %${Math.round(r.to)}`}`
-        : `${r.station.opName} · ${r.station.slow ? 'AC/yavaş ' : ''}${r.station.kw} kW${r.station.uncertain ? '*' : ''} · ${r.station.price.toFixed(2)} TL/kWh · ${Math.max(0, r.station.km - here).toFixed(0)} km ileride · varış %${r.arrive.toFixed(0)}${r.noCharge ? ' · ' + tr('şarj gerekmez') : ` → %${Math.round(r.to)}`}`),
+        ? `${r.station.opName} · ${r.station.slow ? 'AC/yavaş ' : ''}${r.station.kw} kW${r.station.uncertain ? '*' : ''} · ${aheadKmText(r.station.km, here)} km ileride · varış %${r.arrive.toFixed(0)}${r.noCharge ? ' · ' + tr('şarj gerekmez') : ` → %${Math.round(r.to)}`}`
+        : `${r.station.opName} · ${r.station.slow ? 'AC/yavaş ' : ''}${r.station.kw} kW${r.station.uncertain ? '*' : ''} · ${r.station.price.toFixed(2)} TL/kWh · ${aheadKmText(r.station.km, here)} km ileride · varış %${r.arrive.toFixed(0)}${r.noCharge ? ' · ' + tr('şarj gerekmez') : ` → %${Math.round(r.to)}`}`),
     );
     const slotNode = slotEl(r.station);
     if (slotNode) meta.lastElementChild.append(slotNode);

@@ -437,4 +437,5 @@ export default {
   "{0} ileride ücretli yol.": "Estrada com portagem daqui a {0}.",
   "🚇 Tünel {0} ileride ({1})": "🚇 Túnel daqui a {0} ({1})",
   "💰 Ücretli yol {0} ileride": "💰 Portagem daqui a {0}",
+  "Rotada {0} km ileride": "Na rota, daqui a {0} km",
 };

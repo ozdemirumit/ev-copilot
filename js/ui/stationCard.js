@@ -2,7 +2,7 @@
 // Git / Haritalar düğmeleri, fiyat bildirimi ve topluluk bilgisi: 1-5 puan, çevredeki olanaklar (AVM, tuvalet…) ve fotoğraflar (kameradan ya da galeriden).
 // Canlı bilgi tek istasyon için sunucudan istenir (/v1/occupancy; Hollanda'da NDW, Türkiye'de topluluk).
 import { measuredSoc } from '../physics/socEstimate.js';
-import { effective, getState } from '../state.js';
+import { effective, getState, subscribe } from '../state.js';
 import { progressKm } from '../routing/progress.js';
 import { openSwap, removeFromRoute } from './stopSwap.js';
 import { addStop } from '../routing/controller.js';
@@ -15,10 +15,12 @@ import { getSession, proxyFetch, proxyHas } from '../net/proxy.js';
 import { publicFreeMode } from '../net/providerGate.js';
 import { fetchInfo, ratePoint, markFacility, shrinkPhoto, uploadPhoto, photoUrl, deletePhoto, reportPhoto, FACILITIES } from '../account/stationInfo.js';
 import { goToStation } from '../nav/nearby.js';
+import { aheadKmText, routeStationKm } from './routeDist.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => Object.assign(document.createElement(tag), { className: cls || '', textContent: text ?? '' });
 let current = null;
+let distEl = null; // "Rotada … km ileride" satırı (açık kartta engine/plan değişince güncellenir)
 let token = 0; // eski yanıt yeni karta yazılmasın
 let urls = []; // fotoğraf küçük resimlerinin blob adresleri (kart kapanınca serbest bırakılır)
 
@@ -29,6 +31,7 @@ function freeUrls() {
 
 function close() {
   current = null;
+  distEl = null;
   token++;
   freeUrls();
   $('station-card')?.classList.add('hidden');
@@ -163,6 +166,16 @@ async function loadInfo(s, box) {
   box.replaceChildren(rate, fac, ph);
 }
 
+/** Rotadaki istasyonun kalan mesafesi: İstasyonlar listesindeki "… km ileride" ile aynı değer ve biçim (yeni hesap yok). */
+function paintDist() {
+  if (!current || !distEl) return;
+  const here = progressKm();
+  const km = routeStationKm(getState('plan'), current.id, here);
+  const txt = km == null ? '' : t('Rotada {0} km ileride', aheadKmText(km, here));
+  if (distEl.textContent !== txt) distEl.textContent = txt;
+  distEl.classList.toggle('hidden', !txt);
+}
+
 function open(s) {
   current = s;
   freeUrls();
@@ -174,6 +187,7 @@ function open(s) {
   head.append(x);
   const meta = el('div', 'small muted');
   meta.append(el('span', '', s.opName || ''), ' · ', el('span', '', `${s.slow ? tr('AC/yavaş') + ' ' : ''}${s.kw} kW${s.uncertain ? '*' : ''}`));
+  distEl = el('div', 'sc-dist hidden');
   const price = el('div', 'sc-price', s.foreign ? 'Fiyat bilgisi yok (liste fiyatı yalnızca Türkiye için)' : s.price != null ? `${s.price.toFixed(2)} TL/kWh (${s.tariffSrc === 'published' ? 'işletmeci tarifesi · VeriApi.Pro' : 'tahmini'})` : '');
   const live = el('div', 'stack sc-live');
   const acts = el('div', 'row wrap');
@@ -208,7 +222,8 @@ function open(s) {
     }, 'btn primary sm'));
   }
   const info = el('div', 'stack sc-info');
-  card.replaceChildren(head, meta, price, live, acts, info);
+  card.replaceChildren(head, meta, distEl, price, live, acts, info);
+  paintDist();
   card.classList.remove('hidden');
   if (publicFreeMode()) { live.classList.add('hidden'); info.classList.add('hidden'); return; } // herkese açık ücretsiz Beta: doluluk/puan/fotoğraf sunucusu yok, giriş istemi gösterilmez
   load(s, live);
@@ -217,6 +232,8 @@ function open(s) {
 
 export function initStationCard() {
   mapApi.onStation = open; // harita iğneleri dokununca çağırır (ui/mapView.js)
+  subscribe('engine', paintDist); // araç ilerledikçe / plan değişince açık kartın mesafesi listeyle birlikte güncellenir
+  subscribe('plan', paintDist);
   document.addEventListener('tabchange', (e) => { if (e.detail !== 'map') close(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
 }

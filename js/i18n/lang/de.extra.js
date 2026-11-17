@@ -437,4 +437,5 @@ export default {
   "{0} ileride ücretli yol.": "In {0} mautpflichtige Straße.",
   "🚇 Tünel {0} ileride ({1})": "🚇 Tunnel in {0} ({1})",
   "💰 Ücretli yol {0} ileride": "💰 Mautstraße in {0}",
+  "Rotada {0} km ileride": "Auf der Route, in {0} km",
 };

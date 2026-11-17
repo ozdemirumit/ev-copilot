@@ -437,4 +437,5 @@ export default {
   "{0} ileride ücretli yol.": "Strada a pedaggio tra {0}.",
   "🚇 Tünel {0} ileride ({1})": "🚇 Galleria tra {0} ({1})",
   "💰 Ücretli yol {0} ileride": "💰 Pedaggio tra {0}",
+  "Rotada {0} km ileride": "Sul percorso, tra {0} km",
 };

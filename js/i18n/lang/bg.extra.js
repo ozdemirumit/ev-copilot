@@ -437,4 +437,5 @@ export default {
   "{0} ileride ücretli yol.": "След {0} платен път.",
   "🚇 Tünel {0} ileride ({1})": "🚇 Тунел след {0} ({1})",
   "💰 Ücretli yol {0} ileride": "💰 Платен път след {0}",
+  "Rotada {0} km ileride": "По маршрута, след {0} км",
 };

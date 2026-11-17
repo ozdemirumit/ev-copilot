@@ -437,4 +437,5 @@ export default {
   "{0} ileride ücretli yol.": "Over {0} een tolweg.",
   "🚇 Tünel {0} ileride ({1})": "🚇 Tunnel over {0} ({1})",
   "💰 Ücretli yol {0} ileride": "💰 Tolweg over {0}",
+  "Rotada {0} km ileride": "Op de route, over {0} km",
 };

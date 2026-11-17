@@ -437,4 +437,5 @@ export default {
   "{0} ileride ücretli yol.": "Σε {0} δρόμος με διόδια.",
   "🚇 Tünel {0} ileride ({1})": "🚇 Σήραγγα σε {0} ({1})",
   "💰 Ücretli yol {0} ileride": "💰 Διόδια σε {0}",
+  "Rotada {0} km ileride": "Στη διαδρομή, σε {0} χλμ",
 };

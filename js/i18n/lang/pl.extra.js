@@ -437,4 +437,5 @@ export default {
   "{0} ileride ücretli yol.": "Za {0} droga płatna.",
   "🚇 Tünel {0} ileride ({1})": "🚇 Tunel za {0} ({1})",
   "💰 Ücretli yol {0} ileride": "💰 Droga płatna za {0}",
+  "Rotada {0} km ileride": "Na trasie, za {0} km",
 };

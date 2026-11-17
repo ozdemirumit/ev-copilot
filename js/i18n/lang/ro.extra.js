@@ -437,4 +437,5 @@ export default {
   "{0} ileride ücretli yol.": "Drum cu taxă în {0}.",
   "🚇 Tünel {0} ileride ({1})": "🚇 Tunel în {0} ({1})",
   "💰 Ücretli yol {0} ileride": "💰 Drum cu taxă în {0}",
+  "Rotada {0} km ileride": "Pe traseu, peste {0} km",
 };
