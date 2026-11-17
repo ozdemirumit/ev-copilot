@@ -83,6 +83,7 @@ const STUBS = {
   '/js/routing/controller.js': `
     export const replanFrom = (o) => { ${g}.net('replan', [o]); const p = ${g}.st.plan; if (p) { p.fromKm = o.km; p.fromSoc = o.soc; } return true; };
     export const updateAhead = () => {};
+    export const previewSocReplan = (o) => { ${g}.net('socPreview', [o]); return { ok: false, reason: 'stub' }; };
     export const planTrip = () => new Promise(() => {});
     export const rerouteFromHere = () => ${g}.net('reroute', []);
     export const clearTrip = () => {};`,

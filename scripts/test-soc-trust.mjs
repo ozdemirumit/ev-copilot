@@ -28,7 +28,7 @@ for (const s of ['stale', 'estimate', 'default', 'none']) {
 ok('shouldReplan: drift NaN → false', T.shouldReplan({ ...base, drift: NaN }) === false);
 
 // ---------- 2) livePlan.check() entegrasyonu ----------
-const S = (globalThis.__stStub = { state: {}, eff: {}, src: 'live', replans: [], patches: [] });
+const S = (globalThis.__stStub = { state: {}, eff: {}, src: 'live', replans: [], patches: [], previews: [] });
 const g = 'globalThis.__stStub';
 const STUBS = {
   '../state.js': `
@@ -36,7 +36,8 @@ const STUBS = {
     export const effective = () => ${g}.eff;
     export const patch = (k, v) => { ${g}.patches.push([k, v]); };`,
   '../config.js': 'export const VEHICLE = { batteryNetKwh: 100 };',
-  './controller.js': `export const replanFrom = (o) => { ${g}.replans.push(o); };`,
+  './controller.js': `export const replanFrom = (o) => { ${g}.replans.push(o); };
+    export const previewSocReplan = (o) => { ${g}.previews.push(o); return { ok: false, reason: 'test' }; };`,
   '../providers/index.js': 'export const fetchAvailability = async () => new Map();',
   './slots.js': 'export const slotKind = () => "free";',
   '../advisor/voice.js': 'export const speak = () => {};',
@@ -70,25 +71,26 @@ Date.now = () => now;
 function scenario({ src, soc = 60, km = 10, stops = [{ km: 100 }], simSrc = false }) {
   now += 60_000; // COOLDOWN_MS (45 sn) her senaryoda aşılır
   S.src = src;
-  S.replans = []; S.patches = [];
+  S.replans = []; S.patches = []; S.previews = [];
   S.state = {
-    plan: { status: 'ready', profile: { energyBetween: (a, b, k) => (b - a) * 0.2 * k }, fromKm: 0, fromSoc: 80, stops, kInfo: { k: 1 } },
+    plan: { status: 'ready', planId: 'p' + now, profile: { energyBetween: (a, b, k) => (b - a) * 0.2 * k }, fromKm: 0, fromSoc: 80, stops, kInfo: { k: 1 } },
     engine: { routeKm: km, offRouteKm: 0, k: 1 },
     nav: { active: true },
   };
   S.eff = { source: simSrc ? 'sim' : 'live', soc, speed: 80 };
-  check();
+  check(); now += 5000; check(); now += 5000; check(); // v0.99.99: güvenilir SOC sapması 10 sn kararlı olunca öneri hazırlanır
   return S.replans;
 }
 
 // SOC farkı 18 puan (beklenen 78, okunan 60) — tek tetikleyici bu.
-ok('live: SOC farkı → replan', scenario({ src: 'live' }).length === 1);
-ok('manual: SOC farkı → replan', scenario({ src: 'manual' }).length === 1);
-ok('Test Modu (sim): SOC farkı → replan (sürgü kullanıcı girdisi)', scenario({ src: 'default', simSrc: true }).length === 1);
+// v0.99.99: güvenilir kaynakta SOC farkı artık planı OTOMATİK değiştirmez; onaylı öneri hazırlanır (previewSocReplan; ayrıntı test-soc-replan.mjs).
+ok('live: SOC farkı → öneri önizlemesi, otomatik replan YOK', scenario({ src: 'live' }).length === 0 && S.previews.length === 1);
+ok('manual: SOC farkı → öneri önizlemesi, otomatik replan YOK', scenario({ src: 'manual' }).length === 0 && S.previews.length === 1);
+ok('Test Modu (sim): SOC farkı → öneri önizlemesi (sürgü kullanıcı girdisi)', scenario({ src: 'default', simSrc: true }).length === 0 && S.previews.length === 1);
 for (const s of ['stale', 'estimate', 'default', 'none']) {
-  ok(`${s}: SOC farkı tek başına → replan YOK`, scenario({ src: s }).length === 0);
+  ok(`${s}: SOC farkı tek başına → replan YOK, öneri YOK`, scenario({ src: s }).length === 0 && S.previews.length === 0);
 }
-ok('live: küçük fark (≤ 4 puan) → replan yok', scenario({ src: 'live', soc: 76 }).length === 0);
+ok('live: küçük fark (≤ 4 puan) → replan yok, öneri yok', scenario({ src: 'live', soc: 76 }).length === 0 && S.previews.length === 0);
 
 // Diğer normal yenilemeler güvenilmeyen kaynakta da çalışır.
 for (const s of ['stale', 'estimate', 'default']) {
@@ -97,10 +99,13 @@ for (const s of ['stale', 'estimate', 'default']) {
   ok(`${s}: 25 km tazeleme → replan`, scenario({ src: s, km: 30, soc: 74 - 20 }).length === 1);
 }
 const r0 = scenario({ src: 'estimate', km: 30, soc: 40 });
-ok('replanFrom argümanları değişmedi (km, soc, maxFirstStopKm: Infinity)', r0[0]?.km === 30 && r0[0]?.soc === 40 && r0[0]?.maxFirstStopKm === Infinity, JSON.stringify(r0[0]));
+// v0.99.99: güvenilmeyen (tahmini) pil planı değiştirmez — 25 km tazelemesi planın kendi beklentisiyle (%80 − 30 km × 0,2 = %74) yapılır, tahmini %40 ile değil
+ok('replanFrom argümanları (km, planın beklediği pil, maxFirstStopKm: Infinity)', r0[0]?.km === 30 && Math.abs(r0[0]?.soc - 74) < 1e-9 && r0[0]?.maxFirstStopKm === Infinity, JSON.stringify(r0[0]));
+const r1 = scenario({ src: 'live', km: 30, soc: 73 });
+ok('güvenilir pil (eşik içi): tazeleme ölçülen pille', r1[0]?.km === 30 && r1[0]?.soc === 73, JSON.stringify(r1[0]));
 
 // Bekleme süresi (cooldown) korunur
-scenario({ src: 'live' });
+scenario({ src: 'estimate', stops: [{ km: 5 }, { km: 100 }] });
 now += 1000;
 check();
 ok('cooldown: 45 sn içinde ikinci replan yok', S.replans.length === 1);

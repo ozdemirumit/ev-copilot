@@ -91,16 +91,22 @@ function runPreview() {
     $('st-apply').disabled = true;
     return;
   }
-  const { diff, out } = r.preview;
   cur.preview = r.preview;
+  renderPlanDiff(box, r.preview, { meId: cur.stop.station.id });
+  $('st-apply').disabled = r.preview.diff.same;
+}
+
+/** Önizleme farkını kutuya çiz: çıkan/eklenen duraklar, sıra, ileri duraklar (varış → ayrılış, şarj dk), toplam süre, varışta pil, ETA, maliyet. */
+export function renderPlanDiff(box, preview, { meId = null } = {}) {
+  const { diff, out } = preview;
   const lines = [];
   if (diff.same) lines.push(el('div', 'muted', tr('Plan değişmiyor.')));
   for (const n of diff.removed) lines.push(el('div', 'st-rm', t('Çıkar: {0}', n)));
   for (const n of diff.added) lines.push(el('div', 'st-add', t('Ekle: {0}', n)));
   if (diff.orderChanged) lines.push(el('div', null, tr('Durak sırası değişti.')));
   const list = el('ol', 'st-list');
-  out.result.stops.filter((s) => s.km > (getState('plan').fromKm ?? 0) + 0.5).forEach((s) => {
-    const li = el('li', s.station.id === cur.stop.station.id ? 'me' : null);
+  out.result.stops.filter((s) => s.km > (out.fromKm ?? getState('plan').fromKm ?? 0) + 0.5).forEach((s) => {
+    const li = el('li', s.station.id === meId ? 'me' : null);
     li.append(el('b', null, s.station.name), el('span', 'm', `${s.km.toFixed(0)} km · %${s.arriveSoc.toFixed(0)} → %${Math.round(s.leaveSoc)} · ${Math.round(s.minutes)} dk`));
     list.append(li);
   });
@@ -114,7 +120,6 @@ function runPreview() {
   sum.append(el('span', null, t('Tahmini varış {0}', eta.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))));
   if (diff.costDelta != null) sum.append(el('span', null, t('Maliyet farkı {0} TL', sign(diff.costDelta))));
   box.replaceChildren(...lines, list, sum);
-  $('st-apply').disabled = diff.same;
 }
 
 /** stop: plan.stops öğesi. Durağın hedef penceresini açar; mevcut hedef/kilit yüklenir. */

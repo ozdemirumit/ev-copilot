@@ -901,6 +901,18 @@
   </div>
 </dialog>
 
+<dialog id="soc-replan-dialog" class="sheet-dlg st-dlg" aria-labelledby="sr-title">
+  <div class="dlg-head"><h2 id="sr-title">Pil değişti — plan güncellensin mi?</h2><button class="sheet-x" id="sr-x" type="button" aria-label="Kapat"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+  <p id="sr-sub"></p>
+  <p class="small muted" id="sr-src"></p>
+  <div class="st-diff small" id="sr-diff" aria-live="polite"></div>
+  <p class="small muted">Plan yalnızca Onayla ile değişir; İptal mevcut planı aynen korur.</p>
+  <div class="st-acts">
+    <button class="btn ghost" id="sr-cancel" type="button">İptal</button>
+    <button class="btn primary" id="sr-apply" type="button">Onayla</button>
+  </div>
+</dialog>
+
 <dialog id="arrival-dialog" class="sheet-dlg" aria-labelledby="arrival-title">
   <div class="dlg-head"><h2 id="arrival-title">Şarj durağına vardın</h2><button class="sheet-x" id="arrival-x" type="button" aria-label="Kapat"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button></div>
   <p id="arrival-text"></p>

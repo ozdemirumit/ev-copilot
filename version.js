@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.98';
+self.APP_VERSION = '0.99.99';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.99', date: '2026-11-17',
+    notes: [
+      'Navigasyonda pil kameradan (doğrulanmış okuma) ya da elle girilen değerle plan beklentisinden belirgin saparsa (4 puandan fazla), ya da bir şarj durağında şarj planlanan hedeften farklı biterse (erken bırakma ya da hedefi aşma), kalan şarj planı durak hedefi motoruyla yeniden hesaplanır: sonraki duraklar, sıraları, varış pilleri, şarj miktar/süreleri, toplam süre ve tahmini varış farklarıyla gösterilir.',
+      'Aktif plan yalnızca Onayla ile değişir; İptal mevcut planı korur ve aynı pil değeri için 10 dakika yeniden sorulmaz. Değer en az 10 sn kararlı olmalı (tek okuma ya da sürgü sürüklemesi öneri açmaz); şarj sürerken öneri açılmaz, hedefe ulaşılınca bir kez söylenir.',
+      'Eski kamera okuması, tahmini ya da varsayılan pil öneri açmaz ve planı değiştirmez; mesafe/geçilen durak tazelemesi bu durumda planın kendi beklentisiyle yapılır. Kamera kaynağında doğrulanmış değer, ham okuma, güven ve son okuma yaşı ayrı gösterilir. Öneri ağ kullanmaz; plan kurulamazsa mevcut plan kalır. Yeni metinler şimdilik yalnızca Türkçe.',
+    ],
+  },
   {
     v: '0.99.98', date: '2026-11-17',
     notes: [

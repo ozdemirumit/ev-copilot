@@ -47,6 +47,7 @@ import { initPremiumGate } from './ui/premiumGate.js';
 import { initAbrpPanel } from './ui/abrpPanel.js';
 import { initStationsView } from './ui/stationsView.js';
 import { initRoutePanel } from './ui/routePanel.js';
+import { initSocReplan } from './ui/socReplan.js';
 import { initRouteOptionsView } from './ui/routeOptionsView.js';
 import { initVehiclePanel } from './ui/vehiclePanel.js';
 import { initCustomStations } from './ui/customStations.js';
@@ -93,6 +94,7 @@ initTokenScanner();
 initInstallPrompt();
 initStationsView();
 initRoutePanel();
+initSocReplan(); // v0.99.99: pil değişince önerilen plan (yalnız onayla uygulanır)
 initRouteOptionsView();
 initVehiclePanel();
 initCustomStations();

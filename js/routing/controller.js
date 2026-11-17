@@ -21,6 +21,7 @@ import { createAccessBook, applyAccess, verifyStops, lineKm, locateOnLine } from
 import { splitByRoute, altCandidates, buildAlternatives, consentFlow } from './onRoute.js';
 import { askRouteChoice } from '../ui/routeChoice.js';
 import { sanitizeLeaveSocs, planDiff, targetBounds } from './stopTarget.js';
+import { remainingTotals } from './socReplan.js';
 import { slotKind, isFresh } from './slots.js';
 
 const WX_STEP_KM = 50;
@@ -720,6 +721,27 @@ export function applyStopTarget(preview) {
   if (preview.seq !== tripSeq || preview.planId !== plan.planId || plan.status !== 'ready') return { ok: false, reason: 'Plan önizlemeden sonra değişti; yeniden dene.' };
   applyPlan(preview.out, preview.next);
   return { ok: true };
+}
+
+/**
+ * v0.99.99 — Pil değişti (doğrulanmış kamera/elle) ya da şarj planlanandan farklı bitti: kalan planı aynı motorla ÖNİZLE
+ * (computePlan + planDiff; ağ yok, plan/rota/harita DEĞİŞMEZ, rota dışı onayı tetiklemez). Kullanıcının durak hedefleri/kilitleri korunur.
+ * fromKm: plan bu km'den kurulur (durakta şarj bitince durağın hemen ötesi). Uygulama yalnız onayla: applyStopTarget(preview).
+ */
+export function previewSocReplan({ km, soc, fromKm = km }) {
+  const plan = getState('plan');
+  if (!plan.profile || plan.status !== 'ready') return { ok: false, reason: 'Rota yok' };
+  let out;
+  try {
+    out = computePlan({ fromKm, soc, maxFirstStopKm: Infinity, rank: false });
+  } catch (err) {
+    return { ok: false, reason: 'Plan hesaplanamadı: ' + err.message };
+  }
+  if (!out) return { ok: false, reason: 'Plan kurulamadı' };
+  if (!out.result.feasible) return { ok: false, offRouteOnly: !!out.relaxed?.feasible, reason: out.relaxed?.feasible ? OFF_ROUTE_TEXT : out.result.reason || 'Plan kurulamadı' };
+  const ahead = (plan.stops || []).filter((s) => s.km > fromKm + 0.5);
+  const diff = planDiff({ stops: ahead, totals: remainingTotals(plan, fromKm) }, { stops: out.result.stops, totals: out.result.totals });
+  return { ok: true, preview: { out, next: { fromKm, fromSoc: soc }, diff, soc, km: fromKm, planId: plan.planId, seq: tripSeq } };
 }
 
 /** İstasyon fiyat/kW tablosu değişti: ağ çağrısı olmadan yeniden fiyatla ve planla. */
