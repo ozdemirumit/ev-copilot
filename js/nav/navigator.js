@@ -340,6 +340,24 @@ function paintHud(e, remainKm, eta) {
 let zoomNow = null;
 let zoomAt = 0;
 let speedAvg = 0;
+let restoreView = false; // yalnızca Ortala anındaki tick içinde true: followMap navigasyon zoom'unu zorla geri kurar
+
+/**
+ * Ortala sonrası takip (v0.99.101): kamera takibi zaten mapApi.recenter() ile açıldı (eğim/yön navView'dan); bu tick araç durmuşken
+ * de navigasyon zoom'unu ve merkezini zorla geri kurar (araç hareketliyse kare kamera zoomCur=null ile aynı zoom'a hemen döner).
+ * Bayrak tick sonunda düşer: konum gelmemişse sonraki elle harekete taşınmaz. Navigasyon/rota/ses durumuna dokunmaz.
+ */
+function restoreFollow() {
+  restoreView = true;
+  try { tick(); } finally { restoreView = false; }
+  $('nh-recenter').classList.toggle('hidden', !mapApi.dragged()); // tick erken dönse de (konum/plan bekleniyor) düğme hemen gizlenir
+}
+
+/** Konum/Ortala düğmesi (navigasyonda): serbest gezinmeden normal navigasyon takip kamerasına dön. */
+export function recenterNav() {
+  mapApi.recenter();
+  restoreFollow();
+}
 
 /** Hıza göre hedef zoom (ortalama hızla yumuşatılmış); kavşağa yaklaşınca 18. */
 function followMap(e, distM, st, routeHeading) {
@@ -353,7 +371,9 @@ function followMap(e, distM, st, routeHeading) {
   if (gliding()) return; // kamerayı kare döngüsü (frame) sürer; burada yalnızca zoom hedefi (zoomNow) güncellenir
   // Dönüş yönü rotanın gidiş yönünden alınır (GPS yönü olmasa da çalışır); rota dışındaysa GPS yönü
   const heading = routeHeading ?? ((e.speed ?? 0) > 5 ? e.heading : null);
-  mapApi.follow(e.lat, e.lon, change ? want : null, change && !mapApi.dragged(), getState('nav').headingUp ? heading : null); // kaydırılmışken zoom değişimi haritayı geri çekmez
+  // Ortala (restoreView): elle zoom/kaydırmadan sonra navigasyon zoom'u ve araç konumu zorla geri kurulur (araç durmuşken de)
+  const restore = restoreView;
+  mapApi.follow(e.lat, e.lon, change || restore ? zoomNow : null, (change && !mapApi.dragged()) || restore, getState('nav').headingUp ? heading : null); // kaydırılmışken zoom değişimi haritayı geri çekmez
 }
 
 let starting = false;
@@ -482,7 +502,9 @@ export function initNavigator() {
     if (!on) stopSpeech();
   });
   $('nh-overview').addEventListener('click', () => mapApi.overview());
-  $('nh-recenter').addEventListener('click', () => { mapApi.recenter(); tick(); });
+  $('nh-recenter').addEventListener('click', () => { mapApi.recenter(); restoreFollow(); });
+  // Elle gezinme (sürükleme/pinch/tekerlek) başlar başlamaz Ortala düğmesi görünür (GPS güncellemesi beklenmez; tünelde de)
+  mapApi.onExplore?.(() => { if (getState('nav').active) $('nh-recenter').classList.remove('hidden'); });
   subscribe('nav', () => {
     $('nh-voice').innerHTML = icon(getState('nav').voice ? 'volume' : 'volume-off');
     paintAlert(false);

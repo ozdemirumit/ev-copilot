@@ -3,6 +3,8 @@
 // Rota ve trafik katmanları tek bir installLayers() içinde kurulur: stil değişirse ('style.load') son veriyle yeniden uygulanır.
 // Uydu stratejisi { install(map), set(map, on) }: install her katman kurulumunda çağrılır; set stil değiştirecekse
 // setStyle(..., { diff: false }) kullanmalı ki 'style.load' gelsin ve rota/trafik katmanları geri konsun.
+import { bindEngineGestures } from '../mapGesture.js';
+
 export const ZOOM_OFFSET = 1;
 
 const EMPTY = { type: 'FeatureCollection', features: [] };
@@ -146,7 +148,7 @@ export async function createVectorMap(lib, container, { mapOptions = {}, name, s
       else map.jumpTo(o);
     },
     onClick: (fn) => map.on('click', (e) => fn({ lat: e.lngLat.lat, lon: e.lngLat.lng })),
-    onDragStart: (fn) => map.on('dragstart', fn), // yalnızca kullanıcı sürüklemesi (programatik hareket değil)
+    onDragStart: (fn) => bindEngineGestures(map, fn), // kullanıcı sürükleme/pinch/çift dokunma/döndürme/eğme (programatik hareket değil)
     cursor: (c) => { map.getCanvas().style.cursor = c || ''; },
     resize: () => map.resize(),
     bearing: () => map.getBearing(),

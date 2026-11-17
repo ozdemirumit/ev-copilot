@@ -3,7 +3,7 @@
 import { getState, subscribe, effective } from '../state.js';
 import { mapApi } from './mapView.js';
 import { showTab } from './tabs.js';
-import { startNav, stopNav } from '../nav/navigator.js';
+import { startNav, stopNav, recenterNav } from '../nav/navigator.js';
 import { toast } from './toast.js';
 import { save } from '../utils/storage.js';
 import { startGps, stopGps, locateOnce } from '../sensors/gps.js';
@@ -51,6 +51,7 @@ export function initShell() {
   const centerMe = () => {
     const e = effective();
     if (e.lat == null) return false;
+    if (getState('nav').active) { recenterNav(); return true; } // navigasyonda: serbest gezinmeden navigasyon takip kamerasına (zoom/yön/eğim) dön
     const acc = getState('live').acc; // kaba konumda (şebeke) çok yakınlaşma
     mapApi.recenter?.(); // önce görünümü sıfırla (jumpTo çalışan animasyonu iptal eder), sonra konuma git: sıra ters olursa harita hiç kaymaz
     mapApi.follow(e.lat, e.lon, acc > 1500 ? 13 : acc > 300 ? 15 : 16, true);

@@ -13,6 +13,7 @@ import { providerRequestsPaused, freeOnlyMode } from '../net/providerGate.js';
 import { showTab } from './tabs.js';
 import { navCamera, followAnchorPx, groundAheadPx } from './navCamera.js';
 import { icon } from './icons.js';
+import { watchMapGestures } from './mapGesture.js';
 
 /** Harita çizim API'si; initMap() çağrılınca dolar (routing/controller.js, nav/* kullanır). Harita henüz yüklenmediyse çizimler sıraya alınır. */
 export const mapApi = {
@@ -24,6 +25,10 @@ export const mapApi = {
 };
 
 let boot = async () => {};
+
+// Kullanıcı haritayı elle gezmeye başladı (navigator.js: Ortala düğmesi hemen görünür). Modül düzeyinde: initNavigator initMap'ten önce çalışır.
+const exploreHooks = [];
+mapApi.onExplore = (fn) => exploreHooks.push(fn);
 
 const fmt = (p) => (p ? `${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}` : '');
 
@@ -152,7 +157,7 @@ export function initMap() {
         adapter = await openAdapter();
         setActiveMap(adapter.name || 'osm'); // TomTom rotası yalnızca TomTom haritasıyla (js/net/activeMap.js)
         adapter.onClick(onMapClick);
-        adapter.onDragStart(() => { lastDrag = Date.now(); lastFollow = null; if (navOn) navPan = true; });
+        adapter.onDragStart(() => { lastDrag = Date.now(); lastFollow = null; if (navOn) navPan = true; exploreHooks.forEach((fn) => fn()); });
         queue.splice(0).forEach((fn) => fn());
         readyHooks.forEach((fn) => fn());
       } catch (err) {
@@ -179,6 +184,9 @@ export function initMap() {
   let me = null; // canlı konum işareti
   let lastDrag = 0;
   let navPan = false; // navigasyonda elle kaydırıldı: takip süreyle değil yalnızca Ortala (recenter) ile geri döner
+  // Pinch/tekerlek/çift tıklama: tüm sağlayıcılarda (Google dahil) ve hareketin ilk anında takibi durdurur; kare kamera elle zoom'u geri
+  // çekmez (salınım yok). Navigasyon ilerlemesi, ses, konum/SOC/ETA güncellemesi sürer; yalnızca kamera takibi Ortala'ya kadar durur.
+  watchMapGestures(mapEl, () => { lastDrag = Date.now(); lastFollow = null; if (navOn) navPan = true; exploreHooks.forEach((fn) => fn()); });
 
   mapApi.setPoint = (...a) => setPoint(...a);
 

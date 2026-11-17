@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.100';
+self.APP_VERSION = '0.99.101';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.101', date: '2026-11-17',
+    notes: [
+      'Navigasyonda harita serbestçe gezilebilir: iki parmakla yakınlaştırma/uzaklaştırma, kaydırma, tekerlek ve çift dokunma yalnızca kamera takibini durdurur; seçtiğin zoom, sen Ortala\'ya basana kadar korunur, konum güncellemesi haritayı geri çekmez.',
+      'Ortala (ya da konum) düğmesi normal navigasyon görünümüne döner: araç alttan ~%10\'da, navigasyon zoom\'u, yön ve eğim geri gelir, takip yeniden başlar. Araç dururken de zoom geri kurulur.',
+      'Gezinirken navigasyon sürer: rota, sesli yönlendirme, kalan mesafe/varış, pil ve konum güncellenmeye devam eder; rota sıfırlanmaz, navigasyon durmaz.',
+    ],
+  },
   {
     v: '0.99.100', date: '2026-11-17',
     notes: [

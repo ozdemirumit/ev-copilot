@@ -175,7 +175,7 @@ export async function createGoogleMap(container, key, mapId = 'DEMO_MAP_ID', { o
       map.moveCamera(o);
     },
     onClick: (fn) => map.addListener('click', (e) => { if (e.latLng) fn({ lat: e.latLng.lat(), lon: e.latLng.lng() }); }),
-    onDragStart: (fn) => map.addListener('dragstart', fn), // yalnızca kullanıcı sürüklemesi
+    onDragStart: (fn) => { map.addListener('dragstart', fn); map.addListener('dblclick', fn); }, // kullanıcı sürüklemesi + çift tıklama zoom'u (pinch/tekerlek mapView'da DOM'dan)
     cursor: (c) => map.setOptions({ draggableCursor: c || null }),
     resize: () => gm.event.trigger(map, 'resize'), // Google kabın boyutunu kendisi izler; eski sürümler için zararsız
     bearing: () => map.getHeading() || 0,
