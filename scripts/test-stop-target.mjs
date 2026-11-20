@@ -83,7 +83,7 @@ ok('sanitize: geçersiz/aralık dışı atılır, ileri olmayan atılır', JSON.
 
 // 7) Denetim: denetleyici + arayüz bağlantıları (onay zorunlu, iptal planı korur)
 const ctl = read('js/routing/controller.js');
-const fnBody = (src, name) => { const i = src.indexOf(`export function ${name}(`); return i < 0 ? '' : src.slice(i, src.indexOf('\n}\n', i)); };
+const fnBody = (raw, name) => { const src = raw.replace(/\r\n/g, '\n'); const i = src.indexOf(`export function ${name}(`); return i < 0 ? '' : src.slice(i, src.indexOf('\n}\n', i)); }; // CRLF çalışma kopyasında (autocrlf) da doğru keser
 ok('controller: previewStopTarget ve applyStopTarget var', /export function previewStopTarget\(/.test(ctl) && /export function applyStopTarget\(/.test(ctl));
 ok('controller: önizleme applyPlan/patch çağırmaz', fnBody(ctl, 'previewStopTarget') && !/applyPlan\(|patch\(/.test(fnBody(ctl, 'previewStopTarget')));
 ok('controller: eski önizleme reddedilir (planId/tripSeq)', /planId/.test(fnBody(ctl, 'applyStopTarget')) && /tripSeq/.test(fnBody(ctl, 'applyStopTarget')));

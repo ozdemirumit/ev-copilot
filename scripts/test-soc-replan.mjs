@@ -187,7 +187,7 @@ ok('aynı pil: plan farkı yok (öneri açılmaz)', planDiff({ stops: planned.st
 
 // ---------- 4) Kaynak denetimi ----------
 const ctl = read('js/routing/controller.js');
-const fnBody = (src, name) => { const i = src.indexOf(`export function ${name}(`); return i < 0 ? '' : src.slice(i, src.indexOf('\n}\n', i)); };
+const fnBody = (raw, name) => { const src = raw.replace(/\r\n/g, '\n'); const i = src.indexOf(`export function ${name}(`); return i < 0 ? '' : src.slice(i, src.indexOf('\n}\n', i)); }; // CRLF çalışma kopyasında (autocrlf) da doğru keser
 const pv = fnBody(ctl, 'previewSocReplan');
 ok('controller: previewSocReplan var', !!pv);
 ok('önizleme planı değiştirmez, ağ yok, rota dışı onayı açmaz', !/applyPlan\(|patch\(|fetch|await|offerAlternatives/.test(pv));
