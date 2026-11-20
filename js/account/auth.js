@@ -75,12 +75,6 @@ export function prepareGoogleSignIn(invite = pendingInvite()) {
   return { url, code: loginCode(nonce), start };
 }
 
-/** Tek adımlı eski kullanım: hemen tarayıcıyı açar. Dönüş: { url, code, done: Promise<user> }. */
-export function startGoogleSignIn(invite = pendingInvite()) {
-  const p = prepareGoogleSignIn(invite);
-  return { url: p.url, code: p.code, done: p.start() };
-}
-
 function waitForLogin(nonce) {
   return (async () => {
     const t0 = Date.now();

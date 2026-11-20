@@ -25,10 +25,4 @@ async function run(mode, fn) {
   }
 }
 
-/** Kayıt (yoksa veya hata varsa undefined/null). */
-export const kvGet = async (key) => {
-  const r = await run('readonly', (s) => s.get(key));
-  return r === true || r === null ? undefined : r;
-};
-export const kvSet = (key, value) => run('readwrite', (s) => s.put(value, key)).then((r) => r !== null);
 export const kvDel = (key) => run('readwrite', (s) => s.delete(key));

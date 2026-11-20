@@ -3,7 +3,6 @@
 //  - trafik: TRAFFIC_ON_POLYLINE aralıkları (NORMAL / SLOW / TRAFFIC_JAM) → hız çarpanı
 // Çıktı rota profiline (her ~2 km dilim) hız olarak verilir; enerji, süre ve hava zamanlaması bunu kullanır.
 
-export const TRAFFIC_MULT = { SLOW: 0.6, TRAFFIC_JAM: 0.3 }; // NORMAL = 1
 const V_MIN = 15;
 const V_MAX = 130;
 
