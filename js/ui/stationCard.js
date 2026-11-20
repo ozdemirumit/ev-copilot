@@ -16,6 +16,9 @@ import { publicFreeMode } from '../net/providerGate.js';
 import { fetchInfo, ratePoint, markFacility, shrinkPhoto, uploadPhoto, photoUrl, deletePhoto, reportPhoto, FACILITIES } from '../account/stationInfo.js';
 import { goToStation } from '../nav/nearby.js';
 import { aheadKmText, routeStationKm } from './routeDist.js';
+import { addEligibility, stationAt } from '../routing/addToRoute.js';
+import { openAddToRoute, addReasonText } from './addRoute.js';
+import { openTarget } from './stopTarget.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => Object.assign(document.createElement(tag), { className: cls || '', textContent: text ?? '' });
@@ -211,7 +214,8 @@ function open(s) {
   }
   // Bu istasyon rotadaki bir şarj durağıysa: 5 km çevresindeki uygun istasyonlardan biriyle değiştirilebilir (Fiyat bildir'in sağında)
   const stop = getState('plan').stops?.find((x) => x.station.id === s.id && x.km > progressKm() - 0.3);
-  if (stop) acts.append(btn('🔁 Değiştir', () => { close(); openSwap(stop, progressKm()); }), btn('🗑️ Kaldır', () => { close(); removeFromRoute(stop); }));
+  // v0.99.114: planlanan/eklenen durakta ne kadara kadar şarj edileceği (🎯 %hedef) kartın kendisinden de seçilir (önizleme + onay: ui/stopTarget.js)
+  if (stop) acts.append(btn('🎯 %' + Math.round(stop.leaveSoc), () => { close(); openTarget(stop); }, 'btn ghost sm sc-target'), btn('🔁 Değiştir', () => { close(); openSwap(stop, progressKm()); }), btn('🗑️ Kaldır', () => { close(); removeFromRoute(stop); }));
   else if (getState('plan').status === 'ready' && getState('plan').stations?.some((x) => x.id === s.id && x.km > progressKm() + 0.5)) {
     // Rotadaki ama planda olmayan istasyon: burada şarj et → plana girer, gerekmeyen otomatik durak çıkar
     acts.append(btn('⚡ Şarj et', () => {
@@ -221,8 +225,13 @@ function open(s) {
       toast(r.dropped.length ? t('Şarj durağı eklendi: {0}. Gerekmeyen durak çıkarıldı: {1}', s.name, r.dropped.join(', ')) : t('Şarj durağı eklendi: {0}', s.name), 7000);
     }, 'btn primary sm'));
   }
+  // v0.99.108 Rotaya Ekle: aktif rota varken her istasyon iğnesi; gerçek ara nokta + önizleme + onay (ui/addRoute.js). Uygun değilse neden yazılır.
+  const pl = getState('plan');
+  const elig = addEligibility({ plan: pl, station: s, at: stationAt(pl.route?.coords, s), here: progressKm() });
+  if (elig.ok) acts.append(btn('➕ ' + tr('Rotaya Ekle'), () => { close(); openAddToRoute(s); }, 'btn primary sm sc-add'));
+  const addNote = el('div', 'small muted sc-add-note' + (elig.show && !elig.ok ? '' : ' hidden'), elig.show && !elig.ok ? addReasonText(elig.reason) : '');
   const info = el('div', 'stack sc-info');
-  card.replaceChildren(head, meta, distEl, price, live, acts, info);
+  card.replaceChildren(head, meta, distEl, price, live, acts, addNote, info);
   paintDist();
   card.classList.remove('hidden');
   if (publicFreeMode()) { live.classList.add('hidden'); info.classList.add('hidden'); return; } // herkese açık ücretsiz Beta: doluluk/puan/fotoğraf sunucusu yok, giriş istemi gösterilmez

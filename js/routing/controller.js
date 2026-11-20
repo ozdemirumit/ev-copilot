@@ -9,19 +9,20 @@ import { densityFromRatio, speedFactor } from '../physics/traffic.js';
 import { segmentSpeeds } from '../physics/routeSpeed.js';
 import { mergeSpeeds, mergeWx } from './aheadUpdate.js';
 import { kForSpeed, relFactor, overall } from '../physics/history.js';
-import { PHYSICS, PLANNER } from '../config.js';
+import { PHYSICS, PLANNER, VEHICLE } from '../config.js';
 import { mapApi } from '../ui/mapView.js';
 import { toast } from '../ui/toast.js';
 import { setManual } from '../physics/socEstimate.js';
 import { rememberDest } from '../ui/recentDest.js';
 import { projectSteps } from '../nav/steps.js';
 import { t as tpl } from '../i18n/index.js';
-import { stopWaypoints, offRouteKm, viaCheck } from './stopVia.js';
+import { stopWaypoints, offRouteKm, viaCheck, VIA_REACH_KM } from './stopVia.js';
 import { createAccessBook, applyAccess, verifyStops, lineKm, locateOnLine, travelDir } from './stopAccess.js';
 import { splitByRoute, altCandidates, buildAlternatives, consentFlow, autoExclude, ACCESS_PENDING_TEXT, ACCESS_FAILED_TEXT } from './onRoute.js';
 import { askRouteChoice } from '../ui/routeChoice.js';
 import { sanitizeLeaveSocs, planDiff, targetBounds } from './stopTarget.js';
-import { remainingTotals } from './socReplan.js';
+import { remainingTotals, expectedSoc } from './socReplan.js';
+import { addEligibility, stationAt, lockedAhead, addVias, startUturn, judgeAddRoute, PREVIEW_TTL_MS, GPS_MAX_ACC_M, GPS_MAX_OFF_KM } from './addToRoute.js';
 import { slotKind, isFresh } from './slots.js';
 
 const WX_STEP_KM = 50;
@@ -44,8 +45,7 @@ let lastPlanId = 0;
 const newPlanId = () => (lastPlanId = Math.max(Date.now(), lastPlanId + 1));
 
 /** Rotanın istasyondaki gidiş yönü (tam çözünürlüklü çizgiden; rota değişince yeniden hesaplanır). */
-function headingAt(s) {
-  const coords = getState('plan').route?.coords;
+function headingAt(s, coords = getState('plan').route?.coords) { // v0.99.108 coords: önizleme rotası (durum değişmeden)
   if (!coords) return null;
   if (lineCache.coords !== coords) lineCache = { coords, cum: lineKm(coords), head: new Map() };
   const at = locAt(s, coords);
@@ -64,8 +64,7 @@ function locAt(s, coords) {
  * İstasyonun AKTİF rota çizgisine (tam çözünürlük) düz çizgi uzaklığı (km). Yalnızca rota üstü ön elemesi içindir; erişim kanıtı değildir
  * (karşı yön/giriş yol ağıyla doğrulanır). Çizgi yoksa koridor uzaklığı (offKm) kullanılır.
  */
-function lineOffKm(s) {
-  const coords = getState('plan').route?.coords;
+function lineOffKm(s, coords = getState('plan').route?.coords) {
   if (!coords || coords.length < 2) return Number.isFinite(s.geoOffKm) ? s.geoOffKm : s.offKm;
   return locAt(s, coords)?.offKm ?? null;
 }
@@ -112,21 +111,23 @@ export function planK() {
 }
 
 /** Mevcut profil/istasyonlarla planı (yeniden) hesapla. fromKm/soc verilirse o konumdan (dinamik yeniden planlama). */
-export function computePlan({ fromKm = 0, soc = startSoc, maxFirstStopKm = Infinity, pins = null, onlyIds = null, mode = null, rank = true } = {}) { // pins: { pinIds, banIds, leaveSocs } denemesi (kaydetmeden); onlyIds: yalnızca bu istasyonlarla planla
-  const plan = getState('plan');
+export function computePlan({ fromKm = 0, soc = startSoc, maxFirstStopKm = Infinity, pins = null, onlyIds = null, mode = null, rank = true, env = null } = {}) { // pins: { pinIds, banIds, leaveSocs } denemesi (kaydetmeden); onlyIds: yalnızca bu istasyonlarla planla
+  // v0.99.108 env: { profile, stations, route } — durumu DEĞİŞTİRMEDEN başka bir rota üzerinde plan (Rotaya Ekle önizlemesi; uygulanınca aynı sonuç)
+  const plan = env ? { ...getState('plan'), profile: env.profile, stations: env.stations, route: env.route, forceFirstId: null } : getState('plan');
+  const coordsP = plan.route?.coords;
   const r = getState('route');
   if (!plan.profile) return null;
   const kInfo = planK();
   const k = kInfo.k;
   // Yol ağıyla doğrulanmış sapma maliyete girer; erişilemeyen (karşı yön) istasyon aday olmaz (kullanıcının elle seçtiği hariç)
   const keep = new Set([...(pins?.pinIds ?? plan.pinIds ?? []), plan.forceFirstId].filter(Boolean));
-  const acc = applyAccess(plan.stations, accessBook, headingAt, keep);
+  const acc = applyAccess(plan.stations, accessBook, (s) => headingAt(s, coordsP), keep);
   // v0.99.107: erişim kapısı rotaya göredir; rota çizgisi yoksa (çevrimdışı önizleme/test) navigasyon da yoktur — applyPlan'daki
   // viaCheck çizgisiz her durağı tutarsız sayar ve navGate başlatmayı engeller.
   const hasLine = !!plan.route?.coords?.length;
   // v0.99.97: otomatik seçilen durak AKTİF ROTANIN ÜZERİNDE olmalı (onRoute.js). Rotadan ayrılmayı gerektiren ('off') ve karşı yön
   // ('blocked') istasyonlar otomatik seçilmez; rota değişikliği yalnızca kullanıcı onayıyla (offerAlternatives). Elle seçilenler (keep) kalır.
-  const split = splitByRoute(acc.stations, lineOffKm, keep);
+  const split = splitByRoute(acc.stations, (s) => lineOffKm(s, coordsP), keep);
   const all = acc.stations;
   const stations = onlyIds ? all.filter((s) => onlyIds.includes(s.id)) : all;
   // Zorunlu ilk durak yalnızca hâlâ ilerideyse geçerlidir (geçildiyse veya listede yoksa yok sayılır)
@@ -318,7 +319,10 @@ export async function planTrip(from = null, { via = null, extra = [], preRoute =
   const restoreSim = () => { if (resumeSim && getState('sim').enabled) patch('sim', { play: true }); };
 
   try {
-    patch('plan', { status: 'loading', text: 'Rota alınıyor…', stops: [], totals: null, ranking: [], fromKm: 0, fromSoc: null, pinIds: [], banIds: [], leaveSocs: {}, viaIds: [], viaIssues: [] }); // yeni rota: elle değiştirilen duraklar sıfırlanır
+    // v0.99.108: yolda yeniden rotada (from) kullanıcının kilitlediği ileri duraklar (Rotaya Ekle / elle seçim) ve hedefleri korunur; yeni rotada
+    // zorunlu durak olurlar ve routeThroughStops onları gerçek ara nokta yapar (doğrulanamazsa işaretli kalır, navGate). Yeni yolculukta sıfırlanır.
+    const keepU = from ? (prev.plan.userPins || []).filter((id) => (prev.plan.stops || []).some((s) => s.station.id === id && s.km > (prev.plan.fromKm ?? 0) + 0.5)) : [];
+    patch('plan', { status: 'loading', text: 'Rota alınıyor…', stops: [], totals: null, ranking: [], fromKm: 0, fromSoc: null, pinIds: keepU, banIds: [], leaveSocs: sanitizeLeaveSocs(from ? prev.plan.leaveSocs : {}, keepU), viaIds: [], viaIssues: [], userPins: keepU }); // yeni rota: elle değiştirilen duraklar sıfırlanır
     if (!from) {
       accessBook.clear(); // yeni yolculuk: erişim sonuçları sıfırdan (yeniden rotada aynı yöndeki sonuçlar geçerli kalır)
       mapApi.drawStations([], []); // önceki rotanın durak/istasyon işaretleri yeni plan gelene kadar haritada kalmaz
@@ -650,6 +654,7 @@ export function swapStop(oldId, newId) {
   const next = {
     pinIds: [...prev.pinIds.filter((id) => id !== oldId && id !== newId), newId],
     banIds: [...new Set([...prev.banIds.filter((id) => id !== newId), oldId])],
+    userPins: [...(plan.userPins || []).filter((id) => id !== oldId && id !== newId), newId], // v0.99.108 kullanıcı kilidi (Rotaya Ekle korur)
   };
   const fromKm = plan.fromKm ?? 0;
   const soc = plan.fromSoc ?? startSoc;
@@ -679,6 +684,7 @@ export function removeStop(oldId) {
   const next = {
     pinIds: (plan.pinIds || []).filter((id) => id !== oldId),
     banIds: [...new Set([...(plan.banIds || []), oldId])],
+    userPins: (plan.userPins || []).filter((id) => id !== oldId),
   };
   const ahead = (plan.stops || []).filter((s) => s.km > fromKm + 0.5);
   const chain = ahead.filter((s) => s.station.id !== oldId).map((s) => s.station.id);
@@ -703,6 +709,7 @@ export function addStop(newId) {
   const next = {
     pinIds: [...new Set([...(plan.pinIds || []), newId])],
     banIds: (plan.banIds || []).filter((id) => id !== newId),
+    userPins: [...new Set([...(plan.userPins || []), newId])],
   };
   const out = computePlan({ fromKm, soc: plan.fromSoc ?? startSoc, pins: next });
   if (!out?.result.feasible) return { ok: false, reason: out?.result.reason || 'Plan kurulamadı', dropped: [] };
@@ -783,6 +790,215 @@ export function previewSocReplan({ km, soc, fromKm = km }) {
   return { ok: true, preview: { out, next: { fromKm, fromSoc: soc }, diff, soc, km: fromKm, planId: plan.planId, seq: tripSeq } };
 }
 
+// ---------- v0.99.108 Haritadaki istasyonu "Rotaya Ekle": önizleme (durum değişmez) → açık onay → uygulama ----------
+let addRun = null; // { id, p }: aynı anda tek ekleme hesabı (art arda dokunuş aynı sözü alır; başka istasyon 'busy')
+
+/** Önizleme rotası için profil + istasyonlar (durum değişmez). extras: rakım/hava alındıysa ham veri. */
+function addCtx(rt, pool, viaIds, extras = null) {
+  const pts = extras?.raw?.pts ?? resampleRoute(rt.coords);
+  const speeds = extras?.speeds ?? segmentSpeeds(rt, pts);
+  const rw = extras?.raw ?? { pts, elevations: null, elevSource: null, speeds: speeds.segs, wx: [] };
+  const cruise = Math.round(speeds.avgFreeKmh);
+  const traffic = densityFromRatio(rt.trafficRatio);
+  const refV = planK().refV;
+  const profile = buildProfile({ ...rw, cruise, traffic, speedRel: (v) => relFactor(v, refV) });
+  const vs = new Set(viaIds);
+  const stations = reproject(pool, profile).map((s) => (vs.has(s.id) ? { ...s, offKm: Math.min(s.offKm, offRouteKm(rt.coords, s)) } : s));
+  return { rt, pts, speeds, raw: rw, profile, stations, cruise, traffic };
+}
+
+/** Önizleme rotasında rakım ve hava (planTrip ile aynı kaynaklar; yalnız kullanıcının eylemiyle, GPS adımında asla). */
+async function addExtras(rt) {
+  const pts = resampleRoute(rt.coords);
+  const speeds = segmentSpeeds(rt, pts);
+  const wxIdx = pts.map((_, i) => i).filter((i) => i % (WX_STEP_KM / 2) === 0);
+  if (wxIdx.at(-1) !== pts.length - 1) wxIdx.push(pts.length - 1);
+  const t0 = Date.now();
+  let wxError = null;
+  const [elev, wxRes] = await Promise.all([
+    fetchElevations(pts).catch(() => null),
+    fetchWeather(wxIdx.map((i) => ({ lat: pts[i].lat, lon: pts[i].lon, t: t0 + speeds.cumH[i] * 3600e3 }))).catch((err) => { wxError = err.message; return null; }),
+  ]);
+  return {
+    speeds,
+    raw: { pts, elevations: elev?.elevations ?? null, elevSource: elev?.source ?? null, speeds: speeds.segs, wx: wxRes ? wxRes.map((w, j) => ({ km: pts[wxIdx[j]].km, ...w })) : [] },
+    wxInfo: { source: wxRes?.source ?? null, fallbackReason: wxRes?.fallbackReason ?? null, error: wxError },
+    elevOk: !!elev, wxOk: !!wxRes,
+  };
+}
+
+/**
+ * Haritada dokunulan istasyonu kalan rotaya ZORUNLU şarj durağı olarak eklemeyi ÖNİZLE. Plan/rota/harita DEĞİŞMEZ; sonuç yalnız
+ * applyAddToRoute(preview) ile (kullanıcı onayından sonra) uygulanır. Sırayla:
+ *  1) uygunluk + (navigasyonda) konum güvenilirliği; 2) yol ağıyla GİDİŞ YÖNÜNDE erişim (karşı şerit/doğrulanamayan → fail-closed);
+ *  3) istasyon + kullanıcının kilitli durakları + ara durak GERÇEK ara nokta olarak sağlayıcı rotası; 4) yeni rotada plan (kilitliler +
+ *  yeni durak zorunlu, sonrakiler yeniden seçilir; doğrulanmamış aday sorgulanır); otomatik seçilen sonraki duraklar da ara nokta olacak
+ *  şekilde rota bir kez daha alınır; 5) rakım/hava ile son plan, viaCheck (girişe ulaşma, U dönüşü) ve başlangıçta geri dönüş denetimi.
+ * socNow: { soc, trusted } — arayüzün okuduğu pil ve kaynağın güvenilirliği (güvenilir değilse planın bu km için beklediği pil kullanılır).
+ * Dönüş: { ok: true, preview } | { ok: false, reason, detail } (reason → addToRoute.ADD_TEXT).
+ */
+export function previewAddToRoute(station, { socNow = null } = {}) {
+  if (addRun) return addRun.id === station?.id ? addRun.p : Promise.resolve({ ok: false, reason: 'busy', detail: '' });
+  const run = { id: station?.id, p: null };
+  addRun = run;
+  run.p = runAddPreview(station, socNow)
+    .catch((err) => { console.warn('Rotaya ekle:', err?.message); return { ok: false, reason: 'provider', detail: err?.message || String(err) }; })
+    .finally(() => { if (addRun === run) addRun = null; });
+  return run.p;
+}
+
+async function runAddPreview(station, socNow) {
+  const pl = getState('plan');
+  const r = getState('route');
+  const seq = tripSeq;
+  const planId = pl.planId;
+  const gone = () => seq !== tripSeq || getState('plan').planId !== planId;
+  const fail = (reason, detail = '') => ({ ok: false, reason, detail });
+  const coords = pl.route?.coords;
+  const eng = getState('engine');
+  const e = effective();
+  const moving = !!getState('nav').active || (pl.fromKm ?? 0) > 0.5;
+  let fromKm = pl.fromKm ?? 0;
+  let origin = r.start;
+  let soc = pl.fromSoc ?? startSoc;
+  let curDir = null;
+  if (moving && coords?.length) {
+    const live = getState('live');
+    const gpsOk = e.source === 'sim' || (live.gps === 'ok' && e.lat != null && !(live.acc > GPS_MAX_ACC_M));
+    if (!gpsOk || eng.routeKm == null || !((eng.offRouteKm ?? Infinity) <= GPS_MAX_OFF_KM)) return fail('gps');
+    fromKm = eng.routeKm;
+    origin = { lat: e.lat, lon: e.lon, label: 'Konumum' };
+    curDir = travelDir(coords, lineKm(coords), fromKm);
+    const exp = expectedSoc(pl, fromKm, pl.kInfo?.k ?? eng.k, VEHICLE.batteryNetKwh);
+    soc = socNow?.trusted && Number.isFinite(socNow.soc) ? socNow.soc : Number.isFinite(exp) ? exp : (e.soc ?? soc);
+  }
+  const at = stationAt(coords, station);
+  const el = addEligibility({ plan: pl, station, at, here: fromKm });
+  if (!el.ok) return fail(el.reason);
+  if (!origin || !r.end) return fail('noroute');
+
+  // 2) Gidiş yönünde yol ağı erişimi (v0.99.107 kapıları): yakın tarihli başarısız sorgu yeniden denenmez (sağlayıcı sınırı) → doğrulanmadı
+  await verifyStops({ coords, stops: [{ km: at.km, station: { ...station, km: at.km } }], fromKm, book: accessBook, probe: probeStopAccess });
+  if (gone()) return fail('changed');
+  const rec = accessBook.get(station.id, travelDir(coords, lineKm(coords), at.km));
+  if (!rec || !rec.verified) return fail('unverified', rec?.reason || tpl('yol ağı sorgusu yapılamadı'));
+  if (!rec.ok) return fail('blocked');
+
+  // 3) Gerçek ara noktalı rota
+  const locked = lockedAhead(pl, fromKm);
+  const stopover = r.via || null;
+  const sv = stopover ? stationAt(coords, stopover) : null;
+  const v = addVias({ locked, add: { km: at.km, station }, stopover, stopoverKm: sv?.km ?? null, fromKm });
+  if (!v) return fail('provider', tpl('ara nokta sınırı aşıldı'));
+  const pool = [...pl.stations.filter((s) => s.id !== station.id), station];
+  const leaveSocs = pl.leaveSocs || {};
+  const banIds = (pl.banIds || []).filter((id) => id !== station.id);
+  const route = async (wps) => {
+    try {
+      const rt = await fetchRoute(origin, r.end, wps);
+      if (!rt || !Array.isArray(rt.coords) || rt.coords.length < 2) throw new Error(tpl('rota yanıtı boş'));
+      return rt;
+    } catch (err) { return { error: err?.message || String(err) }; }
+  };
+  const planOn = async (ctx, mustIds) => {
+    let out = null;
+    for (let round = 0; round < 3; round++) { // doğrulanmamış aday sonraki durak: yol ağıyla sorgulanır (en çok 2 tur), sonra kesin plan
+      out = computePlan({ fromKm: 0, soc, pins: { pinIds: mustIds, banIds, leaveSocs }, env: { profile: ctx.profile, stations: ctx.stations, route: ctx.rt } });
+      if (out?.result.feasible || !out?.candidate?.feasible || round === 2) break;
+      const need = out.candidate.stops.filter((x) => (out.unverifiedIds || []).includes(x.station.id));
+      if (!need.length) break;
+      const res = await verifyStops({ coords: ctx.rt.coords, stops: need, fromKm: 0, book: accessBook, probe: probeStopAccess });
+      if (gone() || !res.checked) break;
+    }
+    return out;
+  };
+  const turnBad = (rt) => moving && startUturn(rt.coords, curDir, origin);
+  const reached = (rt) => offRouteKm(rt.coords, station) <= VIA_REACH_KM;
+
+  let rt = await route(v.wps);
+  if (gone()) return fail('changed');
+  if (rt.error) return fail('provider', rt.error);
+  if (!reached(rt)) return fail('noreach');
+  if (turnBad(rt)) return fail('startuturn');
+  let viaIds = v.ids;
+  let must = v.ids;
+  let ctx = addCtx(rt, pool, viaIds);
+  let out = await planOn(ctx, must);
+  if (gone()) return fail('changed');
+  if (!out?.result.feasible) return fail('plan', out?.result.reason || '');
+  // Sonraki duraklar yeniden seçildi: hepsi rotada gerçek ara nokta olmalı (v0.99.107) → rota bir kez daha (yalnız gerekiyorsa)
+  if (out.result.stops.some((s) => s.km > 0.5 && !viaIds.includes(s.station.id))) {
+    const ahead = out.result.stops.filter((s) => s.km > 0.5);
+    const mine = ahead.find((s) => s.station.id === station.id);
+    if (!mine) return fail('plan', tpl('durak planda yok'));
+    const sv2 = stopover ? ctx.profile.project(stopover.lat, stopover.lon) : null;
+    const v2 = addVias({ locked: ahead.filter((s) => s !== mine), add: mine, stopover, stopoverKm: sv2?.km ?? null, fromKm: 0 });
+    if (!v2) return fail('provider', tpl('ara nokta sınırı aşıldı'));
+    rt = await route(v2.wps);
+    if (gone()) return fail('changed');
+    if (rt.error) return fail('provider', rt.error);
+    if (!reached(rt)) return fail('noreach');
+    if (turnBad(rt)) return fail('startuturn');
+    viaIds = v2.ids;
+    must = v2.ids;
+  }
+  // 5) Son rota: rakım + hava ile profil ve kesin plan (onayda aynen uygulanır)
+  const ex = await addExtras(rt);
+  if (gone()) return fail('changed');
+  ctx = addCtx(rt, pool, viaIds, ex);
+  out = await planOn(ctx, must);
+  if (gone()) return fail('changed');
+  if (!out?.result.feasible) return fail('plan', out?.result.reason || '');
+  const stop = out.result.stops.find((s) => s.station.id === station.id && s.km > 0.5);
+  if (!stop) return fail('plan', tpl('durak planda yok'));
+  const userPins = [...new Set([...locked.map((s) => s.station.id), station.id])];
+  const vc = viaCheck({ coords: rt.coords, stops: out.result.stops, fromKm: 0, viaIds, pinIds: [] });
+  const j = judgeAddRoute({ viaIssues: vc.issues, addId: station.id, startTurn: turnBad(rt) });
+  if (!j.ok) return fail(j.reason, j.names.join(', '));
+  const ahead0 = (pl.stops || []).filter((s) => s.km > fromKm + 0.5);
+  const diff = planDiff({ stops: ahead0, totals: remainingTotals(pl, fromKm) }, { stops: out.result.stops, totals: out.result.totals });
+  const baseKm = pl.profile.totalKm - fromKm;
+  const baseMin = pl.profile.timeBetween(fromKm, pl.profile.totalKm) * 60;
+  return {
+    ok: true,
+    preview: {
+      station, stop, out, ctx, wxInfo: ex.wxInfo, elevOk: ex.elevOk, wxOk: ex.wxOk, diff,
+      addKm: ctx.profile.totalKm - baseKm, addMin: ctx.profile.timeBetween(0, ctx.profile.totalKm) * 60 - baseMin,
+      provider: rt.routeMeta?.provider ?? null, moving, origin, soc, socTrusted: !!socNow?.trusted,
+      next: { pinIds: must, banIds, leaveSocs: sanitizeLeaveSocs(leaveSocs, must), userPins, viaIds, fromKm: 0, fromSoc: moving ? soc : null, forceFirstId: null },
+      seq, planId, at: Date.now(),
+    },
+  };
+}
+
+/**
+ * Önizlenen eklemeyi kullanıcı ONAYLADIKTAN sonra uygula: rota (ara noktalı), profil, istasyonlar ve plan birlikte değişir; harita
+ * yeniden çizilir. Önizlemeden sonra plan değiştiyse (yeniden rota, yeni plan) ya da önizleme eskidiyse uygulanmaz, mevcut rota kalır.
+ * Dönüş: { ok, reason, viaIssues }.
+ */
+export function applyAddToRoute(preview, now = Date.now()) {
+  if (!preview?.out?.result?.feasible) return { ok: false, reason: 'plan' };
+  const pl = getState('plan');
+  if (preview.seq !== tripSeq || preview.planId !== pl.planId || !['ready', 'infeasible'].includes(pl.status)) return { ok: false, reason: 'changed' };
+  if (now - preview.at > PREVIEW_TTL_MS) return { ok: false, reason: 'stale' };
+  const { ctx } = preview;
+  const rt = ctx.rt;
+  raw = ctx.raw;
+  patch('route', {
+    trafficInfo: { ratio: rt.trafficRatio, driveMin: rt.durationH * 60, freeMin: (rt.durationH * 60) / rt.trafficRatio, avgFreeKmh: ctx.speeds.avgFreeKmh, live: !!rt.live, jamKm: (rt.intervals || []).reduce((a, iv) => a + (iv.to - iv.from), 0), slowKm: (rt.trafficSpans || []).reduce((a, s) => a + (s.to - s.from), 0) },
+    cruise: ctx.cruise,
+    traffic: ctx.traffic,
+  });
+  sig = routeSig();
+  const planId = newPlanId();
+  patch('plan', { route: rt, profile: ctx.profile, steps: projectSteps(rt.steps, ctx.profile), planId, stations: ctx.stations, wxInfo: preview.wxInfo, lastStopKm: null, ...preview.next });
+  applyPlan({ ...preview.out, planId }, preview.next);
+  mapApi.drawRoute(rt.coords, { fit: false, traffic: rt.trafficSpans || null });
+  if (preview.moving && getState('sim').enabled) patch('sim', { routeKm: 0, lat: preview.origin.lat, lon: preview.origin.lon }); // simüle araç yeni rotanın başında (bulunduğu yer)
+  if (rt.note) toast(rt.note, 7000);
+  return { ok: true, viaIssues: getState('plan').viaIssues || [] };
+}
+
 /** İstasyon fiyat/kW tablosu değişti: ağ çağrısı olmadan yeniden fiyatla ve planla. */
 export function repriceAndReplan() {
   const plan = getState('plan');
@@ -841,10 +1057,11 @@ export function clearTrip() {
   accessRun = null;
   offerRun = null;
   offerDone.clear();
+  addRun = null; // v0.99.108: süren Rotaya Ekle önizlemesi temizlenen rotaya uygulanamaz (tripSeq de arttı)
   accessBook.clear();
   raw = null;
   sig = '';
-  patch('plan', { status: 'none', text: '', route: null, profile: null, wxInfo: null, stations: [], stationInfo: null, stops: [], steps: [], pinIds: [], banIds: [], leaveSocs: {}, totals: null, planId: null, fromKm: 0, fromSoc: null, viaIds: [], viaIssues: [], accessPending: false, accessFailed: [] });
+  patch('plan', { status: 'none', text: '', route: null, profile: null, wxInfo: null, stations: [], stationInfo: null, stops: [], steps: [], pinIds: [], banIds: [], leaveSocs: {}, userPins: [], totals: null, planId: null, fromKm: 0, fromSoc: null, viaIds: [], viaIssues: [], accessPending: false, accessFailed: [] });
   mapApi.clearRoute();
   for (const k of ['start', 'via', 'end']) mapApi.setPoint(k, null, { fit: false });
 }

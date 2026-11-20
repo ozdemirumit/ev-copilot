@@ -88,7 +88,7 @@ ok('controller: previewStopTarget ve applyStopTarget var', /export function prev
 ok('controller: önizleme applyPlan/patch çağırmaz', fnBody(ctl, 'previewStopTarget') && !/applyPlan\(|patch\(/.test(fnBody(ctl, 'previewStopTarget')));
 ok('controller: eski önizleme reddedilir (planId/tripSeq)', /planId/.test(fnBody(ctl, 'applyStopTarget')) && /tripSeq/.test(fnBody(ctl, 'applyStopTarget')));
 ok("controller: leaveSocs planRoute'a gider", /leaveSocs/.test(fnBody(ctl, 'computePlan')));
-ok('controller: yeni rota/temizlikte leaveSocs sıfırlanır', (ctl.match(/leaveSocs: \{\}/g) || []).length >= 2);
+ok('controller: yeni yolculukta ve temizlikte leaveSocs sıfırlanır; yolda yeniden rotada yalnız ileride kalan kilitli duraklarınkiler korunur (v0.99.114)', /leaveSocs: sanitizeLeaveSocs\(from \? prev\.plan\.leaveSocs : \{\}, keepU\)/.test(ctl) && /const keepU = from \? \(prev\.plan\.userPins \|\| \[\]\)\.filter\(/.test(ctl) && (ctl.match(/leaveSocs: \{\}/g) || []).length >= 1);
 ok('controller: önizleme rota dışı onayı tetiklemez', !/offerAlternatives/.test(fnBody(ctl, 'previewStopTarget')));
 const ui = read('js/ui/stopTarget.js');
 ok('ui: Onayla ve İptal düğmeleri', /st-apply/.test(ui) && /st-cancel/.test(ui));

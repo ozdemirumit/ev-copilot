@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.113';
+self.APP_VERSION = '0.99.114';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.114', date: '2026-11-21',
+    notes: [
+      'Yeni: haritadaki herhangi bir şarj istasyonu "Rotaya Ekle" ile aktif rotaya zorunlu şarj durağı olarak eklenir. Önce istasyona gidiş yönünde erişim yol ağıyla doğrulanır (karşı şerit/bariyer varsa eklenmez), rota istasyondan geçecek şekilde sağlayıcıdan yeniden alınır, kalan duraklar yeniden planlanır ve istasyon listesi güncellenir; değişiklik önizlenir, plan yalnızca "Onayla" ile değişir',
+      'Durak kartında planlanan ya da eklenen durağın şarj hedefi (🎯 %) görünür; dokununca ne kadara kadar şarj edileceği seçilir (önizleme + onay). 34 yeni metin 11 dilde çevrildi',
+    ],
+  },
   {
     v: '0.99.113', date: '2026-11-20',
     notes: [

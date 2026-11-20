@@ -158,7 +158,7 @@ const ui = read('js/ui/stopSwap.js');
 ok('seçilince swapStop çağrılır, başarısızsa bildirim', /swapStop\(/.test(ui) && /toast\(/.test(ui));
 ok('rotada ±5 km, filtresiz', /RANGE_KM = 5/.test(ui) && /rangeKm: RANGE_KM/.test(ui) && !/radiusKm/.test(ui));
 const card = read('js/ui/stationCard.js');
-ok('istasyon kartında Değiştir, Fiyat bildir ile aynı satırda ve sonrasında', card.indexOf("btn('💳 Fiyat bildir'") > 0 && card.indexOf("btn('🔁 Değiştir'") > card.indexOf("btn('💳 Fiyat bildir'") && /acts\.append\(btn\('🔁 Değiştir'/.test(card));
+ok('istasyon kartında Değiştir, Fiyat bildir ile aynı satırda ve sonrasında (v0.99.114: aynı acts.append içinde 🎯 hedef düğmesinden sonra)', card.indexOf("btn('💳 Fiyat bildir'") > 0 && card.indexOf("btn('🔁 Değiştir'") > card.indexOf("btn('💳 Fiyat bildir'") && /acts\.append\(btn\('🎯 %' \+ Math\.round\(stop\.leaveSoc\)[^\n]*btn\('🔁 Değiştir'/.test(card));
 ok('Değiştir yalnızca rotadaki (araçtan ileri) durak için', /plan'\)\.stops\?\.find\(\(x\) => x\.station\.id === s\.id && x\.km > progressKm\(\) - 0\.3\)/.test(card) && /if \(stop\) acts/.test(card));
 ok('kart kapanır, aynı değiştirme penceresi açılır', /close\(\); openSwap\(stop, progressKm\(\)\)/.test(card));
 ok('addStop: zorunlu eklenir, eski plan kurulamazsa korunur, gerekmeyen çıkarılanlar bildirilir', /export function addStop\(newId\)/.test(ctrl) && /pinIds: \[\.\.\.new Set\(\[\.\.\.\(plan\.pinIds \|\| \[\]\), newId\]\)\]/.test(ctrl) && /if \(!out\?\.result\.feasible\) return \{ ok: false, reason: out\?\.result\.reason \|\| 'Plan kurulamadı', dropped: \[\] \}/.test(ctrl) && /const dropped = /.test(ctrl));
