@@ -969,6 +969,12 @@ self.APP_CHANGELOG = [
     ],
   },
   {
+    v: '0.86.1', date: '2026-11-08',
+    notes: [
+      'Telefonda varış kutusuna dokununca sayfanın yakınlaşıp ekrandan taşması düzeltildi: dokunmatik ekranda yazı alanları 16 px.',
+    ],
+  },
+  {
     v: '0.86.0', date: '2026-11-08',
     notes: [
       'Üst navigasyon paneli sadeleşti: büyük ok ve mesafe, kısa komut ve yol adı; kalan yol ve varış saati alt çubukta.',
