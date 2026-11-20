@@ -1,14 +1,14 @@
-# EV Route Finder — Beta geliştirme kuralları (Claude Code ve diğer ajanlar)
+# EV Route Finder — geliştirme kuralları (Claude Code ve diğer ajanlar)
 
 Bu dosya kalıcıdır; her görevde, görev isteminden SONRA ikinci öncelikle uygulanır.
 Görev istemi bu dosyayla çelişirse görev istemi geçerlidir, ama güvenlik kuralları (§6) hiçbir durumda gevşetilmez.
 Dil: kullanıcıyla ve commit mesajlarında Türkçe.
 
-## 1. Kapsam: yalnızca Beta
+## 1. Kapsam: her şey `main` üzerinden (Beta kullanılmaz)
 
-- Gerçek geliştirme tabanı v0.99.107 (`a4da1e3`, dal `fix/wrongside-charger-8f16680`); `design/modern-ui-soc` yerel ağacı (`0c6dffd`, v0.99.57) ESKİDİR, taban olarak kullanma. Her iş v0.99.107 üzerinden açılmış ayrı worktree'de yapılır. `main` = üretim (GitHub Pages, telefonlar kendiliğinden günceller). `main`'e dokunma, merge/push etme.
-- Beta önizleme ayrı depoya `scripts/build-beta.mjs` ile yayımlanır; yalnızca görev açıkça isterse.
-- Diğer worktree'ler (`git worktree list`; ör. `MBRP-addroute` commit edilmemiş "Rotaya ekle" işi taşır: `controller.js`, `stationCard.js`) ve `backup/`, `android/.idea/`, `local-test/` başka işlere aittir: okuma serbest, değiştirme/silme yasak.
+- **Çalışma düzeni (kullanıcı kararı, 2026-11-21): her şey `main` üzerinden ilerler; Beta kullanılmaz.** `main` = üretim (GitHub Pages, telefonlar kendiliğinden günceller) ve kaynak olarak yayımlanır (derleme adımı yok). Bu yüzden kaynakta `js/net/providerGate.js` `PROVIDER_MODE_BUILD = 'beta-full'` kalır, asla `'paused'`a çevrilmez (`test-beta-full-mode` A1 bunu korur). İş: `origin/main`'den ayrı worktree + kısa ömürlü dal; testler (§4) geçince `main`'e hızlı ileri push (force yok). `design/modern-ui-soc` ve eski `MBRP` yerel ağacı (`0c6dffd`) ESKİDİR, taban olarak kullanma.
+- **Her `main` push'undan sonra canlı doğrulama zorunlu** (`https://ozdemirumit.github.io/ev-copilot/`): `version.js` yeni sürüm, `git ls-tree` ile bulunan tüm `js/` ve `css/` dosyaları 200 (yayın anında Pages bir dosyaya geçici 503 verebilir: yeniden dene), haritanın karoları gelir (`providerRequestsPaused()` false), konsol temiz. Sorun varsa `git revert` (force yok).
+- Diğer worktree'ler (`git worktree list`; `MBRP-addroute`'taki özgün "Rotaya ekle" WIP'i v0.99.114'e taşındı, o ağaca dokunulmadı) ve `backup/`, `android/.idea/`, `local-test/` başka işlere aittir: okuma serbest, değiştirme/silme yasak. Beta (`EV-Route-Finder`, `scripts/build-beta.mjs`) kullanılmaz: araç ve depo dursun, yayın yapılmaz.
 
 ## 2. Değişiklikten ÖNCE durum denetimi (zorunlu)
 
@@ -72,9 +72,9 @@ Not: `MBRP-addroute` ağacındaki commit edilmemiş "Rotaya ekle" işi (`js/rout
 Görev istemi açıkça izin vermedikçe yapma; gerekiyorsa dur ve sor:
 - Ücretli API çağrısı (TomTom, Mapbox, Google, HERE, VeriApi vb. gerçek uç noktalar). Testler çevrimdışı/sahte kalır.
 - Dosya/dal/etiket silme, force-push, geçmiş yeniden yazma (`rebase`, `commit --amend` yayımlanmış commit'te).
-- Üretim: `main`'e push, GitHub Pages, Play Store, sunucu yeniden başlatma, `server/install-task.ps1`.
+- Üretim: `main`'e push artık olağan akıştır (Beta ara basamağı yok) ve kullanıcı o iş için istediğinde yapılır; hızlı ileri, force yok, ardından §1'deki canlı doğrulama. Play Store, sunucu yeniden başlatma, `server/install-task.ps1` ayrıca onay ister.
 - Geri dönüşü zor işler: veri göçü, `server/data/` değişikliği, bağımlılık kurulumu/güncellemesi, CI/hook ayarı.
-- Beta önizlemeye yayın, commit veya push — görev istemi istemiyorsa yapma.
+- Commit ve push: görev istemi ya da kullanıcı istemiyorsa yapma (Beta yayını yoktur).
 
 ## 8. Sürüm kuralı (uygulama değişikliklerinde)
 
@@ -87,7 +87,7 @@ Görev istemi açıkça izin vermedikçe yapma; gerekiyorsa dur ve sor:
 Raporda bu durumları ayrı yaz (bkz. `docs/BETA_TASK_REGISTRY.md` §1):
 - **Değiştirildi (yerel):** diff var, commit yok.
 - **Commit edildi / push edildi:** sha ve dal ile.
-- **Beta'ya yayımlandı:** önizleme deposu commit'i ve canlı `version.js` denetimi ile.
+- **`main`'e yayımlandı (üretim):** push edilen sha ve canlı denetim (`version.js`, dosyalar 200, harita, konsol) ile.
 - **Doğrulandı (`verified`):** yalnızca gerçek cihazda ya da kullanıcı kabulüyle. Ajan bu durumu kendisi veremez.
 - **NO-CHANGE / failed / partial:** neden ve kanıtıyla.
 
