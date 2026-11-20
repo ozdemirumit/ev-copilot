@@ -123,6 +123,20 @@ try {
   ok('SHELL yinelenen giriş içermez', new Set(shell).size === shell.length);
   for (const req of ['./js/nav/trafficGuard.js', './js/nav/routeMeta.js', './js/nav/ahead.js', './js/nav/navigator.js', './js/providers/index.js', './version.js'])
     ok(`SHELL içerir: ${req}`, shell.includes(req));
+  // js/app.js'ten başlayan STATİK import grafiğindeki her dosya SHELL'de olmalı (dinamik import() ve test-only modüller kapsam dışı)
+  {
+    const seen = new Set(); const todo = ['js/app.js'];
+    while (todo.length) {
+      const f = todo.pop(); if (seen.has(f) || !existsSync(join(out, f))) continue; seen.add(f);
+      const txt = readFileSync(join(out, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+      for (const im of txt.matchAll(/(?:^|\n)\s*(?:import|export)\s[^'"\n;]*?from\s*['"](\.[^'"]+)['"]|(?:^|\n)\s*import\s*['"](\.[^'"]+)['"]/g)) {
+        const spec = (im[1] || im[2]).split('?')[0];
+        todo.push(join(dirname(f), spec).split(sep).join('/'));
+      }
+    }
+    const notInShell = [...seen].filter((f) => !shell.includes('./' + f));
+    ok(`app.js statik import grafiği (${seen.size} dosya) SHELL'de eksiksiz`, seen.size > 50 && notInShell.length === 0, notInShell.join(', '));
+  }
   ok('sw.js version.js içe aktarır', sw.includes("importScripts('./version.js')"));
 
   // ---------------------------------------------------------------- 5) Beta ad değişiklikleri
