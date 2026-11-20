@@ -32,7 +32,7 @@ function renderList() {
   list.replaceChildren();
   $('station-title').textContent = `${tr('Rotadakiler')} · ${tr(MODE_TITLE[p.mode])}`;
   // Rota yoksa "Rotadakiler" kartı hiç görünmez (hata varsa nedeni göstermek için görünür kalır)
-  $('route-stations-card').classList.toggle('hidden', !p.profile && !(p.stationInfo?.errors || []).length);
+  $('route-stations-card').classList.toggle('hidden', !p.profile && !(p.stationInfo?.errors || []).length && !(p.stationInfo?.notices || []).length);
   paintMore($('station-more'), 0, ROUTE_LIMIT, false);
   paintPowerNote($('route-power-note'), null);
 
@@ -45,6 +45,8 @@ function renderList() {
     ? (none ? 'Hiç istasyon alınamadı. ' : 'Liste eksik olabilir. ') + errs.join(' · ')
       + ' — İnternet bağlantını kontrol et; sorun geçiciyse biraz sonra yeniden dene (açık kaynak sunucular zaman zaman yanıt vermez).'
     : none ? `Rota boyunca uygun (DC, ≥40 kW) istasyon bulunamadı (OpenStreetMap/OpenChargeMap verisi). Bildiğin istasyonları "Kendi istasyonlarım"dan ekleyebilirsin.` : '';
+  const notes = p.stationInfo?.notices || []; // bilgi (hata değil): ör. Google'da maliyet sınırı nedeniyle taranmayan alt bölgeler
+  if (notes.length) warn.textContent = [warn.textContent, notes.join(' · ')].filter(Boolean).join(' ');
   warn.classList.toggle('hidden', !warn.textContent);
   retry.classList.toggle('hidden', !(errs.length || none));
   retry.disabled = p.status === 'loading';

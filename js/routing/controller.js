@@ -29,6 +29,7 @@ let raw = null; // { pts, elevations, elevSource, wx } — profil ayarları değ
 let startSoc = 80;
 let sig = '';
 let cacheKey = null;
+let stationsCtl = null; // süren istasyon aramasının iptali: yeni planlama başlayınca önceki ücretli Google araması durdurulur
 let timer = null;
 const accessBook = createAccessBook(); // şarj durağı yol ağı erişim sonuçları (istasyon × gidiş yönü); yeni yolculukta temizlenir
 const ACCESS_ROUNDS = 4; // erişilemeyen durak elenince yeni seçilen durak(lar) da doğrulanır: en çok bu kadar tur
@@ -252,13 +253,19 @@ async function runAccess() {
 
 /** İstasyonları getir ve plan durumuna yaz; hata/önbellek bilgisi İstasyon sekmesinde kalıcı gösterilir. */
 async function loadStations(pts, profile, stale = () => false) {
-  const res = await fetchChargers(pts, profile, cacheKey);
-  if (stale()) return; // araya yeni planlama girdi: eski rotanın istasyonları yeni planı ezmez
-  const { cached, summary } = res;
-  const { stations, errors } = keepLastGood(getState('plan').stations, res); // kaynak kesikse aynı rotanın önceki listesi silinmez
-  if (errors.length) toast(errors.join(' · '), 7000);
-  if (cached) toast('İstasyonlar önbellekten alındı');
-  patch('plan', { stations, stationInfo: { errors, cached, summary } });
+  stationsCtl?.abort(); // önceki arama hâlâ sürüyorsa (yeni rota / yeniden ara) ücretli istekleri durur
+  const ctl = (stationsCtl = new AbortController());
+  try {
+    const res = await fetchChargers(pts, profile, cacheKey, { signal: ctl.signal });
+    if (stale() || ctl.signal.aborted) return; // araya yeni planlama girdi: eski rotanın istasyonları yeni planı ezmez
+    const { cached, summary, notices = [] } = res;
+    const { stations, errors } = keepLastGood(getState('plan').stations, res); // kaynak kesikse aynı rotanın önceki listesi silinmez
+    if (errors.length || notices.length) toast([...errors, ...notices].join(' · '), 7000);
+    if (cached) toast('İstasyonlar önbellekten alındı');
+    patch('plan', { stations, stationInfo: { errors, notices, cached, summary } });
+  } finally {
+    if (stationsCtl === ctl) stationsCtl = null;
+  }
 }
 
 /** İstasyon sekmesindeki "Yeniden ara": rota/profil aynı kalır, yalnızca istasyon sorgusu tekrarlanır. */
@@ -301,6 +308,7 @@ export async function planTrip(from = null, { via = null, extra = [], preRoute =
   // Yeni nesil: önceki planlamanın (ve onun arka plan adımlarının) geç gelen sonuçları bundan sonra yok sayılır
   const seq = ++tripSeq;
   const stale = () => seq !== tripSeq;
+  stationsCtl?.abort(); // önceki planlamanın süren istasyon (ücretli Google) araması iptal edilir; sonucu zaten yok sayılırdı
   // İnternet yoksa/rota alınamazsa mevcut (kayıtlı) plan bozulmasın. Planlama sürerken yenisi başladıysa son tutarlı durum geri gelir.
   const cur = getState('plan');
   const prev = cur.status === 'loading' && lastGood ? lastGood

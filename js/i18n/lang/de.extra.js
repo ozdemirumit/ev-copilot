@@ -438,4 +438,12 @@ export default {
   "🚇 Tünel {0} ileride ({1})": "🚇 Tunnel in {0} ({1})",
   "💰 Ücretli yol {0} ileride": "💰 Mautstraße in {0}",
   "Rotada {0} km ileride": "Auf der Route, in {0} km",
+  "Google: {0} alt bölge taranmadı (arama başına {1} ücretli sorgu sınırı)": "Google: {0} Teilgebiete nicht durchsucht (Limit von {1} kostenpflichtigen Abfragen pro Suche)",
+  "Google: {0} arama başarısız{1}": "Google: Suche fehlgeschlagen ({0}×){1}",
+  "Google istasyon aramasının sunucudaki günlük sınırı doldu; yarın yenilenir": "Das tägliche Serverlimit für die Google-Stationssuche ist erreicht; es wird morgen zurückgesetzt",
+  "Google geçici istek sınırına ulaşıldı (HTTP 429); biraz sonra yeniden dene": "Googles vorübergehendes Anfragelimit wurde erreicht (HTTP 429); bitte gleich erneut versuchen",
+  "Google geçici olarak yanıt vermedi (HTTP {0})": "Google hat vorübergehend nicht geantwortet (HTTP {0})",
+  "Google anahtarı ya da API izni geçersiz": "Google-Schlüssel oder API-Berechtigung ungültig",
+  "Google istasyonları Premium gerektirir": "Google-Stationen erfordern Premium",
+  "Sunucuda Google anahtarı yok": "Kein Google-Schlüssel auf dem Server",
 };

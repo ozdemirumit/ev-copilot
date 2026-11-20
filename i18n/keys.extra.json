@@ -437,5 +437,13 @@
  "{0} ileride ücretli yol.",
  "🚇 Tünel {0} ileride ({1})",
  "💰 Ücretli yol {0} ileride",
- "Rotada {0} km ileride"
+ "Rotada {0} km ileride",
+ "Google: {0} alt bölge taranmadı (arama başına {1} ücretli sorgu sınırı)",
+ "Google: {0} arama başarısız{1}",
+ "Google istasyon aramasının sunucudaki günlük sınırı doldu; yarın yenilenir",
+ "Google geçici istek sınırına ulaşıldı (HTTP 429); biraz sonra yeniden dene",
+ "Google geçici olarak yanıt vermedi (HTTP {0})",
+ "Google anahtarı ya da API izni geçersiz",
+ "Google istasyonları Premium gerektirir",
+ "Sunucuda Google anahtarı yok"
 ]

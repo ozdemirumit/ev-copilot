@@ -438,4 +438,12 @@ export default {
   "🚇 Tünel {0} ileride ({1})": "🚇 Tunel în {0} ({1})",
   "💰 Ücretli yol {0} ileride": "💰 Drum cu taxă în {0}",
   "Rotada {0} km ileride": "Pe traseu, peste {0} km",
+  "Google: {0} alt bölge taranmadı (arama başına {1} ücretli sorgu sınırı)": "Google: {0} subzone nescanate (limită de {1} interogări plătite per căutare)",
+  "Google: {0} arama başarısız{1}": "Google: căutări eșuate: {0}{1}",
+  "Google istasyon aramasının sunucudaki günlük sınırı doldu; yarın yenilenir": "Limita zilnică a serverului pentru căutarea stațiilor Google s-a epuizat; se reînnoiește mâine",
+  "Google geçici istek sınırına ulaşıldı (HTTP 429); biraz sonra yeniden dene": "S-a atins limita temporară de cereri Google (HTTP 429); încearcă din nou în curând",
+  "Google geçici olarak yanıt vermedi (HTTP {0})": "Google nu a răspuns temporar (HTTP {0})",
+  "Google anahtarı ya da API izni geçersiz": "Cheia Google sau permisiunea API nu este validă",
+  "Google istasyonları Premium gerektirir": "Stațiile Google necesită Premium",
+  "Sunucuda Google anahtarı yok": "Nicio cheie Google pe server",
 };

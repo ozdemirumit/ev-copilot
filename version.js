@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.110';
+self.APP_VERSION = '0.99.111';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.111', date: '2026-11-20',
+    notes: [
+      'Google şarj istasyonu araması: sunucudaki günlük sınır, Google geçici istek sınırı (429), anahtar/izin hatası ve Premium gereksinimi artık ayrı ve anlaşılır mesajlarla gösterilir; yanıltıcı "arama üst sınır nedeniyle yapılmadı" hatası kalktı',
+      'Google geçici sunucu hatası (502/503/504) verirse ilgili bölge bir kez yeniden denenir; ücretli arama sınırı yeniden denemelerle aşılmaz',
+      'Yeni rota planlanınca eskisi için süren ücretli Google araması iptal edilir; taranmayan alt bölgeler hata değil bilgi notu olarak gösterilir (11 dil)',
+    ],
+  },
   {
     v: '0.99.110', date: '2026-11-20',
     notes: [

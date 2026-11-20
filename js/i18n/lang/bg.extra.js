@@ -438,4 +438,12 @@ export default {
   "🚇 Tünel {0} ileride ({1})": "🚇 Тунел след {0} ({1})",
   "💰 Ücretli yol {0} ileride": "💰 Платен път след {0}",
   "Rotada {0} km ileride": "По маршрута, след {0} км",
+  "Google: {0} alt bölge taranmadı (arama başına {1} ücretli sorgu sınırı)": "Google: непроверени подзони: {0} (лимит от {1} платени заявки на търсене)",
+  "Google: {0} arama başarısız{1}": "Google: неуспешни търсения: {0}{1}",
+  "Google istasyon aramasının sunucudaki günlük sınırı doldu; yarın yenilenir": "Дневният лимит на сървъра за търсене на станции в Google е изчерпан; подновява се утре",
+  "Google geçici istek sınırına ulaşıldı (HTTP 429); biraz sonra yeniden dene": "Достигнат е временният лимит на заявки на Google (HTTP 429); опитайте отново след малко",
+  "Google geçici olarak yanıt vermedi (HTTP {0})": "Google временно не отговори (HTTP {0})",
+  "Google anahtarı ya da API izni geçersiz": "Невалиден ключ за Google или разрешение за API",
+  "Google istasyonları Premium gerektirir": "Станциите от Google изискват Premium",
+  "Sunucuda Google anahtarı yok": "Няма ключ за Google на сървъра",
 };

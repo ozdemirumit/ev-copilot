@@ -438,4 +438,12 @@ export default {
   "🚇 Tünel {0} ileride ({1})": "🚇 Σήραγγα σε {0} ({1})",
   "💰 Ücretli yol {0} ileride": "💰 Διόδια σε {0}",
   "Rotada {0} km ileride": "Στη διαδρομή, σε {0} χλμ",
+  "Google: {0} alt bölge taranmadı (arama başına {1} ücretli sorgu sınırı)": "Google: υποπεριοχές που δεν σαρώθηκαν: {0} (όριο {1} επί πληρωμή αναζητήσεων ανά αναζήτηση)",
+  "Google: {0} arama başarısız{1}": "Google: αποτυχημένες αναζητήσεις: {0}{1}",
+  "Google istasyon aramasının sunucudaki günlük sınırı doldu; yarın yenilenir": "Το ημερήσιο όριο του διακομιστή για την αναζήτηση σταθμών Google εξαντλήθηκε· ανανεώνεται αύριο",
+  "Google geçici istek sınırına ulaşıldı (HTTP 429); biraz sonra yeniden dene": "Συμπληρώθηκε το προσωρινό όριο αιτημάτων της Google (HTTP 429)· δοκιμάστε ξανά σε λίγο",
+  "Google geçici olarak yanıt vermedi (HTTP {0})": "Η Google προσωρινά δεν απάντησε (HTTP {0})",
+  "Google anahtarı ya da API izni geçersiz": "Μη έγκυρο κλειδί Google ή άδεια API",
+  "Google istasyonları Premium gerektirir": "Οι σταθμοί Google απαιτούν Premium",
+  "Sunucuda Google anahtarı yok": "Δεν υπάρχει κλειδί Google στον διακομιστή",
 };

@@ -14,7 +14,7 @@ import { teslaAlong, teslaAround } from '../routing/tesla.js';
 import { mapboxKey } from '../mapbox/api.js';
 import { stationsAlong, stationsAround } from '../mapbox/chargers.js';
 import { hereOn, stationsAlong as hereAlong, stationsAround as hereAround } from '../here/chargers.js';
-import { googleOn, stationsAlong as googleAlong, stationsAround as googleAround } from '../google/chargers.js';
+import { googleOn, googleNotes, stationsAlong as googleAlong, stationsAround as googleAround } from '../google/chargers.js';
 
 // Herkese açık Overpass sunucuları; biri 429/406/hata verirse sıradakine geçilir (adil kullanım: paralel sorgu yok).
 const OVERPASS = [
@@ -240,9 +240,10 @@ export async function testOcm() {
  * Rota boyunca istasyonlar: her ~120 km'lik parça bir Overpass sorgusu (parça başına 6 saat önbellek); OpenChargeMap anahtarı varsa
  * ~40 km aralıklı dairelerle ek olarak sorgulanır. Dönüş: { stations, errors, cached, summary }.
  */
-export async function fetchChargers(pts, profile) {
+export async function fetchChargers(pts, profile, _cacheKey, { signal } = {}) { // signal: yeni rota planlanınca ücretli Google araması iptal edilir
   const ctx = { raw: 0, drop: {}, calls: 0, textCalls: 0, textFound: 0 };
   const errors = [];
+  const notices = []; // bilgi (hata değil): ör. Google'da maliyet sınırı nedeniyle taranmayan alt bölgeler
   const found = new Map();
   let failed = 0;
   let segTotal = 0;
@@ -324,14 +325,14 @@ export async function fetchChargers(pts, profile) {
   if (stale) errors.push(`Overpass: ${stale} parça son başarılı aramadan (en çok 3 gün eski; istasyon değişmiş olabilir)`);
 
   // Google Places (ücretli, yalnızca Premium): ek kaynak; yinelenenleri dedupe eler (önce gelen kayıt kalır), hata olursa öteki kaynaklarla sürülür
-  if (googleOn()) {
+  if (googleOn() && !signal?.aborted) {
     let r;
-    try { r = await googleAlong(pts); } catch (err) { r = { out: new Map(), raw: 0, calls: 0, failed: 0, skipped: 0, fatal: err }; }
+    try { r = await googleAlong(pts, { signal }); } catch (err) { r = { out: new Map(), raw: 0, calls: 0, failed: 0, skipped: 0, fatal: err }; }
     ctx.calls += r.calls;
     take({ out: [...r.out.values()], raw: r.raw, drop: {} });
-    if (r.failed) errors.push(`Google: ${r.failed} arama başarısız${r.lastError ? ' — ' + r.lastError : ''}`);
-    if (r.skipped) errors.push(`Google: ${r.skipped} arama üst sınır nedeniyle yapılmadı`);
-    if (r.fatal) errors.push(r.fatal.message);
+    const g = googleNotes(r); // taranmayan alt bölge = bilgi (uygulamanın ücretli çağrı sınırı), Google kotası/hatası değil
+    errors.push(...g.errors);
+    notices.push(...g.notices);
   }
 
   const key = ocmKey();
@@ -363,7 +364,7 @@ export async function fetchChargers(pts, profile) {
   countFinalDrops([...found.values()], stations, profile, ctx.drop);
   const sourceDown = !found.size && failed > 0 && !usedMapbox; // ağ kesintisi: "istasyon yok" değil, "alınamadı" (geçerli sıfırdan ayrı)
   if (sourceDown) errors.unshift('İstasyon kaynağına ulaşılamadı: internet veya Overpass sunucusu');
-  return { stations, errors, cached: ctx.calls === 0 && found.size > 0, summary: summarize(stations, profile, ctx), sourceDown, stale };
+  return { stations, errors, notices, cached: ctx.calls === 0 && found.size > 0, summary: summarize(stations, profile, ctx), sourceDown, stale };
 }
 
 const NEAR_TTL_MS = 20 * 60e3;
@@ -400,8 +401,7 @@ export async function fetchAround(lat, lon, radiusKm, force = false) {
     if (googleOn()) {
       const r = await googleAround(lat, lon, km).catch((err) => ({ out: new Map(), failed: 0, fatal: err }));
       out.push(...r.out.values());
-      if (r.failed) errors.push(`Google: ${r.failed} arama başarısız${r.lastError ? ' — ' + r.lastError : ''}`);
-      if (r.fatal) errors.push(r.fatal.message);
+      errors.push(...googleNotes(r).errors); // tek daire (+4 alt daire): sınır dolmaz, taranmayan bölge bilgisi çıkmaz
     }
     const key = ocmKey();
     if (key) {
