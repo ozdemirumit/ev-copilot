@@ -1,8 +1,7 @@
 // YALNIZ ÜCRETSİZ (free-only) BETA SAĞLAYICI MODU — kapalı cihaz testi içindir, herkese açık yayın İÇİN DEĞİL.
 // node scripts/test-free-only-mode.mjs   (çevrimdışı; gerçek ağ yok, gerçek anahtar yok, ücretli API yok; saat sanal)
 //
-// Kaynak (üretim/varsayılan Beta) davranışı DEĞİŞMEZ: js/net/providerGate.js PROVIDER_MODE_BUILD = 'paused' kalır ve küresel
-// duraklatma sürer. Yalnız `node scripts/build-beta.mjs --free-only <depo-dışı-klasör>` ile üretilen YEREL çıktıda mod 'free-only'
+// Bayraksız build-beta çıktısı (güvenli varsayılan) 'paused' kalır ve küresel duraklatma sürer (kaynak v0.99.112'den beri 'beta-full'). Yalnız `node scripts/build-beta.mjs --free-only <depo-dışı-klasör>` ile üretilen YEREL çıktıda mod 'free-only'
 // olur: küresel duraklatmanın yerine kesin izin listesi (OpenFreeMap karoları, herkese açık Valhalla, Open-Meteo hava/yükselti,
 // Photon/Nominatim, Overpass aynaları). Mapbox/Google/TomTom/HERE/Iternio(ABRP)/ArcGIS/OpenChargeMap ve ara sunucunun sağlayıcı
 // yolları reddedilir; ücretsiz servislerin adil kullanım sınırları istemcide jeton kovası + saatlik tavanla korunur (kuyruk yok,
@@ -54,8 +53,9 @@ const { blockedReason, installProviderGate, ProviderPausedError } = gate;
 
 // =============================================================================================== A) varsayılan (kaynak) değişmedi
 ok('A1 kaynak: PROVIDER_REQUESTS_PAUSED_DEFAULT hâlâ true', gate.PROVIDER_REQUESTS_PAUSED_DEFAULT === true);
-ok('A2 kaynak: PROVIDER_MODE_BUILD = \'paused\' (free-only yalnız build-beta --free-only çıktısında)', gate.PROVIDER_MODE_BUILD === 'paused');
-ok('A3 kaynak: providerMode() paused, freeOnlyMode() false, providerRequestsPaused() true',
+ok('A2 kaynak: PROVIDER_MODE_BUILD = \'beta-full\' (v0.99.112; free-only yalnız build-beta --free-only çıktısında)', gate.PROVIDER_MODE_BUILD === 'beta-full' && gate.providerMode() === 'beta-full');
+gate.setProviderMode('paused'); // A3/A4 'paused' modunun (bayraksız derleme) davranışını aynen sınar
+ok('A3 paused modu: providerMode() paused, freeOnlyMode() false, providerRequestsPaused() true',
   typeof gate.providerMode === 'function' && gate.providerMode() === 'paused' && gate.freeOnlyMode?.() === false && gate.providerRequestsPaused() === true);
 ok('A4 kaynak duraklatmada ücretsiz servis de reddedilir (bugünkü davranış)', blockedReason('https://api.open-meteo.com/v1/forecast?x=1', { origin: ORIGIN }) === 'external');
 
@@ -267,7 +267,7 @@ ok('F10 tüm test boyunca ücretli/sağlayıcı yolu isteği 0', leaked.length =
     ok('G1 build-beta --free-only geçici klasöre üretir', r1.code === 0 && existsSync(join(out, 'js', 'net', 'providerGate.js')), r1.out.slice(-400));
     const built = existsSync(join(out, 'js', 'net', 'providerGate.js')) ? readFileSync(join(out, 'js', 'net', 'providerGate.js'), 'utf8') : '';
     ok('G2 çıktıda PROVIDER_MODE_BUILD = \'free-only\' (tek satır)', (built.match(/export const PROVIDER_MODE_BUILD = 'free-only';/g) || []).length === 1);
-    ok('G3 kaynak providerGate.js değişmedi (paused)', /export const PROVIDER_MODE_BUILD = 'paused';/.test(read('js/net/providerGate.js')));
+    ok('G3 kaynak providerGate.js değişmedi (beta-full)', /export const PROVIDER_MODE_BUILD = 'beta-full';/.test(read('js/net/providerGate.js')));
     if (built) {
       const bg = await import(pathToFileURL(join(out, 'js', 'net', 'providerGate.js')).href + '?b=' + Date.now());
       ok('G4 üretilen modül: freeOnlyMode() true, providerRequestsPaused() false', bg.freeOnlyMode() === true && bg.providerRequestsPaused() === false);

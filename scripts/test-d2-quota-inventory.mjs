@@ -142,6 +142,7 @@ ok('RETRY_MS dolunca tekrar sorgulanır (durak başına 1)', probeCalls === 4 &&
 // D) Duraklatma kapıları (ücretsiz kota koruması) — istemci ve sunucu; alttaki fetch'e ulaşan istek sayılır.
 // =====================================================================================================================
 const CG = await import('../js/net/providerGate.js');
+CG.setProviderMode('paused'); // v0.99.112: kaynak varsayılanı 'beta-full'; envanter 'paused' modunun (bayraksız derleme) davranışını sınar
 const SG = await import('../server/providerGate.mjs');
 ok('istemci varsayılanı duraklatılmış (PROVIDER_REQUESTS_PAUSED_DEFAULT true)', CG.PROVIDER_REQUESTS_PAUSED_DEFAULT === true && CG.providerRequestsPaused() === true);
 ok('sunucu varsayılanı duraklatılmış (env tanımsız → true; yalnız 0/false/off/no açar)', SG.providerPaused({}) === true && SG.providerPaused({ PROVIDER_REQUESTS_PAUSED: '1' }) === true && SG.providerPaused({ PROVIDER_REQUESTS_PAUSED: '0' }) === false);

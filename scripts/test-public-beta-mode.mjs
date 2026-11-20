@@ -68,9 +68,10 @@ const gate = await import('../js/net/providerGate.js');
 const { blockedReason, installProviderGate, createFreeLimiter, ProviderPausedError, freeMapRequest, BLOCKED_MAP_URL } = gate;
 
 // ================================================================================================ A) kaynak varsayılanı değişmedi
-ok('A1 kaynak: PROVIDER_MODE_BUILD = \'paused\' (public-free yalnız build-beta --public-free çıktısında)', gate.PROVIDER_MODE_BUILD === 'paused');
-ok('A2 kaynak: providerMode() paused, publicFreeMode() false', gate.providerMode() === 'paused' && gate.publicFreeMode() === false && gate.freeOnlyMode() === false);
-ok('A3 kaynak duraklatmada paylaşılan sunucunun sağlayıcı yolu kesik, /v1/config bugünkü gibi izinli', blockedReason(SHARED + '/mapbox/x', { origin: ORIGIN, proxyBase: SHARED }) === 'proxy-provider' && blockedReason(SHARED + '/v1/config', { origin: ORIGIN, proxyBase: SHARED }) === null);
+ok('A1 kaynak: PROVIDER_MODE_BUILD = \'beta-full\' (v0.99.112; public-free yalnız build-beta --public-free çıktısında)', gate.PROVIDER_MODE_BUILD === 'beta-full' && gate.providerMode() === 'beta-full');
+gate.setProviderMode('paused'); // A2/A3 'paused' modunun (bayraksız derleme) davranışını aynen sınar
+ok('A2 paused modu: providerMode() paused, publicFreeMode() false', gate.providerMode() === 'paused' && gate.publicFreeMode() === false && gate.freeOnlyMode() === false);
+ok('A3 paused modunda paylaşılan sunucunun sağlayıcı yolu kesik, /v1/config bugünkü gibi izinli', blockedReason(SHARED + '/mapbox/x', { origin: ORIGIN, proxyBase: SHARED }) === 'proxy-provider' && blockedReason(SHARED + '/v1/config', { origin: ORIGIN, proxyBase: SHARED }) === null);
 
 // ================================================================================================ B) mod ayrıştırma (fail-closed)
 for (const v of ['public-free', 'free-only']) ok(`B1 '${v}' tam eşleşmeyle açılır`, gate.parseProviderMode(v) === v);
@@ -342,7 +343,7 @@ ok(`Z1 testin TAMAMINDA alttaki fetch'e yalnız herkese açık izin listesindeki
     const r = run(['--public-free', out]);
     ok('I1 --public-free depo dışı, git olmayan klasöre derlenir', r.code === 0 && existsSync(join(out, 'index.html')), r.out.slice(-300));
     const pg = readFileSync(join(out, 'js', 'net', 'providerGate.js'), 'utf8');
-    ok('I2 çıktıda PROVIDER_MODE_BUILD = \'public-free\' (tam bir kez), kaynak \'paused\' kaldı', (pg.match(/export const PROVIDER_MODE_BUILD = 'public-free';/g) || []).length === 1 && /export const PROVIDER_MODE_BUILD = 'paused';/.test(read('js/net/providerGate.js')));
+    ok('I2 çıktıda PROVIDER_MODE_BUILD = \'public-free\' (tam bir kez), kaynak \'beta-full\' kaldı', (pg.match(/export const PROVIDER_MODE_BUILD = 'public-free';/g) || []).length === 1 && /export const PROVIDER_MODE_BUILD = 'beta-full';/.test(read('js/net/providerGate.js')));
     ok('I3 kapı kapalı: PUBLIC-BETA-GATE-BLOCKED.txt işareti yazıldı', existsSync(join(out, 'PUBLIC-BETA-GATE-BLOCKED.txt')) && openConds.every((id) => readFileSync(join(out, 'PUBLIC-BETA-GATE-BLOCKED.txt'), 'utf8').includes(id)));
     ok('I4 başlık "(Beta – ücretsiz)", offline.html Beta adresine döner', readFileSync(join(out, 'index.html'), 'utf8').includes('<title>EV Route Finder (Beta – ücretsiz)</title>') && readFileSync(join(out, 'offline.html'), 'utf8').includes('https://ozdemirumit.github.io/EV-Route-Finder/'));
     ok('I5 çıktıda server/, .env, docs/, scripts/ yok', !existsSync(join(out, 'server')) && !existsSync(join(out, '.env')) && !existsSync(join(out, 'docs')) && !existsSync(join(out, 'scripts')));
@@ -386,7 +387,7 @@ ok(`Z1 testin TAMAMINDA alttaki fetch'e yalnız herkese açık izin listesindeki
   ok('J6 istasyon kartı: herkese açık Beta\'da doluluk/puan/fotoğraf (sunucu) yüklenmez, giriş istemi yok', /if \(publicFreeMode\(\)\) \{ live\.classList\.add\('hidden'\); info\.classList\.add\('hidden'\); return; \}/.test(sc));
   const se = strip(read('js/osm/search.js'));
   ok('J7 arama: Nominatim dalı publicFreeMode ile kapalı', /if \(onMore && !publicFreeMode\(\)\)/.test(se));
-  ok('J8 sürüm 0.99.111', /self\.APP_VERSION = '0\.99\.111';/.test(read('version.js')));
+  ok('J8 sürüm 0.99.112', /self\.APP_VERSION = '0\.99\.112';/.test(read('version.js')));
 }
 
 console.log(`\n${pass} geçti, ${fail} başarısız`);

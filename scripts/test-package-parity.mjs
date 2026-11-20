@@ -172,10 +172,13 @@ try {
   for (const r of srcRel) {
     if (!outRel.has(r) || r === 'index.html' || r === 'manifest.webmanifest' || r === 'offline.html') continue;
     const a = readFileSync(join(root, r)), b = readFileSync(join(out, r));
-    const same = renamedSet.has(r) && !isVendor(r) ? applyRenames(a.toString('utf8')) === b.toString('utf8') : a.equals(b);
+    // build-beta.mjs sağlayıcı modu satırını HER derlemede açıkça yazar (v0.99.112: kaynak 'beta-full', bayraksız çıktı 'paused'); yalnız o satır normalleştirilir
+    const modeLine = (s) => (r === join('js', 'net', 'providerGate.js') ? s.replace(/export const PROVIDER_MODE_BUILD = '[a-z-]+';/, "export const PROVIDER_MODE_BUILD = '<mod>';") : s);
+    const same = renamedSet.has(r) && !isVendor(r) ? modeLine(applyRenames(a.toString('utf8'))) === modeLine(b.toString('utf8')) : a.equals(b);
     if (!same) diff.push(r);
   }
   ok('tüm dosyalar kaynakla eşleşiyor (js: ad değişikliği sonrası)', diff.length === 0, diff.slice(0, 5).join(', '));
+  ok("bayraksız derleme providerGate.js modu 'paused' (güvenli varsayılan)", /export const PROVIDER_MODE_BUILD = 'paused';/.test(readFileSync(join(out, 'js', 'net', 'providerGate.js'), 'utf8')));
   for (const [rel, needles] of [
     [join('js', 'nav', 'trafficGuard.js'), ['export function trafficUse', 'export function liveRemainH', 'LIVE_REMAIN_MAX_MS']],
     [join('js', 'nav', 'routeMeta.js'), ['ROUTE_META_VERSION', 'PROVIDERS']],

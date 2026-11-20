@@ -9,15 +9,15 @@
 // stille açılır (js/ui/maps/maplibre.js OFFLINE_STYLE) ve Mapbox/Google/TomTom harita betikleri hiç yüklenmez (js/ui/mapView.js).
 // Geri açma: PROVIDER_REQUESTS_PAUSED_DEFAULT = false + sürüm artırımı + yayın (sunucu tarafı ayrıca: server/providerGate.mjs).
 //
-// YALNIZ ÜCRETSİZ MOD (v0.99.92, kapalı cihaz testi içindir, herkese açık yayın için DEĞİL): kaynakta PROVIDER_MODE_BUILD = 'paused'
-// kalır. Yalnız `node scripts/build-beta.mjs --free-only <depo-dışı-klasör>` çıktısında bu satır 'free-only' olur. O modda küresel
+// YALNIZ ÜCRETSİZ MOD (v0.99.92, kapalı cihaz testi içindir, herkese açık yayın için DEĞİL): kaynakta PROVIDER_MODE_BUILD = 'beta-full'
+// (v0.99.112'den beri; bayraksız derleme 'paused' yazar). Yalnız `node scripts/build-beta.mjs --free-only <depo-dışı-klasör>` çıktısında bu satır 'free-only' olur. O modda küresel
 // duraklatmanın yerine KESİN İZİN LİSTESİ (FREE_ENDPOINTS) uygulanır: yalnız https, standart port, kimlik bilgisiz adres, listedeki ana
 // makine + yol + yöntem geçer. Ücretli sağlayıcılar (PAID_HOST_SUFFIXES), listede olmayan her köken ve ara sunucunun sağlayıcı yolları
 // reddedilir. Ücretsiz servislerin adil kullanım sınırı için ana makine başına jeton kovası + saatlik tavan: sınır aşılınca istek
 // KUYRUĞA ALINMAZ, reddedilir (fırtına/birikme yok). Belirsiz mod değeri → 'paused' (fail-closed). Harita Worker isteği için:
 // freeMapRequest (MapLibre transformRequest) yalnız OpenFreeMap'i geçirir; Esri/ArcGIS uydu katmanı bu modda hiç eklenmez.
 //
-// HERKESE AÇIK ÜCRETSİZ BETA (v0.99.93, D6 kararı: yalnız ozdemirumit.github.io/EV-Route-Finder/): kaynakta yine 'paused'.
+// HERKESE AÇIK ÜCRETSİZ BETA (v0.99.93, D6 kararı: yalnız ozdemirumit.github.io/EV-Route-Finder/): kaynak 'beta-full' (v0.99.112).
 // Yalnız `node scripts/build-beta.mjs --public-free <klasör>` çıktısında 'public-free' olur. free-only'nin üstüne daha katı kurallar:
 //   - PAYLAŞILAN CANLI SUNUCUYA SIFIR İSTEK: ara sunucu kökeni (proxyBase) ve SHARED_SERVER_HOSTS hangi yol olursa olsun
 //     ('shared-server'): /v1/config, giriş, eşitleme, telemetri, istasyon bilgisi, fiyat, tarife dahil. proxy.js ayrıca ağa hiç çıkmaz.
@@ -28,15 +28,19 @@
 //     Retry-After en çok 1 sa); bekleme süresince istek ağa çıkmaz ('backoff'). Başarı sıfırlar. Fırtınayı çağıran koddan bağımsız keser.
 // İstemci tavanları TOPLAM (tüm kullanıcılar) trafiği SINIRLAYAMAZ; bu yüzden yayın kapısı ayrıca belgelenir (docs/public-beta-release-gate.md).
 //
-// TAM BETA (v0.99.95, kullanıcı kararı 2026-11-16: public-free ile kapatılan mevcut özellikler Beta'da geri gelir): kaynakta yine 'paused'.
+// TAM BETA (v0.99.95, kullanıcı kararı 2026-11-16: public-free ile kapatılan mevcut özellikler Beta'da geri gelir): kaynak artık 'beta-full' (v0.99.112).
 // Yalnız `node scripts/build-beta.mjs --beta-full [klasör]` çıktısında 'beta-full' olur. Küresel duraklatma ve public-free kesme/gizleme YOK:
 // hesap, Premium, sağlayıcı bağdaştırıcıları, uydu, canlı trafik/doluluk/fiyat, eşitleme, telemetri ve kimlikli sunucu 0.99.61 Beta'daki gibi
 // çalışır; Free/Premium yetkisi, kullanıcı başı günlük hak ve aylık tavanlar paylaşılan sunucuda (server/proxy.mjs) kalır, anahtarlar sunucuda.
 // Korunan istemci koruması: topluluk servislerine (FREE_ENDPOINTS) cihaz başı jeton kovası + saatlik tavan + yanıt geri çekilmesi; sınırda
 // istek reddedilir (kuyruk yok). Ücretli/sunucu yolları bu kovaya girmez (karar sunucuda).
 export const PROVIDER_REQUESTS_PAUSED_DEFAULT = true;
-/** Derleme modu. KAYNAKTA DAİMA 'paused'. scripts/build-beta.mjs --free-only bu satırı (tam bir eşleşme) 'free-only' yapar. */
-export const PROVIDER_MODE_BUILD = 'paused';
+/**
+ * Derleme modu. KAYNAKTA 'beta-full' (v0.99.112): üretim (main, GitHub Pages) derleme adımı olmadan kaynak olarak yayımlandığı için kaynak 'paused'
+ * kalınca üretimde harita karosu/rota/hava/istasyon istekleri kesiliyordu. scripts/build-beta.mjs bu satırı (tam bir eşleşme) HER derlemede açıkça
+ * yazar: bayraksız = 'paused' (güvenli varsayılan), --free-only / --public-free / --beta-full = ilgili mod. Belirsiz değer → 'paused' (parseProviderMode).
+ */
+export const PROVIDER_MODE_BUILD = 'beta-full';
 export const FREE_ONLY = 'free-only';
 export const PUBLIC_FREE = 'public-free';
 export const BETA_FULL = 'beta-full';

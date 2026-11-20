@@ -47,8 +47,10 @@ const gate = await import('../js/net/providerGate.js');
 const { blockedReason, installProviderGate } = gate;
 
 // ============================================================================ A) kaynak varsayılanı değişmedi (Production/diğer derlemeler)
-ok('A1 kaynak: PROVIDER_MODE_BUILD = \'paused\' (beta-full yalnız build-beta --beta-full çıktısında)', gate.PROVIDER_MODE_BUILD === 'paused' && gate.providerMode() === 'paused');
-ok('A2 kaynak: betaFullMode() false, küresel duraklatma açık', typeof gate.betaFullMode === 'function' && gate.betaFullMode() === false && gate.providerRequestsPaused() === true);
+ok('A1 kaynak: PROVIDER_MODE_BUILD = \'beta-full\' (v0.99.112: üretim kaynak olarak yayımlanır; bayraksız build-beta modu \'paused\' yazar)', gate.PROVIDER_MODE_BUILD === 'beta-full' && gate.providerMode() === 'beta-full');
+ok('A2 kaynak: betaFullMode() true, küresel duraklatma yok', typeof gate.betaFullMode === 'function' && gate.betaFullMode() === true && gate.providerRequestsPaused() === false);
+gate.setProviderMode('paused');
+ok('A3 paused modu (bayraksız derleme): betaFullMode() false, küresel duraklatma açık', gate.betaFullMode() === false && gate.providerRequestsPaused() === true);
 
 // ============================================================================ B) mod ayrıştırma (fail-closed)
 ok('B1 \'beta-full\' tam eşleşmeyle açılır', gate.parseProviderMode('beta-full') === 'beta-full');
@@ -150,7 +152,7 @@ ok('G2 stationCard public-free dalı yalnız publicFreeMode()\'da (beta-full\'de
     const r = run(['--beta-full', out]);
     ok('H1 --beta-full derlenir', r.code === 0 && existsSync(join(out, 'index.html')), r.out.slice(-300));
     const pg = readFileSync(join(out, 'js', 'net', 'providerGate.js'), 'utf8');
-    ok('H2 çıktıda PROVIDER_MODE_BUILD = \'beta-full\' tam bir kez, kaynak \'paused\' kaldı', (pg.match(/export const PROVIDER_MODE_BUILD = 'beta-full';/g) || []).length === 1 && /export const PROVIDER_MODE_BUILD = 'paused';/.test(read('js/net/providerGate.js')));
+    ok('H2 çıktıda PROVIDER_MODE_BUILD = \'beta-full\' tam bir kez, kaynak \'beta-full\' kaldı', (pg.match(/export const PROVIDER_MODE_BUILD = 'beta-full';/g) || []).length === 1 && /export const PROVIDER_MODE_BUILD = 'beta-full';/.test(read('js/net/providerGate.js')));
     ok('H3 başlık "(Beta)", kapı/yerel test işareti yok', readFileSync(join(out, 'index.html'), 'utf8').includes('<title>EV Route Finder (Beta)</title>') && !existsSync(join(out, 'PUBLIC-BETA-GATE-BLOCKED.txt')) && !existsSync(join(out, 'FREE-ONLY-LOCAL-TEST.txt')));
     ok('H4 çıktıda server/, .env, docs/, scripts/ yok', !existsSync(join(out, 'server')) && !existsSync(join(out, '.env')) && !existsSync(join(out, 'docs')) && !existsSync(join(out, 'scripts')));
     const built = await import(pathToFileURL(join(out, 'js', 'net', 'providerGate.js')).href);

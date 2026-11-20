@@ -113,35 +113,27 @@ walk(join(out, 'js'));
 }
 writeFileSync(join(out, '.nojekyll'), '');
 
-// Yalnız ücretsiz mod (kapalı cihaz testi): derleme modu satırı tam bir kez değiştirilir; bulunamazsa derleme durur (fail-closed).
-if (FREE_ONLY) {
+// Derleme modu satırı HER derlemede açıkça yazılır (v0.99.112): kaynak 'beta-full'dur (üretim kaynak olarak yayımlanır, derleme adımı yok);
+// bayraksız derleme güvenli varsayılan 'paused' alır. Satır tam bir kez bulunamazsa derleme durur (fail-closed).
+{
   const p = join(out, 'js', 'net', 'providerGate.js');
   const s = readFileSync(p, 'utf8');
-  const from = "export const PROVIDER_MODE_BUILD = 'paused';";
-  if (s.split(from).length !== 2) throw new Error('providerGate.js derleme modu satırı tam bir kez bulunamadı');
-  writeFileSync(p, s.replace(from, "export const PROVIDER_MODE_BUILD = 'free-only';"));
+  const re = /export const PROVIDER_MODE_BUILD = '[a-z-]+';/g;
+  if ((s.match(re) || []).length !== 1) throw new Error('providerGate.js derleme modu satırı tam bir kez bulunamadı');
+  const mode = FREE_ONLY ? 'free-only' : PUBLIC_FREE ? 'public-free' : BETA_FULL ? 'beta-full' : 'paused';
+  writeFileSync(p, s.replace(re, `export const PROVIDER_MODE_BUILD = '${mode}';`));
+}
+
+// Yalnız ücretsiz mod (kapalı cihaz testi): işaret dosyası.
+if (FREE_ONLY) {
   writeFileSync(join(out, 'FREE-ONLY-LOCAL-TEST.txt'), 'EV Route Finder Beta — YALNIZ UCRETSIZ SAGLAYICI MODU, kapali cihaz testi icin yerel derleme.\n' +
     'YAYIMLAMAYIN (GitHub Pages / ev-copilot-beta / herhangi bir genel sunucu). Ayrinti: docs/free-only-device-test.md\n');
 }
 
-// Herkese açık ücretsiz Beta: derleme modu satırı tam bir kez değiştirilir; bulunamazsa derleme durur (fail-closed).
+// Herkese açık ücretsiz Beta: yayın kapısı kapalıysa işaret dosyası.
 if (PUBLIC_FREE) {
-  const p = join(out, 'js', 'net', 'providerGate.js');
-  const s = readFileSync(p, 'utf8');
-  const from = "export const PROVIDER_MODE_BUILD = 'paused';";
-  if (s.split(from).length !== 2) throw new Error('providerGate.js derleme modu satırı tam bir kez bulunamadı');
-  writeFileSync(p, s.replace(from, "export const PROVIDER_MODE_BUILD = 'public-free';"));
   if (!GATE.ok) writeFileSync(join(out, 'PUBLIC-BETA-GATE-BLOCKED.txt'), 'EV Route Finder Beta — HERKESE ACIK UCRETSIZ MOD derlemesi, YAYIN KAPISI KAPALI.\n' +
     'Bu klasoru YAYIMLAMAYIN. Acik kosullar: ' + GATE.open.join(', ') + '\nAyrinti: docs/public-beta-release-gate.md\n');
-}
-
-// Tam Beta: derleme modu satırı tam bir kez değiştirilir; bulunamazsa derleme durur (fail-closed).
-if (BETA_FULL) {
-  const p = join(out, 'js', 'net', 'providerGate.js');
-  const s = readFileSync(p, 'utf8');
-  const from = "export const PROVIDER_MODE_BUILD = 'paused';";
-  if (s.split(from).length !== 2) throw new Error('providerGate.js derleme modu satırı tam bir kez bulunamadı');
-  writeFileSync(p, s.replace(from, "export const PROVIDER_MODE_BUILD = 'beta-full';"));
 }
 
 // Doğrulama: çakışan adlar kalmadı mı?

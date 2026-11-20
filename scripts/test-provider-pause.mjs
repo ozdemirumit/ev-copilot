@@ -30,6 +30,7 @@ const fakeFetch = async (input) => { netCalls++; seen.push(String(input?.url ?? 
 
 // ===================================================================== 1) istemci kapısı: karar tablosu
 const gate = await import('../js/net/providerGate.js');
+gate.setProviderMode('paused'); // v0.99.112: kaynak varsayılanı 'beta-full'; bu dosya 'paused' modunun (bayraksız derleme) davranışını aynen sınar
 const { blockedReason, installProviderGate, ProviderPausedError, providerRequestsPaused, setProviderRequestsPaused, PROVIDER_REQUESTS_PAUSED_DEFAULT } = gate;
 ok('varsayılan: sağlayıcı istekleri duraklatılmış', PROVIDER_REQUESTS_PAUSED_DEFAULT === true && providerRequestsPaused() === true);
 
