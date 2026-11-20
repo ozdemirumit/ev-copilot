@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.114';
+self.APP_VERSION = '0.99.115';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.115', date: '2026-11-21',
+    notes: [
+      'Yeni: sert viraj uyarısı. Rotanın kendi geometrisinden hesaplanır (ek internet isteği yok, tüm rota sağlayıcılarında çalışır): sert virajdan 200–600 m önce sesli ve ekranda uyarır, önerilen hızı söyler; keskin dönemeçte (saç tokası) ayrıca "yavaşla" der. Kavşak ve dönüşlerde (talimat zaten verilir) uyarmaz',
+      'Ayarlar > Uyarılar bölümüne "Sert viraj uyarısı" anahtarı eklendi (varsayılan açık); 11 dilde çevrildi',
+    ],
+  },
   {
     v: '0.99.114', date: '2026-11-21',
     notes: [

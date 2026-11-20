@@ -480,4 +480,11 @@ export default {
   "ara nokta sınırı aşıldı": "надвишен лимит на междинни точки",
   "rota yanıtı boş": "празен отговор за маршрут",
   "durak planda yok": "спирката не е в плана",
+  "{0} ileride sert sağ viraj, hızını {1} km/sa civarına düşür.": "След {0} остър десен завой, намалете скоростта до около {1} км/ч.",
+  "{0} ileride sert sol viraj, hızını {1} km/sa civarına düşür.": "След {0} остър ляв завой, намалете скоростта до около {1} км/ч.",
+  "{0} ileride keskin sağ dönemeç, yavaşla.": "След {0} шпилка надясно, забавете.",
+  "{0} ileride keskin sol dönemeç, yavaşla.": "След {0} шпилка наляво, забавете.",
+  "↱ Sert sağ viraj {0} ileride": "↱ Остър десен завой след {0}",
+  "↰ Sert sol viraj {0} ileride": "↰ Остър ляв завой след {0}",
+  "Sert viraj uyarısı": "Предупреждение за остър завой",
 };

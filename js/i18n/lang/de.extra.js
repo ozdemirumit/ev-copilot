@@ -480,4 +480,11 @@ export default {
   "ara nokta sınırı aşıldı": "Zwischenziel-Limit überschritten",
   "rota yanıtı boş": "leere Routenantwort",
   "durak planda yok": "Stopp nicht im Plan",
+  "{0} ileride sert sağ viraj, hızını {1} km/sa civarına düşür.": "In {0} scharfe Rechtskurve, Geschwindigkeit auf etwa {1} km/h reduzieren.",
+  "{0} ileride sert sol viraj, hızını {1} km/sa civarına düşür.": "In {0} scharfe Linkskurve, Geschwindigkeit auf etwa {1} km/h reduzieren.",
+  "{0} ileride keskin sağ dönemeç, yavaşla.": "In {0} Haarnadelkurve nach rechts, langsamer fahren.",
+  "{0} ileride keskin sol dönemeç, yavaşla.": "In {0} Haarnadelkurve nach links, langsamer fahren.",
+  "↱ Sert sağ viraj {0} ileride": "↱ Scharfe Rechtskurve in {0}",
+  "↰ Sert sol viraj {0} ileride": "↰ Scharfe Linkskurve in {0}",
+  "Sert viraj uyarısı": "Warnung vor scharfen Kurven",
 };

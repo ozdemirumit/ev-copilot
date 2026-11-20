@@ -3,6 +3,8 @@
 //  - Hız kamerası: OpenStreetMap'te işaretli kameralar (eksik olabilir); 1 km ve 300 m kala uyarır.
 //  - Tünel / ücretli yol (v0.99.102): yalnız seçilen rotanın kendi yanıtındaki veriden (bugün Valhalla/OSM rotası; nav/roadAlerts.js).
 //    Köprü / alt geçit / üst geçit verisi hiçbir rota sağlayıcısında doğrulanmadı: bu uyarılar yoktur. Ek ağ isteği yapılmaz.
+//  - Sert viraj (v0.99.114): rotanın kendi geometrisinden (nav/curveLogic.js; tüm sağlayıcılarda aynı, ek istek yok); kavşak/dönüş adımlarının
+//    yakınındaki kesimler elenir, kaba geometride uyarı üretilmez. Kesime 200–600 m kala bir kez uyarır, 1 km'den itibaren ekranda görünür.
 // Yağış, trafik ve hız eşiği uyarıları nav/ahead.js içindedir. Kaza ve mobil kamera verisi ücretsiz kaynakta yoktur.
 import { getState, patch, effective, subscribe } from '../state.js';
 import { t, locale } from '../i18n/index.js';
@@ -12,14 +14,17 @@ import { fetchCameras } from '../osm/cameras.js';
 import { buildTrack, locate, pointAtKm } from './track.js';
 import { steepSections, pickWarnings, dedupeCams, distText } from './warnLogic.js';
 import { createRoadAlerts, stepRoadAlerts } from './roadAlerts.js';
+import { sharpCurves, pickCurves, CURVE } from './curveLogic.js';
 
 const $ = (id) => document.getElementById(id);
 const CHECK_MS = 3000;
 const MAX_OFF_KM = 0.12; // rotaya 120 m'den uzak kameralar bu yolda değildir
 
-const on = { grade: load('warnGrade', true), camera: load('warnCam', true) };
+const on = { grade: load('warnGrade', true), camera: load('warnCam', true), curve: load('warnCurve', true) };
 let planId = null;
 let sections = [];
+let curves = [];
+let curvesFor = null; // sert virajlar bu rota için hesaplandı (rota başına bir kez; ayar sonradan açılırsa da hesaplanır)
 let cams = [];
 let said = new Set();
 let camBusy = false;
@@ -49,16 +54,22 @@ function tick() {
   const nav = getState('nav');
   const plan = getState('plan');
   if (!nav.active || !plan.profile) {
-    if (nav.ahead.grade || nav.ahead.cam || nav.ahead.road) setAhead({ grade: null, cam: null, road: null, roadSoon: false });
+    if (nav.ahead.grade || nav.ahead.cam || nav.ahead.road || nav.ahead.curve) setAhead({ grade: null, cam: null, road: null, roadSoon: false, curve: null, curveSoon: false });
     return;
   }
   if (plan.planId !== planId) { // yeni rota: kesimleri hesapla, kameraları (varsa) yükle
     planId = plan.planId;
     sections = steepSections(plan.profile.segs || []);
+    curves = [];
+    curvesFor = null;
     cams = [];
     said = new Set();
     camTriedFor = null;
-    setAhead({ grade: null, cam: null, road: null, roadSoon: false });
+    setAhead({ grade: null, cam: null, road: null, roadSoon: false, curve: null, curveSoon: false });
+  }
+  if (on.curve && curvesFor !== planId) { // sert virajlar rota geometrisinden (ağ yok); rota başına bir kez
+    curvesFor = planId;
+    try { curves = sharpCurves(plan.route?.coords, plan.steps); } catch (err) { curves = []; console.warn('Viraj uyarısı hesaplanamadı:', err.message); }
   }
   if (on.camera && camTriedFor !== planId && !camBusy) { // kamera uyarısı sonradan açıldıysa da yüklenir; rota başına bir deneme
     camTriedFor = planId;
@@ -82,9 +93,19 @@ function tick() {
   const gl = g ? `⛰️ ${distText(g.dKm)} ileride ${g.dir < 0 ? 'dik iniş' : 'dik yokuş'} (%${Math.round(g.grade * 100)})` : null;
   const c = w.camLine;
   const cl = c ? `📷 Hız kamerası ${distText(c.dKm)} ileride` : null;
+  const cvr = pickCurves(km, curves, said, { enabled: on.curve });
+  for (const s of cvr.speak) speak(curveSpeech(s), { key: s.key, cooldownMs: 60000 });
+  const cvl = cvr.line ? curveLine(cvr.line) : null;
+  const cvSoon = !!cvr.line && cvr.line.dKm <= CURVE.leadKm[1]; // 600 m'den yakınsa uyarı dönüşümde öne alınır
   const a = nav.ahead;
-  if (a.grade !== gl || a.cam !== cl) setAhead({ grade: gl, cam: cl });
+  if (a.grade !== gl || a.cam !== cl || a.curve !== cvl || !!a.curveSoon !== cvSoon) setAhead({ grade: gl, cam: cl, curve: cvl, curveSoon: cvSoon });
 }
+
+/** Sert viraj anonsu ve ekran satırı: yön ve keskinlik cümlede (çevirisi dil başına tam cümle). */
+const curveSpeech = (s) => (s.hairpin
+  ? t(s.dir === 'left' ? '{0} ileride keskin sol dönemeç, yavaşla.' : '{0} ileride keskin sağ dönemeç, yavaşla.', shortDist(s.dKm * 1000))
+  : t(s.dir === 'left' ? '{0} ileride sert sol viraj, hızını {1} km/sa civarına düşür.' : '{0} ileride sert sağ viraj, hızını {1} km/sa civarına düşür.', shortDist(s.dKm * 1000), s.adviseKmh));
+const curveLine = (c) => t(c.dir === 'left' ? '↰ Sert sol viraj {0} ileride' : '↱ Sert sağ viraj {0} ileride', shortDist(c.dKm * 1000));
 
 /** Konuşma ve gösterim için kısa mesafe: 850 m, 1,2 km (ondalık ayırıcı seçili dile göre). */
 const shortDist = (m) => (m < 950 ? `${Math.max(50, Math.round(m / 50) * 50)} m` : `${(m / 1000).toLocaleString(locale(), { maximumFractionDigits: m < 9950 ? 1 : 0 })} km`);
@@ -127,6 +148,7 @@ export function initRoadWarnings() {
   };
   bind('warn-grade', 'grade', 'warnGrade');
   bind('warn-cam', 'camera', 'warnCam');
+  bind('warn-curve', 'curve', 'warnCurve');
   setInterval(tick, CHECK_MS);
   subscribe('engine', () => { // her konum güncellemesinde (rota km'si değişince) tünel/gişe mesafesi yenilenir
     const plan = getState('plan');

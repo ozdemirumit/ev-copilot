@@ -479,5 +479,12 @@
  "yol ağı sorgusu yapılamadı",
  "ara nokta sınırı aşıldı",
  "rota yanıtı boş",
- "durak planda yok"
+ "durak planda yok",
+ "{0} ileride sert sağ viraj, hızını {1} km/sa civarına düşür.",
+ "{0} ileride sert sol viraj, hızını {1} km/sa civarına düşür.",
+ "{0} ileride keskin sağ dönemeç, yavaşla.",
+ "{0} ileride keskin sol dönemeç, yavaşla.",
+ "↱ Sert sağ viraj {0} ileride",
+ "↰ Sert sol viraj {0} ileride",
+ "Sert viraj uyarısı"
 ]

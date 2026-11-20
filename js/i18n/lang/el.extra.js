@@ -480,4 +480,11 @@ export default {
   "ara nokta sınırı aşıldı": "υπέρβαση ορίου ενδιάμεσων σημείων",
   "rota yanıtı boş": "κενή απάντηση διαδρομής",
   "durak planda yok": "η στάση δεν υπάρχει στο πλάνο",
+  "{0} ileride sert sağ viraj, hızını {1} km/sa civarına düşür.": "Σε {0} απότομη στροφή δεξιά, μειώστε ταχύτητα στα {1} χλμ./ώρα περίπου.",
+  "{0} ileride sert sol viraj, hızını {1} km/sa civarına düşür.": "Σε {0} απότομη στροφή αριστερά, μειώστε ταχύτητα στα {1} χλμ./ώρα περίπου.",
+  "{0} ileride keskin sağ dönemeç, yavaşla.": "Σε {0} φουρκέτα δεξιά, επιβραδύνετε.",
+  "{0} ileride keskin sol dönemeç, yavaşla.": "Σε {0} φουρκέτα αριστερά, επιβραδύνετε.",
+  "↱ Sert sağ viraj {0} ileride": "↱ Απότομη στροφή δεξιά σε {0}",
+  "↰ Sert sol viraj {0} ileride": "↰ Απότομη στροφή αριστερά σε {0}",
+  "Sert viraj uyarısı": "Προειδοποίηση για απότομη στροφή",
 };

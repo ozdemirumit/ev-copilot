@@ -480,4 +480,11 @@ export default {
   "ara nokta sınırı aşıldı": "limiet voor tussenpunten overschreden",
   "rota yanıtı boş": "lege routerespons",
   "durak planda yok": "stop niet in het plan",
+  "{0} ileride sert sağ viraj, hızını {1} km/sa civarına düşür.": "Over {0} scherpe bocht naar rechts, vertraag tot ongeveer {1} km/u.",
+  "{0} ileride sert sol viraj, hızını {1} km/sa civarına düşür.": "Over {0} scherpe bocht naar links, vertraag tot ongeveer {1} km/u.",
+  "{0} ileride keskin sağ dönemeç, yavaşla.": "Over {0} haarspeldbocht naar rechts, vertraag.",
+  "{0} ileride keskin sol dönemeç, yavaşla.": "Over {0} haarspeldbocht naar links, vertraag.",
+  "↱ Sert sağ viraj {0} ileride": "↱ Scherpe bocht naar rechts over {0}",
+  "↰ Sert sol viraj {0} ileride": "↰ Scherpe bocht naar links over {0}",
+  "Sert viraj uyarısı": "Waarschuwing scherpe bocht",
 };

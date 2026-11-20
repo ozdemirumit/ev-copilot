@@ -480,4 +480,11 @@ export default {
   "ara nokta sınırı aşıldı": "limite di tappe superato",
   "rota yanıtı boş": "risposta del percorso vuota",
   "durak planda yok": "sosta non presente nel piano",
+  "{0} ileride sert sağ viraj, hızını {1} km/sa civarına düşür.": "Tra {0} curva stretta a destra, riduci a circa {1} km/h.",
+  "{0} ileride sert sol viraj, hızını {1} km/sa civarına düşür.": "Tra {0} curva stretta a sinistra, riduci a circa {1} km/h.",
+  "{0} ileride keskin sağ dönemeç, yavaşla.": "Tra {0} tornante a destra, rallenta.",
+  "{0} ileride keskin sol dönemeç, yavaşla.": "Tra {0} tornante a sinistra, rallenta.",
+  "↱ Sert sağ viraj {0} ileride": "↱ Curva stretta a destra tra {0}",
+  "↰ Sert sol viraj {0} ileride": "↰ Curva stretta a sinistra tra {0}",
+  "Sert viraj uyarısı": "Avviso curva stretta",
 };

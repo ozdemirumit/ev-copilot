@@ -480,4 +480,11 @@ export default {
   "ara nokta sınırı aşıldı": "limita de puncte intermediare depășită",
   "rota yanıtı boş": "răspuns de traseu gol",
   "durak planda yok": "oprirea nu este în plan",
+  "{0} ileride sert sağ viraj, hızını {1} km/sa civarına düşür.": "Peste {0} curbă strânsă la dreapta, redu viteza la aproximativ {1} km/h.",
+  "{0} ileride sert sol viraj, hızını {1} km/sa civarına düşür.": "Peste {0} curbă strânsă la stânga, redu viteza la aproximativ {1} km/h.",
+  "{0} ileride keskin sağ dönemeç, yavaşla.": "Peste {0} întoarcere în ac de păr la dreapta, încetinește.",
+  "{0} ileride keskin sol dönemeç, yavaşla.": "Peste {0} întoarcere în ac de păr la stânga, încetinește.",
+  "↱ Sert sağ viraj {0} ileride": "↱ Curbă strânsă la dreapta peste {0}",
+  "↰ Sert sol viraj {0} ileride": "↰ Curbă strânsă la stânga peste {0}",
+  "Sert viraj uyarısı": "Avertizare curbă strânsă",
 };

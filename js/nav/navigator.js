@@ -317,8 +317,12 @@ function paintAlert(step) {
   const a = nav.ahead;
   const adv = getState('advisor');
   // Tünel/ücretli yol (v0.99.102) başa girer; 500 m'den yakınsa dönüşümde yalnız o gösterilir (hız aşımı yine araya girer)
-  const base = nav.active ? [adv.level === 'warn' || adv.level === 'bad' ? adv.text : null, a.traffic, a.rain, a.grade].filter((x) => typeof x === 'string' && x.trim()) : [];
-  const alerts = nav.active ? orderAlerts(base, a.road, !!a.roadSoon) : [];
+  const rest = nav.active ? [adv.level === 'warn' || adv.level === 'bad' ? adv.text : null, a.traffic, a.rain, a.grade].filter((x) => typeof x === 'string' && x.trim()) : [];
+  // Sert viraj (v0.99.114): 600 m'den yakınsa dönüşümde en başta (tünel/ücretli yol uyarısından da önce), uzaktaysa sıradaki uyarıların sonunda
+  const cv = nav.active && typeof a.curve === 'string' && a.curve.trim() ? a.curve : null;
+  const base = cv && !a.curveSoon ? [...rest, cv] : rest;
+  const ordered = nav.active ? orderAlerts(base, a.road, !!a.roadSoon) : [];
+  const alerts = cv && a.curveSoon ? [cv, ...ordered] : ordered;
   const slots = alerts.map((_, i) => 'alert:' + i);
   const e = effective();
   const over = a.speed ? overNow(e) : null;

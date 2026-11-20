@@ -480,4 +480,11 @@ export default {
   "ara nokta sınırı aşıldı": "limite de points de passage dépassée",
   "rota yanıtı boş": "réponse d'itinéraire vide",
   "durak planda yok": "arrêt absent du plan",
+  "{0} ileride sert sağ viraj, hızını {1} km/sa civarına düşür.": "Dans {0}, virage serré à droite, réduisez à environ {1} km/h.",
+  "{0} ileride sert sol viraj, hızını {1} km/sa civarına düşür.": "Dans {0}, virage serré à gauche, réduisez à environ {1} km/h.",
+  "{0} ileride keskin sağ dönemeç, yavaşla.": "Dans {0}, épingle à droite, ralentissez.",
+  "{0} ileride keskin sol dönemeç, yavaşla.": "Dans {0}, épingle à gauche, ralentissez.",
+  "↱ Sert sağ viraj {0} ileride": "↱ Virage serré à droite dans {0}",
+  "↰ Sert sol viraj {0} ileride": "↰ Virage serré à gauche dans {0}",
+  "Sert viraj uyarısı": "Alerte virage serré",
 };

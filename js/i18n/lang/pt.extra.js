@@ -480,4 +480,11 @@ export default {
   "ara nokta sınırı aşıldı": "limite de pontos intermédios excedido",
   "rota yanıtı boş": "resposta de rota vazia",
   "durak planda yok": "paragem não incluída no plano",
+  "{0} ileride sert sağ viraj, hızını {1} km/sa civarına düşür.": "Em {0}, curva fechada à direita, reduza para cerca de {1} km/h.",
+  "{0} ileride sert sol viraj, hızını {1} km/sa civarına düşür.": "Em {0}, curva fechada à esquerda, reduza para cerca de {1} km/h.",
+  "{0} ileride keskin sağ dönemeç, yavaşla.": "Em {0}, curva em gancho à direita, reduza a velocidade.",
+  "{0} ileride keskin sol dönemeç, yavaşla.": "Em {0}, curva em gancho à esquerda, reduza a velocidade.",
+  "↱ Sert sağ viraj {0} ileride": "↱ Curva fechada à direita em {0}",
+  "↰ Sert sol viraj {0} ileride": "↰ Curva fechada à esquerda em {0}",
+  "Sert viraj uyarısı": "Aviso de curva fechada",
 };

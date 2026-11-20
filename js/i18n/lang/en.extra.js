@@ -480,4 +480,11 @@ export default {
   "ara nokta sınırı aşıldı": "waypoint limit exceeded",
   "rota yanıtı boş": "empty route response",
   "durak planda yok": "stop not in plan",
+  "{0} ileride sert sağ viraj, hızını {1} km/sa civarına düşür.": "{0} ahead: sharp right curve, slow down to about {1} km/h.",
+  "{0} ileride sert sol viraj, hızını {1} km/sa civarına düşür.": "{0} ahead: sharp left curve, slow down to about {1} km/h.",
+  "{0} ileride keskin sağ dönemeç, yavaşla.": "{0} ahead: hairpin right, slow down.",
+  "{0} ileride keskin sol dönemeç, yavaşla.": "{0} ahead: hairpin left, slow down.",
+  "↱ Sert sağ viraj {0} ileride": "↱ Sharp right curve in {0}",
+  "↰ Sert sol viraj {0} ileride": "↰ Sharp left curve in {0}",
+  "Sert viraj uyarısı": "Sharp curve warning",
 };

@@ -480,4 +480,11 @@ export default {
   "ara nokta sınırı aşıldı": "przekroczono limit punktów pośrednich",
   "rota yanıtı boş": "pusta odpowiedź trasy",
   "durak planda yok": "postoju nie ma w planie",
+  "{0} ileride sert sağ viraj, hızını {1} km/sa civarına düşür.": "Za {0} ostry zakręt w prawo, zwolnij do około {1} km/h.",
+  "{0} ileride sert sol viraj, hızını {1} km/sa civarına düşür.": "Za {0} ostry zakręt w lewo, zwolnij do około {1} km/h.",
+  "{0} ileride keskin sağ dönemeç, yavaşla.": "Za {0} zakręt typu agrafka w prawo, zwolnij.",
+  "{0} ileride keskin sol dönemeç, yavaşla.": "Za {0} zakręt typu agrafka w lewo, zwolnij.",
+  "↱ Sert sağ viraj {0} ileride": "↱ Ostry zakręt w prawo za {0}",
+  "↰ Sert sol viraj {0} ileride": "↰ Ostry zakręt w lewo za {0}",
+  "Sert viraj uyarısı": "Ostrzeżenie o ostrym zakręcie",
 };
