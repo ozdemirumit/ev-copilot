@@ -1,4 +1,4 @@
-// Premium sağlayıcı kataloğu (F1) — SAF, YAN ETKİSİZ, SALT OKUNUR. Ağ, ortam değişkeni, dosya, anahtar yok; çalışma zamanına HENÜZ BAĞLI DEĞİL.
+// Premium sağlayıcı kataloğu (F1) — SAF, YAN ETKİSİZ, SALT OKUNUR. Ağ, ortam değişkeni, dosya, anahtar yok. Çalışma zamanında yalnızca salt okunur GET /v1/providers ile bağlı (server/proxy.mjs); seçim yazmaz, sağlayıcı çağırmaz.
 // Amaç: kullanıcıya sunulabilecek harita/rota/trafik sağlayıcılarını (osm, mapbox, tomtom, google, here) GERÇEK bağlantı durumuyla tek yerde
 // tanımlamak. "available" yalnızca kodda gerçekten bağlı + (Premium ise) yapılandırılmış yetenek içindir; lisans onayı anlamına GELMEZ.
 //
@@ -6,12 +6,13 @@
 //  - osm:    harita OpenFreeMap (js/net/mapConfig.js), rota Valhalla (js/providers/index.js). Canlı trafik YOK.
 //  - mapbox: harita (server/maps.mjs), rota+trafik Mapbox Directions driving-traffic (js/mapbox/route.js); rota haritadan bağımsız kullanılır.
 //  - tomtom: harita (server/maps.mjs), rota+trafik js/tomtom/route.js — yalnızca açık harita TomTom iken (tomtomRouteOn).
-//  - google: YALNIZCA harita (server/maps.mjs). Google Routes bağlı DEĞİL: Google haritası seçilse bile rota Google'dan gelmez.
+//  - google: bu katalogda YALNIZCA harita (server/maps.mjs). Google Routes bağlı DEĞİL: Google haritası seçilse bile rota Google'dan gelmez.
+//            Google Places istasyon kaynağı (server/googleStations.mjs, /google/stations) ayrı bağlıdır ve burada MODELLENMEZ.
 //  - here:   harita/rota/trafik bağlı DEĞİL (server/here.mjs yalnızca istasyon araması); providerPolicy'de de kapalı.
 //
 // Yapılandırma YALNIZCA boolean alır, yetenek bazında: { plan, configured: { mapbox: { map, route }, tomtom: { map, route }, google: { map } } }.
 // Değer tam olarak `true` değilse yapılandırılmamış sayılır (fail-closed); değerler çıktıya asla kopyalanmaz. Çağıran tarafın eşlemesi
-// (bağlanınca; şimdilik yok): mapbox.map ← maps.available().mapbox, mapbox.route ← MAPBOX var, tomtom.map ← maps.available().tomtom,
+// (server/proxy.mjs, GET /v1/providers): mapbox.map ← maps.available().mapbox, mapbox.route ← MAPBOX var, tomtom.map ← maps.available().tomtom,
 // tomtom.route ← TOMTOM_KEY var, google.map ← maps.available().google. Anahtarın kendisi bu modüle verilmez.
 // Trafik yeteneği rota yapılandırmasından türetilir (ayrı bayrak yok). osm anahtarsızdır ve yapılandırmayla kapatılamaz.
 //

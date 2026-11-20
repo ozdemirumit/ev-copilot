@@ -1,4 +1,4 @@
-// Sağlayıcı politika/yetenek kaydı (SAF, SALT OKUNUR). Ağ, anahtar, ortam değişkeni, içe aktarma yok; çalışma zamanına HENÜZ BAĞLI DEĞİL.
+// Sağlayıcı politika/yetenek kaydı (SAF, SALT OKUNUR). Ağ, anahtar, ortam değişkeni, içe aktarma yok. Çalışma zamanına yalnızca providerCatalog.mjs üzerinden (salt okunur GET /v1/providers) bağlı; seçim/yönlendirme yapmaz.
 // Amaç: hangi sağlayıcının (osm/tomtom/here) hangi katmanda (Free/Premium) hangi yetenek (harita/rota/veri) için ve hangi
 // harita-rota-veri birleşimiyle kullanılabileceğini muhafazakâr varsayılanlarla tek yerde tanımlamak.
 //

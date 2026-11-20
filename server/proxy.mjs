@@ -61,7 +61,7 @@ const MAPBOX = env.MAPBOX_TOKEN || '';
 const OCM = env.OCM_KEY || '';
 const HERE = env.HERE_API_KEY || ''; // istasyon listesi ve canlı durum (HERE Search, show=ev); yalnızca sunucuda durur
 const TOMTOM = env.TOMTOM_KEY || ''; // canlı soket doluluğu (TomTom EV Availability; Türkiye operatörleri); yalnızca sunucuda durur, günlük tavan TOMTOM_DAILY_CAP
-const GOOGLE_PLACES = env.GOOGLE_PLACES_KEY || ''; // isteğe bağlı: istasyon doluluğu (NDW'nin kapsamadığı yerler); yalnızca sunucuda durur
+const GOOGLE_PLACES = env.GOOGLE_PLACES_KEY || ''; // isteğe bağlı: Google Places istasyon kaynağı (/google/stations) ve doluluk (NDW'nin kapsamadığı yerler); yalnızca sunucuda durur
 const ORIGINS = new Set(list(env.ALLOW_ORIGINS || 'https://ozdemirumit.github.io,https://localhost,capacitor://localhost,http://localhost'));
 if (env.PUBLIC_URL) ORIGINS.add(String(env.PUBLIC_URL).replace(/\/+$/, '')); // yönetim paneli (/yonetim) aynı kökenden POST/DELETE yapar
 const RATE = Number(env.RATE_PER_MIN || 600); // adres/kullanıcı başına dakikada istek (uzun rotada istasyon araması yüzlerce Mapbox isteği atar)
