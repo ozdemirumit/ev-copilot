@@ -63,7 +63,7 @@ ok('navigator: durak yoksa "Durak yok" çevrilerek yazılır', /t\(NO_STOP\)/.te
 // --- 4. Hız limiti: yoksa --, sorgu varsayılan kapalı (ücretli API maliyeti), speedLimit.js boyar
 ok('limit sorgusu varsayılan KAPALI', /limitOn: load\('limitOn', false\)/.test(state));
 ok('levha speedLimit.js tarafından nh-limit\'e boyanır (yeniden yazılmadı)', /for \(const id of \['hud-limit', 'nh-limit'\]\)/.test(limitJs));
-ok('limit yoksa (levha gizli) -- görünür, varsa gizlenir', /\.nb-limit \.limit-sign:not\(\.hidden\) \+ \.ne-nolim \{ display: none; \}/.test(css));
+ok('limit yoksa kesik çizgili boş daire gösterilmez (v0.99.113); limit varsa rozet hız kutusunun sağ üstünde', /\.nb-limit \.ne-nolim \{ display: none; \}/.test(css) && /\.nb-limit \{ position: absolute; top: -16px; right: -18px;/.test(css));
 
 // --- 5. HTML yapısı (v0.99.91): TEK panel, iki yarı. Sol: ok + canlı mesafe, talimat, yol adı. Sağ: dört sabit temel metrik + ayrı uyarı alanı.
 const banner = html.slice(html.indexOf('id="nav-banner"'), html.indexOf('id="near-alert"'));
@@ -109,18 +109,20 @@ ok('yaklaşık değerler ≈ ile işaretlenir', /classList\.toggle\('approx', m\
 
 // --- 8. Mobil okunurluk ve tema (360/375/390 px): iki yarı, sağda 2×2 metrik
 const lastIdx = (re) => { let i = -1, m; const g = new RegExp(re.source, 'g'); while ((m = g.exec(css))) i = m.index; return i; };
-const halves = '.navbar { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 6px 10px; padding: 8px 8px 6px; align-items: start; }'; // v0.99.103: sol %60 / sağ %40
-ok('panel iki yarı (v0.99.103: sol 3fr, sağ 2fr) ve bu son üst düzey .navbar ızgara kuralı (≤ 360 px @media ayarı ayrı)', css.includes(halves) && css.indexOf(halves) === lastIdx(/(?<![ \t])\.navbar \{ grid-template-columns:/));
-ok('sağ yarı: metrikler üstte, uyarı altta (sütun)', /\.nb-right \{ display: flex; flex-direction: column; gap: 6px; min-width: 0; \}/.test(css));
-ok('metrikler 2×2 ızgara', /\.nb-metrics \{ display: grid; grid-template-columns: minmax\(0, 1\.1fr\) minmax\(0, 1fr\);/.test(css));
-ok('metrik değerleri en az 18 px, hız en az 22 px', /\.nb-metrics \.ne-v b \{ font-size: clamp\(18px, 5\.4vw, 22px\);/.test(css) && /\.nb-metrics \.nb-speed \.ne-v b \{ font-size: clamp\(22px, 6\.6vw, 28px\);/.test(css));
+const stack = '.navbar { --nav-blue: #2f6bd9; display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; align-items: stretch; }'; // v0.99.113: B tasarımı, dikey yığın
+ok('panel dikey yığın (v0.99.113 B: mavi manevra bloğu + beyaz metrik şeridi) ve eski iki yarı ızgara kurallarından SONRA', css.includes(stack) && css.indexOf(stack) > lastIdx(/(?<![ \t])\.navbar \{ grid-template-columns:/));
+ok('alt bölüm: metrikler üstte, uyarı altta (sütun)', /\.nb-right \{ display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 8px 12px 10px; \}/.test(css));
+ok('metrikler tek satırda üç eşit sütun', /\.nb-metrics \{ display: grid; grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/.test(css));
+ok('metrik değerleri en az 15 px (hücreye göre 22 px üst sınır), hız kutusunda 28 px', /\.nb-metrics \.ne-v b \{ font-size: min\(22px, max\(15px, 22cqi\)\);/.test(css) && /\.nb-metrics \.nb-speed \.ne-v b \{ font-size: 28px;/.test(css));
+ok('hız kutusu panelden çıkar: #nb-speed DOM\'da #nb-metrics içinde (kimlikler korunur), konumu fixed, sol altta alt çubuğun üstünde', /<div class="nb-metrics" id="nb-metrics">[\s\S]*?<div class="nb-cell nb-speed" id="nb-speed">/.test(html) && /\.nb-metrics \.nb-speed \{ position: fixed; z-index: 1; left: max\(10px, env\(safe-area-inset-left, 0px\)\); bottom: calc\(var\(--nav-h\) \+ var\(--safe-b\) \+ 40px\);/.test(css));
+ok('hız aşımı: kutu kenarı ve rakam kırmızı', /\.nb-speed\.over \{ border-color: #e53935; \}/.test(css) && /\.nb-speed\.over \.ne-v b \{ color: #e53935; \}/.test(css));
 ok('varışta pil ve menzil alt satırda da okunur (≥ 14 px, kalın)', /\.nb-metrics \.ne-sub b \{ font-size: 14px; font-weight: 800; color: var\(--text\);/.test(css) && css.indexOf('.nb-metrics .ne-sub b {') > css.indexOf('.nb-metrics .ne-v b {'));
 ok('pil düğmesi dokunma hedefi ≥ 44 px', /\.nb-metrics \.nb-cell \{[^}]*min-height: 44px;/.test(css));
 ok('taşan metin … ile kesilir (yarım rakam yok)', /\.nb-metrics \.nb-cell small \{[^}]*text-overflow: ellipsis;/.test(css));
-ok('talimat ve yol adı aynı boy (ortak kural; ayrı boyutlanmaz)', /\.nb-man \.nav-text, \.nb-man \.nav-road \{ font-size: 18px; font-weight: 700;/.test(css) && !/(^|\n)\.nb-man \.nav-(text|road) \{[^}]*font-size/.test(css)
-  && /\.nb-man \.nav-text, \.nb-man \.nav-road \{ font-size: 16px; \}/.test(css));
-ok('renkler tema değişkenlerinden (açık/koyu)', /\.nb-metrics \.nb-cell \{[^}]*border-left: 1px solid var\(--line\);/.test(css) && /\.nb-metrics \.nb-cell small \{[^}]*color: var\(--muted\);/.test(css) && /\.nb-speed \.ne-nolim \{[^}]*var\(--line\)[^}]*var\(--muted\)/.test(css));
-ok('harita alanı: en düşük yükseklik değişmedi (150 px)', /\.navbar, \.mapsoc \{ box-sizing: border-box; min-height: 150px; \}/.test(css));
+ok('yol adı 20 px kalın, talimat 15 px (B: yol adı öne çıkar); ≤ 360 px yol adı 18 px', /\.nb-man \.nav-road \{ color: #fff; font-size: 20px; font-weight: 800;/.test(css) && /\.nb-man \.nav-text \{[^}]*font-size: 15px;/.test(css)
+  && /\.nb-man \.nav-road \{ font-size: 18px; \}/.test(css));
+ok('renkler tema değişkenlerinden (açık/koyu); mavi manevra bloğu sabit --nav-blue + beyaz yazı (iki temada okunur)', /\.nb-metrics \.nb-cell \{[^}]*border-left: 1px solid var\(--line\);/.test(css) && /\.nb-metrics \.nb-cell small \{[^}]*color: var\(--muted\);/.test(css) && /\.nb-metrics \.nb-speed \{[^}]*border: 1px solid var\(--line\);[^}]*background: var\(--card\);/.test(css) && /\.nb-left \{[^}]*background: var\(--nav-blue\); color: #fff;/.test(css));
+ok('harita alanı: eski 150 px en düşük yükseklik kalktı, panel içeriği kadar (v0.99.113)', /\.navbar, \.mapsoc \{ box-sizing: border-box; \}/.test(css) && !/\.navbar, \.mapsoc \{[^}]*min-height: 150px/.test(css));
 ok('sağ dikey kontroller ve ortala düğmesi duruyor (panelin dışında)', ['nh-limitbtn', 'nh-voice', 'nh-overview', 'nh-search', 'nh-recenter'].every((id) => (html.match(new RegExp(`id="${id}"`, 'g')) || []).length === 1) && !banner.includes('id="nh-voice"'));
 
 console.log(`\n${pass} geçti, ${fail} kaldı`);

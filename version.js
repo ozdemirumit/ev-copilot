@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.112';
+self.APP_VERSION = '0.99.113';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.113', date: '2026-11-20',
+    notes: [
+      'Yeni navigasyon üst paneli: üstte mavi manevra bloğu (ok, mesafe, talimat, yol adı beyaz yazıyla), altında tek satırda üç metrik (pil, varış, sonraki şarj), en altta tam genişlikte uyarı; uzun yol adları ve değerler artık daha az sıkışır',
+      'Hız, hız limiti ve ortalama hız panelden çıkıp haritanın sol altında ayrı bir kutuya taşındı; limit yoksa boş daire gösterilmez',
+      'Navigasyon dışındaki pil ve menzil paneli de aynı tasarım diliyle yenilendi: mavi başlık bloğu, altında pil sürgüsü; düşük pilde başlık turuncuya döner',
+    ],
+  },
   {
     v: '0.99.112', date: '2026-11-20',
     notes: [

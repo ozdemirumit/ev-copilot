@@ -3,6 +3,13 @@
 Durum: **test + belge**; tek uygulama değişikliği RM-07 A1 (v0.99.74): `#near-alert-close` görünmez dokunma alanı 36→44px (yalnız CSS `::after`). Diğer boşluklar açık; hiçbiri cihazda "düzeltildi" sayılmaz.
 Taban: `e08b265` (v0.99.73); **v0.99.91 ile model iki yarılı tek panele güncellendi** (taban `2c06f69`). Test: `scripts/test-nav-narrow-layout-contract.mjs` (düz Node, bağımlılık yok, ağ yok).
 
+> **v0.99.113 güncellemesi (B tasarımı, taban `b360a39`):** iki yarılı düzen kalktı. Üst panel dikey yığın: üstte mavi manevra bloğu (ok + mesafe, altında talimat ve yol adı; beyaz yazı),
+> altında tek satırda üç EŞİT metrik sütunu (pil | varış | sonraki şarj), en altta tam genişlikte uyarı (en çok 2 satır). Hız + limit levhası + Ø panelden çıktı: `#nb-speed` DOM'da `#nb-metrics`
+> içinde kalır (kimlikler ve `navigator.js` / `avgSpeedView.js` / `speedLimit.js` değişmedi), CSS ile haritanın sol altında `position: fixed` bir kutu; limit levhası kutunun köşesinde rozet.
+> Rotasız panel (`.mapsoc`) aynı dilde: mavi başlık bloğu + beyaz sürgü şeridi, düşük pilde amber; 150 px en düşük yükseklik kalktı (iki panel de içerik kadar).
+> Test modeli (bölüm 2-3) bu düzene göre yeniden yazıldı; sonuç: tipik panel + 1 satır uyarı ≈194,6 px (tarayıcıda 360×740'ta 194 px ölçüldü) SIĞAR; **uyarı 2 satırken ≈213 px → KAYAR-RİSKİ** (bütçe ≈209,6;
+> `#banners` kendi içinde kayar, bilinen boşluk); alt satırlar (varış, sonraki şarj) 360/375 px'te SINIRDA = ikinci satıra sarar, … ile kesilmez. Aşağıdaki v0.99.91 / v0.99.103 bölümleri tarihsel kayıttır. Gerçek cihazda doğrulanmadı.
+>
 > **v0.99.103 güncellemesi (taban `61b49a0`):** üst panel sol %60 / sağ %40 (`3fr | 2fr`; ≤360 px `11fr | 9fr`), sağ 2×2 metrik eşit sütun,
 > değer yazısı hücreye göre (`min(21px, max(14px, 28cqi))`, hız 33cqi / ≤360 px 30cqi, sonraki şarj 23cqi), limit levhası 30 px (≤360 px 26 px).
 > Sağ değer ve alt satırlar artık `…` ile **kesilmez, sarar**; §3'teki sağ hücre `SINIRDA`/`KESİLME-RİSKİ` sınıfları v0.99.103'te "tek satıra sığmayabilir → ikinci satıra sarar

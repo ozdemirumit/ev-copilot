@@ -19,13 +19,15 @@ const css = readFileSync(join(ROOT, 'css/styles.css'), 'utf8').replace(/\/\*[\s\
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
 
 // --- 1) Statik
-const navGrid = [...css.matchAll(/(^|\n)\.navbar \{ grid-template-columns: ([^;]+);/g)].map((m) => m[2]);
-ok('son .navbar ızgarası sol 3fr / sağ 2fr (%60/%40)', navGrid.at(-1) === 'minmax(0, 3fr) minmax(0, 2fr)', navGrid.at(-1));
-ok('dar ekranda (≤ 360 px) pratik oran 11fr/9fr', /@media \(max-width: 360px\) \{[^}]*\.navbar \{ grid-template-columns: minmax\(0, 11fr\) minmax\(0, 9fr\);/.test(css));
-ok('talimat ve yol adı ortak kural, 20 px kalın, en çok 3 satır, kelime içi sarma',
-  /\.nb-man \.nav-text, \.nb-man \.nav-road \{ font-size: 20px; font-weight: 700;[^}]*-webkit-line-clamp: 3;[^}]*overflow-wrap: anywhere;/.test(css));
-ok('ok ve mesafe büyüdü (ok 44 px, mesafe 34 px)', /\.nb-man \.nav-arrow \{ font-size: 44px;/.test(css) && /\.nb-man \.nav-dist \{ font-size: 34px;/.test(css));
-ok('sağ alt satırlar kesilmez, sarar (veri kaybı yok)', /\.nb-metrics \.ne-sub, \.nb-metrics \.nb-cell small, #ne-next-t \{[^}]*white-space: normal;[^}]*text-overflow: clip;/.test(css));
+const stackIdx = css.search(/(^|\n)\.navbar \{ --nav-blue: #2f6bd9; display: flex; flex-direction: column;/);
+const lastGridIdx = Math.max(-1, ...[...css.matchAll(/(^|\n)\.navbar \{ grid-template-columns:/g)].map((m) => m.index));
+ok('üst panel dikey yığın (v0.99.113 B): üstte mavi manevra bloğu, altında metrikler ve uyarı; eski iki yarı ızgaranın SONRASINDA', stackIdx > lastGridIdx && lastGridIdx >= 0, `${stackIdx} ${lastGridIdx}`);
+ok('metrikler üç eşit sütun (pil, varış, sonraki şarj); hız haritada ayrı kutu', /\.nb-metrics \{ display: grid; grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/.test(css) && /\.nb-metrics \.nb-speed \{ position: fixed;/.test(css));
+ok('dar ekranda (≤ 360 px) blok dolgusu, ok ve mesafe küçülür; metrik sütunları 6 px dolgu', /@media \(max-width: 360px\) \{[\s\S]*?\.nb-man \.nav-arrow \{ font-size: 40px; width: 44px; \}[\s\S]*?\.nb-man \.nav-dist \{ font-size: 32px; \}[\s\S]*?\.nb-metrics \.nb-cell \{ padding-left: 6px; \}/.test(css));
+ok('yol adı 20 px kalın, talimat 15 px; ikisi en çok 2 satır, kelime içi sarma (Yunanca yol adları)',
+  /\.nb-man \.nav-road \{ color: #fff; font-size: 20px; font-weight: 800;[^}]*-webkit-line-clamp: 2;[^}]*overflow-wrap: anywhere;/.test(css) && /\.nb-man \.nav-text \{[^}]*font-size: 15px;[^}]*-webkit-line-clamp: 2;[^}]*overflow-wrap: anywhere;/.test(css));
+ok('ok ve mesafe büyük (ok 46 px, mesafe 38 px)', /\.nb-man \.nav-arrow \{[^}]*font-size: 46px;/.test(css) && /\.nb-man \.nav-dist \{[^}]*font-size: 38px;/.test(css));
+ok('alt satırlar kesilmez, sarar (veri kaybı yok)', /\.nb-metrics \.ne-sub, #ne-next-t \{[^}]*white-space: normal;[^}]*text-overflow: clip;/.test(css));
 ok('panel güvenli alanı gözetir (sol/sağ çentik)', /#banners > \.toppanel \{[^}]*safe-area-inset-left[^}]*safe-area-inset-right/.test(css));
 const ids = ['nav-arrow', 'nav-dist', 'nav-text', 'nav-road', 'nh-speed', 'nh-limit', 'nh-avg-v', 'ne-soc', 'ne-range', 'nh-eta', 'ne-arrive', 'nh-rem', 'ne-next', 'ne-next-n', 'ne-next-t', 'nb-alert'];
 ok('tüm üst panel kimlikleri yerinde (sol + sağ + uyarı)', ids.every((id) => html.includes(`id="${id}"`)));

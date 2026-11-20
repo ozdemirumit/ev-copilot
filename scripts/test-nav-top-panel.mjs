@@ -49,7 +49,7 @@ ok('sağ: dönüşümlü uyarı alanı, başlangıçta gizli', /id="nb-alert"/.t
 ok('ince hız çubuğu kalktı', !html.includes('nav-speedbar') && !/sb-track|sb-fill/.test(css));
 ok('hız ve hız sınırı levhası yan yana (aynı Hız hücresinde, hızın sağında), sürekli görünür', /<div class="nb-cell nb-speed" id="nb-speed"><small>Hız<\/small><div class="ne-v"><b id="nh-speed">0<\/b><div class="nb-limit" id="ne-limit-box"[^>]*><div class="limit-sign hidden" id="nh-limit"[^>]*><\/div><small class="ne-nolim">--<\/small><\/div><\/div>/.test(metrics)
   && /\.nb-speed \.ne-v \{ flex-direction: row;/.test(css) && !/id="nb-speed"[^>]*hidden|id="ne-limit-box"[^>]*hidden|class="nb-cell[^"]*hidden"/.test(metrics));
-ok('levha belirgin (hücrede 38 px, 4 px kenar; temel levhadan küçük değil)', /\.nb-limit \.limit-sign \{ width: 38px; height: 38px; border-width: 4px;/.test(css) && /^\.limit-sign \{ flex: none; width: 38px; height: 38px;[^}]*border: 4px solid #e53935;/m.test(css));
+ok('levha belirgin (hız kutusunda rozet 30 px, 3 px kenar; temel levha 38 px / 4 px kenar korunur)', /\.nb-limit \.limit-sign \{ width: 30px; height: 30px; border-width: 3px;/.test(css) && /^\.limit-sign \{ flex: none; width: 38px; height: 38px;[^}]*border: 4px solid #e53935;/m.test(css));
 ok('aşımda hız kırmızı', /\.nb-speed\.over \.ne-v b \{ color: #e53935; \}/.test(css) && /classList\.toggle\('over', !!overNow\(e\)\)/.test(nav));
 ok('pil, varış (varışta pil), durak sabit metrik hücrelerinde (dönüşüm yuvası yok); uyarı ayrı alanda', ['ne-soc-btn', 'ne-eta-box', 'ne-next-box'].every((id) => new RegExp(`class="nb-cell[^"]*" id="${id}"`).test(metrics)) && metrics.includes('id="ne-arrive"')
   && !/data-slot=/.test(html) && !html.includes('id="nb-rot"') && !metrics.includes('id="nb-alert"'));
@@ -82,7 +82,7 @@ ok('clearTrip: plan sıfırlanır, çizgi ve işaretler kalkar', /export functio
 // --- v0.99.34 okunabilirlik: sol ikincil satır yok, yol adı talimatla aynı boyda, sağ hücreler büyük
 ok('sol ikincil satır (sonra) gizli; eski kalan süre alt satırı (.nb-trip) kaldırıldı', /class="nav-then hidden" id="nav-then"/.test(banner) && !banner.includes('nb-trip'));
 ok('yol adı talimatla aynı boy/ağırlık, en çok 2 satır', /\.nb-man \.nav-text, \.nb-man \.nav-road \{ font-size: 18px; font-weight: 700;[^}]*-webkit-line-clamp: 2; \}/.test(css));
-ok('sağ değerler büyük (≥ 18 px), uyarı 15 px', /\.nb-metrics \.ne-v b \{ font-size: clamp\(18px, 5\.4vw, 22px\);/.test(css) && /\.nb-alert \{ font-size: 15px;/.test(css));
+ok('metrik değerleri büyük (hücreye göre 15–22 px), alt satır değerleri 14 px, uyarı 15 px', /\.nb-metrics \.ne-v b \{ font-size: min\(22px, max\(15px, 22cqi\)\);/.test(css) && /\.nb-metrics \.ne-sub b \{ font-size: 14px;/.test(css) && /\.nb-alert \{ margin: 0;[^}]*font-size: 15px;/.test(css));
 
 // --- v0.99.51 → v0.99.91: varış saati (ETA) sağ yarıdaki sabit "Varış" hücresinde, varışta pil ve kalan km ile (dönüşüm yok); etaShown saf işlevi korunur
 const man = banner.slice(banner.indexOf('class="nb-man"'), banner.indexOf('id="nav-then"'));
@@ -133,7 +133,7 @@ ok('trafik/yağış uyarıları dönüşümde korunur (şarj hücresi onları ka
   && ['alert:0', 'alert:1', 'alert:0'].every((x, t) => pickSlot(['alert:0', 'alert:1'], t, false) === x) && !metrics.includes('id="nb-alert"'));
 
 // --- normal sürüş paneli ile aynı ölçü
-ok('rotasız sürüş paneli ve navigasyon paneli aynı en düşük yükseklikte', /.navbar, .mapsoc { box-sizing: border-box; min-height: 150px; }/.test(css));
+ok('rotasız sürüş paneli ve navigasyon paneli aynı kutu modeli; 150 px en düşük yükseklik kalktı, ikisi de içerik kadar (v0.99.113 B)', /\.navbar, \.mapsoc \{ box-sizing: border-box; \}/.test(css) && !/\.navbar, \.mapsoc \{[^}]*min-height: 150px/.test(css));
 
 // --- OCR ve kamera sabitleri (değişmeden korunur)
 ok('OCR güncelleme aralığı 5 sn', OCR.intervalMs === 5000);
