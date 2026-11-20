@@ -111,5 +111,17 @@ check();
 ok('cooldown: 45 sn içinde ikinci replan yok', S.replans.length === 1);
 
 Date.now = realNow;
+
+// 3) Güvenilir kaynak listesi TEK yerde (routing/socTrust.js): panelLogic.js kendi kopyasını tutmaz, aynı kararı verir.
+const { readFileSync } = await import('node:fs');
+const PL = await import('../js/nav/panelLogic.js');
+const plSrc = readFileSync(new URL('../js/nav/panelLogic.js', import.meta.url), 'utf8');
+ok('panelLogic: güvenilir kaynak listesini kendi içinde tanımlamaz', !/\[\s*'live'\s*,\s*'manual'\s*,\s*'sim'\s*\]/.test(plSrc));
+ok("panelLogic: socTrusted'ı routing/socTrust.js'ten alır", /import\s*\{[^}]*\bsocTrusted\b[^}]*\}\s*from\s*'\.\.\/routing\/socTrust\.js'/.test(plSrc));
+for (const s of ['live', 'manual', 'sim', 'stale', 'estimate', 'default', 'none', 'bilinmeyen', undefined]) {
+  ok(`panelLogic.socTrust ve socTrusted aynı karar (${s})`, (PL.socTrust(s) === 'trusted') === T.socTrusted(s));
+  ok(`nextChargeView varış pili yalnız güvenilir kaynakta (${s})`, (PL.nextChargeView({ km: 50, arriveSoc: 40 }, 10, s).soc !== null) === T.socTrusted(s));
+}
+
 console.log(`\n${pass} geçti, ${fail} başarısız`);
 process.exit(fail ? 1 : 0);

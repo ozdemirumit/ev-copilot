@@ -1,4 +1,5 @@
 // Navigasyon üst paneli mantığı (DOM'suz, node ile test edilir): dönüşümlü bilgi/uyarı seçimi ve hız aşımı.
+import { socTrusted } from '../routing/socTrust.js'; // güvenilir pil kaynağı kararı TEK yerde (routing/socTrust.js)
 
 export const ALERT_MS = 3000; // pil/varış/durak bilgisi ve gerçek uyarılar bu aralıkla dönüşümlü gösterilir
 export const OVER_TOL_KMH = 5; // limitin bu kadar üstü "aşıldı" (GPS payı; ahead.js yol limiti toleransıyla aynı)
@@ -38,8 +39,7 @@ export function etaShown(text) {
 }
 
 // Durakta varış pili yalnızca bu pil kaynaklarında gösterilir (socSource(): taze kamera, elle girilen; Test Modu 'sim').
-// Eski kamera/tahmin/varsayılan değerden çıkan plan pili ölçüme dayanmaz: '--' gösterilir.
-const NEXT_SOC_TRUSTED = ['live', 'manual', 'sim'];
+// Eski kamera/tahmin/varsayılan değerden çıkan plan pili ölçüme dayanmaz: '--' gösterilir. Liste: routing/socTrust.js.
 
 /**
  * Sonraki PLANLI şarj durağı görünümü (DOM'suz). stop = plan.stops içindeki sıradaki durak, km = aracın rota üstü km'si,
@@ -49,7 +49,7 @@ const NEXT_SOC_TRUSTED = ['live', 'manual', 'sim'];
 export function nextChargeView(stop, km, source) {
   if (!stop || !Number.isFinite(stop.km) || !Number.isFinite(km)) return null;
   const name = typeof stop.station?.name === 'string' ? stop.station.name.trim() : '';
-  const soc = NEXT_SOC_TRUSTED.includes(source) && Number.isFinite(stop.arriveSoc) ? Math.max(0, Math.round(stop.arriveSoc)) : null;
+  const soc = socTrusted(source) && Number.isFinite(stop.arriveSoc) ? Math.max(0, Math.round(stop.arriveSoc)) : null;
   return { name, km: Math.max(0, stop.km - km), soc };
 }
 
@@ -73,7 +73,7 @@ export const FLAG_TEXT = {
  */
 export function socTrust(source, contested = null) {
   if (contested != null && (source === 'live' || source === 'stale')) return 'contested';
-  if (NEXT_SOC_TRUSTED.includes(source)) return 'trusted';
+  if (socTrusted(source)) return 'trusted';
   if (source === 'stale' || source === 'estimate') return 'approx';
   return 'none';
 }
