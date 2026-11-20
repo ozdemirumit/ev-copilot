@@ -2,7 +2,9 @@
 
 > **Kapsam:** Yalnızca Beta, kaynak dalı `design/modern-ui-soc`. `main` / üretim (v0.86.1) bu kaydın dışında.
 > **Makine okunur kopya:** [`docs/beta-task-registry.json`](beta-task-registry.json). İki dosya birlikte güncellenir. Çelişki olursa JSON esas alınır.
-> **Son güncelleme:** 2026-11-16T19:30:00Z (BETA **herkese açık ücretsiz Beta modu — yayın kapısı BLOCKED**, **v0.99.93** `c2b6c59`): kullanıcı D6'yı yalnız `https://ozdemirumit.github.io/EV-Route-Finder/` için herkese açık ücretsiz Beta olarak değiştirdi (kapılar geçerse). `build-beta --public-free`: paylaşılan sunucuya sıfır istek, ücretli sağlayıcı yok, Nominatim/overpass-api.de kapalı, cihaz başı tavan + geri çekilme; S-1/N-1 kapandı. Testler yeşil (guarded 111/111 BLOCK_ 0). **Yayımlanmadı**: kullanıcıya ait koşullar açık (§7.6, `docs/public-beta-release-gate.md`). Push yok, cihazda test yok.
+> **Son güncelleme:** 2026-11-20T17:37:03Z (BETA **kayıt uzlaştırması v0.99.110'a**, yalnız belge; sürüm artmadı): v0.99.94–0.99.110 kayıtta yoktu; git geçmişi ve canlı Beta (0.99.107, `252cde1`) ile eklendi (§7.7). Hiçbir kayıt `verified` yapılmadı; cihaz testi yok.
+>
+> Önceki: 2026-11-16T19:30:00Z (BETA **herkese açık ücretsiz Beta modu — yayın kapısı BLOCKED**, **v0.99.93** `c2b6c59`): kullanıcı D6'yı yalnız `https://ozdemirumit.github.io/EV-Route-Finder/` için herkese açık ücretsiz Beta olarak değiştirdi (kapılar geçerse). `build-beta --public-free`: paylaşılan sunucuya sıfır istek, ücretli sağlayıcı yok, Nominatim/overpass-api.de kapalı, cihaz başı tavan + geri çekilme; S-1/N-1 kapandı. Testler yeşil (guarded 111/111 BLOCK_ 0). **Yayımlanmadı**: kullanıcıya ait koşullar açık (§7.6, `docs/public-beta-release-gate.md`). Push yok, cihazda test yok.
 >
 > Önceki: 2026-11-16T17:05:00Z (BETA **güncelleme takibi — yalnız YEREL özel cihaz test derlemesi**, köprü `ce6f9141`, yalnız belge; sürüm değişmedi **v0.99.92**): `dee61f95` köprüde completed ve esasta başarılı — `39dc62c` = integ HEAD (temiz). Kapılar yeşil: check.mjs, test-free-only-mode 165/0, run-tests-guarded 110/110 BLOCK_ 0. Yerel derleme `D:\AI-Codes\evrf-localtest\build-0.99.92-39dc62c` üretildi ve denetlendi (§7.5). **Herkese açık Beta güncellenmedi** (D6 erişim kararı yalnız kapalı yerel test), push yok, cihazda test yok.
 
@@ -564,6 +566,35 @@ Herkese açık Beta neden güncellenmedi: D6 erişim kararı (G-ACCESS) yalnız 
 | Testler | **yeşil (çevrimdışı)** | test-public-beta-mode 169/0; free-only 165/0; check.mjs; i18n 11×419; run-tests-guarded 111/111 BLOCK_ 0. |
 | Yayın kapısı | **BLOCKED** | `docs/public-beta-gate.json`: G-PUB-AUTO met; G-PUB-VALHALLA, -OPENMETEO, -OVERPASS, -AGGREGATE, -DEVICE, -PUBLISH açık (kullanıcı). Kapı kapalıyken derleme git deposuna yazmaz (çıkış 2). |
 | Yayın | **yok** | Canlı Beta 0.99.61 (`4c3bd73`), üretim, canlı sunucu dokunulmadı; push yok; cihazda test yok. Geri alma planı: `docs/public-beta-release-gate.md` §6. |
+
+### 7.7 Uzlaştırma: v0.99.94–0.99.110 (2026-11-20, yalnız belge)
+
+Kayıt 0.99.93'te kalmıştı. Aşağıdaki satırlar git geçmişinden (`git log`, sürüm başlıklı commit'ler) alındı; Beta sha'ları bellek notlarından, **yalnız 0.99.107 bugün doğrulandı** (salt-okunur `git ls-remote` + `curl`: Beta `main` = `252cde1`, `version.js` 0.99.107; üretim 0.86.1).
+
+| Sürüm | Commit | Tarih | Konu | Yer |
+|---|---|---|---|---|
+| 0.99.94 | `c748fb3` | 2026-11-16 | Herkese açık ücretsiz Beta'da Hesap kartı ve davet + Google girişi geri geldi (Ücretsiz/Premium planı, eşitleme) | Beta'da (bellek notu) |
+| 0.99.95 | `13c32e5` | 2026-11-16 | Beta'da tüm mevcut özellikler geri — build-beta --beta-full (duraklatma ve public-free kesme/gizleme yok) | Beta'da (bellek notu) |
+| 0.99.96 | `ab310f5` | 2026-11-16 | Şarj istasyonu araması — Overpass kesintisi geçerli sıfırdan ayrıldı, son başarılı sonuç ve önceki liste korunur | Beta'da (bellek notu) |
+| 0.99.97 | `d1a2bb4` | 2026-11-17 | Şarj durağı yalnızca aktif rota üzerindeki istasyonlardan otomatik seçilir; rota dışı seçenek yalnız kullanıcı onayıyla | Beta'da (bellek notu) |
+| 0.99.98 | `8e61e2e` | 2026-11-17 | Durak başına şarj hedefi — her şarj durağında hedef pil seçilir, sonraki duraklar/sıra/varış pili/süre önizlenir, plan y… | Beta'da (bellek notu) |
+| 0.99.99 | `5eec4dc` | 2026-11-17 | Pil değişince (kamera/elle) ve şarj planlanandan farklı bitince kalan plan önerilir, yalnız onayla uygulanır | Beta'da (bellek notu) |
+| 0.99.100 | `379ab9b` | 2026-11-17 | Rota planlama sayfasındaki yinelenen 'Son hedefler' bölümü kaldırıldı — son hedefler Varış açılır listesinde kalır | Beta'da (bellek notu) |
+| 0.99.101 | `36b3972` | 2026-11-17 | Navigasyonda harita serbest gezilir — pinch/kaydırma/tekerlek/çift dokunma yalnız kamera takibini durdurur, Ortala/konum… | Beta'da (bellek notu) |
+| 0.99.102 | `61b49a0` | 2026-11-17 | Navigasyonda tünel ve ücretli yol uyarısı (Valhalla/OSM rotasının kendi verisinden; köprü/alt-üst geçit verisi doğrulanm… | Beta'da (bellek notu) |
+| 0.99.103 | `cdd2cce` | 2026-11-17 | Navigasyon üst paneli okunabilirliği — sol talimat ~%60 / sağ metrikler ~%40 (≤360 px %55/%45) | Beta'da (bellek notu) |
+| 0.99.104 | `05b09de` | 2026-11-17 | İstasyon ayrıntı kartında rotadaki kalan mesafe ("Rotada 25 km ileride") — İstasyonlar listesindeki "… km ileride" ile a… | Beta'da (bellek notu) |
+| 0.99.105 | `617e97e` | 2026-11-17 | İstasyonlar > Filtre > Ara düzeltildi — arama sürerken dokunuş/yarıçap değişimi yutulmaz, konum yoksa dokunuşta tek sefe… | Beta'da (bellek notu) |
+| 0.99.106 | `8f16680` | 2026-11-17 | İstasyonlar > Filtre > Ara dokunuşu her zaman görünür yanıt alır | Beta'da (bellek notu) |
+| 0.99.107 | `a4da1e3` | 2026-11-17 | GÜVENLİK — karşı şerit şarj tesisi otomatik durak olmaz; doğrulanamayan erişimde fail-closed; onaylı durak gerçek ara no… | canlı Beta (doğrulandı) |
+| 0.99.108 | `f6b8915` | 2026-11-20 | Güvenilir pil kaynağı listesi tek yerde (routing/socTrust.js); panelLogic kendi kopyasını tutmaz, davranış aynı | yalnız yerel dal |
+| 0.99.109 | `52c0dc7` | 2026-11-20 | sw.js SHELL'e socReplan ve stopTarget dosyaları (4) eklendi; test-package-parity app.js statik import grafiğinin SHELL'd… | yalnız yerel dal |
+| 0.99.110 | `beb5b54` | 2026-11-20 | Hiçbir yerde kullanılmayan ölü kod silindi (startGoogleSignIn, kvGet, kvSet, TRAFFIC_MULT); i18n/keys.v1.json ayrı commi… | yalnız yerel dal |
+
+- **Cihaz:** hiçbir satır `verified` değil. HEAD'de `check.mjs` tamam, 121 test 121 geçti (çevrimdışı/sahte veri).
+- **0.99.108–110** yalnız `cleanup/v0.99.107-duzeltme` dalında (MBRP-cleanup): push yok, Beta'da değil.
+- **Kapılar:** §7.3/§7.6'daki G-* durumları 2026-11-16 tarihlidir ve yeniden değerlendirilmedi (D6 sonradan kullanıcıca değişti, Beta yayımlandı).
+- **DEF-02:** düzeltme `3975941` canlı Beta'nın kaynağının atası; durum "açık" (cihazda 18→77 gözlemi yok). **DEF-01:** Google Places kodu kaynakta; kusurların kapanıp kapanmadığı denetlenmedi.
 
 ## 8. Açık hatalar
 

@@ -1,20 +1,20 @@
 {
  "schema": "evrf-beta-task-registry/1",
  "scope": "EV Route Finder BETA only — source branch design/modern-ui-soc. main/production (v0.86.1) is out of scope.",
- "updated": "2026-11-16T19:30:00Z",
- "source_head_at_update": "c2b6c59 v0.99.93 public-free mode on feat/public-beta-free-39665d3 (MBRP-pubbeta, parent 39665d3) + docs commit; --ff-only into integ/beta-2026-11-14 only after guarded green. Previous: 39dc62c (integ/beta-2026-11-14 HEAD, clean, verified by ce6f9141 via git merge-base; docs-only commit on docs/free-only-local-build-39dc62c, MBRP-fobuild, --ff-only into integ by ce6f9141). Previous: 9965cfb + dee61f95 v0.99.92 free-only commit (this commit on feat/beta-free-only-9965cfb, parent 9965cfb). Previous: 08a3cde (registry + release-blocker reconciliation 2026-11-16, bridge 418c2ff5: MBRP-integ clean at task start, integ/beta-2026-11-14 = 08a3cde = origin/beta/verified-integration-2026-11-16 08a3cded6ec382f64143c63d540a4841c5a2844f (git ls-remote); docs-only commit on docs/registry-reconcile-08a3cde (MBRP-regrec18), --ff-only into integ by the same task — read ancestry from git; NOT pushed); previous: e090676 (post-push registry reconciliation 2026-11-16, bridge e44a5b81: git ls-remote origin refs/heads/beta/verified-integration-2026-11-16 = e09067613b84f06d713bd5cdd63397a584f2112a = local integ/beta-2026-11-14 HEAD; MBRP-integ clean at task start; docs-only commit on docs/registry-reconcile-e090676 (MBRP-regrec17), --ff-only into integ by the same task — read ancestry from git; NOT pushed by this task); previous: 03e0fa5 (G2b 2026-11-16, bridge 278b6c24: local integ/beta-2026-11-14 = 03e0fa5 = G2a recovery commit, MBRP-integ clean at task start; G2b commit on fix/g2b-request-budget-03e0fa5 (MBRP-g2b), --ff-only into integ by the same task — read ancestry from git); previous: 708d87c (G2a 2026-11-16, bridge 15364d5f: local integ/beta-2026-11-14 = 708d87c = G1b v0.99.88, MBRP-integ clean at task start; G2a commit on fix/server-quota-g2a (MBRP-g2a), --ff-only into integ by the same task — read ancestry from git; server/ + scripts/ + docs/ only, app version unchanged 0.99.88); previous: fb064ef (G1b 2026-11-16, bridge dfe79c32: local integ/beta-2026-11-14 = fb064ef = G1a v0.99.87, MBRP-integ clean at task start); previous: cab7756 (R5 2026-11-16, bridge f6b36d78: local integ/beta-2026-11-14 = cab7756 = R4 e2620bc + registry, MBRP-integ clean at task start; R5 adds test + docs only, app code unchanged, v0.99.86). Before: f60bb9d (R4 2026-11-16, bridge feb985dc: local integ/beta-2026-11-14 = f60bb9d = R3, MBRP-integ clean at task start; timestamp is real UTC, earlier R3 value 10:00Z was ahead of the clock) + e2620bc (D2-T1, v0.99.86) + this registry commit on feat/mapbox-premium-gate-d2-t1 (MBRP-d2t1), --ff-only into integ by the same task (read ancestry from git). Previous: 175ea1f (R3 2026-11-16, bridge 7af0bb6f: local integ/beta-2026-11-14 = 175ea1f = R2 registry, MBRP-integ clean at task start; D2-T0 inventory test only, no app code change) + this commit on test/d2-t0-quota-inventory-175ea1f (MBRP-d2t0), --ff-only into integ by the same task (read ancestry from git). Previous: 5fdf7a9 (R2 2026-11-16, bridge 7cdbcea3: local integ/beta-2026-11-14 = 5fdf7a9 = R1 registry, MBRP-integ clean at task start; D3-T6 regression only, no code change) + this registry commit on test/d3-t6-regression-5fdf7a9 (MBRP-d3t6), --ff-only into integ by the same task (read ancestry from git). Previous: 3050058 (R1 2026-11-16: local integ/beta-2026-11-14 = 3050058 = R0 docs, MBRP-integ clean at task start) + 5445671 (D3-T5 K6 price label, v0.99.85) + this registry commit on feat/price-live-label-d3-t5-k6 (MBRP-d3t5k6), --ff-only into integ by the same task (read ancestry from git). Previous: bb2a8c1 (R0 2026-11-16: local integ/beta-2026-11-14 = bb2a8c1 at task start, MBRP-integ clean; git merge-base --is-ancestor: b63d229 (D3-T4 recovery), 7c6be78 (D3-T5-occ), bb2a8c1 (D3-T5-occ registry) all ancestors of integ HEAD) + this R0 docs-only registry commit on docs/beta-recovery-r0-bb2a8c1 (MBRP-recov-r0), --ff-only into integ by the same task (read ancestry from git). Code/version unchanged (0.99.84). Previous: b63d229 (local integ/beta-2026-11-14 = b26c3790 D3-T4 recovery commit v0.99.83, unpushed, clean at task start) + 7c6be78 (D3-T5 consumer alignment, v0.99.84) + this registry docs commit on feat/occupancy-consumers-d3-t5 (MBRP-d3t5), --ff-only into integ by the same task (read ancestry from git). Previous: 15be974 (local integ/beta-2026-11-14 = aa4c329c D3-T3 commit v0.99.82, unpushed, clean at task start; bridge aa4c329c completed exit 0 at 05:51:14Z) + one code commit by b26c3790 (D3-T4 recovery; 0a472ebc failed 'Reached max turns (80)' before committing — its uncommitted WIP in MBRP-d3t4 was copied read-only as a patch and completed; MBRP-d3t4 left untouched) on feat/occupancy-ui-d3-t4-r2 (MBRP-d3t4r), --ff-only into integ by the same task (read ancestry from git). Previous: 045a257 (local integ/beta-2026-11-14, unpushed, clean at task start; c759f62 → 045a257 = ddb92ce9 D3-T2 server commit, --ff-only by that task) + one code commit by aa4c329c (D3-T3) on feat/community-reports-d3-t3 (MBRP-d3t3), --ff-only into integ by the same task (read ancestry from git). Previous: c759f62 (local integ/beta-2026-11-14, unpushed, clean at task start; f984e70 → c759f62 = ec585e43 D3-T1 code commit, --ff-only by that task) + one server/test/docs commit by ddb92ce9 (D3-T2) on feat/occupancy-adapter-d3-t2 (MBRP-d3t2), --ff-only into integ by the same task (read ancestry from git). Previous: f984e70 (local integ/beta-2026-11-14, unpushed, clean at task start; 4934476 → f984e70 = 0a591021 D3 decisions docs commit, --ff-only by that task) + one code commit by ec585e43 (D3-T1) on feat/occupancy-decision-d3-t1 (MBRP-d3t1), --ff-only into integ by the same task (read ancestry from git). Previous: 4934476 (local integ/beta-2026-11-14, unpushed, clean; 0987a72 → 4934476 = 6883b3a8 netguard commit, --ff-only by the same task) + one docs-only commit by 0a591021 on docs/d3-decisions-4934476 (MBRP-d3dec), --ff-only into integ by the same task (read ancestry from git). Previous: 0987a72 + one test-infra/docs commit by 6883b3a8 on test/netguard-hardening-0987a72 (MBRP-netguard), --ff-only into integ by the same task (read ancestry from git). Previous: 0987a72 (local integ/beta-2026-11-14, unpushed, clean; 8e2399f → dca5a47 (a0fa9e93 registry reconcile, docs-only, ff reflog 2026-11-16 04:18:37 +0300) → 9394189 (531d536f D3-T0, docs-only, ff 04:47:37) → 0987a72 (8a21b5a9 T-SAFE-1, 2 test files, ff 06:39:47); all --ff-only by their own tasks, no merge commits; read by 83d3680e from git worktree list + reflog). This update is UNCOMMITTED in isolated worktree MBRP-netguard (branch test/netguard-hardening-0987a72, base 0987a72): the task STOPPED before commit/ff because test-station-card-layout launches Playwright Chromium/WebKit, which the Node-level net guard cannot contain (see decisions_note-adjacent docs/beta-decision-matrix.md §7).",
- "app_version_at_update": "0.99.93 set by c2b6c59 (public-free build mode build-beta --public-free; S-1/N-1 backoff; source default still paused). Previous: 0.99.92 set by dee61f95 (free-only local build mode: js/net/providerGate.js, js/net/proxy.js, js/mapbox/api.js, js/osm/chargers.js, js/ui/maps/maplibre.js, js/ui/mapView.js; source default still paused). Previous: 0.99.91 set by topbar 08a3cde (fa065b60: index.html, css/styles.css, js/nav/navigator.js, version.js + 4 test/doc files; two-half top bar); unchanged by source push 16859cbd, read-only audit 2b3f7ae4, BLOCKED publish gate c3f6ff69 and this docs-only reconciliation 418c2ff5; between 0.99.90 and 0.99.91 the docs-only commits 8d0c522 (e44a5b81), 8625735 (8858f5da D6 prep), 2c06f69 (4b7c802d S-1/N-1) changed no app files; previous: 0.99.90 set by geodot e090676 (8e9ac846: js/ui/mapView.js single green geolocation dot, scripts/test-geo-dot.mjs, version.js); unchanged by source push 53093aa1 and by this docs-only reconciliation e44a5b81; previous: 0.99.89 set by G2b (js/nav/nearby.js S-0 search-error backoff); previous: 0.99.88 unchanged by G2a (server/proxy.mjs, new server/quotaCounters.mjs, scripts/, docs/ only — no index.html/js/css/sw.js change; check.mjs v0.99.88 / 275 entries / 187 files); 0.99.88 set by G1b commit on fix/soc-trust-gates-g1b (Q-SOC-1/Q-SOC-2 trusted-SOC request gates); before: 0.99.87 G1a fb064ef; earlier: 0.99.86 set by R4 D2-T1 commit e2620bc (Mapbox route Premium gate + monthly route cap + Free fallback; check.mjs v0.99.86 / 273 entries / 187 files). Before: 0.99.85 unchanged by R3 D2-T0 (scripts/ + docs/ only; check.mjs 187 files) and by R2 D3-T6 (docs-only; check.mjs 187 files). Set by the D3-T5 K6 commit 5445671 (slots.js isLivePrice/livePrice; check.mjs v0.99.85 / 272 entries / 187 files). Before: 0.99.84 by the D3-T5 consumer commit 7c6be78 (slots.js slotKind/isFresh → trustedOccupancy; nearSort slotKind(s, now); check.mjs v0.99.84 / 271 entries / 187 files). Before: 0.99.83 by the D3-T4 commit (slots.js slotEl/slotLabel wired to occupancyDecision + communityReport: three UI states Müsait/Dolu/Bilinmiyor; 2 new i18n keys x 11 languages; sw.js SHELL +3 modules; check.mjs v0.99.83 / 270 entries / 187 files). Before: 0.99.82 by the D3-T3 commit (js/routing/communityReport.js added, not wired; occupancyDecision community guard; check.mjs v0.99.82 / 269 entries / 187 files). Before: 0.99.81 unchanged by D3-T2 (server/, scripts/, docs/ only; check.mjs v0.99.81 / 268 entries / 186 files). Before: 0.99.81 by the D3-T1 commit (js/routing/occupancyDecision.js added, not wired; check.mjs v0.99.81 / 268 entries / 186 files). Before: 0.99.80 on local integ @4934476 (unchanged since 8e2399f; 4934476 is test-infra/docs-only; this commit docs-only). 0.99.80 on local integ @0987a72 (unchanged since 8e2399f; dca5a47/9394189/0987a72 are docs/test-only). 0.99.80 on local integ @8e2399f (0.99.77 405f628, 0.99.78 f0f448e, 0.99.79 e28ee47, 0.99.80 8e2399f; check.mjs v0.99.80 / 267 entries / 185 files, a0fa9e93). Live Beta 0.99.61 re-read 2026-11-16 by a0fa9e93 (github.io + raw.githubusercontent version.js). git ls-remote origin 2026-11-16: design/modern-ui-soc 132d610, main 31a6ef5, beta/quota-protection-2026-11-16 f0f448e (pushed by 4bc2adc1; new branch only). Beta NO-GO: no device test, integ unpushed, D6 closed-access method undecided.",
+ "updated": "2026-11-20T17:37:03Z",
+ "source_head_at_update": "a82d0f7 cleanup/v0.99.107-duzeltme (MBRP-cleanup, yerel, push yok; a4da1e3 v0.99.107 üstünde commit'ler: git log a4da1e3..a82d0f7) — 2026-11-20 uzlaştırması. Önceki: c2b6c59 v0.99.93 public-free mode on feat/public-beta-free-39665d3 (MBRP-pubbeta, parent 39665d3) + docs commit; --ff-only into integ/beta-2026-11-14 only after guarded green. Previous: 39dc62c (integ/beta-2026-11-14 HEAD, clean, verified by ce6f9141 via git merge-base; docs-only commit on docs/free-only-local-build-39dc62c, MBRP-fobuild, --ff-only into integ by ce6f9141). Previous: 9965cfb + dee61f95 v0.99.92 free-only commit (this commit on feat/beta-free-only-9965cfb, parent 9965cfb). Previous: 08a3cde (registry + release-blocker reconciliation 2026-11-16, bridge 418c2ff5: MBRP-integ clean at task start, integ/beta-2026-11-14 = 08a3cde = origin/beta/verified-integration-2026-11-16 08a3cded6ec382f64143c63d540a4841c5a2844f (git ls-remote); docs-only commit on docs/registry-reconcile-08a3cde (MBRP-regrec18), --ff-only into integ by the same task — read ancestry from git; NOT pushed); previous: e090676 (post-push registry reconciliation 2026-11-16, bridge e44a5b81: git ls-remote origin refs/heads/beta/verified-integration-2026-11-16 = e09067613b84f06d713bd5cdd63397a584f2112a = local integ/beta-2026-11-14 HEAD; MBRP-integ clean at task start; docs-only commit on docs/registry-reconcile-e090676 (MBRP-regrec17), --ff-only into integ by the same task — read ancestry from git; NOT pushed by this task); previous: 03e0fa5 (G2b 2026-11-16, bridge 278b6c24: local integ/beta-2026-11-14 = 03e0fa5 = G2a recovery commit, MBRP-integ clean at task start; G2b commit on fix/g2b-request-budget-03e0fa5 (MBRP-g2b), --ff-only into integ by the same task — read ancestry from git); previous: 708d87c (G2a 2026-11-16, bridge 15364d5f: local integ/beta-2026-11-14 = 708d87c = G1b v0.99.88, MBRP-integ clean at task start; G2a commit on fix/server-quota-g2a (MBRP-g2a), --ff-only into integ by the same task — read ancestry from git; server/ + scripts/ + docs/ only, app version unchanged 0.99.88); previous: fb064ef (G1b 2026-11-16, bridge dfe79c32: local integ/beta-2026-11-14 = fb064ef = G1a v0.99.87, MBRP-integ clean at task start); previous: cab7756 (R5 2026-11-16, bridge f6b36d78: local integ/beta-2026-11-14 = cab7756 = R4 e2620bc + registry, MBRP-integ clean at task start; R5 adds test + docs only, app code unchanged, v0.99.86). Before: f60bb9d (R4 2026-11-16, bridge feb985dc: local integ/beta-2026-11-14 = f60bb9d = R3, MBRP-integ clean at task start; timestamp is real UTC, earlier R3 value 10:00Z was ahead of the clock) + e2620bc (D2-T1, v0.99.86) + this registry commit on feat/mapbox-premium-gate-d2-t1 (MBRP-d2t1), --ff-only into integ by the same task (read ancestry from git). Previous: 175ea1f (R3 2026-11-16, bridge 7af0bb6f: local integ/beta-2026-11-14 = 175ea1f = R2 registry, MBRP-integ clean at task start; D2-T0 inventory test only, no app code change) + this commit on test/d2-t0-quota-inventory-175ea1f (MBRP-d2t0), --ff-only into integ by the same task (read ancestry from git). Previous: 5fdf7a9 (R2 2026-11-16, bridge 7cdbcea3: local integ/beta-2026-11-14 = 5fdf7a9 = R1 registry, MBRP-integ clean at task start; D3-T6 regression only, no code change) + this registry commit on test/d3-t6-regression-5fdf7a9 (MBRP-d3t6), --ff-only into integ by the same task (read ancestry from git). Previous: 3050058 (R1 2026-11-16: local integ/beta-2026-11-14 = 3050058 = R0 docs, MBRP-integ clean at task start) + 5445671 (D3-T5 K6 price label, v0.99.85) + this registry commit on feat/price-live-label-d3-t5-k6 (MBRP-d3t5k6), --ff-only into integ by the same task (read ancestry from git). Previous: bb2a8c1 (R0 2026-11-16: local integ/beta-2026-11-14 = bb2a8c1 at task start, MBRP-integ clean; git merge-base --is-ancestor: b63d229 (D3-T4 recovery), 7c6be78 (D3-T5-occ), bb2a8c1 (D3-T5-occ registry) all ancestors of integ HEAD) + this R0 docs-only registry commit on docs/beta-recovery-r0-bb2a8c1 (MBRP-recov-r0), --ff-only into integ by the same task (read ancestry from git). Code/version unchanged (0.99.84). Previous: b63d229 (local integ/beta-2026-11-14 = b26c3790 D3-T4 recovery commit v0.99.83, unpushed, clean at task start) + 7c6be78 (D3-T5 consumer alignment, v0.99.84) + this registry docs commit on feat/occupancy-consumers-d3-t5 (MBRP-d3t5), --ff-only into integ by the same task (read ancestry from git). Previous: 15be974 (local integ/beta-2026-11-14 = aa4c329c D3-T3 commit v0.99.82, unpushed, clean at task start; bridge aa4c329c completed exit 0 at 05:51:14Z) + one code commit by b26c3790 (D3-T4 recovery; 0a472ebc failed 'Reached max turns (80)' before committing — its uncommitted WIP in MBRP-d3t4 was copied read-only as a patch and completed; MBRP-d3t4 left untouched) on feat/occupancy-ui-d3-t4-r2 (MBRP-d3t4r), --ff-only into integ by the same task (read ancestry from git). Previous: 045a257 (local integ/beta-2026-11-14, unpushed, clean at task start; c759f62 → 045a257 = ddb92ce9 D3-T2 server commit, --ff-only by that task) + one code commit by aa4c329c (D3-T3) on feat/community-reports-d3-t3 (MBRP-d3t3), --ff-only into integ by the same task (read ancestry from git). Previous: c759f62 (local integ/beta-2026-11-14, unpushed, clean at task start; f984e70 → c759f62 = ec585e43 D3-T1 code commit, --ff-only by that task) + one server/test/docs commit by ddb92ce9 (D3-T2) on feat/occupancy-adapter-d3-t2 (MBRP-d3t2), --ff-only into integ by the same task (read ancestry from git). Previous: f984e70 (local integ/beta-2026-11-14, unpushed, clean at task start; 4934476 → f984e70 = 0a591021 D3 decisions docs commit, --ff-only by that task) + one code commit by ec585e43 (D3-T1) on feat/occupancy-decision-d3-t1 (MBRP-d3t1), --ff-only into integ by the same task (read ancestry from git). Previous: 4934476 (local integ/beta-2026-11-14, unpushed, clean; 0987a72 → 4934476 = 6883b3a8 netguard commit, --ff-only by the same task) + one docs-only commit by 0a591021 on docs/d3-decisions-4934476 (MBRP-d3dec), --ff-only into integ by the same task (read ancestry from git). Previous: 0987a72 + one test-infra/docs commit by 6883b3a8 on test/netguard-hardening-0987a72 (MBRP-netguard), --ff-only into integ by the same task (read ancestry from git). Previous: 0987a72 (local integ/beta-2026-11-14, unpushed, clean; 8e2399f → dca5a47 (a0fa9e93 registry reconcile, docs-only, ff reflog 2026-11-16 04:18:37 +0300) → 9394189 (531d536f D3-T0, docs-only, ff 04:47:37) → 0987a72 (8a21b5a9 T-SAFE-1, 2 test files, ff 06:39:47); all --ff-only by their own tasks, no merge commits; read by 83d3680e from git worktree list + reflog). This update is UNCOMMITTED in isolated worktree MBRP-netguard (branch test/netguard-hardening-0987a72, base 0987a72): the task STOPPED before commit/ff because test-station-card-layout launches Playwright Chromium/WebKit, which the Node-level net guard cannot contain (see decisions_note-adjacent docs/beta-decision-matrix.md §7).",
+ "app_version_at_update": "0.99.110 set by beb5b54 (cleanup/v0.99.107-duzeltme, yerel, push yok, Beta'da değil; ölü kod silindi). Önceki: 0.99.109 52c0dc7 (sw.js SHELL + parity testi), 0.99.108 f6b8915 (socTrust tek liste), 0.99.107 a4da1e3 (Beta'da canlı, 252cde1), 0.99.94–0.99.106 git geçmişinden uzlaştırıldı. Önceki kayıt: 0.99.93 set by c2b6c59 (public-free build mode build-beta --public-free; S-1/N-1 backoff; source default still paused). Previous: 0.99.92 set by dee61f95 (free-only local build mode: js/net/providerGate.js, js/net/proxy.js, js/mapbox/api.js, js/osm/chargers.js, js/ui/maps/maplibre.js, js/ui/mapView.js; source default still paused). Previous: 0.99.91 set by topbar 08a3cde (fa065b60: index.html, css/styles.css, js/nav/navigator.js, version.js + 4 test/doc files; two-half top bar); unchanged by source push 16859cbd, read-only audit 2b3f7ae4, BLOCKED publish gate c3f6ff69 and this docs-only reconciliation 418c2ff5; between 0.99.90 and 0.99.91 the docs-only commits 8d0c522 (e44a5b81), 8625735 (8858f5da D6 prep), 2c06f69 (4b7c802d S-1/N-1) changed no app files; previous: 0.99.90 set by geodot e090676 (8e9ac846: js/ui/mapView.js single green geolocation dot, scripts/test-geo-dot.mjs, version.js); unchanged by source push 53093aa1 and by this docs-only reconciliation e44a5b81; previous: 0.99.89 set by G2b (js/nav/nearby.js S-0 search-error backoff); previous: 0.99.88 unchanged by G2a (server/proxy.mjs, new server/quotaCounters.mjs, scripts/, docs/ only — no index.html/js/css/sw.js change; check.mjs v0.99.88 / 275 entries / 187 files); 0.99.88 set by G1b commit on fix/soc-trust-gates-g1b (Q-SOC-1/Q-SOC-2 trusted-SOC request gates); before: 0.99.87 G1a fb064ef; earlier: 0.99.86 set by R4 D2-T1 commit e2620bc (Mapbox route Premium gate + monthly route cap + Free fallback; check.mjs v0.99.86 / 273 entries / 187 files). Before: 0.99.85 unchanged by R3 D2-T0 (scripts/ + docs/ only; check.mjs 187 files) and by R2 D3-T6 (docs-only; check.mjs 187 files). Set by the D3-T5 K6 commit 5445671 (slots.js isLivePrice/livePrice; check.mjs v0.99.85 / 272 entries / 187 files). Before: 0.99.84 by the D3-T5 consumer commit 7c6be78 (slots.js slotKind/isFresh → trustedOccupancy; nearSort slotKind(s, now); check.mjs v0.99.84 / 271 entries / 187 files). Before: 0.99.83 by the D3-T4 commit (slots.js slotEl/slotLabel wired to occupancyDecision + communityReport: three UI states Müsait/Dolu/Bilinmiyor; 2 new i18n keys x 11 languages; sw.js SHELL +3 modules; check.mjs v0.99.83 / 270 entries / 187 files). Before: 0.99.82 by the D3-T3 commit (js/routing/communityReport.js added, not wired; occupancyDecision community guard; check.mjs v0.99.82 / 269 entries / 187 files). Before: 0.99.81 unchanged by D3-T2 (server/, scripts/, docs/ only; check.mjs v0.99.81 / 268 entries / 186 files). Before: 0.99.81 by the D3-T1 commit (js/routing/occupancyDecision.js added, not wired; check.mjs v0.99.81 / 268 entries / 186 files). Before: 0.99.80 on local integ @4934476 (unchanged since 8e2399f; 4934476 is test-infra/docs-only; this commit docs-only). 0.99.80 on local integ @0987a72 (unchanged since 8e2399f; dca5a47/9394189/0987a72 are docs/test-only). 0.99.80 on local integ @8e2399f (0.99.77 405f628, 0.99.78 f0f448e, 0.99.79 e28ee47, 0.99.80 8e2399f; check.mjs v0.99.80 / 267 entries / 185 files, a0fa9e93). Live Beta 0.99.61 re-read 2026-11-16 by a0fa9e93 (github.io + raw.githubusercontent version.js). git ls-remote origin 2026-11-16: design/modern-ui-soc 132d610, main 31a6ef5, beta/quota-protection-2026-11-16 f0f448e (pushed by 4bc2adc1; new branch only). Beta NO-GO: no device test, integ unpushed, D6 closed-access method undecided.",
  "beta_preview": {
   "repo": "ozdemirumit/EV-Route-Finder",
   "branch": "main",
   "url": "https://ozdemirumit.github.io/EV-Route-Finder/",
   "latest_known_deploy": {
-   "commit": "4c3bd73",
-   "app_version": "0.99.61",
-   "source_commit": "132d610",
+   "commit": "252cde1",
+   "app_version": "0.99.107",
+   "source_commit": "a4da1e3",
    "by_session": "1d3a3004-d0a1-4e0c-bb65-0776d4722e97",
    "by_orchestrator": "6716d31f",
-   "live_check": "Live version.js = 0.99.61 re-read 2026-11-16T16:08:15Z by 418c2ff5 (read-only curl https://ozdemirumit.github.io/EV-Route-Finder/version.js → APP_VERSION '0.99.61'; git ls-remote https://github.com/ozdemirumit/EV-Route-Finder → main 4c3bd7316dce13931fef203caadfe30f7bcab0fa; GitHub API commits/main date 2026-11-13T20:31:26Z; production https://ozdemirumit.github.io/ev-copilot/version.js → '0.86.1'). v0.99.62–0.99.91 NOT published: publish gate c3f6ff69 and publish request 70bbbd9a both stopped BLOCKED (no build-beta run, no push to EV-Route-Finder). Earlier: Live version.js = 0.99.61 re-read 2026-11-16 ~13:20Z by e44a5b81 (read-only curl raw.githubusercontent EV-Route-Finder/main/version.js; EV-Route-Finder main ls-remote = 4c3bd7316dce13931fef203caadfe30f7bcab0fa = 4c3bd73, unchanged by source push 53093aa1). Earlier: Live version.js = 0.99.61 re-read 2026-11-15 ~21:35Z by 1c769a50 (session 97b6c67d; read-only curl raw.githubusercontent + github.io; EV-Route-Finder main ls-remote = 4c3bd73; origin design/modern-ui-soc = 132d610, origin main = 31a6ef5). Earlier: Live version.js = 0.99.61 re-read 2026-11-15 ~16:20Z by regrec15 (bridge ee335415 / session 5c734a23; read-only curl raw.githubusercontent + github.io; EV-Route-Finder main ls-remote = 4c3bd73). Earlier: Live version.js = 0.99.61 (read-only curl of raw.githubusercontent EV-Route-Finder/main/version.js and ozdemirumit.github.io/EV-Route-Finder/version.js by regrec9 session 3c354db1 / bridge f2a8365c, 2026-11-15 ~09:15Z; EV-Route-Finder main ls-remote = 4c3bd73) — last live verification; previous checks 32ac6eb9 / 03556766 ~2026-11-15T05:30Z, 8a8da642 / c6cd2b12 ~2026-11-15T04:05Z, 77006ffc / b05ce195 ~2026-11-15T03:30Z, 8315e5f7 / daace8e2 2026-11-14 ~18:35Z, b069193a / 5c147383 ~03:30Z. No later deploy; v0.99.62–0.99.76 and all later tool/test/docs commits up to e321ffe are not published (8dcef0b4 push attempt stopped NO-CHANGE; no build-beta run). Original deploy evidence: ev-copilot-beta push 6540e59..4c3bd73 HEAD -> main.",
+   "live_check": "Canlı version.js = 0.99.107, EV-Route-Finder main ls-remote = 252cde1cd2c523fa99b1b5161aaddc98e81cab3e, üretim ev-copilot version.js 0.86.1 — 2026-11-20T17:37:03Z salt-okunur (git ls-remote + curl), bu uzlaştırma. Önceki: Live version.js = 0.99.61 re-read 2026-11-16T16:08:15Z by 418c2ff5 (read-only curl https://ozdemirumit.github.io/EV-Route-Finder/version.js → APP_VERSION '0.99.61'; git ls-remote https://github.com/ozdemirumit/EV-Route-Finder → main 4c3bd7316dce13931fef203caadfe30f7bcab0fa; GitHub API commits/main date 2026-11-13T20:31:26Z; production https://ozdemirumit.github.io/ev-copilot/version.js → '0.86.1'). v0.99.62–0.99.91 NOT published: publish gate c3f6ff69 and publish request 70bbbd9a both stopped BLOCKED (no build-beta run, no push to EV-Route-Finder). Earlier: Live version.js = 0.99.61 re-read 2026-11-16 ~13:20Z by e44a5b81 (read-only curl raw.githubusercontent EV-Route-Finder/main/version.js; EV-Route-Finder main ls-remote = 4c3bd7316dce13931fef203caadfe30f7bcab0fa = 4c3bd73, unchanged by source push 53093aa1). Earlier: Live version.js = 0.99.61 re-read 2026-11-15 ~21:35Z by 1c769a50 (session 97b6c67d; read-only curl raw.githubusercontent + github.io; EV-Route-Finder main ls-remote = 4c3bd73; origin design/modern-ui-soc = 132d610, origin main = 31a6ef5). Earlier: Live version.js = 0.99.61 re-read 2026-11-15 ~16:20Z by regrec15 (bridge ee335415 / session 5c734a23; read-only curl raw.githubusercontent + github.io; EV-Route-Finder main ls-remote = 4c3bd73). Earlier: Live version.js = 0.99.61 (read-only curl of raw.githubusercontent EV-Route-Finder/main/version.js and ozdemirumit.github.io/EV-Route-Finder/version.js by regrec9 session 3c354db1 / bridge f2a8365c, 2026-11-15 ~09:15Z; EV-Route-Finder main ls-remote = 4c3bd73) — last live verification; previous checks 32ac6eb9 / 03556766 ~2026-11-15T05:30Z, 8a8da642 / c6cd2b12 ~2026-11-15T04:05Z, 77006ffc / b05ce195 ~2026-11-15T03:30Z, 8315e5f7 / daace8e2 2026-11-14 ~18:35Z, b069193a / 5c147383 ~03:30Z. No later deploy; v0.99.62–0.99.76 and all later tool/test/docs commits up to e321ffe are not published (8dcef0b4 push attempt stopped NO-CHANGE; no build-beta run). Original deploy evidence: ev-copilot-beta push 6540e59..4c3bd73 HEAD -> main.",
    "previous": [
     {
      "commit": "6540e59",
@@ -31,7 +31,12 @@
      "app_version": "0.99.53",
      "source_commit": "bb2f676"
     }
-   ]
+   ],
+   "previous_deploy_0_99_61": {
+    "commit": "4c3bd73",
+    "app_version": "0.99.61",
+    "source_commit": "132d610"
+   }
   }
  },
  "status_vocabulary": {
@@ -2540,6 +2545,261 @@
    "tests": "red-first on 39665d3 copy: test-public-beta-mode exit 1, test-g2b 44/6; after: check.mjs ok; test-public-beta-mode 169/0; test-g2b 50/0; test-free-only-mode 165/0; i18n 11×419/419; run-tests-guarded run1 109/111 (2 fixed in code) → run2 111/111 BLOCK_ 0 (D:/AI-Codes/evrf-pubbeta-tools/guarded-2)",
    "policies_read": "2026-11-16 primary sources: OSMF Nominatim policy (aggregate per app → disabled), Valhalla README+discussion 3373 (X-Client-Id + notify maintainers), Open-Meteo terms (non-commercial), OpenFreeMap (no limits, commercial ok), Photon (fair use), Overpass wiki/manual (overpass-api.de aggregate → disabled; private.coffee notify if large)",
    "roadmap": []
+  },
+  {
+   "local_session": "unknown (git geçmişinden uzlaştırıldı; oturum kimliği kayıtlı değil)",
+   "orchestrator_id": null,
+   "started": "2026-11-16T21:24Z",
+   "kind": "fix",
+   "title": "v0.99.94: Herkese açık ücretsiz Beta'da Hesap kartı ve davet + Google girişi geri geldi (Ücretsiz/Premium planı, eşitleme)",
+   "state": "completed",
+   "commit": "c748fb3",
+   "version": "0.99.94",
+   "substantive_status": "completed — c748fb3 kaynak dalında ve origin'de; canlı Beta 0.99.107 bu sürümü içerir; NOT device-verified",
+   "integration": "published-to-beta (canlı version.js 0.99.107; bkz. beta_preview)",
+   "deploy": "Beta deposu 013c3db (bellek notu; bugün doğrulanmadı)",
+   "tests": "Bu uzlaştırmada her sürüm için yeniden koşulmadı; 2026-11-20 itibarıyla HEAD a82d0f7'de node scripts/check.mjs tamam ve 121 scripts/test-*.mjs 121 geçti / 0 kaldı (çevrimdışı, sahte veri). Cihazda doğrulanmadı.",
+   "note": "Kayıt 2026-11-20 uzlaştırmasında git geçmişinden eklendi (önceden yoktu). Sürüm/sha git log'dan; Beta commit sha'ları bellek notlarından (107 hariç)."
+  },
+  {
+   "local_session": "unknown (git geçmişinden uzlaştırıldı; oturum kimliği kayıtlı değil)",
+   "orchestrator_id": null,
+   "started": "2026-11-16T21:46Z",
+   "kind": "feature",
+   "title": "v0.99.95: Beta'da tüm mevcut özellikler geri — build-beta --beta-full (duraklatma ve public-free kesme/gizleme yok)",
+   "state": "completed",
+   "commit": "13c32e5",
+   "version": "0.99.95",
+   "substantive_status": "completed — 13c32e5 kaynak dalında ve origin'de; canlı Beta 0.99.107 bu sürümü içerir; NOT device-verified",
+   "integration": "published-to-beta (canlı version.js 0.99.107; bkz. beta_preview)",
+   "deploy": "Beta deposu 1418ad3 (bellek notu; bugün doğrulanmadı)",
+   "tests": "Bu uzlaştırmada her sürüm için yeniden koşulmadı; 2026-11-20 itibarıyla HEAD a82d0f7'de node scripts/check.mjs tamam ve 121 scripts/test-*.mjs 121 geçti / 0 kaldı (çevrimdışı, sahte veri). Cihazda doğrulanmadı.",
+   "note": "Kayıt 2026-11-20 uzlaştırmasında git geçmişinden eklendi (önceden yoktu). Sürüm/sha git log'dan; Beta commit sha'ları bellek notlarından (107 hariç)."
+  },
+  {
+   "local_session": "unknown (git geçmişinden uzlaştırıldı; oturum kimliği kayıtlı değil)",
+   "orchestrator_id": null,
+   "started": "2026-11-16T22:08Z",
+   "kind": "fix",
+   "title": "v0.99.96: Şarj istasyonu araması — Overpass kesintisi geçerli sıfırdan ayrıldı, son başarılı sonuç ve önceki liste korunur",
+   "state": "completed",
+   "commit": "ab310f5",
+   "version": "0.99.96",
+   "substantive_status": "completed — ab310f5 kaynak dalında ve origin'de; canlı Beta 0.99.107 bu sürümü içerir; NOT device-verified",
+   "integration": "published-to-beta (canlı version.js 0.99.107; bkz. beta_preview)",
+   "deploy": "Beta deposu 436b609 (bellek notu; bugün doğrulanmadı)",
+   "tests": "Bu uzlaştırmada her sürüm için yeniden koşulmadı; 2026-11-20 itibarıyla HEAD a82d0f7'de node scripts/check.mjs tamam ve 121 scripts/test-*.mjs 121 geçti / 0 kaldı (çevrimdışı, sahte veri). Cihazda doğrulanmadı.",
+   "note": "Kayıt 2026-11-20 uzlaştırmasında git geçmişinden eklendi (önceden yoktu). Sürüm/sha git log'dan; Beta commit sha'ları bellek notlarından (107 hariç)."
+  },
+  {
+   "local_session": "unknown (git geçmişinden uzlaştırıldı; oturum kimliği kayıtlı değil)",
+   "orchestrator_id": null,
+   "started": "2026-11-17T07:00Z",
+   "kind": "fix",
+   "title": "v0.99.97: Şarj durağı yalnızca aktif rota üzerindeki istasyonlardan otomatik seçilir; rota dışı seçenek yalnız kullanıcı onayıyla",
+   "state": "completed",
+   "commit": "d1a2bb4",
+   "version": "0.99.97",
+   "substantive_status": "completed — d1a2bb4 kaynak dalında ve origin'de; canlı Beta 0.99.107 bu sürümü içerir; NOT device-verified",
+   "integration": "published-to-beta (canlı version.js 0.99.107; bkz. beta_preview)",
+   "deploy": "Beta deposu ab78c10 (bellek notu; bugün doğrulanmadı)",
+   "tests": "Bu uzlaştırmada her sürüm için yeniden koşulmadı; 2026-11-20 itibarıyla HEAD a82d0f7'de node scripts/check.mjs tamam ve 121 scripts/test-*.mjs 121 geçti / 0 kaldı (çevrimdışı, sahte veri). Cihazda doğrulanmadı.",
+   "note": "Kayıt 2026-11-20 uzlaştırmasında git geçmişinden eklendi (önceden yoktu). Sürüm/sha git log'dan; Beta commit sha'ları bellek notlarından (107 hariç)."
+  },
+  {
+   "local_session": "unknown (git geçmişinden uzlaştırıldı; oturum kimliği kayıtlı değil)",
+   "orchestrator_id": null,
+   "started": "2026-11-17T07:27Z",
+   "kind": "feature",
+   "title": "v0.99.98: Durak başına şarj hedefi — her şarj durağında hedef pil seçilir, sonraki duraklar/sıra/varış pili/süre önizlenir, plan yalnız onayla değişir",
+   "state": "completed",
+   "commit": "8e61e2e",
+   "version": "0.99.98",
+   "substantive_status": "completed — 8e61e2e kaynak dalında ve origin'de; canlı Beta 0.99.107 bu sürümü içerir; NOT device-verified",
+   "integration": "published-to-beta (canlı version.js 0.99.107; bkz. beta_preview)",
+   "deploy": "Beta deposu 5a01cd2 (bellek notu; bugün doğrulanmadı)",
+   "tests": "Bu uzlaştırmada her sürüm için yeniden koşulmadı; 2026-11-20 itibarıyla HEAD a82d0f7'de node scripts/check.mjs tamam ve 121 scripts/test-*.mjs 121 geçti / 0 kaldı (çevrimdışı, sahte veri). Cihazda doğrulanmadı.",
+   "note": "Kayıt 2026-11-20 uzlaştırmasında git geçmişinden eklendi (önceden yoktu). Sürüm/sha git log'dan; Beta commit sha'ları bellek notlarından (107 hariç)."
+  },
+  {
+   "local_session": "unknown (git geçmişinden uzlaştırıldı; oturum kimliği kayıtlı değil)",
+   "orchestrator_id": null,
+   "started": "2026-11-17T07:48Z",
+   "kind": "feature",
+   "title": "v0.99.99: Pil değişince (kamera/elle) ve şarj planlanandan farklı bitince kalan plan önerilir, yalnız onayla uygulanır",
+   "state": "completed",
+   "commit": "5eec4dc",
+   "version": "0.99.99",
+   "substantive_status": "completed — 5eec4dc kaynak dalında ve origin'de; canlı Beta 0.99.107 bu sürümü içerir; NOT device-verified",
+   "integration": "published-to-beta (canlı version.js 0.99.107; bkz. beta_preview)",
+   "deploy": "Beta deposu 359c2ab (bellek notu; bugün doğrulanmadı)",
+   "tests": "Bu uzlaştırmada her sürüm için yeniden koşulmadı; 2026-11-20 itibarıyla HEAD a82d0f7'de node scripts/check.mjs tamam ve 121 scripts/test-*.mjs 121 geçti / 0 kaldı (çevrimdışı, sahte veri). Cihazda doğrulanmadı.",
+   "note": "Kayıt 2026-11-20 uzlaştırmasında git geçmişinden eklendi (önceden yoktu). Sürüm/sha git log'dan; Beta commit sha'ları bellek notlarından (107 hariç)."
+  },
+  {
+   "local_session": "unknown (git geçmişinden uzlaştırıldı; oturum kimliği kayıtlı değil)",
+   "orchestrator_id": null,
+   "started": "2026-11-17T08:37Z",
+   "kind": "ui",
+   "title": "v0.99.100: Rota planlama sayfasındaki yinelenen 'Son hedefler' bölümü kaldırıldı — son hedefler Varış açılır listesinde kalır",
+   "state": "completed",
+   "commit": "379ab9b",
+   "version": "0.99.100",
+   "substantive_status": "completed — 379ab9b kaynak dalında ve origin'de; canlı Beta 0.99.107 bu sürümü içerir; NOT device-verified",
+   "integration": "published-to-beta (canlı version.js 0.99.107; bkz. beta_preview)",
+   "deploy": "Beta deposu 56abfe3 (bellek notu; bugün doğrulanmadı)",
+   "tests": "Bu uzlaştırmada her sürüm için yeniden koşulmadı; 2026-11-20 itibarıyla HEAD a82d0f7'de node scripts/check.mjs tamam ve 121 scripts/test-*.mjs 121 geçti / 0 kaldı (çevrimdışı, sahte veri). Cihazda doğrulanmadı.",
+   "note": "Kayıt 2026-11-20 uzlaştırmasında git geçmişinden eklendi (önceden yoktu). Sürüm/sha git log'dan; Beta commit sha'ları bellek notlarından (107 hariç)."
+  },
+  {
+   "local_session": "unknown (git geçmişinden uzlaştırıldı; oturum kimliği kayıtlı değil)",
+   "orchestrator_id": null,
+   "started": "2026-11-17T08:59Z",
+   "kind": "feature",
+   "title": "v0.99.101: Navigasyonda harita serbest gezilir — pinch/kaydırma/tekerlek/çift dokunma yalnız kamera takibini durdurur, Ortala/konum düğmesi navigasyon zoom/yön/eğimini geri kurar",
+   "state": "completed",
+   "commit": "36b3972",
+   "version": "0.99.101",
+   "substantive_status": "completed — 36b3972 kaynak dalında ve origin'de; canlı Beta 0.99.107 bu sürümü içerir; NOT device-verified",
+   "integration": "published-to-beta (canlı version.js 0.99.107; bkz. beta_preview)",
+   "deploy": "Beta deposu ddc98ec (bellek notu; bugün doğrulanmadı)",
+   "tests": "Bu uzlaştırmada her sürüm için yeniden koşulmadı; 2026-11-20 itibarıyla HEAD a82d0f7'de node scripts/check.mjs tamam ve 121 scripts/test-*.mjs 121 geçti / 0 kaldı (çevrimdışı, sahte veri). Cihazda doğrulanmadı.",
+   "note": "Kayıt 2026-11-20 uzlaştırmasında git geçmişinden eklendi (önceden yoktu). Sürüm/sha git log'dan; Beta commit sha'ları bellek notlarından (107 hariç)."
+  },
+  {
+   "local_session": "unknown (git geçmişinden uzlaştırıldı; oturum kimliği kayıtlı değil)",
+   "orchestrator_id": null,
+   "started": "2026-11-17T09:26Z",
+   "kind": "feature",
+   "title": "v0.99.102: Navigasyonda tünel ve ücretli yol uyarısı (Valhalla/OSM rotasının kendi verisinden; köprü/alt-üst geçit verisi doğrulanmadığından yok)",
+   "state": "completed",
+   "commit": "61b49a0",
+   "version": "0.99.102",
+   "substantive_status": "completed — 61b49a0 kaynak dalında ve origin'de; canlı Beta 0.99.107 bu sürümü içerir; NOT device-verified",
+   "integration": "published-to-beta (canlı version.js 0.99.107; bkz. beta_preview)",
+   "deploy": "Beta deposu ef73a63 (bellek notu; bugün doğrulanmadı)",
+   "tests": "Bu uzlaştırmada her sürüm için yeniden koşulmadı; 2026-11-20 itibarıyla HEAD a82d0f7'de node scripts/check.mjs tamam ve 121 scripts/test-*.mjs 121 geçti / 0 kaldı (çevrimdışı, sahte veri). Cihazda doğrulanmadı.",
+   "note": "Kayıt 2026-11-20 uzlaştırmasında git geçmişinden eklendi (önceden yoktu). Sürüm/sha git log'dan; Beta commit sha'ları bellek notlarından (107 hariç)."
+  },
+  {
+   "local_session": "unknown (git geçmişinden uzlaştırıldı; oturum kimliği kayıtlı değil)",
+   "orchestrator_id": null,
+   "started": "2026-11-17T10:24Z",
+   "kind": "ui",
+   "title": "v0.99.103: Navigasyon üst paneli okunabilirliği — sol talimat ~%60 / sağ metrikler ~%40 (≤360 px %55/%45)",
+   "state": "completed",
+   "commit": "cdd2cce",
+   "version": "0.99.103",
+   "substantive_status": "completed — cdd2cce kaynak dalında ve origin'de; canlı Beta 0.99.107 bu sürümü içerir; NOT device-verified",
+   "integration": "published-to-beta (canlı version.js 0.99.107; bkz. beta_preview)",
+   "deploy": "Beta deposu 847f6e3 (bellek notu; bugün doğrulanmadı)",
+   "tests": "Bu uzlaştırmada her sürüm için yeniden koşulmadı; 2026-11-20 itibarıyla HEAD a82d0f7'de node scripts/check.mjs tamam ve 121 scripts/test-*.mjs 121 geçti / 0 kaldı (çevrimdışı, sahte veri). Cihazda doğrulanmadı.",
+   "note": "Kayıt 2026-11-20 uzlaştırmasında git geçmişinden eklendi (önceden yoktu). Sürüm/sha git log'dan; Beta commit sha'ları bellek notlarından (107 hariç)."
+  },
+  {
+   "local_session": "unknown (git geçmişinden uzlaştırıldı; oturum kimliği kayıtlı değil)",
+   "orchestrator_id": null,
+   "started": "2026-11-17T10:48Z",
+   "kind": "ui",
+   "title": "v0.99.104: İstasyon ayrıntı kartında rotadaki kalan mesafe (\"Rotada 25 km ileride\") — İstasyonlar listesindeki \"… km ileride\" ile aynı değer",
+   "state": "completed",
+   "commit": "05b09de",
+   "version": "0.99.104",
+   "substantive_status": "completed — 05b09de kaynak dalında ve origin'de; canlı Beta 0.99.107 bu sürümü içerir; NOT device-verified",
+   "integration": "published-to-beta (canlı version.js 0.99.107; bkz. beta_preview)",
+   "deploy": "Beta deposu 2e90d88 (bellek notu; bugün doğrulanmadı)",
+   "tests": "Bu uzlaştırmada her sürüm için yeniden koşulmadı; 2026-11-20 itibarıyla HEAD a82d0f7'de node scripts/check.mjs tamam ve 121 scripts/test-*.mjs 121 geçti / 0 kaldı (çevrimdışı, sahte veri). Cihazda doğrulanmadı.",
+   "note": "Kayıt 2026-11-20 uzlaştırmasında git geçmişinden eklendi (önceden yoktu). Sürüm/sha git log'dan; Beta commit sha'ları bellek notlarından (107 hariç)."
+  },
+  {
+   "local_session": "unknown (git geçmişinden uzlaştırıldı; oturum kimliği kayıtlı değil)",
+   "orchestrator_id": null,
+   "started": "2026-11-17T11:20Z",
+   "kind": "fix",
+   "title": "v0.99.105: İstasyonlar > Filtre > Ara düzeltildi — arama sürerken dokunuş/yarıçap değişimi yutulmaz, konum yoksa dokunuşta tek seferlik konum",
+   "state": "completed",
+   "commit": "617e97e",
+   "version": "0.99.105",
+   "substantive_status": "completed — 617e97e kaynak dalında ve origin'de; canlı Beta 0.99.107 bu sürümü içerir; NOT device-verified",
+   "integration": "published-to-beta (canlı version.js 0.99.107; bkz. beta_preview)",
+   "deploy": "Ayrı Beta commit'i kayıtlı değil; kaynak commit'i 0.99.107'nin atası, canlı 0.99.107 bu sürümü içerir",
+   "tests": "Bu uzlaştırmada her sürüm için yeniden koşulmadı; 2026-11-20 itibarıyla HEAD a82d0f7'de node scripts/check.mjs tamam ve 121 scripts/test-*.mjs 121 geçti / 0 kaldı (çevrimdışı, sahte veri). Cihazda doğrulanmadı.",
+   "note": "Kayıt 2026-11-20 uzlaştırmasında git geçmişinden eklendi (önceden yoktu). Sürüm/sha git log'dan; Beta commit sha'ları bellek notlarından (107 hariç)."
+  },
+  {
+   "local_session": "unknown (git geçmişinden uzlaştırıldı; oturum kimliği kayıtlı değil)",
+   "orchestrator_id": null,
+   "started": "2026-11-17T12:17Z",
+   "kind": "fix",
+   "title": "v0.99.106: İstasyonlar > Filtre > Ara dokunuşu her zaman görünür yanıt alır",
+   "state": "completed",
+   "commit": "8f16680",
+   "version": "0.99.106",
+   "substantive_status": "completed — 8f16680 kaynak dalında ve origin'de; canlı Beta 0.99.107 bu sürümü içerir; NOT device-verified",
+   "integration": "published-to-beta (canlı version.js 0.99.107; bkz. beta_preview)",
+   "deploy": "Beta deposu a474545 (bellek notu; bugün doğrulanmadı)",
+   "tests": "Bu uzlaştırmada her sürüm için yeniden koşulmadı; 2026-11-20 itibarıyla HEAD a82d0f7'de node scripts/check.mjs tamam ve 121 scripts/test-*.mjs 121 geçti / 0 kaldı (çevrimdışı, sahte veri). Cihazda doğrulanmadı.",
+   "note": "Kayıt 2026-11-20 uzlaştırmasında git geçmişinden eklendi (önceden yoktu). Sürüm/sha git log'dan; Beta commit sha'ları bellek notlarından (107 hariç)."
+  },
+  {
+   "local_session": "unknown (git geçmişinden uzlaştırıldı; oturum kimliği kayıtlı değil)",
+   "orchestrator_id": null,
+   "started": "2026-11-17T21:07Z",
+   "kind": "fix",
+   "title": "v0.99.107: GÜVENLİK — karşı şerit şarj tesisi otomatik durak olmaz; doğrulanamayan erişimde fail-closed; onaylı durak gerçek ara nokta",
+   "state": "completed",
+   "commit": "a4da1e3",
+   "version": "0.99.107",
+   "substantive_status": "completed — a4da1e3 kaynak dalında ve origin'de; canlı Beta 0.99.107 bu sürümü içerir; NOT device-verified",
+   "integration": "published-to-beta (canlı version.js 0.99.107; bkz. beta_preview)",
+   "deploy": "Beta deposu main = 252cde1cd2c523fa99b1b5161aaddc98e81cab3e; canlı version.js 0.99.107 (2026-11-20, salt-okunur git ls-remote + curl ile okundu)",
+   "tests": "Bu uzlaştırmada her sürüm için yeniden koşulmadı; 2026-11-20 itibarıyla HEAD a82d0f7'de node scripts/check.mjs tamam ve 121 scripts/test-*.mjs 121 geçti / 0 kaldı (çevrimdışı, sahte veri). Cihazda doğrulanmadı.",
+   "note": "Kayıt 2026-11-20 uzlaştırmasında git geçmişinden eklendi (önceden yoktu). Sürüm/sha git log'dan; Beta commit sha'ları bellek notlarından (107 hariç)."
+  },
+  {
+   "local_session": "unknown (bu Claude Code oturumu; kimlik ajana açık değil)",
+   "orchestrator_id": null,
+   "started": "2026-11-20T17:20Z",
+   "kind": "refactor",
+   "title": "v0.99.108: Güvenilir pil kaynağı listesi tek yerde (routing/socTrust.js); panelLogic kendi kopyasını tutmaz, davranış aynı",
+   "state": "completed",
+   "commit": "f6b8915",
+   "version": "0.99.108",
+   "substantive_status": "completed (yerel) — f6b8915 yalnız cleanup/v0.99.107-duzeltme dalında (a4da1e3 üstünde); push yok, Beta'da değil; NOT device-verified",
+   "integration": "isolated — dal a4da1e3 (v0.99.107) üstünde doğrusal; hiçbir dala birleştirilmedi",
+   "deploy": "yok",
+   "tests": "Bu uzlaştırmada her sürüm için yeniden koşulmadı; 2026-11-20 itibarıyla HEAD a82d0f7'de node scripts/check.mjs tamam ve 121 scripts/test-*.mjs 121 geçti / 0 kaldı (çevrimdışı, sahte veri). Cihazda doğrulanmadı.",
+   "worktree": "D:/AI-Codes/Claude Code/MBRP-cleanup"
+  },
+  {
+   "local_session": "unknown (bu Claude Code oturumu; kimlik ajana açık değil)",
+   "orchestrator_id": null,
+   "started": "2026-11-20T17:26Z",
+   "kind": "fix",
+   "title": "v0.99.109: sw.js SHELL'e socReplan ve stopTarget dosyaları (4) eklendi; test-package-parity app.js statik import grafiğinin SHELL'de eksiksiz olmasını denetler",
+   "state": "completed",
+   "commit": "52c0dc7",
+   "version": "0.99.109",
+   "substantive_status": "completed (yerel) — 52c0dc7 yalnız cleanup/v0.99.107-duzeltme dalında (a4da1e3 üstünde); push yok, Beta'da değil; NOT device-verified",
+   "integration": "isolated — dal a4da1e3 (v0.99.107) üstünde doğrusal; hiçbir dala birleştirilmedi",
+   "deploy": "yok",
+   "tests": "Bu uzlaştırmada her sürüm için yeniden koşulmadı; 2026-11-20 itibarıyla HEAD a82d0f7'de node scripts/check.mjs tamam ve 121 scripts/test-*.mjs 121 geçti / 0 kaldı (çevrimdışı, sahte veri). Cihazda doğrulanmadı.",
+   "worktree": "D:/AI-Codes/Claude Code/MBRP-cleanup"
+  },
+  {
+   "local_session": "unknown (bu Claude Code oturumu; kimlik ajana açık değil)",
+   "orchestrator_id": null,
+   "started": "2026-11-20T17:51Z",
+   "kind": "cleanup",
+   "title": "v0.99.110: Hiçbir yerde kullanılmayan ölü kod silindi (startGoogleSignIn, kvGet, kvSet, TRAFFIC_MULT); i18n/keys.v1.json ayrı commit a82d0f7 ile silindi (sürüm artmadı)",
+   "state": "completed",
+   "commit": "beb5b54",
+   "version": "0.99.110",
+   "substantive_status": "completed (yerel) — beb5b54 yalnız cleanup/v0.99.107-duzeltme dalında (a4da1e3 üstünde); push yok, Beta'da değil; NOT device-verified",
+   "integration": "isolated — dal a4da1e3 (v0.99.107) üstünde doğrusal; hiçbir dala birleştirilmedi",
+   "deploy": "yok",
+   "tests": "Bu uzlaştırmada her sürüm için yeniden koşulmadı; 2026-11-20 itibarıyla HEAD a82d0f7'de node scripts/check.mjs tamam ve 121 scripts/test-*.mjs 121 geçti / 0 kaldı (çevrimdışı, sahte veri). Cihazda doğrulanmadı.",
+   "worktree": "D:/AI-Codes/Claude Code/MBRP-cleanup"
   }
  ],
  "orchestrator_only_tasks": [
@@ -2991,13 +3251,13 @@
   "as_of": "2026-11-16T16:08:15Z",
   "by": "418c2ff5 (docs only; nothing below is approved or implemented by this record)",
   "actual_release_state": {
-   "live_beta_version": "0.99.61",
-   "live_beta_repo_sha": "4c3bd7316dce13931fef203caadfe30f7bcab0fa",
-   "live_beta_last_commit_date": "2026-11-13T20:31:26Z",
+   "live_beta_version": "0.99.107",
+   "live_beta_repo_sha": "252cde1cd2c523fa99b1b5161aaddc98e81cab3e",
+   "live_beta_last_commit_date": "bu uzlaştırmada okunmadı",
    "production_version": "0.86.1 (ev-copilot main 31a6ef5, untouched)",
    "source_pushed": "08a3cde v0.99.91 on origin/beta/verified-integration-2026-11-16 (source only)",
-   "published_since_0_99_61": "none",
-   "device_verified": "none"
+   "published_since_0_99_61": "Beta kaynağı 0.99.107'ye kadar yayımlandı (canlı version.js 0.99.107, 2026-11-20); ara sürümlerin tek tek yayın zamanı bu uzlaştırmada denetlenmedi",
+   "device_verified": "none (hiçbir kayıt değişmedi; kullanıcı cihaz kanıtı yok)"
   },
   "gates": [
    {
@@ -3114,7 +3374,8 @@
      ]
     }
    ]
-  }
+  },
+  "reconciled_2026_11_20": "Aşağıdaki kapı durumları 2026-11-16 tarihlidir ve bu uzlaştırmada YENİDEN DEĞERLENDİRİLMEDİ. Sonradan olanlar: D6 kullanıcıca değiştirildi (yalnız ozdemirumit.github.io/EV-Route-Finder herkese açık Beta, §7.6); v0.99.94 hesap girişi ve v0.99.95 --beta-full ile Beta yayımlandı; canlı Beta bugün 0.99.107. G-PAUSE/G-ACCESS/G-PUB-* satırlarının güncel durumu için kullanıcı kararı gerekir."
  },
  "open_defects": [
   {
@@ -3133,7 +3394,8 @@
    },
    "wip": "MBRP-gplaces worktree, branch fix/google-places-2026-11-13 @132d610, uncommitted (16 modified + 1 new file). Must be preserved; a retry should start by auditing this WIP, not by redoing it blindly.",
    "not_completed": true,
-   "reconciled_2026_11_14": "AÇIK. integ/beta-2026-11-14 içinde js/google/ veya js/osm/chargers.js commit'i yok; MBRP-gplaces WIP hâlâ commit edilmemiş (17 dosya, son değişiklik 2026-11-13 23:27 yerel saat)."
+   "reconciled_2026_11_14": "AÇIK. integ/beta-2026-11-14 içinde js/google/ veya js/osm/chargers.js commit'i yok; MBRP-gplaces WIP hâlâ commit edilmemiş (17 dosya, son değişiklik 2026-11-13 23:27 yerel saat).",
+   "reconciled_2026_11_20": "Google Places istasyon kodu artık kaynakta (js/google/chargers.js, server/googleStations.mjs, server/proxy.mjs /google/stations). Kayıttaki kusurların (yanıltıcı \"arama üst sınır\" uyarısı, 502/429/402, eski aramanın iptali) kapanıp kapanmadığı bu uzlaştırmada DENETLENMEDİ; MBRP-gplaces WIP dalı (fix/google-places-2026-11-13 @132d610) ayrıca duruyor."
   },
   {
    "id": "DEF-02",
@@ -3164,7 +3426,8 @@
     "BL-P1-03"
    ],
    "evidence": "2026-11-14 03:15Z: düzeltme 3975941 (v0.99.68) yalnız yerel integ/beta-2026-11-14 dalında; outlierFilter.js latchUpward + scripts/test-soc-resync.mjs. Push yok, Beta yok, cihaz testi yok → hata AÇIK kalır (kapanış için push + Beta + cihazda 18→77 senaryosu). Önceki kanıt (@aecfdfb): resyncFactor değişmemişti.",
-   "not_completed": true
+   "not_completed": true,
+   "reconciled_2026_11_20": "Düzeltme 3975941 (0.99.68) HEAD'in ve v0.99.107 (a4da1e3, canlı Beta) kaynağının atasıdır (git merge-base --is-ancestor); yani kod Beta'dadır. Durum \"open\" kalır: kapanış koşulu cihazda 18→77 gözlemidir, yapılmadı."
   }
  ],
  "local_integration": {

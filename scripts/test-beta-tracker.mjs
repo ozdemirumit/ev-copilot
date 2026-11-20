@@ -56,8 +56,10 @@ const html = T.renderTracker(reg, { generatedAt: NOW });
 
 // ---- Eskime ----
 {
-  ok('taze kayıtta eskime uyarısı yok', !T.renderTracker(reg, { generatedAt: '2026-11-13T07:00:00Z' }).includes('class="snap stale"'));
-  const old = T.renderTracker(reg, { generatedAt: '2026-11-20T07:00:00Z' });
+  // Tarihler kaydın kendi `updated` değerinden türetilir (eşik STALE_HOURS = 24): kayıt her güncellendiğinde sabit tarih eskimesin.
+  const at = (hours) => new Date(Date.parse(reg.updated) + hours * 3600e3).toISOString();
+  ok('taze kayıtta eskime uyarısı yok', !T.renderTracker(reg, { generatedAt: at(1) }).includes('class="snap stale"'));
+  const old = T.renderTracker(reg, { generatedAt: at(48) });
   ok('eski kayıtta uyarı', old.includes('class="snap stale"') && old.includes('saat önce güncellendi'));
   ok('zamansız kayıtta uyarı', T.renderTracker({ ...reg, updated: 'bozuk' }, { generatedAt: NOW }).includes('Kayıt zamanı okunamadı'));
 }
