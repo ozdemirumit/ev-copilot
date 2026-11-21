@@ -74,7 +74,9 @@ const osm = strip(src['js/osm/route.js']);
 // intersections yalnızca [0].lanes için okunur (intersections[].classes vb. yok)
 const interAll = (mbx.match(/\bintersections\b[^\s,;)]*/g) || []);
 ok('mapbox: intersections yalnızca ?.[0]?.lanes ile okunur', interAll.length > 0 && interAll.every((s) => s === 'intersections?.[0]?.lanes'), interAll.join(' | '));
-ok('osm/valhalla: intersections okunmaz', !/\bintersections\b/.test(osm));
+// v0.99.122: Valhalla da (Mapbox ile aynı dar kuralla) yalnız manevra kavşağının şeritlerini okur; tünel/gişe/sınıf alanları valhallaRoadEvents.js'te, burada YOK
+const interOsm = (osm.match(/\bintersections\b[^\s,;)]*/g) || []);
+ok('osm/valhalla: intersections yalnızca ?.[0]?.lanes ile okunur (classes/toll vb. route.js\'te yok)', interOsm.length > 0 && interOsm.every((s) => s === 'intersections?.[0]?.lanes'), interOsm.join(' | '));
 // Valhalla banner talimatları istenmez (açıkça kapalı) ve hiçbir biçimde okunmaz
 ok('osm/valhalla: banner_instructions yalnızca false olarak geçer',
   (osm.match(/\bbanner_instructions\b[^,\n]*/g) || []).every((s) => /^banner_instructions\s*:\s*false\s*$/.test(s)));

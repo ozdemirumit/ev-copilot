@@ -74,7 +74,7 @@ ok('B yaş metni: dk / sa', R.ageMinutes(snap, NOW + 5 * 60e3) === 5 && R.ageMin
   ok('D navigasyon bitince (active true→false) kayıt silinir; durdururken de', /subscribe\('nav'/.test(ui) && /remove\(KEY\)|clearSaved\(/.test(ui));
   ok('D ağ yok: ağ/konum/kamera API\'si çağrılmaz', ![pure, ui].some((s) => /fetch\(|XMLHttpRequest|sendBeacon|geolocation|proxyFetch/.test(s)));
   ok('D saf modül depolama/DOM/zaman okumaz', !/localStorage|sessionStorage|document\.|Date\.now|window\./.test(pure));
-  ok('D sürüm 0.99.121', /self\.APP_VERSION = '0\.99\.121';/.test(ver) && /v: '0\.99\.121'/.test(ver));
+  ok('D sürüm 0.99.121 kaydı changelog\'da', /self\.APP_VERSION = '0\.99\.\d+';/.test(ver) && /v: '0\.99\.121'/.test(ver));
 }
 
 console.log(`\n${pass} geçti, ${fail} başarısız`);

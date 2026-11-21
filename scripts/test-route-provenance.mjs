@@ -81,7 +81,7 @@ const tunnelBridgeUnsupported = (r) => r.routeMeta.attrs.tunnel.status === 'unsu
   const r = await P.fetchRoute(A, B, VIA);
   ok('ücretsiz: rota Valhalla, provider osm', r.routeMeta.provider === 'osm' && r.routeMeta.v === 1);
   ok('ücretsiz: rota alanları aynen (not yok) + yalnızca routeMeta eklendi', sameShape(r, osmFx()) && !('note' in r));
-  ok('ücretsiz: osm şerit unsupported, tünel/köprü unsupported, aralık/ret yok', lanes(r).status === 'unsupported' && lanes(r).source === null && tunnelBridgeUnsupported(r) && noSpansOrDenied(r));
+  ok('ücretsiz: osm şerit absent (bu rotada veri yok; v0.99.122 Valhalla şerit okur), tünel/köprü unsupported, aralık/ret yok', lanes(r).status === 'absent' && lanes(r).source === 'osm' && tunnelBridgeUnsupported(r) && noSpansOrDenied(r));
   ok('ücretsiz: argümanlar aynen iletilir, tek çağrı', eq(S.calls, [['osm', [A, B, VIA]]]) && S.calls[0][1][2] === VIA);
   ok('ücretsiz: sağlayıcı sonucu değiştirilmez, koordinat dizisi aynı nesne', !('routeMeta' in fx) && r !== fx && r.coords === fx.coords && r.steps === fx.steps);
   ok('routeMeta dondurulmuş', Object.isFrozen(r.routeMeta) && Object.isFrozen(r.routeMeta.attrs) && Object.isFrozen(r.routeMeta.attrs.lanes));
@@ -115,7 +115,7 @@ const tunnelBridgeUnsupported = (r) => r.routeMeta.attrs.tunnel.status === 'unsu
 {
   setup({ mbKey: 'proxy', map: 'mapbox', mapbox: boom('HTTP 500'), osm: () => osmFx() });
   const r = await P.fetchRoute(A, B);
-  ok('Mapbox hata → Valhalla: provider osm (harita mapbox olsa da)', r.routeMeta.provider === 'osm' && lanes(r).status === 'unsupported');
+  ok('Mapbox hata → Valhalla: provider osm (harita mapbox olsa da)', r.routeMeta.provider === 'osm' && lanes(r).status === 'absent' && lanes(r).source === 'osm');
   ok('Mapbox hata → not metni aynen', r.note === 'Mapbox rotası alınamadı (HTTP 500); ücretsiz rota kullanıldı, trafik yok' && sameShape(r, osmFx(), r.note));
   ok('Mapbox hata → çağrı sırası mapbox, osm', eq(S.calls.map((c) => c[0]), ['mapbox', 'osm']));
 }
@@ -137,7 +137,7 @@ const tunnelBridgeUnsupported = (r) => r.routeMeta.attrs.tunnel.status === 'unsu
 {
   setup({ tomtomOn: true, map: 'tomtom', tomtom: boom('402'), osm: () => osmFx() });
   const r = await P.fetchRoute(A, B);
-  ok('TomTom hata → Valhalla: provider osm (harita tomtom olsa da)', r.routeMeta.provider === 'osm' && lanes(r).status === 'unsupported');
+  ok('TomTom hata → Valhalla: provider osm (harita tomtom olsa da)', r.routeMeta.provider === 'osm' && lanes(r).status === 'absent' && lanes(r).source === 'osm');
   ok('TomTom hata → Valhalla: not metni aynen', r.note === 'TomTom rotası alınamadı (402); ücretsiz rota kullanıldı, trafik yok' && sameShape(r, osmFx(), r.note));
   ok('TomTom hata → çağrı sırası tomtom, osm', eq(S.calls.map((c) => c[0]), ['tomtom', 'osm']));
 }
@@ -154,7 +154,7 @@ const tunnelBridgeUnsupported = (r) => r.routeMeta.attrs.tunnel.status === 'unsu
 {
   setup({ tomtomOn: true, map: 'tomtom', mbKey: 'proxy', tomtom: boom('zaman aşımı'), mapbox: boom('HTTP 503'), osm: () => osmFx() });
   const r = await P.fetchRoute(A, B);
-  ok('TomTom + Mapbox hata → Valhalla: provider osm', r.routeMeta.provider === 'osm' && lanes(r).status === 'unsupported');
+  ok('TomTom + Mapbox hata → Valhalla: provider osm', r.routeMeta.provider === 'osm' && lanes(r).status === 'absent' && lanes(r).source === 'osm');
   ok('TomTom + Mapbox hata → birleşik not aynen', r.note === 'TomTom rotası alınamadı (zaman aşımı); Mapbox rotası alınamadı (HTTP 503); ücretsiz rota kullanıldı, trafik yok');
   ok('TomTom + Mapbox hata → çağrı sırası tomtom, mapbox, osm', eq(S.calls.map((c) => c[0]), ['tomtom', 'mapbox', 'osm']));
 }

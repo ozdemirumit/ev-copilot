@@ -5,6 +5,7 @@ import { cached, TTL } from '../utils/cache.js';
 import { valhalla } from './valhalla.js';
 import { TURN_TR } from '../nav/steps.js';
 import { fromValhallaOsrm } from '../nav/valhallaRoadEvents.js';
+import { parseLanes } from '../nav/lanes.js';
 
 /** Valhalla/OSRM kodlu çizgi (hassasiyet 1e6, [lat, lon]) → GeoJSON sırası [lon, lat] dizisi. */
 export function decodePolyline6(str) {
@@ -80,6 +81,7 @@ async function routeFromValhalla(start, end, via) {
         road: clean(st.name),
         distM: st.distance || 0,
         staticSec: st.duration || 0, // serbest akış süresi
+        lanes: parseLanes(st.intersections?.[0]?.lanes), // v0.99.122: Valhalla OSRM yanıtı manevra kavşağında Mapbox ile aynı şemada şerit verir (OSM turn:lanes; yoksa null)
       };
     });
     if (i === legs.length - 1) return mapped;

@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.121';
+self.APP_VERSION = '0.99.122';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.122', date: '2026-11-21',
+    notes: [
+      'Yeni: Ücretsiz OSM (Valhalla) rotasında da şerit bilgisi. Manevraya yaklaşırken şerit oklarının paneli ve sesli şerit ipucu artık yalnız Mapbox rotasında değil, Valhalla rotasında da çıkar (OpenStreetMap şerit etiketleri varsa; Valhalla yanıtı Mapbox ile aynı şemada verir)',
+      'Şerit yalnızca sağlayıcının verdiği veriden gösterilir (kamerayla şerit tespiti yok); veri olmayan yolda panel çıkmaz. TomTom/HERE/Google rotasında şerit verisi hâlâ yok. Gerçek kayıtlı Ankara rotasıyla denendi; cihazda doğrulanmadı',
+    ],
+  },
   {
     v: '0.99.121', date: '2026-11-21',
     notes: [

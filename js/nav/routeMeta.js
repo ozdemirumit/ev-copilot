@@ -20,9 +20,9 @@ export const INFERRED_SOURCES = Object.freeze(['gps', 'gps-loss', 'speed', 'came
 
 const f = (o) => Object.freeze(o);
 const NONE = f({});
-// Uygulamanın bugün gerçekten ayrıştırdığı veriler (js/mapbox/route.js → parseLanes). Diğer her şey 'unsupported'.
+// Uygulamanın bugün gerçekten ayrıştırdığı veriler (js/mapbox/route.js ve js/osm/route.js → parseLanes). Diğer her şey 'unsupported'.
 export const DEFAULT_CAPS = f({
-  osm: f([]), mapbox: f(['lanes']), tomtom: f([]), here: f([]), google: f([]),
+  osm: f(['lanes']), mapbox: f(['lanes']), tomtom: f([]), here: f([]), google: f([]),
 });
 
 const isProvider = (p) => typeof p === 'string' && PROVIDERS.includes(p);

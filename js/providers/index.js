@@ -38,7 +38,7 @@ function tagRoute(r, provider) {
   if (!r || typeof r !== 'object') return r;
   try {
     let meta = emptyMeta(provider);
-    if (provider === 'mapbox' && Array.isArray(r.steps)) meta = withProvenance(meta, 'lanes', { source: 'mapbox', status: lanesStatusFromSteps(r.steps) });
+    if ((provider === 'mapbox' || provider === 'osm') && Array.isArray(r.steps)) meta = withProvenance(meta, 'lanes', { source: provider, status: lanesStatusFromSteps(r.steps) }); // osm: Valhalla OSRM şeritleri (v0.99.122)
     return { ...r, routeMeta: meta };
   } catch {
     return r;

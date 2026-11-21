@@ -25,7 +25,7 @@ const { PROVIDERS, ATTRS, STATUSES, DEFAULT_CAPS, INFERRED_SOURCES, emptyMeta, w
 ok('öznitelikler lanes/tunnel/bridge', JSON.stringify(ATTRS) === '["lanes","tunnel","bridge"]');
 ok('durumlar present/absent/unrequested/unsupported', JSON.stringify(STATUSES) === '["present","absent","unrequested","unsupported"]');
 ok('sabitler dondurulmuş', [PROVIDERS, ATTRS, STATUSES, DEFAULT_CAPS, INFERRED_SOURCES].every(Object.isFrozen));
-ok('varsayılan yetenek: yalnızca mapbox lanes', JSON.stringify(DEFAULT_CAPS) === '{"osm":[],"mapbox":["lanes"],"tomtom":[],"here":[],"google":[]}');
+ok('varsayılan yetenek: mapbox + osm (Valhalla) lanes; tomtom/here/google yok', JSON.stringify(DEFAULT_CAPS) === '{"osm":["lanes"],"mapbox":["lanes"],"tomtom":[],"here":[],"google":[]}');
 for (const p of PROVIDERS) {
   const m = emptyMeta(p);
   ok(`${p}: tünel/köprü varsayılan unsupported (bugün kaynak yok)`, m.attrs.tunnel.status === 'unsupported' && m.attrs.bridge.status === 'unsupported');
@@ -37,7 +37,7 @@ for (const p of PROVIDERS) {
   ok('mapbox boş: provider mapbox, lanes unrequested', m.provider === 'mapbox' && m.attrs.lanes.status === 'unrequested' && m.attrs.lanes.source === null);
   ok('boş: aralık ve ret yok', m.roadSpans.length === 0 && m.denied.length === 0 && m.v === 1);
   ok('boş: derin dondurulmuş', Object.isFrozen(m) && Object.isFrozen(m.attrs) && Object.isFrozen(m.attrs.lanes) && Object.isFrozen(m.roadSpans) && Object.isFrozen(m.denied));
-  ok('osm boş: lanes unsupported', emptyMeta('osm').attrs.lanes.status === 'unsupported');
+  ok('osm boş: lanes unrequested (v0.99.122: Valhalla şerit verir; tomtom hâlâ unsupported)', emptyMeta('osm').attrs.lanes.status === 'unrequested' && emptyMeta('tomtom').attrs.lanes.status === 'unsupported');
 }
 for (const bad of ['foo', 'Mapbox', '', null, undefined, 42, {}, 'gps']) {
   const m = emptyMeta(bad);
@@ -194,7 +194,7 @@ for (const p of srcFiles) {
 }
 ok('köprü/alt geçit verisi yalnız OSM ekstralarında (izin listesi); sağlayıcı dosyalarında yok', hits.every((p) => BRIDGE_OK.includes(p)) && hits.includes('js/nav/roadExtras.js') && !hits.some((p) => /mapbox|tomtom|here|google/i.test(p)), hits.join(', '));
 ok('tünel yalnız Valhalla tünel yolunda (izin listesi)', tunnelHits.every((p) => TUNNEL_OK.includes(p)) && tunnelHits.includes('js/nav/valhallaRoadEvents.js'), tunnelHits.join(', '));
-ok('şerit verisi yalnızca mapbox rotasında ayrıştırılır', srcFiles.filter((p) => /parseLanes\(/.test(read(p)) && p !== 'js/nav/lanes.js').join() === 'js/mapbox/route.js');
+ok('şerit verisi yalnızca Mapbox ve Valhalla (OSM) rotasında ayrıştırılır; TomTom/HERE/Google dosyalarında yok', srcFiles.filter((p) => /parseLanes\(/.test(read(p)) && p !== 'js/nav/lanes.js').sort().join() === 'js/mapbox/route.js,js/osm/route.js');
 
 ok('ağ çağrısı yapılmadı', netCalls === 0);
 console.log(`\n${pass} geçti, ${fail} başarısız`);
