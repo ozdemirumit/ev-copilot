@@ -496,5 +496,10 @@
  "Kaydedildi. Yeni harita yenilenince ya da bir sonraki açılışta gelir.",
  "Kaydedildi. Navigasyon bitince yenileyince gelir.",
  "Harita sağlayıcısı değiştirilemedi",
- "HERE rotası henüz bağlı değil: rota HERE'den gelmez (Valhalla, canlı trafik yok)."
+ "HERE rotası henüz bağlı değil: rota HERE'den gelmez (Valhalla, canlı trafik yok).",
+ "{0} ileride köprü, uzunluğu {1}.",
+ "{0} ileride alt geçit.",
+ "🌉 Köprü {0} ileride ({1})",
+ "⬇️ Alt geçit {0} ileride",
+ "Köprü, alt geçit ve gişe uyarısı (OpenStreetMap; tüm yolları kapsamaz)"
 ]

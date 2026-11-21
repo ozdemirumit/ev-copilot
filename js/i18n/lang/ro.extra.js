@@ -497,4 +497,9 @@ export default {
   "Kaydedildi. Navigasyon bitince yenileyince gelir.": "Salvat. Harta nouă apare dacă reîmprospătezi după terminarea navigației.",
   "Harita sağlayıcısı değiştirilemedi": "Furnizorul de hartă nu a putut fi schimbat",
   "HERE rotası henüz bağlı değil: rota HERE'den gelmez (Valhalla, canlı trafik yok).": "Traseul HERE nu este încă conectat: traseul nu vine de la HERE (Valhalla, fără trafic în timp real).",
+  "{0} ileride köprü, uzunluğu {1}.": "Pod peste {0}, lungime {1}.",
+  "{0} ileride alt geçit.": "Pasaj subteran peste {0}.",
+  "🌉 Köprü {0} ileride ({1})": "🌉 Pod peste {0} ({1})",
+  "⬇️ Alt geçit {0} ileride": "⬇️ Pasaj subteran peste {0}",
+  "Köprü, alt geçit ve gişe uyarısı (OpenStreetMap; tüm yolları kapsamaz)": "Avertizare poduri, pasaje subterane și bariere de taxare (OpenStreetMap; nu acoperă toate drumurile)",
 };

@@ -186,7 +186,7 @@ const adaptImp = importersOf(/roadEventsAdapt/, 'js/nav/roadEventsAdapt.js');
 ok('roadEventsAdapt hiçbir çalışma zamanı dosyasına bağlı değil', adaptImp.length === 0, adaptImp.join(', '));
 // v0.99.102: roadEvents.js yalnız Valhalla (osm) tünel/gişe yoluna bağlıdır; TomTom yolunda hiçbir bağlantı yoktur (dar izin listesi).
 const evImp = importersOf(/nav\/roadEvents\.js|\.\/roadEvents\.js/, 'js/nav/roadEvents.js').sort();
-ok('roadEvents.js yalnız roadAlerts + valhallaRoadEvents (+ sw.js kabuğu) tarafından içe aktarılır; TomTom yolu yok', J(evImp) === J(['js/nav/roadAlerts.js', 'js/nav/valhallaRoadEvents.js', 'sw.js']), evImp.join(', '));
+ok('roadEvents.js yalnız roadAlerts + roadExtras (OSM ekstraları) + valhallaRoadEvents (+ sw.js kabuğu) tarafından içe aktarılır; TomTom yolu yok', J(evImp) === J(['js/nav/roadAlerts.js', 'js/nav/roadExtras.js', 'js/nav/valhallaRoadEvents.js', 'sw.js']), evImp.join(', '));
 const speakers = runtime.filter((p) => /\bspeak\s*\(/.test(strip(readFileSync(p, 'utf8'))));
 ok('sesli uyarı çağıranlar bulundu (tarama boş değil)', speakers.length > 0);
 const roadSpeakers = speakers.filter((p) => /roadEventsAdapt|tomtom\/route\.js|exitNumber|signpost|roundaboutExitNumber/.test(readFileSync(p, 'utf8'))).map(rel);

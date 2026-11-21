@@ -497,4 +497,9 @@ export default {
   "Kaydedildi. Navigasyon bitince yenileyince gelir.": "Salvato. La nuova mappa compare se aggiorni al termine della navigazione.",
   "Harita sağlayıcısı değiştirilemedi": "Impossibile cambiare il fornitore della mappa",
   "HERE rotası henüz bağlı değil: rota HERE'den gelmez (Valhalla, canlı trafik yok).": "Il percorso HERE non è ancora collegato: il percorso non arriva da HERE (Valhalla, niente traffico in tempo reale).",
+  "{0} ileride köprü, uzunluğu {1}.": "Ponte tra {0}, lunghezza {1}.",
+  "{0} ileride alt geçit.": "Sottopasso tra {0}.",
+  "🌉 Köprü {0} ileride ({1})": "🌉 Ponte tra {0} ({1})",
+  "⬇️ Alt geçit {0} ileride": "⬇️ Sottopasso tra {0}",
+  "Köprü, alt geçit ve gişe uyarısı (OpenStreetMap; tüm yolları kapsamaz)": "Avviso ponti, sottopassi e caselli (OpenStreetMap; non copre tutte le strade)",
 };

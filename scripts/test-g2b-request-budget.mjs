@@ -97,6 +97,7 @@ const STUBS = {
   '/js/net/activeMap.js': `export const activeMap = () => ${g}.map; export const setActiveMap = () => {};`,
   '/js/physics/socEstimate.js': `export const socSource = () => ${g}.src; export const measuredSoc = (e) => e.soc;`,
   '/js/osm/cameras.js': `export const fetchCameras = (...a) => ${g}.net('cameras', a);`,
+  '/js/osm/roadExtras.js': `export const roadExtrasFor = (...a) => ${g}.net('roadExtras', a);`,
   '/js/routing/occupancyClient.js': `export const fetchAvailability = (...a) => ${g}.net('occupancy', a);`,
   '/js/nav/navigator.js': 'export const startNav = () => {}; export const syncTopPanel = () => {};',
   '/js/nav/speedLimit.js': 'export const currentLimit = () => null; export const limitInfo = () => null;',
@@ -157,6 +158,7 @@ G.net = (kind, args) => {
   if (kind === 'occupancy') return Promise.resolve(new Map());
   if (kind === 'speedlimit') return Promise.resolve(90);
   if (kind === 'cameras') return Promise.resolve([]);
+  if (kind === 'roadExtras') return Promise.resolve(null);
   if (kind === 'reroute') return Promise.resolve(false); // yeniden rota alınamadı (internet yok / sağlayıcı hatası)
   if (kind === 'around') {
     if (mode === 'errors') return Promise.resolve({ stations: [], errors: ['İstasyon kaynağına ulaşılamadı (sahte)'], cached: false });
@@ -359,6 +361,20 @@ for (const mode of ['ok', 'fail']) {
   const n = await roadWarnRun(mode);
   budget[`B4 hız kameraları (${mode})`] = n;
   ok(`B4 roadWarnings (${mode}): rota başına tek kamera sorgusu (hata yeniden denenmez): ${n}`, n === 1, String(n));
+}
+async function roadExtrasRun(mode) { // v0.99.118: OSM ekstraları (köprü/alt geçit/gişe) rota başına en çok BİR toplu sorgu; hata yeniden denenmez
+  resetWorld();
+  G.mode.roadExtras = mode;
+  const W = await fresh('../js/nav/roadWarnings.js');
+  W.initRoadWarnings();
+  startDriving();
+  await advance(HOUR);
+  return count('roadExtras');
+}
+for (const mode of ['ok', 'fail']) {
+  const n = await roadExtrasRun(mode);
+  budget[`B4b yol ekstraları (${mode})`] = n;
+  ok(`B4b roadWarnings (${mode}): rota başına tek ekstra (köprü/alt geçit/gişe) sorgusu (hata yeniden denenmez): ${n}`, n === 1, String(n));
 }
 
 { // B5: rotadan çıkınca yeniden rota, rota sağlayıcısı sürekli başarısız (internet yok / sağlayıcı hatası)

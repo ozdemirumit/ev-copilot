@@ -497,4 +497,9 @@ export default {
   "Kaydedildi. Navigasyon bitince yenileyince gelir.": "Запазено. Новата карта се показва при опресняване след края на навигацията.",
   "Harita sağlayıcısı değiştirilemedi": "Доставчикът на карта не можа да бъде променен",
   "HERE rotası henüz bağlı değil: rota HERE'den gelmez (Valhalla, canlı trafik yok).": "Маршрутът на HERE още не е свързан: маршрутът не идва от HERE (Valhalla, без трафик на живо).",
+  "{0} ileride köprü, uzunluğu {1}.": "След {0} мост, дължина {1}.",
+  "{0} ileride alt geçit.": "След {0} подлез.",
+  "🌉 Köprü {0} ileride ({1})": "🌉 Мост след {0} ({1})",
+  "⬇️ Alt geçit {0} ileride": "⬇️ Подлез след {0}",
+  "Köprü, alt geçit ve gişe uyarısı (OpenStreetMap; tüm yolları kapsamaz)": "Предупреждение за мостове, подлези и пунктове за таксуване (OpenStreetMap; не покрива всички пътища)",
 };

@@ -497,4 +497,9 @@ export default {
   "Kaydedildi. Navigasyon bitince yenileyince gelir.": "Gespeichert. Die neue Karte erscheint, wenn du nach der Navigation aktualisierst.",
   "Harita sağlayıcısı değiştirilemedi": "Kartenanbieter konnte nicht geändert werden",
   "HERE rotası henüz bağlı değil: rota HERE'den gelmez (Valhalla, canlı trafik yok).": "HERE-Routing ist noch nicht angebunden: die Route kommt nicht von HERE (Valhalla, kein Live-Verkehr).",
+  "{0} ileride köprü, uzunluğu {1}.": "In {0} Brücke, {1} lang.",
+  "{0} ileride alt geçit.": "In {0} Unterführung.",
+  "🌉 Köprü {0} ileride ({1})": "🌉 Brücke in {0} ({1})",
+  "⬇️ Alt geçit {0} ileride": "⬇️ Unterführung in {0}",
+  "Köprü, alt geçit ve gişe uyarısı (OpenStreetMap; tüm yolları kapsamaz)": "Warnung vor Brücken, Unterführungen und Mautstellen (OpenStreetMap; nicht jede Straße abgedeckt)",
 };

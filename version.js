@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.117';
+self.APP_VERSION = '0.99.118';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.118', date: '2026-11-21',
+    notes: [
+      'Yeni: Navigasyonda köprü ve alt geçit uyarısı (sesli + üst barda), Mapbox/TomTom rotalarında da tünel ve gişe uyarısı. Veri OpenStreetMap\'ten: Valhalla trace_attributes (köprü/tünel/alt geçit) + Overpass (gişe/ücret direği); rotayı veren sağlayıcının kendi verisi varsa o kazanır. 250 m\'den kısa köprü ve 25 m\'den kısa alt geçit uyarılmaz',
+      'Ayarlar\'daki uyarı anahtarlarına "Köprü, alt geçit ve gişe uyarısı" eklendi (varsayılan açık); rota başına birkaç ek istek, kapalıyken hiç istek yok. Şerit bilgisi yalnız Mapbox rotasında kalır (Valhalla/TomTom yanıtında yok), üst geçit uyarısı yoktur; cihazda doğrulanmadı; 11 dilde çevrildi',
+    ],
+  },
   {
     v: '0.99.117', date: '2026-11-21',
     notes: [

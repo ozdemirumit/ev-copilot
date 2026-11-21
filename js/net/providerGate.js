@@ -82,7 +82,7 @@ export const PAUSED_PROXY_PATHS = [
 export const FREE_ENDPOINTS = Object.freeze([
   Object.freeze({ id: 'openfreemap', hosts: ['tiles.openfreemap.org'], paths: [/^\/(?:styles|planet|fonts|sprites|natural_earth)(?:\/|$)/], methods: ['GET'], burst: 20, gapMs: 100, perHour: 3000,
     terms: 'OpenFreeMap: anahtarsız, kayıtsız ücretsiz karo; OSM atfı zorunlu (harita atıf denetimi açık). Karolar Worker\'dan: yalnız freeMapRequest ile ana makine denetlenir, sayılmaz.' }),
-  Object.freeze({ id: 'valhalla', hosts: ['valhalla1.openstreetmap.de'], paths: [/^\/(?:route|height|locate)$/], methods: ['POST'], burst: 5, gapMs: 1000, perHour: 600,
+  Object.freeze({ id: 'valhalla', hosts: ['valhalla1.openstreetmap.de'], paths: [/^\/(?:route|height|locate|trace_attributes)$/], methods: ['POST'], burst: 5, gapMs: 1000, perHour: 600,
     terms: 'FOSSGIS herkese açık Valhalla: adil kullanım, garanti yok; yoğun/toplu kullanım yasak. Uzun dönem en çok 1 istek/sn.' }),
   Object.freeze({ id: 'open-meteo', hosts: ['api.open-meteo.com'], paths: [/^\/v1\/(?:forecast|elevation)$/], methods: ['GET'], burst: 10, gapMs: 500, perHour: 600,
     terms: 'Open-Meteo ücretsiz uç: ticari olmayan kullanım, günde 10.000 / saatte 5.000 / dakikada 600 çağrı altı; CC BY 4.0 atıf. Ticari customer-api uç izinli DEĞİL.' }),

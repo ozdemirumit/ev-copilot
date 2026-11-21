@@ -12,7 +12,7 @@ const TTL_MS = 7 * 24 * 3600e3;
 const fmt = (p) => `${p.lat.toFixed(5)},${p.lon.toFixed(5)}`;
 
 /** Rota koordinatlarından (GeoJSON [lon,lat]) SPACING_KM aralıklı noktalar. */
-function spaced(coords) {
+export function spaced(coords) {
   const pts = [];
   let last = null;
   for (const c of coords) {

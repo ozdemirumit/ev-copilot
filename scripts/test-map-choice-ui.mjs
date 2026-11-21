@@ -56,7 +56,7 @@ ok('mapChoice.js: sağlayıcı istekleri kapalıyken/yalnız ücretsiz modda sun
 ok('mapChoice.js: Premium + oturum yoksa sormaz', /isPremium\(\)/.test(mod) && /getSession\(\)/.test(mod));
 ok('mapChoice.js: anahtar/belirteç saklamaz (yalnızca rememberProvider)', !/localStorage|sessionStorage|\.token|\.key\b/.test(mod) && mod.includes('rememberProvider('));
 ok('mapChoice.js: navigasyon sürerken yenileme düğmesi kapalı', /nav'\)\?\.active/.test(mod) && /apply\.disabled = navOn/.test(mod));
-ok('sürüm 0.99.117', /self\.APP_VERSION = '0\.99\.117';/.test(ver) && /v: '0\.99\.117'/.test(ver));
+ok('sürüm 0.99.117 kaydı changelog\'da', /self\.APP_VERSION = '0\.99\.\d+';/.test(ver) && /v: '0\.99\.117'/.test(ver));
 
 console.log(`\n${pass} geçti, ${fail} başarısız`);
 process.exit(fail ? 1 : 0);

@@ -180,7 +180,10 @@ const srcFiles = runtime.filter((p) => /\.m?js$/.test(p) && !p.startsWith('js/i1
 const ROAD_EVENTS_EXEMPT = 'js/nav/roadEvents.js';
 // v0.99.102: TÜNEL yalnız gerçek kayıtla doğrulanan Valhalla yolunda (ayrıştırıcı + uyarı mantığı + ses/gösterim) geçebilir
 // (dar izin listesi; scripts/test-road-alerts.mjs). Köprü/brunnel/alt geçit veri kaynağı hâlâ hiçbir dosyada yok.
-const TUNNEL_OK = ['js/nav/roadAlerts.js', 'js/nav/roadWarnings.js', 'js/nav/valhallaRoadEvents.js'];
+const TUNNEL_OK = ['js/nav/roadAlerts.js', 'js/nav/roadExtras.js', 'js/nav/roadWarnings.js', 'js/nav/valhallaRoadEvents.js', 'js/osm/roadExtras.js'];
+// v0.99.118: köprü/alt geçit verisi YALNIZ OSM ekstralarında (Valhalla trace_attributes + Overpass; gerçek kayıtla doğrulandı, scripts/test-road-extras.mjs) ve uyarı mantığında geçebilir.
+// Mapbox/TomTom/HERE/Google dosyalarında köprü/alt geçit okunmaz (rota sağlayıcısı verisi değil, OSM verisi).
+const BRIDGE_OK = ['js/nav/roadAlerts.js', 'js/nav/roadExtras.js', 'js/nav/roadWarnings.js', 'js/osm/roadExtras.js'];
 const hits = [];
 const tunnelHits = [];
 for (const p of srcFiles) {
@@ -189,7 +192,7 @@ for (const p of srcFiles) {
   if (/\b(bridges?|brunnel|underpass)\b/i.test(c)) hits.push(p);
   if (/\btunnels?\b/i.test(c)) tunnelHits.push(p);
 }
-ok('çalışma zamanında köprü/alt geçit veri kaynağı yok', hits.length === 0, hits.join(', '));
+ok('köprü/alt geçit verisi yalnız OSM ekstralarında (izin listesi); sağlayıcı dosyalarında yok', hits.every((p) => BRIDGE_OK.includes(p)) && hits.includes('js/nav/roadExtras.js') && !hits.some((p) => /mapbox|tomtom|here|google/i.test(p)), hits.join(', '));
 ok('tünel yalnız Valhalla tünel yolunda (izin listesi)', tunnelHits.every((p) => TUNNEL_OK.includes(p)) && tunnelHits.includes('js/nav/valhallaRoadEvents.js'), tunnelHits.join(', '));
 ok('şerit verisi yalnızca mapbox rotasında ayrıştırılır', srcFiles.filter((p) => /parseLanes\(/.test(read(p)) && p !== 'js/nav/lanes.js').join() === 'js/mapbox/route.js');
 

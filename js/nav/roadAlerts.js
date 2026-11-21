@@ -8,8 +8,10 @@
 // - Olay uydurulmaz: model yoksa, yetenek yoksa ya da olay türü desteklenmiyorsa boş döner.
 import { eventsAhead } from './roadEvents.js';
 
-export const ALERT_KINDS = Object.freeze(['tunnel', 'toll']); // bugün gerçek veriyle doğrulanan türler
-export const MIN_TUNNEL_M = 100; // daha kısa "tünel" (ör. 29 m'lik alt geçit parçası) uyarı üretmez
+export const ALERT_KINDS = Object.freeze(['tunnel', 'toll', 'bridge', 'underpass']); // gerçek veriyle doğrulanan türler (köprü/alt geçit: OSM ekstraları, js/nav/roadExtras.js)
+export const MIN_TUNNEL_M = 100; // daha kısa "tünel" (ör. 29 m'lik alt geçit parçası) tünel uyarısı üretmez
+export const MIN_BRIDGE_M = 250; // daha kısa köprü (dere/menfez üstü) uyarı üretmez (roadExtras.MIN_BRIDGE_M ile aynı)
+export const MIN_UNDERPASS_M = 25; // daha kısa alt geçit uyarı üretmez
 export const SHOW_M = 2000; // üst barda gösterim ufku
 export const SOON_M = 500; // bu kadar yakınsa uyarı dönüşümde sabitlenir (öncelikli)
 export const STAGES = Object.freeze({ far: Object.freeze([700, 1300]), near: Object.freeze([150, 450]) }); // metre
@@ -23,7 +25,9 @@ const startOf = (e) => (e.fromM !== undefined ? e.fromM : e.atM);
 export function alertable(model) {
   if (!model || !Array.isArray(model.events) || !Array.isArray(model.supports)) return [];
   return model.events.filter((e) => ALERT_KINDS.includes(e.kind) && model.supports.includes(e.kind)
-    && (e.kind !== 'tunnel' || e.toM - e.fromM >= MIN_TUNNEL_M));
+    && (e.kind !== 'tunnel' || e.toM - e.fromM >= MIN_TUNNEL_M)
+    && (e.kind !== 'bridge' || e.toM - e.fromM >= MIN_BRIDGE_M)
+    && (e.kind !== 'underpass' || e.toM - e.fromM >= MIN_UNDERPASS_M));
 }
 
 export function createRoadAlerts() {

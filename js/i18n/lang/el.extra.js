@@ -497,4 +497,9 @@ export default {
   "Kaydedildi. Navigasyon bitince yenileyince gelir.": "Αποθηκεύτηκε. Ο νέος χάρτης εμφανίζεται αν ανανεώσεις μετά το τέλος της πλοήγησης.",
   "Harita sağlayıcısı değiştirilemedi": "Δεν ήταν δυνατή η αλλαγή παρόχου χάρτη",
   "HERE rotası henüz bağlı değil: rota HERE'den gelmez (Valhalla, canlı trafik yok).": "Η διαδρομή HERE δεν είναι ακόμη συνδεδεμένη: η διαδρομή δεν προέρχεται από το HERE (Valhalla, χωρίς κυκλοφορία σε πραγματικό χρόνο).",
+  "{0} ileride köprü, uzunluğu {1}.": "Γέφυρα σε {0}, μήκους {1}.",
+  "{0} ileride alt geçit.": "Υπόγεια διάβαση σε {0}.",
+  "🌉 Köprü {0} ileride ({1})": "🌉 Γέφυρα σε {0} ({1})",
+  "⬇️ Alt geçit {0} ileride": "⬇️ Υπόγεια διάβαση σε {0}",
+  "Köprü, alt geçit ve gişe uyarısı (OpenStreetMap; tüm yolları kapsamaz)": "Προειδοποίηση για γέφυρες, υπόγειες διαβάσεις και διόδια (OpenStreetMap· δεν καλύπτει όλους τους δρόμους)",
 };

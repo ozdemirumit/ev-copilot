@@ -129,7 +129,9 @@ const step = (st, km, o = {}) => A.stepRoadAlerts(st, { model, planId: 1, routeK
   ok('Mapbox/TomTom boş modeli → boş', A.stepRoadAlerts(A.createRoadAlerts(), { model: E.emptyEvents('mapbox'), planId: 1, routeKm: 29 }).line === null);
   const br = E.addEvent(E.addEvent(E.addEvent(E.emptyEvents('osm', { supports: E.KINDS }), { kind: 'bridge', source: 'osm', fromM: 1500, toM: 1800 }),
     { kind: 'underpass', source: 'osm', fromM: 1600, toM: 1700 }), { kind: 'overpass', source: 'osm', fromM: 1650, toM: 1660 });
-  ok('köprü/alt geçit/üst geçit (doğrulanmamış tür) uyarılmaz', br.events.length === 3 && A.stepRoadAlerts(A.createRoadAlerts(), { model: br, planId: 1, routeKm: 0.8 }).line === null);
+  // v0.99.118: köprü ve alt geçit artık OSM ekstralarıyla uyarılır (scripts/test-road-extras.mjs); ÜST GEÇİT hâlâ uyarılmaz (sürücü için anlamlı değil, veri kaynağı yok)
+  const op = E.addEvent(E.emptyEvents('osm', { supports: E.KINDS }), { kind: 'overpass', source: 'osm', fromM: 1650, toM: 1700 });
+  ok('üst geçit uyarılmaz; köprü + alt geçit alertable, üst geçit değil', br.events.length === 3 && A.stepRoadAlerts(A.createRoadAlerts(), { model: op, planId: 1, routeKm: 0.8 }).line === null && J(A.alertable(br).map((e) => e.kind)) === J(['bridge', 'underpass']));
   const unsup = E.addEvent(E.emptyEvents('osm', { supports: [] }), { kind: 'tunnel', source: 'osm', fromM: 1500, toM: 1800 });
   ok('yeteneksiz modelde olay yok (unsupported reddi)', unsup.events.length === 0 && A.alertable(unsup).length === 0);
   ok('rotadan çıkınca (offRoute > 100 m) gösterim/ses yok', J(step(A.createRoadAlerts(), 29.5, { offRouteKm: 0.3 })) === J({ line: null, soon: false, speak: [] }));
