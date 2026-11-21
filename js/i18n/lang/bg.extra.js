@@ -502,4 +502,9 @@ export default {
   "🌉 Köprü {0} ileride ({1})": "🌉 Мост след {0} ({1})",
   "⬇️ Alt geçit {0} ileride": "⬇️ Подлез след {0}",
   "Köprü, alt geçit ve gişe uyarısı (OpenStreetMap; tüm yolları kapsamaz)": "Предупреждение за мостове, подлези и пунктове за таксуване (OpenStreetMap; не покрива всички пътища)",
+  "İki parmakla yakınlaştır, sürükleyerek kaydır; çift dokunuş 2× yapar. Bu yalnızca görüntüyü büyütür: yeşil kutu görüntüyle birlikte hareket eder, okuma ayarı bozulmaz.": "Щипнете с два пръста за увеличение, плъзнете за преместване; двойното докосване превключва 2×. Това само уголемява изображението: зелената рамка се движи с него, а настройката за четене не се променя.",
+  "Görüntü yakınlaştırma": "Увеличение на изображението",
+  "Uzaklaştır": "Намали",
+  "Yakınlaştır": "Увеличи",
+  "Görüntüyü sıfırla": "Нулиране на изгледа",
 };

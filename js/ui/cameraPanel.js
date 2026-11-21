@@ -1,6 +1,7 @@
 import { getState, patch, subscribe } from '../state.js';
 import { load, save, remove } from '../utils/storage.js';
 import { persistCamera } from './roiBox.js';
+import { resetView } from './camView.js';
 import { startCamera, stopCamera, zoomInfo, legacyZoomRoi, onCameraStatus, cameraDiag } from '../sensors/camera.js';
 import { invalidateSkew, roiToVideoRect } from '../sensors/preprocess.js';
 import { startOcr, stopOcr, startPreview, stopPreview, setOcrEngine } from '../sensors/ocr.js';
@@ -57,6 +58,7 @@ export function initCameraPanel() {
       stopPreview();
       stopCamPreview();
       stopCamera(video);
+      resetView();
       patch('system', { camera: false });
       return;
     }
@@ -64,6 +66,7 @@ export function initCameraPanel() {
       await startCamera(video);
       invalidateSkew();
       migrateLegacyZoom();
+      resetView(); // önizleme yakınlaştırması her açılışta 1×
       patch('system', { camera: true });
       startPreview(video, stage, $('ocr-preview'));
       startCamPreview(video, stage, $('cam-mirror'));
@@ -81,6 +84,7 @@ export function initCameraPanel() {
       stopPreview();
       stopCamPreview();
       stopCamera(video);
+      resetView();
       patch('system', { camera: false });
       toast('Kamera bağlantısı kesildi, yeniden açılamadı');
     }

@@ -1,5 +1,6 @@
 import { getState, patch, subscribe } from '../state.js';
 import { save } from '../utils/storage.js';
+import { boxStyle, screenToBaseDelta, getView, onView } from './camView.js';
 
 const MIN = 0.06; // ROI'nin minimum boyutu (çerçevenin oranı)
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -13,14 +14,15 @@ function persist() {
   });
 }
 
-/** Kamera çerçevesi üzerinde sürüklenebilir + köşeden boyutlandırılabilir ROI kutusu. Konum 0..1 oran olarak saklanır. */
+/** Kamera çerçevesi üzerinde sürüklenebilir + köşeden boyutlandırılabilir ROI kutusu. Konum 0..1 oran olarak saklanır (görünümden bağımsız: sahne oranı).
+ *  Önizleme yakınlaştırılmışsa (js/ui/camView.js) kutu görüntüyle birlikte çizilir; sürükleme farkı yakınlaştırmaya bölünerek taban oranına çevrilir. */
 function makeRoi(stage, box, handle, key) {
   const paint = () => {
-    const { x, y, w, h } = getState('ocr')[key];
-    box.style.left = x * 100 + '%';
-    box.style.top = y * 100 + '%';
-    box.style.width = w * 100 + '%';
-    box.style.height = h * 100 + '%';
+    const s = boxStyle(getView(), getState('ocr')[key]);
+    box.style.left = s.left;
+    box.style.top = s.top;
+    box.style.width = s.width;
+    box.style.height = s.height;
   };
   const commit = (roi) => { patch('ocr', { [key]: roi }); paint(); };
 
@@ -32,7 +34,10 @@ function makeRoi(stage, box, handle, key) {
     const target = startEvent.currentTarget;
     target.setPointerCapture?.(startEvent.pointerId);
 
-    const move = (e) => apply(start, (e.clientX - px) / rect.width, (e.clientY - py) / rect.height);
+    const move = (e) => {
+      const d = screenToBaseDelta(getView(), (e.clientX - px) / rect.width, (e.clientY - py) / rect.height);
+      apply(start, d.dx, d.dy);
+    };
     const up = () => {
       target.removeEventListener('pointermove', move);
       target.removeEventListener('pointerup', up);
@@ -57,6 +62,7 @@ function makeRoi(stage, box, handle, key) {
   });
 
   paint();
+  onView(paint); // yakınlaştırma/kaydırma değişince kutu görüntüyle birlikte yeniden çizilir
   subscribe('ocr', paint); // kutu dışarıdan değişirse de (eski yakınlaştırma kaydının uyarlanması) güncel görünsün
 }
 

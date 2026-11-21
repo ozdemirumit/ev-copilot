@@ -502,4 +502,9 @@ export default {
   "🌉 Köprü {0} ileride ({1})": "🌉 Puente en {0} ({1})",
   "⬇️ Alt geçit {0} ileride": "⬇️ Paso inferior en {0}",
   "Köprü, alt geçit ve gişe uyarısı (OpenStreetMap; tüm yolları kapsamaz)": "Aviso de puentes, pasos inferiores y peajes (OpenStreetMap; no cubre todas las vías)",
+  "İki parmakla yakınlaştır, sürükleyerek kaydır; çift dokunuş 2× yapar. Bu yalnızca görüntüyü büyütür: yeşil kutu görüntüyle birlikte hareket eder, okuma ayarı bozulmaz.": "Pellizca con dos dedos para ampliar y arrastra para desplazar; el doble toque alterna 2×. Solo amplía la imagen: el recuadro verde se mueve con ella y el ajuste de lectura no cambia.",
+  "Görüntü yakınlaştırma": "Zoom de la imagen",
+  "Uzaklaştır": "Alejar",
+  "Yakınlaştır": "Acercar",
+  "Görüntüyü sıfırla": "Restablecer vista",
 };

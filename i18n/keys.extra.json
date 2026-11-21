@@ -501,5 +501,10 @@
  "{0} ileride alt geçit.",
  "🌉 Köprü {0} ileride ({1})",
  "⬇️ Alt geçit {0} ileride",
- "Köprü, alt geçit ve gişe uyarısı (OpenStreetMap; tüm yolları kapsamaz)"
+ "Köprü, alt geçit ve gişe uyarısı (OpenStreetMap; tüm yolları kapsamaz)",
+ "İki parmakla yakınlaştır, sürükleyerek kaydır; çift dokunuş 2× yapar. Bu yalnızca görüntüyü büyütür: yeşil kutu görüntüyle birlikte hareket eder, okuma ayarı bozulmaz.",
+ "Görüntü yakınlaştırma",
+ "Uzaklaştır",
+ "Yakınlaştır",
+ "Görüntüyü sıfırla"
 ]

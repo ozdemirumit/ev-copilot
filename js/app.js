@@ -42,6 +42,7 @@ import { initDefaultStart } from './ui/defaultStart.js';
 import { initSocEstimate, restoreSoc } from './physics/socEstimate.js';
 import { initMap } from './ui/mapView.js';
 import { initRoiBox } from './ui/roiBox.js';
+import { initCamView } from './ui/camView.js';
 import { initCameraPanel } from './ui/cameraPanel.js';
 import { initTestPanel } from './ui/testPanel.js';
 import { initPremiumGate } from './ui/premiumGate.js';
@@ -106,6 +107,7 @@ initAhead();
 initSpeedLimit();
 initLivePlan();
 initCollapse();
+initCamView(); // önizleme yakınlaştırma/kaydırma (ROI kutusundan önce: kutu görünümü dinler)
 initRoiBox();
 initCameraPanel();
 initWakeLock();

@@ -502,4 +502,9 @@ export default {
   "🌉 Köprü {0} ileride ({1})": "🌉 Most za {0} ({1})",
   "⬇️ Alt geçit {0} ileride": "⬇️ Przejazd podziemny za {0}",
   "Köprü, alt geçit ve gişe uyarısı (OpenStreetMap; tüm yolları kapsamaz)": "Ostrzeżenie o mostach, przejazdach podziemnych i bramkach (OpenStreetMap; nie obejmuje wszystkich dróg)",
+  "İki parmakla yakınlaştır, sürükleyerek kaydır; çift dokunuş 2× yapar. Bu yalnızca görüntüyü büyütür: yeşil kutu görüntüyle birlikte hareket eder, okuma ayarı bozulmaz.": "Rozsuń dwoma palcami, aby powiększyć, przeciągnij, aby przesunąć; podwójne stuknięcie włącza 2×. To tylko powiększa obraz: zielona ramka porusza się razem z nim, a ustawienie odczytu się nie zmienia.",
+  "Görüntü yakınlaştırma": "Powiększenie obrazu",
+  "Uzaklaştır": "Pomniejsz",
+  "Yakınlaştır": "Powiększ",
+  "Görüntüyü sıfırla": "Resetuj widok",
 };

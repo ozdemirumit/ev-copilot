@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.118';
+self.APP_VERSION = '0.99.119';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.119', date: '2026-11-21',
+    notes: [
+      'Yeni: Kamera sekmesinde önizleme iki parmakla yakınlaştırılır (1×–5×) ve sürüklenerek kaydırılır; + / − / sıfırla düğmeleri, fare tekerleği ve çift dokunuş da çalışır. Yeşil okuma kutusu (ROI) görüntüyle birlikte büyür ve kayar, kutuyu yakınlaştırılmış görüntüde de sürükleyip boyutlandırabilirsin',
+      'Yalnızca ekrandaki görüntüyü büyütür: OCR\'ın okuduğu bölge, kalibrasyon ve okuma değişmez (çözünürlük artmaz); kamera kapanınca 1×\'e döner, kalıcı değildir. Cihazda doğrulanmadı; 11 dilde çevrildi',
+    ],
+  },
   {
     v: '0.99.118', date: '2026-11-21',
     notes: [

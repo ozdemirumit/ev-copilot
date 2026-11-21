@@ -502,4 +502,9 @@ export default {
   "🌉 Köprü {0} ileride ({1})": "🌉 Brug over {0} ({1})",
   "⬇️ Alt geçit {0} ileride": "⬇️ Onderdoorgang over {0}",
   "Köprü, alt geçit ve gişe uyarısı (OpenStreetMap; tüm yolları kapsamaz)": "Waarschuwing voor bruggen, onderdoorgangen en tolpoorten (OpenStreetMap; dekt niet elke weg)",
+  "İki parmakla yakınlaştır, sürükleyerek kaydır; çift dokunuş 2× yapar. Bu yalnızca görüntüyü büyütür: yeşil kutu görüntüyle birlikte hareket eder, okuma ayarı bozulmaz.": "Knijp met twee vingers om te zoomen, sleep om te verschuiven; dubbeltikken schakelt 2× in. Dit vergroot alleen het beeld: het groene kader beweegt mee en de leesinstelling blijft ongewijzigd.",
+  "Görüntü yakınlaştırma": "Beeldzoom",
+  "Uzaklaştır": "Uitzoomen",
+  "Yakınlaştır": "Inzoomen",
+  "Görüntüyü sıfırla": "Weergave herstellen",
 };

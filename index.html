@@ -421,7 +421,13 @@
         <span class="roi-label">km/h</span>
         <div class="roi-handle" id="roi-speed-handle" aria-label="Boyutlandır"></div>
       </div>
+      <div class="cam-viewctl" role="group" aria-label="Görüntü yakınlaştırma">
+        <button type="button" id="cam-view-out" aria-label="Uzaklaştır" disabled>−</button>
+        <button type="button" id="cam-view-reset" aria-label="Görüntüyü sıfırla" disabled>1.0×</button>
+        <button type="button" id="cam-view-in" aria-label="Yakınlaştır">+</button>
+      </div>
     </div>
+    <p class="cam-view-hint" id="cam-view-hint">İki parmakla yakınlaştır, sürükleyerek kaydır; çift dokunuş 2× yapar. Bu yalnızca görüntüyü büyütür: yeşil kutu görüntüyle birlikte hareket eder, okuma ayarı bozulmaz.</p>
 
     <div class="row">
       <button class="btn primary" id="btn-cam" type="button" style="flex:1">📷 Kamerayı Başlat</button>

@@ -502,4 +502,9 @@ export default {
   "🌉 Köprü {0} ileride ({1})": "🌉 Bridge in {0} ({1})",
   "⬇️ Alt geçit {0} ileride": "⬇️ Underpass in {0}",
   "Köprü, alt geçit ve gişe uyarısı (OpenStreetMap; tüm yolları kapsamaz)": "Bridge, underpass and toll booth warning (OpenStreetMap; does not cover every road)",
+  "İki parmakla yakınlaştır, sürükleyerek kaydır; çift dokunuş 2× yapar. Bu yalnızca görüntüyü büyütür: yeşil kutu görüntüyle birlikte hareket eder, okuma ayarı bozulmaz.": "Pinch with two fingers to zoom, drag to pan; double-tap toggles 2×. This only magnifies the picture: the green box moves with it and the reading setup is not affected.",
+  "Görüntü yakınlaştırma": "Image zoom",
+  "Uzaklaştır": "Zoom out",
+  "Yakınlaştır": "Zoom in",
+  "Görüntüyü sıfırla": "Reset view",
 };

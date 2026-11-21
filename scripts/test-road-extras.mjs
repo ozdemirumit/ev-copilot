@@ -164,7 +164,7 @@ const N = await import('../js/osm/roadExtras.js');
   ok('G index.html: warn-road anahtarı', /id="warn-road"/.test(html));
   ok('G sw.js SHELL: iki yeni dosya', sw.includes("'./js/nav/roadExtras.js'") && sw.includes("'./js/osm/roadExtras.js'"));
   ok('G providerGate: ücretsiz modda Valhalla trace_attributes izinli', /route\|height\|locate\|trace_attributes/.test(pg));
-  ok('G sürüm 0.99.118', /self\.APP_VERSION = '0\.99\.118';/.test(ver) && /v: '0\.99\.118'/.test(ver));
+  ok('G sürüm 0.99.118 kaydı changelog\'da', /self\.APP_VERSION = '0\.99\.\d+';/.test(ver) && /v: '0\.99\.118'/.test(ver));
   const ne = read('js/osm/roadExtras.js');
   ok('G ağ modülü: anahtar/belirteç/depolama yok, yalnız Valhalla + Overpass yardımcıları', !/localStorage|sessionStorage|apiKey|token|process\.env/.test(ne) && /trace_attributes/.test(ne));
 }

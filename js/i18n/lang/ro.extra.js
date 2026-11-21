@@ -502,4 +502,9 @@ export default {
   "🌉 Köprü {0} ileride ({1})": "🌉 Pod peste {0} ({1})",
   "⬇️ Alt geçit {0} ileride": "⬇️ Pasaj subteran peste {0}",
   "Köprü, alt geçit ve gişe uyarısı (OpenStreetMap; tüm yolları kapsamaz)": "Avertizare poduri, pasaje subterane și bariere de taxare (OpenStreetMap; nu acoperă toate drumurile)",
+  "İki parmakla yakınlaştır, sürükleyerek kaydır; çift dokunuş 2× yapar. Bu yalnızca görüntüyü büyütür: yeşil kutu görüntüyle birlikte hareket eder, okuma ayarı bozulmaz.": "Ciupește cu două degete pentru a mări, trage pentru a deplasa; dubla atingere comută 2×. Aceasta doar mărește imaginea: cadrul verde se mișcă odată cu ea, iar reglajul de citire nu se schimbă.",
+  "Görüntü yakınlaştırma": "Mărire imagine",
+  "Uzaklaştır": "Micșorează",
+  "Yakınlaştır": "Mărește",
+  "Görüntüyü sıfırla": "Resetează vizualizarea",
 };

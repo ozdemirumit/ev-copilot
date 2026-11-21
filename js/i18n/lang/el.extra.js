@@ -502,4 +502,9 @@ export default {
   "🌉 Köprü {0} ileride ({1})": "🌉 Γέφυρα σε {0} ({1})",
   "⬇️ Alt geçit {0} ileride": "⬇️ Υπόγεια διάβαση σε {0}",
   "Köprü, alt geçit ve gişe uyarısı (OpenStreetMap; tüm yolları kapsamaz)": "Προειδοποίηση για γέφυρες, υπόγειες διαβάσεις και διόδια (OpenStreetMap· δεν καλύπτει όλους τους δρόμους)",
+  "İki parmakla yakınlaştır, sürükleyerek kaydır; çift dokunuş 2× yapar. Bu yalnızca görüntüyü büyütür: yeşil kutu görüntüyle birlikte hareket eder, okuma ayarı bozulmaz.": "Τσίμπημα με δύο δάχτυλα για μεγέθυνση, σύρετε για μετακίνηση· το διπλό άγγιγμα εναλλάσσει 2×. Μεγεθύνει μόνο την εικόνα: το πράσινο πλαίσιο κινείται μαζί της και η ρύθμιση ανάγνωσης δεν αλλάζει.",
+  "Görüntü yakınlaştırma": "Μεγέθυνση εικόνας",
+  "Uzaklaştır": "Σμίκρυνση",
+  "Yakınlaştır": "Μεγέθυνση",
+  "Görüntüyü sıfırla": "Επαναφορά προβολής",
 };
