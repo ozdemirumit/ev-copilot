@@ -2,7 +2,9 @@
 
 > **Kapsam:** Yalnızca Beta, kaynak dalı `design/modern-ui-soc`. `main` / üretim (v0.86.1) bu kaydın dışında.
 > **Makine okunur kopya:** [`docs/beta-task-registry.json`](beta-task-registry.json). İki dosya birlikte güncellenir. Çelişki olursa JSON esas alınır.
-> **Son güncelleme:** 2026-11-20T17:37:03Z (BETA **kayıt uzlaştırması v0.99.110'a**, yalnız belge; sürüm artmadı): v0.99.94–0.99.110 kayıtta yoktu; git geçmişi ve canlı Beta (0.99.107, `252cde1`) ile eklendi (§7.7). Hiçbir kayıt `verified` yapılmadı; cihaz testi yok.
+> **Son güncelleme:** 2026-11-21T09:30:00Z (**kayıt uzlaştırması v0.99.117'ye**, yalnız belge; sürüm artmadı): v0.99.111–0.99.117 kayıtta yoktu; git geçmişinden eklendi (§7.8). **Kullanıcı kararı 2026-11-21: Beta kullanılmaz, her şey `main` üzerinden gider; Beta önizleme 728ccc9'da donuk.** Hiçbir kayıt `verified` yapılmadı; cihaz testi yok.
+>
+> Önceki: 2026-11-20T17:37:03Z (BETA **kayıt uzlaştırması v0.99.110'a**, yalnız belge; sürüm artmadı): v0.99.94–0.99.110 kayıtta yoktu; git geçmişi ve canlı Beta (0.99.107, `252cde1`) ile eklendi (§7.7). Hiçbir kayıt `verified` yapılmadı; cihaz testi yok.
 >
 > Önceki: 2026-11-16T19:30:00Z (BETA **herkese açık ücretsiz Beta modu — yayın kapısı BLOCKED**, **v0.99.93** `c2b6c59`): kullanıcı D6'yı yalnız `https://ozdemirumit.github.io/EV-Route-Finder/` için herkese açık ücretsiz Beta olarak değiştirdi (kapılar geçerse). `build-beta --public-free`: paylaşılan sunucuya sıfır istek, ücretli sağlayıcı yok, Nominatim/overpass-api.de kapalı, cihaz başı tavan + geri çekilme; S-1/N-1 kapandı. Testler yeşil (guarded 111/111 BLOCK_ 0). **Yayımlanmadı**: kullanıcıya ait koşullar açık (§7.6, `docs/public-beta-release-gate.md`). Push yok, cihazda test yok.
 >
@@ -595,6 +597,26 @@ Kayıt 0.99.93'te kalmıştı. Aşağıdaki satırlar git geçmişinden (`git lo
 - **0.99.108–110** yalnız `cleanup/v0.99.107-duzeltme` dalında (MBRP-cleanup): push yok, Beta'da değil.
 - **Kapılar:** §7.3/§7.6'daki G-* durumları 2026-11-16 tarihlidir ve yeniden değerlendirilmedi (D6 sonradan kullanıcıca değişti, Beta yayımlandı).
 - **DEF-02:** düzeltme `3975941` canlı Beta'nın kaynağının atası; durum "açık" (cihazda 18→77 gözlemi yok). **DEF-01:** Google Places kodu kaynakta; kusurların kapanıp kapanmadığı denetlenmedi.
+
+### 7.8 Uzlaştırma: v0.99.111–0.99.117 (2026-11-21, yalnız belge)
+
+Kullanıcı 2026-11-21'de Beta'yı bıraktı: her şey `main` (GitHub Pages, https://ozdemirumit.github.io/ev-copilot/) üzerinden ilerler. Aşağıdaki satırlar git geçmişinden (`git log`, sürüm başlıklı commit'ler) alındı.
+
+| Sürüm | Commit | Tarih | Konu | Yer |
+|---|---|---|---|---|
+| 0.99.111 | `c0a79d1` | 2026-11-20 | Google şarj istasyonu araması düzeltmeleri (DEF-01, RM-14); yarım kalan fix/google-places-2026-11-13 işi bugünkü tabana taşındı | main |
+| 0.99.112 | `b360a39` | 2026-11-20 | Üretimde harita/rota/hava/istasyon gelmiyordu: kaynak PROVIDER_MODE_BUILD "beta-full" yapıldı (asla "paused" olmamalı); build-beta modu her derlemede açıkça yazar | main |
+| 0.99.113 | `74ba657` | 2026-11-20 | Navigasyon üst paneli ve rotasız pil/menzil paneli B tasarımı: mavi manevra bloğu, üç metrik tek satırda, hız kutusu haritada | main |
+| 0.99.114 | `3c2d22f` | 2026-11-21 | Rotaya Ekle: haritadaki istasyon aktif rotaya zorunlu şarj durağı olarak eklenir (önizleme + onay); istasyon kartında şarj hedefi | main |
+| 0.99.115 | `1aa1e1f` | 2026-11-21 | Sert viraj uyarısı: rotanın kendi geometrisinden, sesli + ekranda, ayarlanabilir, 11 dil | main |
+| 0.99.116 | `20d4063` | 2026-11-21 | Premium kullanıcı kendi harita sağlayıcısını seçer (Daha Fazla > Harita sağlayıcısı); POST /v1/map/choice | main |
+| 0.99.117 | `38516f2` | 2026-11-21 | HERE haritası Premium seçicide (HERE Raster Tile v3, ayrı HERE_MAP_KEY); rota/trafik HERE değil | main |
+
+- **Birleşme:** 0.99.108–110 (§7.7'de "yalnız yerel dal") `2c2c5a9` birleşmesiyle (origin/main v0.86.1 + v0.99.111 hattı) main'in atasıdır; artık yalnız yerel dal değildir.
+- **Canlı doğrulama:** 0.99.116 ve 0.99.117 bu oturumda doğrulandı (`version.js` ve ilgili dosyalar 200). 0.99.112–115 ilgili oturumlarda doğrulandı (bellek notları).
+- **Sunucu:** `EVCoPilotProxy` hizmeti artık `D:\AI-Codes\Claude Code\MBRP-live\server` (detached, 38516f2) klasöründen çalışır; veri `MBRP\server\data` içinde kalır (`.env` DATA_DIR). Eski kullanıcı zamanlanmış görevi `EVCoPilotProxy` devre dışıdır.
+- **Açık:** `HERE_MAP_KEY` sunucuda tanımlı değil (HERE seçilemez). HERE lisansı ve zorunlu telif metni doğrulanmadı (`providerPolicy`: unverified). Cihazda doğrulanan sürüm yok.
+- **Testler:** HEAD 38516f2'de `check.mjs` tamam, 127 test dosyası geçti (çevrimdışı/sahte veri).
 
 ## 8. Açık hatalar
 

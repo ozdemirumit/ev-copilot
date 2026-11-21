@@ -1,5 +1,7 @@
 # Yalnız ücretsiz sağlayıcı modu — kapalı cihaz testi (Android `adb reverse` / iOS yerel HTTPS)
 
+> **Güncel durum (2026-11-21):** Bu belge 2026-11-16 tarihli durumu anlatır; tarihsel kayıttır. Kaynakta `PROVIDER_MODE_BUILD` v0.99.112'den (`b360a39`) beri **`'beta-full'`**'dur, `'paused'` DEĞİL (üretim haritasını kapatan hata buydu; `'paused'` asla geri konmamalı). Kullanıcı kararıyla (2026-11-21) Beta kullanılmaz, her şey `main` üzerinden gider. Aşağıdaki "kaynakta paused" / G-PAUSE ifadeleri o günün durumudur.
+
 Durum: **UYGULANDI (yerel), CİHAZDA TEST EDİLMEDİ.** Köprü görevi `dee61f95`, 2026-11-16, uygulama **v0.99.92**.
 Bu belge yalnız talimat ve boş kanıt listesidir. Hiçbir fiziksel cihaz testi yapılmadı; `verified` yalnız kullanıcı yazar (CLAUDE.md §9).
 Herkese açık yayın İÇİN DEĞİL: GitHub Pages, `ev-copilot-beta` deposu, üretim (`main`) ve canlı sunucu bu işte değişmedi.

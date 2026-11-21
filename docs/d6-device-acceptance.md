@@ -1,5 +1,7 @@
 # D6 — Kapalı Beta gerçek cihaz kabul hazırlığı (iOS / Android) — yalnız belge
 
+> **Güncel durum (2026-11-21):** Bu belge 2026-11-16 tarihli durumu anlatır; tarihsel kayıttır. Kaynakta `PROVIDER_MODE_BUILD` v0.99.112'den (`b360a39`) beri **`'beta-full'`**'dur, `'paused'` DEĞİL (üretim haritasını kapatan hata buydu; `'paused'` asla geri konmamalı). Kullanıcı kararıyla (2026-11-21) Beta kullanılmaz, her şey `main` üzerinden gider. Aşağıdaki "kaynakta paused" / G-PAUSE ifadeleri o günün durumudur.
+
 Durum: **HAZIRLIK.** Bu belgede **hiçbir test sonucu yoktur**; tüm "Sonuç" alanları boştur ve yalnız cihazı kullanan kişi doldurur.
 `verified` yalnız kullanıcı tarafından, aşağıdaki kanıt paketiyle yazılır (CLAUDE.md §9). Yazan: köprü `8858f5da`, 2026-11-16.
 

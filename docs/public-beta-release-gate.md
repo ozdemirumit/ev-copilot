@@ -1,5 +1,7 @@
 # Herkese açık ücretsiz Beta (public-free) — yayın kapısı raporu (v0.99.93)
 
+> **Güncel durum (2026-11-21):** Bu belge 2026-11-16 tarihli durumu anlatır; tarihsel kayıttır. Kaynakta `PROVIDER_MODE_BUILD` v0.99.112'den (`b360a39`) beri **`'beta-full'`**'dur, `'paused'` DEĞİL (üretim haritasını kapatan hata buydu; `'paused'` asla geri konmamalı). Kullanıcı kararıyla (2026-11-21) Beta kullanılmaz, her şey `main` üzerinden gider. Aşağıdaki "kaynakta paused" / G-PAUSE ifadeleri o günün durumudur.
+
 **Sonuç: BLOCKED — yayımlanmadı.** Kod ve otomatik fail-closed testleri hazır (G-PUB-AUTO `met`); yayın, kullanıcıya ait dış koşullar
 (§5) `met` olmadan yapılamaz ve derleme betiği bunu zorlar (kapı kapalıyken çıktı git deposuna yazılamaz, çıkış 2).
 Push yok, GitHub Pages / `EV-Route-Finder` / üretim (`ev-copilot` main) / paylaşılan canlı sunucu dokunulmadı, ücretli API çağrısı yok,
