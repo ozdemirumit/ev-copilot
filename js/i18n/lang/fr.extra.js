@@ -487,4 +487,13 @@ export default {
   "↱ Sert sağ viraj {0} ileride": "↱ Virage serré à droite dans {0}",
   "↰ Sert sol viraj {0} ileride": "↰ Virage serré à gauche dans {0}",
   "Sert viraj uyarısı": "Alerte virage serré",
+  "🧭 Harita sağlayıcısı": "🧭 Fournisseur de carte",
+  "Rota Valhalla (OSM); canlı trafik yok.": "Itinéraire par Valhalla (OSM) ; pas de trafic en direct.",
+  "Canlı trafikli rota Mapbox ile; harita seçiminden bağımsızdır.": "L’itinéraire avec trafic en direct utilise Mapbox ; indépendant du choix de la carte.",
+  "Rota ve trafik TomTom ile; yalnızca TomTom haritası açıkken.": "Itinéraire et trafic via TomTom ; uniquement quand la carte TomTom est ouverte.",
+  "Google rotası henüz bağlı değil: rota Google'dan gelmez.": "L’itinéraire Google n’est pas encore connecté : le trajet ne vient pas de Google.",
+  "⟳ Şimdi uygula": "⟳ Appliquer maintenant",
+  "Kaydedildi. Yeni harita yenilenince ya da bir sonraki açılışta gelir.": "Enregistré. La nouvelle carte apparaît après actualisation ou au prochain lancement.",
+  "Kaydedildi. Navigasyon bitince yenileyince gelir.": "Enregistré. La nouvelle carte apparaît si vous actualisez après la fin de la navigation.",
+  "Harita sağlayıcısı değiştirilemedi": "Impossible de changer le fournisseur de carte",
 };

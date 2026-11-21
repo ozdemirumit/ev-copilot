@@ -751,6 +751,14 @@ const server = http.createServer(async (req, res) => {
       const cat = buildCatalog({ plan: premium ? 'premium' : 'free', configured: { mapbox: { map: av.mapbox, route: !!MAPBOX }, tomtom: { map: av.tomtom, route: !!TOMTOM }, google: { map: av.google } } });
       return json(res, 200, { plan: cat.plan, selected: { map: maps.effective(id.kind === 'user' ? id.user : null, premium) }, providers: cat.providers }, { 'Cache-Control': 'no-store' });
     }
+    if (p === '/v1/map/choice' && req.method === 'POST') { // Premium kullanıcı kendi harita sağlayıcısını seçer: yalnızca hesaplı + Premium, yalnızca anahtarı tanımlı sağlayıcı (osm hep); u.mapProvider'a yazılır (yönetici seçimiyle aynı alan; null = varsayılanı izle). Anahtar dönmez, üst sunucu çağrılmaz; günlük anahtar tavanları /v1/map/config'te aynen geçerli
+      if (id.kind !== 'user') return json(res, 403, { error: 'account_required' }); // hesapsız eski erişim kodunda kullanıcı kaydı yok
+      if (!premiumOk(id)) return json(res, 402, { error: 'premium_required' });
+      const b = await readJson(req, 500);
+      if (!b || b.provider === undefined) return json(res, 400, { error: 'geçersiz gövde' });
+      try { maps.setUser(id.user, b.provider); } catch (e) { return json(res, 400, { error: e.message }); }
+      return json(res, 200, { ok: true, choice: id.user.mapProvider ?? null, effective: maps.effective(id.user, true) }, { 'Cache-Control': 'no-store' });
+    }
     if (adminAuth && p === '/admin/logout' && req.method === 'POST' && id.admin) { // yönetim sayfası Çıkış; ?all=1 yalnızca bu makineden: her yerden çıkış
       if (url.searchParams.get('all') === '1') {
         if (!isLocal(req)) return json(res, 403, { error: 'yalnızca yerel' });

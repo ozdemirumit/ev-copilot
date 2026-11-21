@@ -487,4 +487,13 @@ export default {
   "↱ Sert sağ viraj {0} ileride": "↱ Απότομη στροφή δεξιά σε {0}",
   "↰ Sert sol viraj {0} ileride": "↰ Απότομη στροφή αριστερά σε {0}",
   "Sert viraj uyarısı": "Προειδοποίηση για απότομη στροφή",
+  "🧭 Harita sağlayıcısı": "🧭 Πάροχος χάρτη",
+  "Rota Valhalla (OSM); canlı trafik yok.": "Διαδρομή μέσω Valhalla (OSM)· χωρίς κυκλοφορία σε πραγματικό χρόνο.",
+  "Canlı trafikli rota Mapbox ile; harita seçiminden bağımsızdır.": "Η διαδρομή με κυκλοφορία σε πραγματικό χρόνο χρησιμοποιεί Mapbox· ανεξάρτητα από τον χάρτη που επιλέγεις.",
+  "Rota ve trafik TomTom ile; yalnızca TomTom haritası açıkken.": "Διαδρομή και κυκλοφορία μέσω TomTom· μόνο όταν είναι ανοιχτός ο χάρτης TomTom.",
+  "Google rotası henüz bağlı değil: rota Google'dan gelmez.": "Η διαδρομή Google δεν είναι ακόμη συνδεδεμένη: η διαδρομή δεν προέρχεται από το Google.",
+  "⟳ Şimdi uygula": "⟳ Εφαρμογή τώρα",
+  "Kaydedildi. Yeni harita yenilenince ya da bir sonraki açılışta gelir.": "Αποθηκεύτηκε. Ο νέος χάρτης εμφανίζεται μετά από ανανέωση ή στην επόμενη εκκίνηση.",
+  "Kaydedildi. Navigasyon bitince yenileyince gelir.": "Αποθηκεύτηκε. Ο νέος χάρτης εμφανίζεται αν ανανεώσεις μετά το τέλος της πλοήγησης.",
+  "Harita sağlayıcısı değiştirilemedi": "Δεν ήταν δυνατή η αλλαγή παρόχου χάρτη",
 };

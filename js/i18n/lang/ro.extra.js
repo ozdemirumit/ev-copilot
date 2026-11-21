@@ -487,4 +487,13 @@ export default {
   "↱ Sert sağ viraj {0} ileride": "↱ Curbă strânsă la dreapta peste {0}",
   "↰ Sert sol viraj {0} ileride": "↰ Curbă strânsă la stânga peste {0}",
   "Sert viraj uyarısı": "Avertizare curbă strânsă",
+  "🧭 Harita sağlayıcısı": "🧭 Furnizor de hartă",
+  "Rota Valhalla (OSM); canlı trafik yok.": "Traseu prin Valhalla (OSM); fără trafic în timp real.",
+  "Canlı trafikli rota Mapbox ile; harita seçiminden bağımsızdır.": "Traseul cu trafic în timp real folosește Mapbox; independent de harta aleasă.",
+  "Rota ve trafik TomTom ile; yalnızca TomTom haritası açıkken.": "Traseu și trafic prin TomTom; doar când harta TomTom este deschisă.",
+  "Google rotası henüz bağlı değil: rota Google'dan gelmez.": "Traseul Google nu este încă conectat: traseul nu vine de la Google.",
+  "⟳ Şimdi uygula": "⟳ Aplică acum",
+  "Kaydedildi. Yeni harita yenilenince ya da bir sonraki açılışta gelir.": "Salvat. Harta nouă apare după reîmprospătare sau la următoarea pornire.",
+  "Kaydedildi. Navigasyon bitince yenileyince gelir.": "Salvat. Harta nouă apare dacă reîmprospătezi după terminarea navigației.",
+  "Harita sağlayıcısı değiştirilemedi": "Furnizorul de hartă nu a putut fi schimbat",
 };

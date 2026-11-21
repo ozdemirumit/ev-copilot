@@ -52,11 +52,12 @@ iletir) ve `providerGate.js` (duraklatmada isteği alttaki fetch'e hiç iletmez)
 | `js/routing/tesla.js` | proxyFetch 1 | `/v1/tesla` | sunucu→sağlayıcı | istasyon kaynağı |
 | `js/tomtom/route.js` | proxyFetch 1 | `/tomtom/route` | ücretli | plan / yol önü trafik (10 dk); sunucuda `premiumOk` |
 | `js/ui/historyPanel.js` | proxyFetch 1 | `/v1/price` | kendi | kullanıcı |
+| `js/ui/mapChoice.js` | proxyFetch 2 | `/v1/providers` (salt okunur), `/v1/map/choice` | kendi | Premium kartı açılışı / plan değişimi (katalog); seçim değişince kullanıcı eylemi (yalnızca hesaplı Premium; anahtar dönmez; üst sunucu çağrılmaz) |
 | `js/ui/stationCard.js` | proxyFetch 1 | `/v1/price` | kendi | kullanıcı |
 | `js/ui/versionInfo.js` | fetch 1 | aynı köken `version.js` | uygulama | kullanıcı / güncelleme denetimi |
 | `sw.js` | fetch 2, importScripts 1 | aynı köken | uygulama | service worker önbellek |
 
-Toplam: 28 dosya, 51 çağrı noktası. Koddaki `https://` kökenleri (16, test §A tam eşitlik): api.iternio.com, api.mapbox.com,
+Toplam: 29 dosya, 53 çağrı noktası. Koddaki `https://` kökenleri (16, test §A tam eşitlik): api.iternio.com, api.mapbox.com,
 api.open-meteo.com, api.openchargemap.io, api.tomtom.com, evcopilot.duckdns.org, maps.googleapis.com, nominatim.openstreetmap.org,
 overpass-api.de, overpass.kumi.systems, overpass.private.coffee, photon.komoot.io, server.arcgisonline.com, tiles.openfreemap.org,
 valhalla1.openstreetmap.de, www.google.com. (Bazıları bağlantı/harita stili adresidir; istek atılıp atılmadığı yukarıdaki tabloya göre.)

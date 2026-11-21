@@ -487,4 +487,13 @@ export default {
   "↱ Sert sağ viraj {0} ileride": "↱ Sharp right curve in {0}",
   "↰ Sert sol viraj {0} ileride": "↰ Sharp left curve in {0}",
   "Sert viraj uyarısı": "Sharp curve warning",
+  "🧭 Harita sağlayıcısı": "🧭 Map provider",
+  "Rota Valhalla (OSM); canlı trafik yok.": "Route by Valhalla (OSM); no live traffic.",
+  "Canlı trafikli rota Mapbox ile; harita seçiminden bağımsızdır.": "Live-traffic routing uses Mapbox; independent of the map choice.",
+  "Rota ve trafik TomTom ile; yalnızca TomTom haritası açıkken.": "Routing and traffic use TomTom; only while the TomTom map is open.",
+  "Google rotası henüz bağlı değil: rota Google'dan gelmez.": "Google routing is not connected yet: the route does not come from Google.",
+  "⟳ Şimdi uygula": "⟳ Apply now",
+  "Kaydedildi. Yeni harita yenilenince ya da bir sonraki açılışta gelir.": "Saved. The new map appears after a refresh or at the next launch.",
+  "Kaydedildi. Navigasyon bitince yenileyince gelir.": "Saved. The new map appears when you refresh after navigation ends.",
+  "Harita sağlayıcısı değiştirilemedi": "Could not change the map provider",
 };

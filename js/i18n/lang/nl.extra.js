@@ -487,4 +487,13 @@ export default {
   "↱ Sert sağ viraj {0} ileride": "↱ Scherpe bocht naar rechts over {0}",
   "↰ Sert sol viraj {0} ileride": "↰ Scherpe bocht naar links over {0}",
   "Sert viraj uyarısı": "Waarschuwing scherpe bocht",
+  "🧭 Harita sağlayıcısı": "🧭 Kaartaanbieder",
+  "Rota Valhalla (OSM); canlı trafik yok.": "Route via Valhalla (OSM); geen live verkeer.",
+  "Canlı trafikli rota Mapbox ile; harita seçiminden bağımsızdır.": "Routes met live verkeer gebruiken Mapbox; los van de kaartkeuze.",
+  "Rota ve trafik TomTom ile; yalnızca TomTom haritası açıkken.": "Route en verkeer via TomTom; alleen als de TomTom-kaart open is.",
+  "Google rotası henüz bağlı değil: rota Google'dan gelmez.": "Google-routering is nog niet gekoppeld: de route komt niet van Google.",
+  "⟳ Şimdi uygula": "⟳ Nu toepassen",
+  "Kaydedildi. Yeni harita yenilenince ya da bir sonraki açılışta gelir.": "Opgeslagen. De nieuwe kaart verschijnt na vernieuwen of bij de volgende start.",
+  "Kaydedildi. Navigasyon bitince yenileyince gelir.": "Opgeslagen. De nieuwe kaart verschijnt als je vernieuwt na afloop van de navigatie.",
+  "Harita sağlayıcısı değiştirilemedi": "Kaartaanbieder kon niet worden gewijzigd",
 };

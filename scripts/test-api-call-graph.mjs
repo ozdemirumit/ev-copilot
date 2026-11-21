@@ -71,6 +71,7 @@ const MANIFEST = {
   'js/routing/tesla.js': { proxyFetch: 1 }, // /v1/tesla
   'js/tomtom/route.js': { proxyFetch: 1 }, // ücretli: /tomtom/route (Premium)
   'js/ui/historyPanel.js': { proxyFetch: 1 }, // kendi sunucu: /v1/price (kullanıcı eylemi)
+  'js/ui/mapChoice.js': { proxyFetch: 2 }, // kendi sunucu: /v1/providers (salt okunur katalog) + /v1/map/choice (kullanıcı eylemi; yalnızca Premium kartı)
   'js/ui/stationCard.js': { proxyFetch: 1 }, // kendi sunucu: /v1/price (kullanıcı eylemi)
   'js/ui/versionInfo.js': { fetch: 1 }, // aynı köken: version.js
   'sw.js': { fetch: 2, importScripts: 1 }, // service worker: aynı köken önbellek/geçiş
@@ -86,7 +87,7 @@ for (const f of APP_FILES) {
 ok(`taranan uygulama dosyası > 150 (js/** + sw.js, i18n dil tabloları hariç): ${APP_FILES.length}`, APP_FILES.length > 150);
 for (const f of Object.keys(found)) ok(`sink ${f} manifestoda ve sayılar eşit ${JSON.stringify(found[f])}`, JSON.stringify(found[f]) === JSON.stringify(MANIFEST[f]), `manifest ${JSON.stringify(MANIFEST[f] || null)} — yeni/değişen ağ çağrısı: docs/api-call-graph.md §2'de sınıflandırıp manifesti güncelleyin`);
 for (const f of Object.keys(MANIFEST)) if (!found[f]) ok(`manifest satırı ${f} hâlâ ağ ilkeli içeriyor`, false, 'çağrı kaldırıldıysa manifest ve belge güncellenmeli');
-ok('manifest dosya sayısı = bulunan (28)', Object.keys(found).length === Object.keys(MANIFEST).length && Object.keys(MANIFEST).length === 28, `${Object.keys(found).length}/${Object.keys(MANIFEST).length}`);
+ok('manifest dosya sayısı = bulunan (29)', Object.keys(found).length === Object.keys(MANIFEST).length && Object.keys(MANIFEST).length === 29, `${Object.keys(found).length}/${Object.keys(MANIFEST).length}`);
 ok('XHR / WebSocket / EventSource / sendBeacon hiçbir uygulama dosyasında yok (yalnız fetch ailesi)', !Object.values(found).some((c) => c.xhr || c.websocket || c.eventsource || c.beacon));
 // fetch sarmalayıcıları (window.fetch = …): yalnız sayaç ve kota kapısı; ikisi de isteği çoğaltmaz
 const WRAP = /\b(?:window|target)\.fetch\s*=/;

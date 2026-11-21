@@ -486,5 +486,14 @@
  "{0} ileride keskin sol dönemeç, yavaşla.",
  "↱ Sert sağ viraj {0} ileride",
  "↰ Sert sol viraj {0} ileride",
- "Sert viraj uyarısı"
+ "Sert viraj uyarısı",
+ "🧭 Harita sağlayıcısı",
+ "Rota Valhalla (OSM); canlı trafik yok.",
+ "Canlı trafikli rota Mapbox ile; harita seçiminden bağımsızdır.",
+ "Rota ve trafik TomTom ile; yalnızca TomTom haritası açıkken.",
+ "Google rotası henüz bağlı değil: rota Google'dan gelmez.",
+ "⟳ Şimdi uygula",
+ "Kaydedildi. Yeni harita yenilenince ya da bir sonraki açılışta gelir.",
+ "Kaydedildi. Navigasyon bitince yenileyince gelir.",
+ "Harita sağlayıcısı değiştirilemedi"
 ]

@@ -16,6 +16,12 @@ export function savedProvider() {
   return NAMES.includes(p) ? p : 'osm';
 }
 
+/** Kullanıcı sağlayıcıyı kendisi değiştirdi (js/ui/mapChoice.js): yeni ADI hemen saklanır (sonraki açılış bununla başlar) ve bu oturumdaki OpenFreeMap zorlaması kalkar. Anahtar asla. */
+export function rememberProvider(p) {
+  save('mapProvider', NAMES.includes(p) ? p : 'osm');
+  try { sessionStorage.removeItem(FORCE_KEY); } catch { /* özel pencere: yoksay */ }
+}
+
 /** Sağlayıcı çalışmadı: bu cihaz oturumu boyunca OpenFreeMap kullanılır (yenilemede döngü olmaz). */
 export function forceOsm() {
   try { sessionStorage.setItem(FORCE_KEY, '1'); } catch { /* özel pencere: yoksay */ }

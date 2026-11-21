@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.115';
+self.APP_VERSION = '0.99.116';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.116', date: '2026-11-21',
+    notes: [
+      'Yeni: Premium kullanıcı artık kendi harita sağlayıcısını seçebilir (Daha Fazla > Harita sağlayıcısı: OpenFreeMap, Mapbox, TomTom, Google; yalnızca sunucuda anahtarı tanımlı olanlar listelenir). Seçim hesabına kaydedilir; yeni harita yenilemede ya da bir sonraki açılışta gelir, navigasyon sürerken yenileme kapalıdır',
+      'Sunucu: POST /v1/map/choice (yalnızca hesaplı Premium; yönetici seçimiyle aynı alan, son yazan kazanır; anahtar dönmez). Günlük harita anahtarı tavanları aynen geçerli; 11 dilde çevrildi',
+    ],
+  },
   {
     v: '0.99.115', date: '2026-11-21',
     notes: [

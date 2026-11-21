@@ -487,4 +487,13 @@ export default {
   "↱ Sert sağ viraj {0} ileride": "↱ Curva fechada à direita em {0}",
   "↰ Sert sol viraj {0} ileride": "↰ Curva fechada à esquerda em {0}",
   "Sert viraj uyarısı": "Aviso de curva fechada",
+  "🧭 Harita sağlayıcısı": "🧭 Fornecedor do mapa",
+  "Rota Valhalla (OSM); canlı trafik yok.": "Rota pelo Valhalla (OSM); sem trânsito em tempo real.",
+  "Canlı trafikli rota Mapbox ile; harita seçiminden bağımsızdır.": "A rota com trânsito em tempo real usa o Mapbox; independente do mapa escolhido.",
+  "Rota ve trafik TomTom ile; yalnızca TomTom haritası açıkken.": "Rota e trânsito pela TomTom; só com o mapa TomTom aberto.",
+  "Google rotası henüz bağlı değil: rota Google'dan gelmez.": "A rota do Google ainda não está ligada: a rota não vem do Google.",
+  "⟳ Şimdi uygula": "⟳ Aplicar agora",
+  "Kaydedildi. Yeni harita yenilenince ya da bir sonraki açılışta gelir.": "Guardado. O novo mapa aparece após atualizar ou no próximo arranque.",
+  "Kaydedildi. Navigasyon bitince yenileyince gelir.": "Guardado. O novo mapa aparece ao atualizar depois de terminar a navegação.",
+  "Harita sağlayıcısı değiştirilemedi": "Não foi possível alterar o fornecedor do mapa",
 };

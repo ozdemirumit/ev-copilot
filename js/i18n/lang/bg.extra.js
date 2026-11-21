@@ -487,4 +487,13 @@ export default {
   "↱ Sert sağ viraj {0} ileride": "↱ Остър десен завой след {0}",
   "↰ Sert sol viraj {0} ileride": "↰ Остър ляв завой след {0}",
   "Sert viraj uyarısı": "Предупреждение за остър завой",
+  "🧭 Harita sağlayıcısı": "🧭 Доставчик на карта",
+  "Rota Valhalla (OSM); canlı trafik yok.": "Маршрут чрез Valhalla (OSM); без трафик на живо.",
+  "Canlı trafikli rota Mapbox ile; harita seçiminden bağımsızdır.": "Маршрутът с трафик на живо използва Mapbox; независимо от избраната карта.",
+  "Rota ve trafik TomTom ile; yalnızca TomTom haritası açıkken.": "Маршрут и трафик чрез TomTom; само при отворена карта на TomTom.",
+  "Google rotası henüz bağlı değil: rota Google'dan gelmez.": "Маршрутът на Google още не е свързан: маршрутът не идва от Google.",
+  "⟳ Şimdi uygula": "⟳ Приложи сега",
+  "Kaydedildi. Yeni harita yenilenince ya da bir sonraki açılışta gelir.": "Запазено. Новата карта се показва след опресняване или при следващото стартиране.",
+  "Kaydedildi. Navigasyon bitince yenileyince gelir.": "Запазено. Новата карта се показва при опресняване след края на навигацията.",
+  "Harita sağlayıcısı değiştirilemedi": "Доставчикът на карта не можа да бъде променен",
 };

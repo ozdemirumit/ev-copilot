@@ -23,6 +23,7 @@ import { initShell } from './ui/shell.js';
 import { initPlaces } from './ui/places.js';
 import { initRecentDest } from './ui/recentDest.js';
 import { initAccountPanel } from './ui/accountPanel.js';
+import { initMapChoice } from './ui/mapChoice.js';
 import { captureInviteFromUrl, listenInviteDeepLink } from './account/auth.js';
 import { initSync } from './account/sync.js';
 import { initHistorySync } from './account/historySync.js';
@@ -122,6 +123,7 @@ initRecentDest();
 captureInviteFromUrl();
 listenInviteDeepLink();
 initAccountPanel();
+initMapChoice(); // Premium: kendi harita sağlayıcını seç (Daha Fazla)
 initSync();
 initHistorySync();
 initCharging();
