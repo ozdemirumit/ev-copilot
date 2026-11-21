@@ -231,7 +231,7 @@ function adminSummary() {
     here: { month: hereUsage().month, used: hereUsage().n, cap: HERE_CAP },
     devices: devices.stats(),
     map: { default: maps.getDefault() },
-    configured: { mapbox: !!MAPBOX, mapboxMap: maps.available().mapbox, googleMap: maps.available().google, here: !!HERE, ocm: !!OCM, tomtom: !!TOMTOM, tomtomMap: maps.available().tomtom, googlePlaces: !!GOOGLE_PLACES, googleLogin: !!accounts.googleOn, smtp: !!mailer, premiumRequired: String(env.PREMIUM_REQUIRED ?? '1') !== '0' },
+    configured: { mapbox: !!MAPBOX, mapboxMap: maps.available().mapbox, googleMap: maps.available().google, here: !!HERE, ocm: !!OCM, tomtom: !!TOMTOM, tomtomMap: maps.available().tomtom, hereMap: maps.available().here, googlePlaces: !!GOOGLE_PLACES, googleLogin: !!accounts.googleOn, smtp: !!mailer, premiumRequired: String(env.PREMIUM_REQUIRED ?? '1') !== '0' },
     usageToday: byKind,
     usageByUser: usageByUser(),
     google: { callsToday: gToday.d === today() ? gToday.n : 0, dailyCap: GOOGLE_TOTAL, unitUsd: costs.unit, usd: tot },
@@ -748,7 +748,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (p === '/v1/providers' && req.method === 'GET') { // Premium sağlayıcı kataloğu (F2): SALT OKUNUR; seçim yazmaz, üst sunucu çağırmaz, harita hakkı harcamaz; yalnızca boolean yapılandırma, anahtar/kullanıcı bilgisi yok
       const premium = premiumOk(id), av = maps.available();
-      const cat = buildCatalog({ plan: premium ? 'premium' : 'free', configured: { mapbox: { map: av.mapbox, route: !!MAPBOX }, tomtom: { map: av.tomtom, route: !!TOMTOM }, google: { map: av.google } } });
+      const cat = buildCatalog({ plan: premium ? 'premium' : 'free', configured: { mapbox: { map: av.mapbox, route: !!MAPBOX }, tomtom: { map: av.tomtom, route: !!TOMTOM }, google: { map: av.google }, here: { map: av.here } } });
       return json(res, 200, { plan: cat.plan, selected: { map: maps.effective(id.kind === 'user' ? id.user : null, premium) }, providers: cat.providers }, { 'Cache-Control': 'no-store' });
     }
     if (p === '/v1/map/choice' && req.method === 'POST') { // Premium kullanıcı kendi harita sağlayıcısını seçer: yalnızca hesaplı + Premium, yalnızca anahtarı tanımlı sağlayıcı (osm hep); u.mapProvider'a yazılır (yönetici seçimiyle aynı alan; null = varsayılanı izle). Anahtar dönmez, üst sunucu çağrılmaz; günlük anahtar tavanları /v1/map/config'te aynen geçerli

@@ -390,14 +390,14 @@ ok('A/B bölümlerinde gerçek ağ (fetch/XHR/WebSocket/EventSource) çağrısı
 {
   const mv = strip(read('js/ui/mapView.js'));
   const eng = strip(read('js/ui/maps/mapEngine.js'));
-  const maps = ['mapbox', 'google', 'tomtom', 'maplibre'].map((n) => [n, strip(read(`js/ui/maps/${n}.js`))]);
+  const maps = ['mapbox', 'google', 'tomtom', 'here', 'maplibre'].map((n) => [n, strip(read(`js/ui/maps/${n}.js`))]);
   ok('C1 vektör harita nesnesi tek yerde oluşturulur (mapEngine.js: tek `new lib.Map`)', (eng.match(/new lib\.Map\(/g) || []).length === 1 && maps.every(([n, s]) => n === 'google' || !/new [A-Za-z.]*Map\(/.test(s)));
   ok('C1 Google haritası tek `new GMap(` (bağdaştırıcıda)', (maps.find(([n]) => n === 'google')[1].match(/new GMap\(/g) || []).length === 1);
   ok('C2 harita açılışı sayfa başına bir kez: boot() hazırsa çıkar, eşzamanlı çağrı aynı sözü paylaşır (booting ??=)', /boot = async \(\) => \{\s*if \(adapter\) return;\s*booting \?\?=/.test(mv));
   ok('C2 boot() yalnız initMap sonunda bir kez çağrılır (zamanlayıcı/olayla yeniden açılış yok)', (mv.match(/\bboot\(\)/g) || []).length === 1 && !/set(Interval|Timeout)\([^)]*boot/.test(mv));
   ok('C3 ücretli harita kimlik hatası → oturum boyu OpenFreeMap (forceOsm) + en çok bir yenileme; mapConfig osmForced ise sunucuya sorulmaz',
-    (mv.match(/fallBackToOsm\(\); if \(shown\) setTimeout\(\(\) => location\.reload\(\), 1500\)/g) || []).length === 3 && /if \(osmForced\(\) \|\| !hasCreds\(\)\) return/.test(strip(read('js/net/mapConfig.js'))));
-  ok('C4 uydu aç/kapa yeni harita oluşturmaz: Mapbox/TomTom setStyle, aynı değerde yeniden yüklenmez', ['mapbox', 'tomtom'].every((n) => { const s = maps.find(([m]) => m === n)[1]; return /if \(!!want === on\) return;/.test(s) && /map\.setStyle\(/.test(s); }));
+    (mv.match(/fallBackToOsm\(\); if \(shown\) setTimeout\(\(\) => location\.reload\(\), 1500\)/g) || []).length === 4 && /if \(osmForced\(\) \|\| !hasCreds\(\)\) return/.test(strip(read('js/net/mapConfig.js'))));
+  ok('C4 uydu aç/kapa yeni harita oluşturmaz: Mapbox/TomTom setStyle, aynı değerde yeniden yüklenmez', ['mapbox', 'tomtom', 'here'].every((n) => { const s = maps.find(([m]) => m === n)[1]; return /if \(!!want === on\) return;/.test(s) && /map\.setStyle\(/.test(s); }));
   ok('C5 harita bağdaştırıcılarında zamanlayıcıyla periyodik yeniden yükleme yok (setInterval yok)', maps.every(([, s]) => !/setInterval\(/.test(s)) && !/setInterval\(/.test(eng));
   ok('C6 takip kamerası araç durunca (≤ 2 m, dönüş/zoom yok) haritayı oynatmaz → yeni karo isteği tetiklemez', /if \(still\) return;/.test(mv) && /< 2 && Math\.abs\(center\.lon - lf\.lon\)/.test(mv));
   ok('C7 kota duraklatmasında yerel boş stil (createMapLibreMap paused): sağlayıcı betiği/karosu ve /v1/map/config istenmez', /if \(providerRequestsPaused\(\)\) \{[\s\S]{0,300}createMapLibreMap\(mapEl, \{ paused: true \}\)/.test(mv));

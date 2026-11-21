@@ -495,5 +495,6 @@
  "⟳ Şimdi uygula",
  "Kaydedildi. Yeni harita yenilenince ya da bir sonraki açılışta gelir.",
  "Kaydedildi. Navigasyon bitince yenileyince gelir.",
- "Harita sağlayıcısı değiştirilemedi"
+ "Harita sağlayıcısı değiştirilemedi",
+ "HERE rotası henüz bağlı değil: rota HERE'den gelmez (Valhalla, canlı trafik yok)."
 ]

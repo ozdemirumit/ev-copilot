@@ -496,4 +496,5 @@ export default {
   "Kaydedildi. Yeni harita yenilenince ya da bir sonraki açılışta gelir.": "Guardado. O novo mapa aparece após atualizar ou no próximo arranque.",
   "Kaydedildi. Navigasyon bitince yenileyince gelir.": "Guardado. O novo mapa aparece ao atualizar depois de terminar a navegação.",
   "Harita sağlayıcısı değiştirilemedi": "Não foi possível alterar o fornecedor do mapa",
+  "HERE rotası henüz bağlı değil: rota HERE'den gelmez (Valhalla, canlı trafik yok).": "A rota da HERE ainda não está ligada: a rota não vem da HERE (Valhalla, sem trânsito em tempo real).",
 };

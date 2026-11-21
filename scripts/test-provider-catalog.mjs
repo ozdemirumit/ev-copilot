@@ -23,7 +23,7 @@ const ALL_ON = Object.freeze({
   mapbox: { map: true, route: true },
   tomtom: { map: true, route: true },
   google: { map: true, route: true }, // route bayrağı Google Routes'u açamaz (bağlı değil)
-  here: { map: true, route: true, traffic: true }, // HERE bağlı değil: bayraklar etkisiz
+  here: { map: true, route: true, traffic: true }, // HERE yalnızca harita bağlı: rota/trafik bayrakları etkisiz
 });
 const cap = (cat, id, c) => cat.providers.find((p) => p.id === id).capabilities[c];
 const prov = (cat, id) => cat.providers.find((p) => p.id === id);
@@ -48,9 +48,9 @@ ok('osm: harita+rota bağlı, trafik yok', w('osm').map && w('osm').route && !w(
 ok('mapbox: harita+rota+trafik bağlı', w('mapbox').map && w('mapbox').route && w('mapbox').traffic);
 ok('tomtom: harita+rota+trafik bağlı', w('tomtom').map && w('tomtom').route && w('tomtom').traffic);
 ok('google: yalnızca harita bağlı', w('google').map && !w('google').route && !w('google').traffic);
-ok('here: hiçbiri bağlı değil', !w('here').map && !w('here').route && !w('here').traffic);
+ok('here: yalnızca harita bağlı', w('here').map && !w('here').route && !w('here').traffic);
 ok('google rota coming-soon olarak işaretli', catalogEntry('google').comingSoon.includes('route'));
-ok('here map/route/traffic coming-soon', ['map', 'route', 'traffic'].every((c) => catalogEntry('here').comingSoon.includes(c)));
+ok('here route/traffic coming-soon, map değil', ['route', 'traffic'].every((c) => catalogEntry('here').comingSoon.includes(c)) && !catalogEntry('here').comingSoon.includes('map'));
 
 // ---- Lisans: varsayım yok ----
 ok('osm lisansı providerPolicy ile aynı (approved)', catalogEntry('osm').licenseStatus === policy.getProvider('osm').licenseStatus && catalogEntry('osm').licenseStatus === 'approved');
@@ -68,7 +68,7 @@ for (const cfg of [undefined, {}, { plan: 'free' }, { plan: 'free', configured: 
   ok(`Free ${label}: osm available`, prov(cat, 'osm').status === 'available' && cap(cat, 'osm', 'map').status === 'available' && cap(cat, 'osm', 'route').status === 'available');
   ok(`Free ${label}: osm trafik unavailable`, cap(cat, 'osm', 'traffic').status === 'unavailable');
   ok(`Free ${label}: mapbox/tomtom/google premium-required`, ['mapbox', 'tomtom', 'google'].every((id) => prov(cat, id).status === 'premium-required'));
-  ok(`Free ${label}: here coming-soon`, prov(cat, 'here').status === 'coming-soon' && !prov(cat, 'here').selectable);
+  ok(`Free ${label}: here premium-required, seçilemez`, prov(cat, 'here').status === 'premium-required' && !prov(cat, 'here').selectable);
   ok(`Free ${label}: osm dışında hiçbir yetenek available değil`, cat.providers.filter((p) => p.id !== 'osm').every((p) => CATALOG_CAPABILITIES.every((c) => p.capabilities[c].status !== 'available')));
 }
 
@@ -78,15 +78,15 @@ for (const cfg of [undefined, {}, { plan: 'free' }, { plan: 'free', configured: 
   ok('Premium boş: plan premium', cat.plan === 'premium');
   ok('Premium boş: yalnızca osm seçilebilir', JSON.stringify(cat.providers.filter((p) => p.selectable).map((p) => p.id)) === '["osm"]');
   ok('Premium boş: mapbox/tomtom/google not-configured', ['mapbox', 'tomtom', 'google'].every((id) => prov(cat, id).status === 'not-configured'));
-  ok('Premium boş: here coming-soon', prov(cat, 'here').status === 'coming-soon');
+  ok('Premium boş: here not-configured', prov(cat, 'here').status === 'not-configured');
 }
 
 // ---- Premium, hepsi yapılandırılmış ----
 {
   const cat = buildCatalog({ plan: 'premium', configured: ALL_ON });
-  ok('Premium hepsi: osm/mapbox/tomtom/google seçilebilir', JSON.stringify(cat.providers.filter((p) => p.selectable).map((p) => p.id)) === '["osm","mapbox","tomtom","google"]');
-  ok('Premium hepsi: here seçilemez, coming-soon', prov(cat, 'here').status === 'coming-soon' && !prov(cat, 'here').selectable);
-  ok('Premium hepsi: here tüm yetenekler coming-soon', CATALOG_CAPABILITIES.every((c) => cap(cat, 'here', c).status === 'coming-soon'));
+  ok('Premium hepsi: osm/mapbox/tomtom/google/here seçilebilir', JSON.stringify(cat.providers.filter((p) => p.selectable).map((p) => p.id)) === '["osm","mapbox","tomtom","google","here"]');
+  ok('Premium hepsi: here harita available, seçilebilir', prov(cat, 'here').status === 'available' && prov(cat, 'here').selectable);
+  ok('Premium hepsi: here harita available, rota/trafik coming-soon (route bayrağı etkisiz)', cap(cat, 'here', 'map').status === 'available' && cap(cat, 'here', 'route').status === 'coming-soon' && cap(cat, 'here', 'traffic').status === 'coming-soon' && prov(cat, 'here').routeAvailable === false);
   ok('Premium hepsi: mapbox map/route/traffic available', CATALOG_CAPABILITIES.every((c) => cap(cat, 'mapbox', c).status === 'available'));
   ok('Premium hepsi: tomtom map/route/traffic available', CATALOG_CAPABILITIES.every((c) => cap(cat, 'tomtom', c).status === 'available'));
   ok('Premium hepsi: google harita available', cap(cat, 'google', 'map').status === 'available' && prov(cat, 'google').status === 'available');

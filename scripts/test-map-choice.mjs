@@ -17,7 +17,7 @@ const CODE = 'test-dummy-access-code-0123456789';
 const sha256 = (s) => createHash('sha256').update(s).digest('hex');
 const TOK_FREE = 'F'.repeat(30), TOK_PREM = 'P'.repeat(30), TOK_PREM2 = 'Q'.repeat(30);
 const FAKE = { MAPBOX_MAP_TOKEN: 'pk.SAHTE-mapbox-harita-111', MAPBOX_TOKEN: 'sahte-mapbox-sunucu-222', TOMTOM_KEY: 'sahte-tomtom-sunucu-333', TOMTOM_MAP_KEY: 'sahte-tomtom-harita-444', GOOGLE_MAPS_BROWSER_KEY: 'sahte-google-harita-555' };
-const BLANK = Object.fromEntries(['MAPBOX_TOKEN', 'MAPBOX_MAP_TOKEN', 'TOMTOM_KEY', 'TOMTOM_MAP_KEY', 'OCM_KEY', 'HERE_API_KEY', 'GOOGLE_PLACES_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SMTP_USER', 'SMTP_PASS', 'PUBLIC_URL', 'ADMIN_EMAILS', 'GOOGLE_MAPS_BROWSER_KEY', 'GOOGLE_MAP_ID', 'MAP_DAILY_PER_USER', 'MAP_DAILY_TOTAL', 'TRUST_PROXY', 'PREMIUM_REQUIRED', 'ADMIN_TOTP_SECRET', 'VERIAPI_KEY'].map((k) => [k, '']));
+const BLANK = Object.fromEntries(['MAPBOX_TOKEN', 'MAPBOX_MAP_TOKEN', 'TOMTOM_KEY', 'TOMTOM_MAP_KEY', 'OCM_KEY', 'HERE_API_KEY', 'HERE_MAP_KEY', 'GOOGLE_PLACES_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SMTP_USER', 'SMTP_PASS', 'PUBLIC_URL', 'ADMIN_EMAILS', 'GOOGLE_MAPS_BROWSER_KEY', 'GOOGLE_MAP_ID', 'MAP_DAILY_PER_USER', 'MAP_DAILY_TOTAL', 'TRUST_PROXY', 'PREMIUM_REQUIRED', 'ADMIN_TOTP_SECRET', 'VERIAPI_KEY'].map((k) => [k, '']));
 
 let upstreamHits = 0;
 const upstream = http.createServer((req, res) => { upstreamHits++; res.writeHead(500); res.end('{}'); });
@@ -108,7 +108,7 @@ try {
     r = await choose(A, TOK_PREM, 'bing');
     ok('A geçersiz ad → 400, seçim değişmedi (mapbox)', r.status === 400 && await stored(A.dir, 'u_prem') === 'mapbox');
     r = await choose(A, TOK_PREM, 'here');
-    ok('A here (haritası bağlı değil) → 400', r.status === 400);
+    ok('A here (HERE_MAP_KEY yok) → 400', r.status === 400);
     r = await A.call('POST', '/v1/map/choice', { auth: TOK_PREM, body: {} });
     ok('A provider alanı yok → 400', r.status === 400);
     r = await A.call('POST', '/v1/map/choice', { auth: TOK_PREM, body: { provider: ['mapbox'] } });

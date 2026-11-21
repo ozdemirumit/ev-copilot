@@ -496,4 +496,5 @@ export default {
   "Kaydedildi. Yeni harita yenilenince ya da bir sonraki açılışta gelir.": "Запазено. Новата карта се показва след опресняване или при следващото стартиране.",
   "Kaydedildi. Navigasyon bitince yenileyince gelir.": "Запазено. Новата карта се показва при опресняване след края на навигацията.",
   "Harita sağlayıcısı değiştirilemedi": "Доставчикът на карта не можа да бъде променен",
+  "HERE rotası henüz bağlı değil: rota HERE'den gelmez (Valhalla, canlı trafik yok).": "Маршрутът на HERE още не е свързан: маршрутът не идва от HERE (Valhalla, без трафик на живо).",
 };

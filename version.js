@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.116';
+self.APP_VERSION = '0.99.117';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.117', date: '2026-11-21',
+    notes: [
+      'Yeni: HERE haritası Premium harita sağlayıcıları arasında (Daha Fazla > Harita sağlayıcısı > HERE; HERE karoları, koyu stil ve uydu). Yalnızca sunucuda ayrı HERE_MAP_KEY (tarayıcı anahtarı) tanımlıysa listelenir. Rota ve canlı trafik şimdilik HERE\'den GELMEZ (Valhalla); HERE lisansı doğrulanmadı',
+      'Sunucu: HERE_MAP_KEY tarayıcıya yalnızca Premium + HERE seçiliyken gider; HERE_API_KEY (istasyon/hız limiti) asla gitmez. Yönetimde HERE seçeneği ve harita anahtarı durumu; 11 dilde çevrildi',
+    ],
+  },
   {
     v: '0.99.116', date: '2026-11-21',
     notes: [

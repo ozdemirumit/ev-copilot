@@ -1,4 +1,4 @@
-// Daha Fazla > Harita sağlayıcısı kartı (yalnızca Premium, hesaplı): kullanıcı OpenFreeMap / Mapbox / TomTom / Google arasından KENDİ haritasını seçer.
+// Daha Fazla > Harita sağlayıcısı kartı (yalnızca Premium, hesaplı): kullanıcı OpenFreeMap / Mapbox / TomTom / Google / HERE arasından KENDİ haritasını seçer.
 // Seçenekler GET /v1/providers kataloğundan gelir (salt okunur; yalnızca sunucuda anahtarı tanımlı olanlar seçilebilir), seçim POST /v1/map/choice ile
 // sunucuya yazılır. Anahtar bu modüle hiç gelmez: harita açılırken js/net/mapConfig.js /v1/map/config'ten alır. Açık harita bu sayfada değişmez;
 // yenilemede ya da bir sonraki açılışta yeni sağlayıcı gelir (navigasyon sürerken yenileme düğmesi kapalıdır).
@@ -16,6 +16,7 @@ export const NOTES = Object.freeze({
   mapbox: 'Canlı trafikli rota Mapbox ile; harita seçiminden bağımsızdır.',
   tomtom: 'Rota ve trafik TomTom ile; yalnızca TomTom haritası açıkken.',
   google: "Google rotası henüz bağlı değil: rota Google'dan gelmez.",
+  here: "HERE rotası henüz bağlı değil: rota HERE'den gelmez (Valhalla, canlı trafik yok).",
 });
 
 /** Katalog yanıtından seçilebilir sağlayıcılar (bilinmeyen/seçilemez olanlar atılır). Bozuk yanıt → []. */

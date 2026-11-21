@@ -7,6 +7,7 @@ import { createMapLibreMap } from './maps/maplibre.js';
 import { createMapboxMap } from './maps/mapbox.js';
 import { createGoogleMap } from './maps/google.js';
 import { createTomTomMap } from './maps/tomtom.js';
+import { createHereMap } from './maps/here.js';
 import { setActiveMap } from '../net/activeMap.js';
 import { resolveProvider, forceOsm } from '../net/mapConfig.js';
 import { providerRequestsPaused, freeOnlyMode } from '../net/providerGate.js';
@@ -129,6 +130,14 @@ export function initMap() {
           let shown = false;
           const onAuthFail = () => { fallBackToOsm(); if (shown) setTimeout(() => location.reload(), 1500); };
           const a = await createTomTomMap(mapEl, cfg.key, { onAuthFail });
+          shown = true;
+          return a;
+        }
+        if (cfg.provider === 'here') {
+          // Anahtar reddedildi (401/403): TomTom/Mapbox ile aynı akış (bayrak + bildirim, harita gösterildiyse yenile; açılışta söz reddedilir ve OpenFreeMap açılır).
+          let shown = false;
+          const onAuthFail = () => { fallBackToOsm(); if (shown) setTimeout(() => location.reload(), 1500); };
+          const a = await createHereMap(mapEl, cfg.key, { onAuthFail });
           shown = true;
           return a;
         }

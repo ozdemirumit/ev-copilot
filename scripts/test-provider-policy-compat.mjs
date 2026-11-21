@@ -37,12 +37,12 @@ const { createMaps, PROVIDERS: MAP_PROVIDERS } = await import('../server/maps.mj
 
 // ---- 0) Ön koşullar: politika ve harita kayıtlarının bugünkü hâli ----
 ok('politika kaydı: osm/tomtom/here', JSON.stringify(policy.PROVIDER_IDS) === '["osm","tomtom","here"]');
-ok('harita sağlayıcıları (maps.mjs): osm/mapbox/google/tomtom', JSON.stringify(MAP_PROVIDERS) === '["osm","mapbox","google","tomtom"]');
+ok('harita sağlayıcıları (maps.mjs): osm/mapbox/google/tomtom/here', JSON.stringify(MAP_PROVIDERS) === '["osm","mapbox","google","tomtom","here"]');
 ok('HERE lisansı unverified, varsayılan kapalı', policy.getProvider('here').licenseStatus === 'unverified' && Object.values(policy.getProvider('here').enabledByDefault).every((v) => v === false));
 ok('TomTom lisansı unverified', policy.getProvider('tomtom').licenseStatus === 'unverified');
 
 // ---- 1) Harita: maps.mjs sahte depo + yer tutucu değerlerle (gerçek anahtar DEĞİL; çıktıya asla basılmaz) ----
-const FAKE = { MAPBOX_MAP_TOKEN: 'pk.PLACEHOLDER-not-a-key', GOOGLE_MAPS_BROWSER_KEY: 'PLACEHOLDER-google-not-a-key', TOMTOM_MAP_KEY: 'PLACEHOLDER-tomtom-not-a-key' };
+const FAKE = { MAPBOX_MAP_TOKEN: 'pk.PLACEHOLDER-not-a-key', GOOGLE_MAPS_BROWSER_KEY: 'PLACEHOLDER-google-not-a-key', TOMTOM_MAP_KEY: 'PLACEHOLDER-tomtom-not-a-key', HERE_MAP_KEY: 'PLACEHOLDER-here-not-a-key' };
 const store = { data: { settings: {} }, save() {} };
 const maps = createMaps(store, FAKE);
 const mapRows = [];
@@ -57,7 +57,7 @@ for (const p of MAP_PROVIDERS) {
 }
 {
   const bare = createMaps({ data: { settings: {} }, save() {} }, {});
-  ok('anahtar yokken Premium da osm’ye düşer (mapbox/google/tomtom)', ['mapbox', 'google', 'tomtom'].every((p) => bare.effective({ mapProvider: p }, true) === 'osm'));
+  ok('anahtar yokken Premium da osm’ye düşer (mapbox/google/tomtom/here)', ['mapbox', 'google', 'tomtom', 'here'].every((p) => bare.effective({ mapProvider: p }, true) === 'osm'));
 }
 
 // ---- 2) Statik kanıtlar (kaynak metin) ----

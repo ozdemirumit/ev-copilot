@@ -18,7 +18,7 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
   const ENV = { MAPBOX_MAP_TOKEN: 'pk.test-dummy', GOOGLE_MAPS_BROWSER_KEY: 'gk-dummy', GOOGLE_MAP_ID: 'mid' };
   const mk = (env = ENV) => createMaps({ data: { users: {} }, save() {} }, env);
 
-  ok('PROVIDERS sırası', JSON.stringify(PROVIDERS) === '["osm","mapbox","google","tomtom"]');
+  ok('PROVIDERS sırası', JSON.stringify(PROVIDERS) === '["osm","mapbox","google","tomtom","here"]');
   {
     const m = mk(), u = {};
     ok('premium değil → effective osm', m.effective(u, false) === 'osm');
@@ -58,7 +58,7 @@ async function throws(fn, msg) { try { await fn(); return false; } catch (e) { r
   }
   {
     const m = mk({}), u = {};
-    ok('anahtar yok → available hepsi false', JSON.stringify(m.available()) === '{"mapbox":false,"google":false,"tomtom":false}');
+    ok('anahtar yok → available hepsi false', JSON.stringify(m.available()) === '{"mapbox":false,"google":false,"tomtom":false,"here":false}');
     ok("anahtar yok → setUser(mapbox) 'anahtar yok' fırlatır", await throws(() => m.setUser(u, 'mapbox'), 'anahtar yok'));
     ok("anahtar yok → setDefault(google) 'anahtar yok' fırlatır", await throws(() => m.setDefault('google'), 'anahtar yok'));
     ok('osm her zaman geçerli', !(await throws(() => m.setUser(u, 'osm'))));

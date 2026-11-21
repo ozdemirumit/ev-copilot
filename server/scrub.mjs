@@ -2,7 +2,7 @@
 // Değerler asla yazdırılmaz; yalnızca değişken ADLARI burada listelenir. Yeni bir gizli .env değişkeni eklenirse buraya da eklenmeli.
 export const SECRET_ENV_NAMES = [
   'MAPBOX_TOKEN', 'MAPBOX_MAP_TOKEN', 'OCM_KEY', 'GOOGLE_PLACES_KEY', 'GOOGLE_MAPS_BROWSER_KEY', 'GOOGLE_CLIENT_SECRET',
-  'HERE_API_KEY', 'HERE_ACCESS_KEY_ID', 'HERE_ACCESS_KEY_SECRET', 'TOMTOM_KEY', 'TOMTOM_MAP_KEY', 'VERIAPI_KEY',
+  'HERE_API_KEY', 'HERE_ACCESS_KEY_ID', 'HERE_ACCESS_KEY_SECRET', 'TOMTOM_KEY', 'TOMTOM_MAP_KEY', 'HERE_MAP_KEY', 'VERIAPI_KEY',
   'ADMIN_TOTP_SECRET', 'SMTP_PASS',
 ];
 // Virgülle ayrılmış listeler: her öğe ayrı gizli değerdir (ör. yönetici erişim kodları).

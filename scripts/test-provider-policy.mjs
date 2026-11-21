@@ -121,7 +121,8 @@ ok('hiç fetch çağrısı yok', fetchCalls === 0);
 // ---- Mevcut davranış etkilenmedi ----
 {
   const { createMaps, PROVIDERS } = await import('../server/maps.mjs');
-  ok('server/maps.mjs PROVIDERS değişmedi (here eklenmedi)', JSON.stringify(PROVIDERS) === '["osm","mapbox","google","tomtom"]');
+  // v0.99.117: HERE haritası kullanıcı isteğiyle eklendi (yalnız HERE_MAP_KEY varken seçilebilir); politika kaydı (varsayılan kapalı, lisans unverified) DEĞİŞMEDİ.
+  ok('server/maps.mjs PROVIDERS: here en sonda eklendi, öncekiler aynı sırada', JSON.stringify(PROVIDERS) === '["osm","mapbox","google","tomtom","here"]');
   const m = createMaps({ data: { users: {}, settings: {} }, save() {} }, { TOMTOM_MAP_KEY: 'tt-dummy' });
   ok('maps: Free → osm', JSON.stringify(m.config({}, false)) === '{"provider":"osm"}');
   ok('maps: Premium + TomTom anahtarı → tomtom (politika çalışma zamanına bağlı değil)', m.config({}, true).provider === 'tomtom');
@@ -134,7 +135,7 @@ ok('hiç fetch çağrısı yok', fetchCalls === 0);
   const html = readFileSync(fileURLToPath(new URL('index.html', root)), 'utf8');
   ok('index.html: HERE harita seçeneği yok', !/value=["']here["']/i.test(html));
   const mapCfg = readFileSync(fileURLToPath(new URL('js/net/mapConfig.js', root)), 'utf8');
-  ok('mapConfig.js: here sağlayıcısı yok', !/['"]here['"]/.test(mapCfg));
+  ok('mapConfig.js: here yalnızca anahtar (key) alanıyla ayrıştırılır; belirteç/ek alan yok', /provider === 'here' && typeof j\.key === 'string' && j\.key\) return \{ provider: 'here', key: j\.key \}/.test(mapCfg));
 }
 
 globalThis.fetch = realFetch;

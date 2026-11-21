@@ -57,8 +57,8 @@ iletir) ve `providerGate.js` (duraklatmada isteği alttaki fetch'e hiç iletmez)
 | `js/ui/versionInfo.js` | fetch 1 | aynı köken `version.js` | uygulama | kullanıcı / güncelleme denetimi |
 | `sw.js` | fetch 2, importScripts 1 | aynı köken | uygulama | service worker önbellek |
 
-Toplam: 29 dosya, 53 çağrı noktası. Koddaki `https://` kökenleri (16, test §A tam eşitlik): api.iternio.com, api.mapbox.com,
-api.open-meteo.com, api.openchargemap.io, api.tomtom.com, evcopilot.duckdns.org, maps.googleapis.com, nominatim.openstreetmap.org,
+Toplam: 29 dosya, 53 çağrı noktası. Koddaki `https://` kökenleri (17, test §A tam eşitlik): api.iternio.com, api.mapbox.com,
+api.open-meteo.com, api.openchargemap.io, api.tomtom.com, evcopilot.duckdns.org, maps.googleapis.com, maps.hereapi.com, nominatim.openstreetmap.org,
 overpass-api.de, overpass.kumi.systems, overpass.private.coffee, photon.komoot.io, server.arcgisonline.com, tiles.openfreemap.org,
 valhalla1.openstreetmap.de, www.google.com. (Bazıları bağlantı/harita stili adresidir; istek atılıp atılmadığı yukarıdaki tabloya göre.)
 

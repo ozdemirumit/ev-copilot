@@ -496,4 +496,5 @@ export default {
   "Kaydedildi. Yeni harita yenilenince ya da bir sonraki açılışta gelir.": "Αποθηκεύτηκε. Ο νέος χάρτης εμφανίζεται μετά από ανανέωση ή στην επόμενη εκκίνηση.",
   "Kaydedildi. Navigasyon bitince yenileyince gelir.": "Αποθηκεύτηκε. Ο νέος χάρτης εμφανίζεται αν ανανεώσεις μετά το τέλος της πλοήγησης.",
   "Harita sağlayıcısı değiştirilemedi": "Δεν ήταν δυνατή η αλλαγή παρόχου χάρτη",
+  "HERE rotası henüz bağlı değil: rota HERE'den gelmez (Valhalla, canlı trafik yok).": "Η διαδρομή HERE δεν είναι ακόμη συνδεδεμένη: η διαδρομή δεν προέρχεται από το HERE (Valhalla, χωρίς κυκλοφορία σε πραγματικό χρόνο).",
 };

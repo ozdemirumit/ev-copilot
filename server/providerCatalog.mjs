@@ -8,12 +8,13 @@
 //  - tomtom: harita (server/maps.mjs), rota+trafik js/tomtom/route.js — yalnızca açık harita TomTom iken (tomtomRouteOn).
 //  - google: bu katalogda YALNIZCA harita (server/maps.mjs). Google Routes bağlı DEĞİL: Google haritası seçilse bile rota Google'dan gelmez.
 //            Google Places istasyon kaynağı (server/googleStations.mjs, /google/stations) ayrı bağlıdır ve burada MODELLENMEZ.
-//  - here:   harita/rota/trafik bağlı DEĞİL (server/here.mjs yalnızca istasyon araması); providerPolicy'de de kapalı.
+//  - here:   YALNIZCA harita (server/maps.mjs, HERE Raster Tile v3, ayrı HERE_MAP_KEY). Rota/trafik bağlı DEĞİL: HERE haritası seçilse bile rota HERE'den gelmez
+//            (server/here.mjs yalnızca istasyon araması/hız limiti). providerPolicy'de varsayılan kapalıdır ve lisans doğrulanmadı: seçim kullanıcı/yönetici kararıdır.
 //
 // Yapılandırma YALNIZCA boolean alır, yetenek bazında: { plan, configured: { mapbox: { map, route }, tomtom: { map, route }, google: { map } } }.
 // Değer tam olarak `true` değilse yapılandırılmamış sayılır (fail-closed); değerler çıktıya asla kopyalanmaz. Çağıran tarafın eşlemesi
 // (server/proxy.mjs, GET /v1/providers): mapbox.map ← maps.available().mapbox, mapbox.route ← MAPBOX var, tomtom.map ← maps.available().tomtom,
-// tomtom.route ← TOMTOM_KEY var, google.map ← maps.available().google. Anahtarın kendisi bu modüle verilmez.
+// tomtom.route ← TOMTOM_KEY var, google.map ← maps.available().google, here.map ← maps.available().here. Anahtarın kendisi bu modüle verilmez.
 // Trafik yeteneği rota yapılandırmasından türetilir (ayrı bayrak yok). osm anahtarsızdır ve yapılandırmayla kapatılamaz.
 //
 // HUKUKİ NOT: Bu bir lisans incelemesi DEĞİLDİR. osm/tomtom/here lisans durumu providerPolicy.mjs'den okunur (tek kaynak).
@@ -66,10 +67,10 @@ const CATALOG = deepFreeze({
   },
   here: {
     id: 'here', label: 'HERE', tier: 'premium',
-    wired: { map: false, route: false, traffic: false }, comingSoon: ['map', 'route', 'traffic'], needsConfig: true, requiresMap: false,
+    wired: { map: true, route: false, traffic: false }, comingSoon: ['route', 'traffic'], needsConfig: true, requiresMap: false,
     licenseStatus: licenseFromPolicy('here'),
     licenseNote: 'HERE tüketici navigasyonu ve karışık veri hakları doğrulanmadı (unverified); providerPolicy kaydından.',
-    routeNote: 'HERE harita/rota/trafik henüz bağlı değil (coming-soon).',
+    routeNote: 'HERE rota/trafik henüz bağlı değil (coming-soon): HERE haritası seçilse bile rota HERE\'den gelmez.',
   },
 });
 

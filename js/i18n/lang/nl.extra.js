@@ -496,4 +496,5 @@ export default {
   "Kaydedildi. Yeni harita yenilenince ya da bir sonraki açılışta gelir.": "Opgeslagen. De nieuwe kaart verschijnt na vernieuwen of bij de volgende start.",
   "Kaydedildi. Navigasyon bitince yenileyince gelir.": "Opgeslagen. De nieuwe kaart verschijnt als je vernieuwt na afloop van de navigatie.",
   "Harita sağlayıcısı değiştirilemedi": "Kaartaanbieder kon niet worden gewijzigd",
+  "HERE rotası henüz bağlı değil: rota HERE'den gelmez (Valhalla, canlı trafik yok).": "HERE-routering is nog niet gekoppeld: de route komt niet van HERE (Valhalla, geen live verkeer).",
 };

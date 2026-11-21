@@ -45,7 +45,7 @@ for (const key of ['PLACEHOLDER-tt-map', ' PLACEHOLDER-tt-map-padded ', 'PH\tinn
 // ---- Diğer sağlayıcılar etkilenmedi ----
 {
   const m = mk({ TOMTOM_MAP_KEY: '  ', MAPBOX_MAP_TOKEN: 'pk.PLACEHOLDER', GOOGLE_MAPS_BROWSER_KEY: 'PLACEHOLDER-g' });
-  ok('mapbox/google aynen kullanılabilir', JSON.stringify(m.available()) === '{"mapbox":true,"google":true,"tomtom":false}');
+  ok('mapbox/google aynen kullanılabilir', JSON.stringify(m.available()) === '{"mapbox":true,"google":true,"tomtom":false,"here":false}');
 }
 
 console.log(`map-key-whitespace: ${pass} geçti, ${fail} başarısız`);

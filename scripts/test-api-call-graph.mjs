@@ -99,7 +99,7 @@ ok('providerGate sarmalayıcısı engellenen isteği alttaki fetch\'e iletmez (r
 const HOSTS = new Set();
 for (const f of APP_FILES) for (const m of appSrc(f).matchAll(/https:\/\/([a-z0-9.-]+\.[a-z]{2,})(?=[/'"`?])/g)) HOSTS.add(m[1]);
 // Tam küme (iki yönlü): yeni köken eklenirse ya da biri kalkarsa docs/api-call-graph.md §2 ile birlikte güncellenir.
-const EXPECTED_HOSTS = ['api.iternio.com', 'api.mapbox.com', 'api.open-meteo.com', 'api.openchargemap.io', 'api.tomtom.com', 'evcopilot.duckdns.org', 'maps.googleapis.com', 'nominatim.openstreetmap.org', 'overpass-api.de', 'overpass.kumi.systems', 'overpass.private.coffee', 'photon.komoot.io', 'server.arcgisonline.com', 'tiles.openfreemap.org', 'valhalla1.openstreetmap.de', 'www.google.com'];
+const EXPECTED_HOSTS = ['api.iternio.com', 'api.mapbox.com', 'api.open-meteo.com', 'api.openchargemap.io', 'api.tomtom.com', 'evcopilot.duckdns.org', 'maps.googleapis.com', 'maps.hereapi.com', 'nominatim.openstreetmap.org', 'overpass-api.de', 'overpass.kumi.systems', 'overpass.private.coffee', 'photon.komoot.io', 'server.arcgisonline.com', 'tiles.openfreemap.org', 'valhalla1.openstreetmap.de', 'www.google.com'];
 const hostList = [...HOSTS].sort();
 ok(`koddaki https ana makineleri tam olarak beklenen ${EXPECTED_HOSTS.length} köken`, hostList.join() === EXPECTED_HOSTS.join(), hostList.join(' '));
 

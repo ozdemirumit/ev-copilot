@@ -105,7 +105,7 @@ try {
     ok('A Free: beş sağlayıcı, sabit sıra', JSON.stringify(r.json?.providers?.map((p) => p.id)) === IDS);
     ok('A Free: yalnızca osm seçilebilir', selectable(r.json) === '["osm"]');
     ok('A Free: mapbox/tomtom/google premium-required', ['mapbox', 'tomtom', 'google'].every((id) => prov(r.json, id)?.status === 'premium-required'));
-    ok('A Free: here coming-soon, seçilemez', prov(r.json, 'here')?.status === 'coming-soon' && prov(r.json, 'here')?.selectable === false);
+    ok('A Free: here premium-required, seçilemez', prov(r.json, 'here')?.status === 'premium-required' && prov(r.json, 'here')?.selectable === false);
     ok('A Free: seçili harita osm', JSON.stringify(r.json?.selected) === '{"map":"osm"}');
     ok('A Free: Cache-Control no-store', /no-store/.test(r.headers.get('cache-control') || ''));
     ok('A Free: kullanıcı/anahtar sızıntısı yok', noLeak(r.text));
@@ -134,8 +134,8 @@ try {
 
     for (let i = 0; i < 3; i++) r = await get(TOK_PREM); // birkaç okuma: harita hakkı (MAP_DAILY_TOTAL=1) harcanmamalı
     ok('B Premium: plan premium', r.status === 200 && r.json?.plan === 'premium');
-    ok('B Premium: osm/mapbox/tomtom/google seçilebilir, here değil', selectable(r.json) === '["osm","mapbox","tomtom","google"]');
-    ok('B Premium: here coming-soon (map/route/traffic)', prov(r.json, 'here')?.status === 'coming-soon' && ['map', 'route', 'traffic'].every((c) => cap(r.json, 'here', c) === 'coming-soon'));
+    ok('B Premium: osm/mapbox/tomtom/google seçilebilir, here değil (yalnız sunucu HERE_API_KEY var, HERE_MAP_KEY yok)', selectable(r.json) === '["osm","mapbox","tomtom","google"]');
+    ok('B Premium: here harita not-configured (sunucu anahtarı HERE haritasını açmaz), rota/trafik coming-soon', prov(r.json, 'here')?.status === 'not-configured' && cap(r.json, 'here', 'map') === 'not-configured' && ['route', 'traffic'].every((c) => cap(r.json, 'here', c) === 'coming-soon'));
     ok('B Premium: here rota seçilebilir gibi görünmez', prov(r.json, 'here')?.routeAvailable === false && prov(r.json, 'here')?.selectable === false);
     ok('B Premium: google harita available ama rota coming-soon', cap(r.json, 'google', 'map') === 'available' && cap(r.json, 'google', 'route') === 'coming-soon' && prov(r.json, 'google')?.routeAvailable === false);
     ok('B Premium: google uyarısı route-coming-soon', prov(r.json, 'google')?.warnings?.includes('route-coming-soon'));

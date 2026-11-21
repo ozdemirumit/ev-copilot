@@ -37,7 +37,7 @@ const read = (rel) => readFileSync(new URL(rel, root), 'utf8');
   ENV.ACCESS_CODES = 'PH-code-one-placeholder-aaaa,PH-code-two-placeholder-bbbb';
   ENV.GOOGLE_MAP_ID = 'PH-map-id';
   // Tarayıcı anahtarı → yalnızca bu sağlayıcının config'inde görünebilir
-  const BROWSER = { MAPBOX_MAP_TOKEN: 'mapbox', GOOGLE_MAPS_BROWSER_KEY: 'google', TOMTOM_MAP_KEY: 'tomtom' };
+  const BROWSER = { MAPBOX_MAP_TOKEN: 'mapbox', GOOGLE_MAPS_BROWSER_KEY: 'google', TOMTOM_MAP_KEY: 'tomtom', HERE_MAP_KEY: 'here' };
   const serverOnly = [...SECRET_ENV_NAMES.filter((n) => !(n in BROWSER)), ...SECRET_LIST_ENV_NAMES];
   ok('sunucu içi adlar listesi TOMTOM_KEY ve HERE_API_KEY içerir', serverOnly.includes('TOMTOM_KEY') && serverOnly.includes('HERE_API_KEY'));
   const serverVals = [...serverOnly.flatMap((n) => String(ENV[n]).split(','))];
@@ -82,7 +82,7 @@ const read = (rel) => readFileSync(new URL(rel, root), 'utf8');
     ['here', 'premium', 'unverified', '© HERE', true, { map: false, route: false, data: false }],
   ]));
   ok('HERE ve TomTom lisansı onaylanmış sayılmaz', getProvider('here').licenseStatus === 'unverified' && getProvider('tomtom').licenseStatus === 'unverified');
-  ok('maps.mjs PROVIDERS aynı', JSON.stringify(PROVIDERS) === '["osm","mapbox","google","tomtom"]');
+  ok('maps.mjs PROVIDERS aynı', JSON.stringify(PROVIDERS) === '["osm","mapbox","google","tomtom","here"]');
 }
 
 // ---- 5) .env.example: değer yok + operatör kurulum listesi ----
