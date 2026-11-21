@@ -519,5 +519,12 @@
  "Kayıt başladı",
  "Rapor panoya kopyalandı",
  "Panoya kopyalanamadı; metni elle seçip kopyalayın",
- "Saha testi sayaçları sıfırlandı"
+ "Saha testi sayaçları sıfırlandı",
+ "Yarım kalan navigasyon: {0} ({1} dk önce kaydedildi)",
+ "hedef",
+ "Kayıtlı rota artık geçerli değil",
+ "▶ Sürdür",
+ "Sil",
+ "Kayıtlı rota yalnızca bu cihazda saklanır; navigasyon bitince silinir. Sürdürmek internet gerektirmez.",
+ "Kayıtlı rota yüklendi (bağlantı gerekmez)"
 ]

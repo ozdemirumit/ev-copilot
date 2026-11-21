@@ -520,4 +520,11 @@ export default {
   "Rapor panoya kopyalandı": "Rapport copié dans le presse-papiers",
   "Panoya kopyalanamadı; metni elle seçip kopyalayın": "Copie impossible ; sélectionne le texte et copie-le à la main",
   "Saha testi sayaçları sıfırlandı": "Compteurs du test terrain réinitialisés",
+  "Yarım kalan navigasyon: {0} ({1} dk önce kaydedildi)": "Navigation interrompue : {0} (enregistrée il y a {1} min)",
+  "hedef": "destination",
+  "Kayıtlı rota artık geçerli değil": "L’itinéraire enregistré n’est plus valide",
+  "▶ Sürdür": "▶ Reprendre",
+  "Sil": "Supprimer",
+  "Kayıtlı rota yalnızca bu cihazda saklanır; navigasyon bitince silinir. Sürdürmek internet gerektirmez.": "L’itinéraire enregistré reste uniquement sur cet appareil et est supprimé à la fin de la navigation. La reprise ne nécessite pas Internet.",
+  "Kayıtlı rota yüklendi (bağlantı gerekmez)": "Itinéraire enregistré chargé (aucune connexion nécessaire)",
 };

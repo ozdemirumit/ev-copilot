@@ -520,4 +520,11 @@ export default {
   "Rapor panoya kopyalandı": "Rapport naar klembord gekopieerd",
   "Panoya kopyalanamadı; metni elle seçip kopyalayın": "Kopiëren mislukt; selecteer de tekst en kopieer handmatig",
   "Saha testi sayaçları sıfırlandı": "Veldtest-tellers gereset",
+  "Yarım kalan navigasyon: {0} ({1} dk önce kaydedildi)": "Onderbroken navigatie: {0} (opgeslagen {1} min geleden)",
+  "hedef": "bestemming",
+  "Kayıtlı rota artık geçerli değil": "De opgeslagen route is niet meer geldig",
+  "▶ Sürdür": "▶ Hervatten",
+  "Sil": "Verwijderen",
+  "Kayıtlı rota yalnızca bu cihazda saklanır; navigasyon bitince silinir. Sürdürmek internet gerektirmez.": "De opgeslagen route staat alleen op dit apparaat en wordt verwijderd als de navigatie eindigt. Hervatten heeft geen internet nodig.",
+  "Kayıtlı rota yüklendi (bağlantı gerekmez)": "Opgeslagen route geladen (geen verbinding nodig)",
 };

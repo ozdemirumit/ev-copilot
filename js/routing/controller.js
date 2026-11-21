@@ -1049,6 +1049,21 @@ export function initRouteController() {
   });
 }
 
+/**
+ * Kayıtlı planı sürdürürken (js/ui/resumeNav.js, v0.99.121): başlangıç/ara/varış işaretleri ve plan yazılır, rota çizgisi ve duraklar çizilir; imza güncellenir
+ * ki kayıtlı plan ağ gerektiren bir yeniden planlamayla (400 ms sonraki refresh) ezilmesin. Süren eski planlama geçersiz kılınır.
+ */
+export function adoptSavedPlan(route, plan) {
+  clearTimeout(timer);
+  tripSeq++;
+  for (const k of ['start', 'via', 'end']) mapApi.setPoint(k, route?.[k] ?? null, { fit: false });
+  sig = routeSig();
+  clearTimeout(timer); // setPoint'in tetiklediği bekleyen yeniden planlama iptal
+  patch('plan', plan);
+  if (plan.route?.coords) mapApi.drawRoute(plan.route.coords, { fit: true, traffic: plan.route.trafficSpans || null });
+  mapApi.drawStations(plan.stations || [], plan.stops || []);
+}
+
 /** Navigasyon bitti ya da durduruldu: plan, rota çizgisi ve başlangıç/ara/varış işaretleri temizlenir (yeni rota için sıfırdan başlanır). */
 export function clearTrip() {
   clearTimeout(timer);

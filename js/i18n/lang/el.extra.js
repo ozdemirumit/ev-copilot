@@ -520,4 +520,11 @@ export default {
   "Rapor panoya kopyalandı": "Η αναφορά αντιγράφηκε στο πρόχειρο",
   "Panoya kopyalanamadı; metni elle seçip kopyalayın": "Η αντιγραφή απέτυχε· επίλεξε το κείμενο και αντίγραψέ το χειροκίνητα",
   "Saha testi sayaçları sıfırlandı": "Οι μετρητές δοκιμής πεδίου μηδενίστηκαν",
+  "Yarım kalan navigasyon: {0} ({1} dk önce kaydedildi)": "Διακοπείσα πλοήγηση: {0} (αποθηκεύτηκε πριν από {1} λεπτά)",
+  "hedef": "προορισμός",
+  "Kayıtlı rota artık geçerli değil": "Η αποθηκευμένη διαδρομή δεν ισχύει πλέον",
+  "▶ Sürdür": "▶ Συνέχεια",
+  "Sil": "Διαγραφή",
+  "Kayıtlı rota yalnızca bu cihazda saklanır; navigasyon bitince silinir. Sürdürmek internet gerektirmez.": "Η αποθηκευμένη διαδρομή φυλάσσεται μόνο σε αυτή τη συσκευή και διαγράφεται όταν τελειώσει η πλοήγηση. Η συνέχιση δεν απαιτεί διαδίκτυο.",
+  "Kayıtlı rota yüklendi (bağlantı gerekmez)": "Φορτώθηκε η αποθηκευμένη διαδρομή (χωρίς σύνδεση)",
 };

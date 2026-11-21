@@ -520,4 +520,11 @@ export default {
   "Rapor panoya kopyalandı": "Raport copiat în clipboard",
   "Panoya kopyalanamadı; metni elle seçip kopyalayın": "Nu s-a putut copia; selectează textul și copiază-l manual",
   "Saha testi sayaçları sıfırlandı": "Contoarele testului pe teren au fost resetate",
+  "Yarım kalan navigasyon: {0} ({1} dk önce kaydedildi)": "Navigație întreruptă: {0} (salvată acum {1} min)",
+  "hedef": "destinație",
+  "Kayıtlı rota artık geçerli değil": "Traseul salvat nu mai este valid",
+  "▶ Sürdür": "▶ Reia",
+  "Sil": "Șterge",
+  "Kayıtlı rota yalnızca bu cihazda saklanır; navigasyon bitince silinir. Sürdürmek internet gerektirmez.": "Traseul salvat rămâne doar pe acest dispozitiv și este șters la sfârșitul navigației. Reluarea nu necesită internet.",
+  "Kayıtlı rota yüklendi (bağlantı gerekmez)": "Traseu salvat încărcat (fără conexiune)",
 };

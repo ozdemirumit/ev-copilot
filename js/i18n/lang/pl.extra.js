@@ -520,4 +520,11 @@ export default {
   "Rapor panoya kopyalandı": "Raport skopiowany do schowka",
   "Panoya kopyalanamadı; metni elle seçip kopyalayın": "Nie udało się skopiować; zaznacz tekst i skopiuj ręcznie",
   "Saha testi sayaçları sıfırlandı": "Liczniki testu w terenie wyzerowane",
+  "Yarım kalan navigasyon: {0} ({1} dk önce kaydedildi)": "Przerwana nawigacja: {0} (zapisana {1} min temu)",
+  "hedef": "cel",
+  "Kayıtlı rota artık geçerli değil": "Zapisana trasa nie jest już ważna",
+  "▶ Sürdür": "▶ Wznów",
+  "Sil": "Usuń",
+  "Kayıtlı rota yalnızca bu cihazda saklanır; navigasyon bitince silinir. Sürdürmek internet gerektirmez.": "Zapisana trasa jest przechowywana tylko na tym urządzeniu i usuwana po zakończeniu nawigacji. Wznowienie nie wymaga internetu.",
+  "Kayıtlı rota yüklendi (bağlantı gerekmez)": "Wczytano zapisaną trasę (połączenie niepotrzebne)",
 };

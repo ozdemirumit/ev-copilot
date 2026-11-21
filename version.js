@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.120';
+self.APP_VERSION = '0.99.121';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.121', date: '2026-11-21',
+    notes: [
+      'Yeni: Yarım kalan navigasyonu sürdür. Navigasyon açıkken plan bu cihazda saklanır; uygulama sürüş ortasında kapanıp yeniden açılırsa (bağlantısız bölge dahil) üstte "Sürdür" kartı çıkar ve kayıtlı rotayla internet olmadan navigasyon sürer. Kendiliğinden başlamaz; 12 saatten eski ya da farklı sürümden kalan kayıt silinir',
+      'Kayıt yalnızca bu cihazdadır (sunucuya eşitlenmez), navigasyon bitince ya da "Sil" ile silinir. Cihazda doğrulanmadı; harita karoları çevrimdışıysa yalnız rota çizgisi ve konum görünür; 11 dilde çevrildi',
+    ],
+  },
   {
     v: '0.99.120', date: '2026-11-21',
     notes: [

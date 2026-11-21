@@ -520,4 +520,11 @@ export default {
   "Rapor panoya kopyalandı": "Отчетът е копиран в клипборда",
   "Panoya kopyalanamadı; metni elle seçip kopyalayın": "Копирането не успя; изберете текста и го копирайте ръчно",
   "Saha testi sayaçları sıfırlandı": "Броячите на полевия тест са нулирани",
+  "Yarım kalan navigasyon: {0} ({1} dk önce kaydedildi)": "Прекъсната навигация: {0} (запазена преди {1} мин)",
+  "hedef": "дестинация",
+  "Kayıtlı rota artık geçerli değil": "Запазеният маршрут вече не е валиден",
+  "▶ Sürdür": "▶ Продължи",
+  "Sil": "Изтрий",
+  "Kayıtlı rota yalnızca bu cihazda saklanır; navigasyon bitince silinir. Sürdürmek internet gerektirmez.": "Запазеният маршрут се пази само на това устройство и се изтрива при края на навигацията. Продължаването не изисква интернет.",
+  "Kayıtlı rota yüklendi (bağlantı gerekmez)": "Запазеният маршрут е зареден (без връзка)",
 };

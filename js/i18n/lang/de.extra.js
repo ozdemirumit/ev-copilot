@@ -520,4 +520,11 @@ export default {
   "Rapor panoya kopyalandı": "Bericht in die Zwischenablage kopiert",
   "Panoya kopyalanamadı; metni elle seçip kopyalayın": "Kopieren fehlgeschlagen; Text markieren und manuell kopieren",
   "Saha testi sayaçları sıfırlandı": "Feldtest-Zähler zurückgesetzt",
+  "Yarım kalan navigasyon: {0} ({1} dk önce kaydedildi)": "Unterbrochene Navigation: {0} (vor {1} Min. gespeichert)",
+  "hedef": "Ziel",
+  "Kayıtlı rota artık geçerli değil": "Die gespeicherte Route ist nicht mehr gültig",
+  "▶ Sürdür": "▶ Fortsetzen",
+  "Sil": "Löschen",
+  "Kayıtlı rota yalnızca bu cihazda saklanır; navigasyon bitince silinir. Sürdürmek internet gerektirmez.": "Die gespeicherte Route liegt nur auf diesem Gerät und wird nach der Navigation gelöscht. Fortsetzen braucht kein Internet.",
+  "Kayıtlı rota yüklendi (bağlantı gerekmez)": "Gespeicherte Route geladen (keine Verbindung nötig)",
 };

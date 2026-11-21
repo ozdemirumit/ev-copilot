@@ -520,4 +520,11 @@ export default {
   "Rapor panoya kopyalandı": "Report copied to clipboard",
   "Panoya kopyalanamadı; metni elle seçip kopyalayın": "Could not copy; select the text and copy it manually",
   "Saha testi sayaçları sıfırlandı": "Field test counters reset",
+  "Yarım kalan navigasyon: {0} ({1} dk önce kaydedildi)": "Unfinished navigation: {0} (saved {1} min ago)",
+  "hedef": "destination",
+  "Kayıtlı rota artık geçerli değil": "The saved route is no longer valid",
+  "▶ Sürdür": "▶ Resume",
+  "Sil": "Delete",
+  "Kayıtlı rota yalnızca bu cihazda saklanır; navigasyon bitince silinir. Sürdürmek internet gerektirmez.": "The saved route is stored only on this device and deleted when navigation ends. Resuming needs no internet.",
+  "Kayıtlı rota yüklendi (bağlantı gerekmez)": "Saved route loaded (no connection needed)",
 };
