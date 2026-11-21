@@ -116,12 +116,18 @@ powershell -ExecutionPolicy Bypass -File "D:\AI-Codes\Claude Code\MBRP\server\se
 
 **Hâlâ bilgisayara bağlı olanlar (yazılım çözemez):** elektrik ve internet kesintisi (UPS önerilir), Windows güncellemesinin zorunlu yeniden başlatması (hizmetler kendiliğinden gelir), router'da bilgisayarın yerel adresinin sabitlenmesi (DHCP rezervasyonu) ve 443 yönlendirmesi, BIOS'ta "elektrik gelince aç" ayarı. Yedekleri başka bir diske/bilgisayara da kopyalamak için `install-services.ps1 -BackupDir "E:\EVCoPilotYedek"` kullan.
 
+## Canlı klasör modeli ve işletme araçları (2026-11-21)
+- **Canlı klasör:** `EVCoPilotProxy` hizmeti geliştirme klasöründen değil, ayrı bir temiz klasörden çalışır (örnek: `D:\AI-Codes\Claude Code\MBRP-live`, `main`'e ayrık `git worktree`). Hizmetin çalışma klasörü NSSM `AppDirectory` ayarındadır. `server\.env` ve `server\public` (APK) git dışıdır, canlı klasörde durur.
+- **Yeni sürüme almak (yönetici gerekmez):** `powershell -ExecutionPolicy Bypass -File server\service\deploy-live.ps1 -DryRun` (ne yapılacağını yazar), sonra `-DryRun` olmadan. Betik `origin/main`'e geçer, sunucu kodu değiştiyse `node server\restart.mjs` ile yeniden başlatır, `/v1/config` ve `/v1/providers` yoklar; yanıt yoksa eski commit'e geri döner. Klasörde commitlenmemiş dosya varsa ya da eski kullanıcı görevi `EVCoPilotProxy` etkinse durur (yeniden başlatmada portu eski kodla çalabilir; yönetici: `Disable-ScheduledTask -TaskName EVCoPilotProxy`).
+- **Veriyi kalıcı yere taşımak (yönetici, onayla):** veri şimdilik `.env` içindeki `DATA_DIR` ile geliştirme klasöründe durabilir. `server\service\migrate-data.ps1 -DryRun`, sonra `-DryRun` olmadan: yedek alır, hizmeti durdurur, veriyi `C:\ProgramData\EVCoPilot\data` altına KOPYALAR (eski klasöre dokunmaz), dosya sayısını ve `db.json` SHA256'sını doğrular, `DATA_DIR`'i yazar, yoklar; olmazsa `.env` yedeğinden geri döner. Yedek ve sağlık görevlerini canlı klasördeki betiklere çevirir.
+- **Yedek doğrulamak:** `node scripts\verify-backup.mjs --dir C:\ProgramData\EVCoPilot\backup` en yeni `db-*.json` dosyasının geçerli olduğunu denetler (yalnız sayılar basar). `--boot` ekleyince yedeği geçici klasörde gerçek sunucuyla açıp `/v1/config`'i yoklar (anahtarsız; ücretli çağrı yok). `backup.ps1` bozuk `db.json`'u yedeklemez ve `backup.log`'a yazar.
+
 ## Güncelleme: neyi nasıl yayınlarız
 | Değişen | Ne yapılır | Kullanıcıya etkisi |
 |---|---|---|
 | **Web uygulaması** (arayüz, hesaplamalar, çeviriler; `index.html`, `js/`, `css/`) | `git push` (GitHub Pages kendiliğinden yayınlar, ~1-2 dk) | Tarayıcı/PWA kullananlarda açılışta "Güncelle" rozeti çıkar. APK'da gömülü kopya olduğu için APK'yı yenilemek gerekir (aşağıdaki satır). |
 | **Android APK** (web kodu ya da Android izinleri/eklentileri değişti) | `npm.cmd run apk` → APK `server\public` içine konur | Kullanıcılar `https://evcopilot.duckdns.org/app` adresinden indirip üstüne kurar; hesapları ve ayarları korunur. |
-| **Sunucu kodu** (`server\*.mjs`) | `node server
+| **Sunucu kodu** (`server\*.mjs`) | canlı klasörde `server\service\deploy-live.ps1` (yukarıya bak; içinde `restart.mjs` çalışır) 
 estart.mjs` (yönetici gerekmez) | Hizmet süreci kapanır, NSSM 5 sn içinde yeni kodla açar. Kullanıcılar birkaç saniye bağlantı hatası görebilir. |
 | **Sunucu ayarı** (`server\.env`: anahtarlar, Google, kotalar) | `node server
 estart.mjs` | Aynı. |
