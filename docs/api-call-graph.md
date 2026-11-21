@@ -68,6 +68,7 @@ valhalla1.openstreetmap.de, www.google.com. (Bazıları bağlantı/harita stili 
 GPS watchPosition ──► gps.onPosition ──► patch('live')  ── (ağ YOK) ──► 16 dinleyici dosyası (UI çizimi, yerel)
                                                      └─► defaultStart ─► mapApi.setPoint(start) ─► controller.refresh (plan yoksa dön; yerel computePlan)
 OCR çevrimi (5 sn) ─► ocr.js kabul ─► patch('ocr') + patch('live'.soc) ── (ağ YOK) ──► socEstimate (sessiz kayıt)
+Saha testi (v0.99.120, varsayılan KAPALI) ─► ocr/live/nav/plan dinleyicileri + onSpoken + kamera olayı ── (ağ YOK) ──► yerel sayaç; rapor yalnız kullanıcı eylemiyle kopyala/indir (js/ui/fieldTest.js)
 Zamanlayıcılar (konum/SOC'yi OKUR, olay başına istek atmaz):
   rangeEngine 1 sn ─► maybeRefreshWeather ─► Open-Meteo   [15 dk / 25 km; hata: 60 sn→10 dk geri çekilme (W-1 kapandı)]
                    └► tracker SOC kenarı ─► save('kCal') ─► sync.js 4 sn ─► /v1/sync (oturum varsa)

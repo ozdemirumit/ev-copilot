@@ -506,5 +506,18 @@
  "Görüntü yakınlaştırma",
  "Uzaklaştır",
  "Yakınlaştır",
- "Görüntüyü sıfırla"
+ "Görüntüyü sıfırla",
+ "📋 Saha testi",
+ "Sürüş kaydı (yalnızca sayılar; konum, adres ve konuşma metni tutulmaz)",
+ "Raporu göster",
+ "Kopyala",
+ "İndir (JSON)",
+ "Sıfırla",
+ "Rapor yalnızca bu cihazda üretilir; sen kopyalayıp ya da indirip paylaşmadıkça hiçbir yere gönderilmez.",
+ "Kayıt kapalı",
+ "{0} OCR okuması · %{1} geçerli · {2} sesli uyarı · {3} hata",
+ "Kayıt başladı",
+ "Rapor panoya kopyalandı",
+ "Panoya kopyalanamadı; metni elle seçip kopyalayın",
+ "Saha testi sayaçları sıfırlandı"
 ]

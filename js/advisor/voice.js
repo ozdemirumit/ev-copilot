@@ -5,6 +5,10 @@ import { toast } from '../ui/toast.js';
 const lastSpoken = new Map();
 let lastErrAt = 0;
 let voice = null;
+const spokenListeners = new Set();
+/** Gerçekten konuşulduğunda (anahtar bazında; metin verilmez) haber alır: saha testi sayaçları (js/ui/fieldTest.js). Dönüş: aboneliği kaldıran işlev. */
+export function onSpoken(fn) { spokenListeners.add(fn); return () => spokenListeners.delete(fn); }
+const spoken = (key) => spokenListeners.forEach((fn) => { try { fn(key); } catch { /* dinleyici hatası konuşmayı bozmaz */ } });
 
 // APK (Android WebView): güncel WebView'da window.speechSynthesis yok; Android'in yerel ses motoru Capacitor TextToSpeech eklentisiyle konuşturulur.
 // Eklenti yoksa (eski APK ya da tarayıcı) null döner ve Web Speech API kullanılır.
@@ -40,6 +44,7 @@ export function speak(text, { key = text, cooldownMs = 60000, force = false, int
   lastSpoken.set(key, now);
   if (nt) { // queueStrategy 0 = öncekini kes, 1 = sıraya ekle; söz konuşma bitince çözülür, beklenmez
     nt.speak({ text: tr(text), lang: locale(), rate: 1.0, queueStrategy: interrupt ? 0 : 1 }).catch((e) => reportError(e?.message || String(e)));
+    spoken(key);
     return true;
   }
   if (interrupt) synth.cancel(); // eski komut kuyruğa yığılmasın (yalnızca güncel talimat konuşulsun)
@@ -54,6 +59,7 @@ export function speak(text, { key = text, cooldownMs = 60000, force = false, int
   };
   // cancel() hemen ardından gelen speak() bazı tarayıcılarda (Chrome) yutulur: kesme varsa kısa bekleyip konuş
   if (interrupt) setTimeout(() => synth.speak(u), 60); else synth.speak(u);
+  spoken(key);
   return true;
 }
 

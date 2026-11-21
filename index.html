@@ -829,6 +829,22 @@
         <button class="btn primary hidden" id="mc-apply" type="button">⟳ Şimdi uygula</button>
       </div>
     </div>
+    <div class="card stack" id="ft-card">
+      <h2 style="margin:0">📋 Saha testi</h2>
+      <div class="row between">
+        <label for="ft-toggle">Sürüş kaydı (yalnızca sayılar; konum, adres ve konuşma metni tutulmaz)</label>
+        <label class="switch"><input type="checkbox" id="ft-toggle"><i></i></label>
+      </div>
+      <div class="small muted" id="ft-live"></div>
+      <div class="row wrap">
+        <button class="btn" id="ft-show" type="button">Raporu göster</button>
+        <button class="btn" id="ft-copy" type="button">Kopyala</button>
+        <button class="btn" id="ft-download" type="button">İndir (JSON)</button>
+        <button class="btn" id="ft-reset" type="button">Sıfırla</button>
+      </div>
+      <pre class="small hidden" id="ft-out" style="white-space:pre-wrap;margin:0"></pre>
+      <p class="small muted" style="margin:0">Rapor yalnızca bu cihazda üretilir; sen kopyalayıp ya da indirip paylaşmadıkça hiçbir yere gönderilmez.</p>
+    </div>
     <div class="card stack" id="ocm-card">
       <h2 style="margin:0">🗺️ Veri ve önbellek</h2>
       <p class="small muted" id="data-src-note" style="margin:0">Harita OpenFreeMap, rota ve rakım Valhalla, yer arama Photon, istasyonlar Overpass ve OpenChargeMap, hava Open-Meteo, yol hız limiti OpenStreetMap kaynaklıdır (© OpenStreetMap katkıcıları). Hesapla giriş yapınca trafikli rota, hızlı istasyon araması ve Premium canlı doluluk ve fiyat sunucu üzerinden gelir; anahtar girmen gerekmez.</p>

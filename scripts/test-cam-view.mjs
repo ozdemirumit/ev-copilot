@@ -192,7 +192,7 @@ const fire = (target, type, props = {}) => { const e = Object.assign(new Event(t
   ok('E app.js: görünüm başlatılır', /camView\.js/.test(app) || /camView\.js/.test(box) || /camView\.js/.test(panel));
   ok('E roiBox.js: konum boxStyle ile, sürükleme screenToBaseDelta ile (taban koordinatlarda saklar)', /boxStyle\(/.test(box) && /screenToBaseDelta\(/.test(box) && /onView\(|getView\(/.test(box));
   ok('E cameraPanel.js: kamera açılıp kapanınca görünüm sıfırlanır', /resetView\(\)/.test(panel));
-  ok('E sürüm 0.99.119', /self\.APP_VERSION = '0\.99\.119';/.test(ver) && /v: '0\.99\.119'/.test(ver));
+  ok('E sürüm 0.99.119 kaydı changelog\'da', /self\.APP_VERSION = '0\.99\.\d+';/.test(ver) && /v: '0\.99\.119'/.test(ver));
 }
 
 console.log(`\n${pass} geçti, ${fail} başarısız`);

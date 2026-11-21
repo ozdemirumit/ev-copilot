@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.119';
+self.APP_VERSION = '0.99.120';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.120', date: '2026-11-21',
+    notes: [
+      'Yeni: Daha Fazla > Saha testi kartı. Sürüş sırasında YALNIZ sayılar toplanır (OCR okuma/ret oranı, GPS taze süre oranı, navigasyon süresi, sesli uyarı sayıları, kamera kopması, hata sayıları); konum, adres, konuşma metni ve ham OCR değeri tutulmaz. Sürüş sonunda "Raporu göster / Kopyala / İndir (JSON)" ile özet alınır',
+      'Varsayılan kapalı; rapor yalnız bu cihazda üretilir, kopyalayıp ya da indirip kendin paylaşmadıkça hiçbir yere gönderilmez. Uygulama sürüş ortasında kapanırsa 6 saat içinde kaldığı yerden sürer. Cihazda doğrulanmadı; 11 dilde çevrildi',
+    ],
+  },
   {
     v: '0.99.119', date: '2026-11-21',
     notes: [

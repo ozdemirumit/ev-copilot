@@ -142,7 +142,7 @@ for (const f of APP_FILES) {
 }
 const EXPECTED_LISTEN = {
   'js/nav/freeDrive.js': 1, 'js/physics/socEstimate.js': 1, 'js/ui/abrpPanel.js': 1, 'js/ui/avgSpeedView.js': 1, 'js/ui/cameraPanel.js': 2,
-  'js/ui/cards.js': 1, 'js/ui/defaultStart.js': 1, 'js/ui/gpsControl.js': 1, 'js/ui/mapView.js': 2, 'js/ui/roiBox.js': 2, 'js/ui/routeForm.js': 1,
+  'js/ui/cards.js': 1, 'js/ui/defaultStart.js': 1, 'js/ui/fieldTest.js': 2, 'js/ui/gpsControl.js': 1, 'js/ui/mapView.js': 2, 'js/ui/roiBox.js': 2, 'js/ui/routeForm.js': 1,
   'js/ui/shell.js': 1, 'js/ui/socBar.js': 1, 'js/ui/socInput.js': 1, 'js/ui/statusBadges.js': 3, 'js/ui/testPanel.js': 1,
 };
 const sortObj = (o) => JSON.stringify(Object.fromEntries(Object.entries(o).sort()));
