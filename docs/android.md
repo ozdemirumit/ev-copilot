@@ -41,6 +41,23 @@ keyPassword=...
 
 Web kodu değişince yeni AAB gerekmez (uygulama canlı siteyi yükler); yalnızca Android tarafı (izin, eklenti, `capacitor.config.json`, manifest) değişince.
 
+## Otomatik yükleme (GitHub Actions → Play dahili test)
+`.github/workflows/play-internal.yml`: imzalı AAB'yi derler, `scripts/play-whatsnew.mjs` ile `APP_CHANGELOG`'un en üst kaydından sürüm notu (≤ 500 karakter) üretir ve **dahili test** kanalına yükler. Üretime taşıma ve kapalı test Play Console'dan **elle** kalır.
+
+**Ne zaman gerekir:** yalnızca Android tarafı değişince (izin, eklenti, `capacitor.config.json`, manifest). Web kodu canlı siteden (Pages) yüklendiği için her yeni özellik için AAB gerekmez.
+
+**Bir kerelik kurulum (sende; değerleri YALNIZCA GitHub'a gir, sohbete/kimseyle paylaşma):**
+1. **İlk yükleme elle yapılmış olmalı** (uygulama kaydı Play'de var; 7 Kasım 2026'daki AAB). Otomasyon yalnızca sonrakileri yükler.
+2. **Servis hesabı:** Google Cloud Console'da (mevcut ya da yeni proje) "Google Play Android Developer API"yi etkinleştir → IAM ve Yönetici > Hizmet hesapları > hesap oluştur → Anahtarlar > JSON anahtar indir. Play Console > Kullanıcılar ve izinler > Yeni kullanıcı davet et → servis hesabının e-postası, uygulama için "Test sürümlerini yönet" ve "Sürümleri oluştur ve düzenle" izinleri. (İzinlerin geçerli olması birkaç saati bulabilir.)
+3. **GitHub:** depo > Settings > Environments > `play-internal` oluştur (isteğe bağlı: "Required reviewers" olarak kendini ekle: her yükleme onay bekler). Ortam gizli değerleri (Environment secrets):
+   - `PLAY_SERVICE_ACCOUNT_JSON`: indirilen JSON dosyasının TÜM içeriği
+   - `ANDROID_KEYSTORE_B64`: yükleme anahtarı dosyasının base64'ü. PowerShell: `[Convert]::ToBase64String([IO.File]::ReadAllBytes('C:\Users\<sen>\anahtarlar\ev-copilot-upload.jks')) | Set-Clipboard`
+   - `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` (`upload`), `ANDROID_KEY_PASSWORD`
+
+**Her yayında:** `git tag android-v0.99.123` ardından `git push origin android-v0.99.123` (etiketteki sürüm yalnızca ad; asıl sürüm kodu `version.js`'ten türer ve Play her yüklemede artmasını ister). Ya da GitHub > Actions > "Play dahili test" > Run workflow (`draft`: sürüm oluşur ama testçilere çıkmaz, Play Console'dan yayınlarsın; `completed`: dahili testçilere hemen çıkar). Derlenen AAB 30 gün Actions çıktısında da kalır.
+
+**Güvenlik:** akış yalnızca etiket ya da elle tetiklenir (PR/fork ile çalışmaz, gizli değerler sızmaz); anahtar dosyası geçici klasöre yazılır ve iş bitince silinir; gizli değerler günlüğe yazdırılmaz. Anahtar ya da servis hesabı sızdıysa Play Console'dan servis hesabını kaldır, yükleme anahtarını sıfırlat.
+
 ## Notlar
 - Eski gömülü sürümde adres `https://localhost` idi; o kurulumlardaki yerel ayarlar yeni sürümde görünmez, hesapla giriş yapınca senkron her şeyi geri getirir.
 - Ekran kapalıyken GPS için ek bir eklenti (arka plan konumu) gerekir, ilk pakette yok.

@@ -1,0 +1,73 @@
+# Imzali AAB'yi derler ve Google Play DAHILI TEST kanalina yukler.
+# YALNIZCA Android tarafi degisince gerekir (izin, eklenti, capacitor.config.json, manifest): web kodu canli siteden (Pages) yuklendigi icin yeni AAB gerekmez.
+# Tetik: `git tag android-v0.99.123 && git push origin android-v0.99.123` ya da Actions > "Play dahili test" > Run workflow. PR/fork/dal push'u ile ASLA calismaz.
+# Kurulum ve gizli degerler: docs/android.md "Otomatik yukleme". Uretime tasima ve kapali test Play Console'dan ELLE yapilir.
+name: Play dahili test
+on:
+  push:
+    tags: [ 'android-v*' ]
+  workflow_dispatch:
+    inputs:
+      status:
+        description: 'draft: surum olusur ama testcilere cikmaz (Play Console''dan elle yayinla); completed: dahili testcilere hemen cikar'
+        type: choice
+        options: [ draft, completed ]
+        default: draft
+permissions:
+  contents: read
+concurrency:
+  group: play-internal
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    environment: play-internal
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - name: Kapi (soz dizimi denetimi)
+        run: node scripts/check.mjs
+      - name: Imza anahtarini hazirla (gecici klasore)
+        shell: pwsh
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          $ks = Join-Path $env:RUNNER_TEMP 'upload.jks'
+          [IO.File]::WriteAllBytes($ks, [Convert]::FromBase64String($env:KS_B64))
+          $p = $ks -replace '\\', '/'
+          "storeFile=$p`nstorePassword=$env:KS_PASS`nkeyAlias=$env:KEY_ALIAS`nkeyPassword=$env:KEY_PASS" | Set-Content -Path android/keystore.properties -Encoding ascii
+      - name: AAB derle ve imzasini dogrula
+        run: npm run aab
+      - name: Surum notu (APP_CHANGELOG en ust kayit, en cok 500 karakter)
+        run: node scripts/play-whatsnew.mjs distribution/whatsnew
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+      - uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.evroutefinder.app
+          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
+          track: internal
+          status: ${{ inputs.status || 'completed' }}
+          whatsNewDirectory: distribution/whatsnew
+      - name: Anahtar dosyalarini sil
+        if: always()
+        shell: pwsh
+        run: |
+          Remove-Item -Force -ErrorAction SilentlyContinue android/keystore.properties
+          Remove-Item -Force -ErrorAction SilentlyContinue (Join-Path $env:RUNNER_TEMP 'upload.jks')
