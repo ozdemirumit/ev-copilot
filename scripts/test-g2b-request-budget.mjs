@@ -70,7 +70,7 @@ const STUBS = {
     export const subscribe = () => () => {};
     export const effective = () => ${g}.eff;`,
   '/js/utils/storage.js': 'export const load = (k, d) => d; export const save = () => {}; export const remove = () => {}; export const onSave = () => {};',
-  '/js/advisor/voice.js': 'export const speak = (s, o) => { (globalThis.__spoken ||= []).push((o && o.key) || s); }; export const stopSpeech = () => {}; export const testVoice = () => {};',
+  '/js/advisor/voice.js': 'export const speak = (s, o) => { (globalThis.__spoken ||= []).push((o && o.key) || s); }; export const stopSpeech = () => {}; export const testVoice = () => {}; export const unlockVoice = () => {}; export const voiceUnlocked = () => true;',
   '/js/ui/mapView.js': 'export const mapApi = new Proxy({}, { get: () => () => {} });',
   '/js/ui/toast.js': 'export const toast = () => {};',
   '/js/i18n/index.js': 'export const t = (s, ...a) => String(s).replace(/\\{(\\d)\\}/g, (m, i) => a[i]); export const locale = () => "tr";',
