@@ -6,7 +6,7 @@ import { save } from '../utils/storage.js';
 import { mapApi } from '../ui/mapView.js';
 import { toast } from '../ui/toast.js';
 import { rerouteFromHere, clearTrip } from '../routing/controller.js';
-import { speak, stopSpeech, testVoice } from '../advisor/voice.js';
+import { speak, stopSpeech, testVoice, unlockVoice, voiceUnlocked } from '../advisor/voice.js';
 import { instruction, fmtDist, dueVoice, isMinor } from './steps.js';
 import { lanesToShow, addLaneHint } from './lanes.js';
 import { buildTrack, locate, headingAt, pointAtKm } from './track.js';
@@ -395,7 +395,9 @@ export async function startNav() {
   if (starting) return;
   const plan0 = getState('plan');
   if (!plan0.profile || !plan0.steps?.length) return toast('Önce rotayı planla');
-  try { window.speechSynthesis?.speak(Object.assign(new SpeechSynthesisUtterance(''), { volume: 0 })); } catch { /* ses yok */ } // dokunuş anında ses iznini aç (aşağıdaki beklemeden önce)
+  // Dokunuş anında (aşağıdaki beklemelerden ÖNCE, eşzamanlı) ses motorunu aç. iPhone'da sessiz söylem yetmediyse sesli kısa bir söylemle aç: bu, anahtarı kapat/aç yapınca çalışan yolun aynısıdır.
+  unlockVoice();
+  const announced = getState('nav').voice && !voiceUnlocked() && speak('Sesli yönlendirme açık.', { key: 'voicetest', cooldownMs: 0 });
   const e0 = effective();
   if (e0.lat != null && plan0.route?.coords) {
     const loc = locate(buildTrack(plan0.route.coords), e0.lat, e0.lon, null);
@@ -427,7 +429,7 @@ export async function startNav() {
   const up = getState('nav').headingUp;
   mapApi.navView(true, up, mapApi.is3d());
   if (e.lat != null) mapApi.follow(e.lat, e.lon, 18, true, up ? (track ? headingAt(track, trackKm ?? 0) : (e.speed ?? 0) > 5 ? e.heading : null) : null);
-  speak('Navigasyon başladı.', { key: 'navstart', cooldownMs: 0, interrupt: true });
+  speak('Navigasyon başladı.', { key: 'navstart', cooldownMs: 0, interrupt: !announced });
   tick();
 }
 
