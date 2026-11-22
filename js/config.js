@@ -111,6 +111,7 @@ export const DEFAULT_SIM = {
   speed: 90, soc: 70, grade: 0, heading: 90,
   windSpeed: 0, windDir: 0, rain: 0, traffic: 0, temp: 15,
   play: false, timeScale: 10, lat: null, lon: null, routeKm: 0,
+  vNow: null, // km/sa: oynatırken sürücünün anlık (ivmelenen) hızı; null = sürgüdeki hız
 };
 
 export const DEFAULT_CAMERA = {

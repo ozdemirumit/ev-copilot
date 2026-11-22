@@ -42,7 +42,7 @@ export function initTestPanel() {
     play.classList.toggle('sel', sim.play);
     scale.value = String(sim.timeScale);
     const total = getState('plan').profile?.totalKm;
-    $('sim-pos').textContent = total ? `${(sim.routeKm ?? 0).toFixed(1)} / ${total.toFixed(0)} km` : 'rota yok (gidiş açısı yönünde ilerler)';
+    $('sim-pos').textContent = total ? `${(sim.routeKm ?? 0).toFixed(1)} / ${total.toFixed(0)} km${sim.vNow != null ? ` · ${Math.round(sim.vNow)} km/sa` : ''}` : 'rota yok (gidiş açısı yönünde ilerler)';
   }
 
   sliders.forEach((s) =>

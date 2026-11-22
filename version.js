@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.126';
+self.APP_VERSION = '0.99.127';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.127', date: '2026-11-22',
+    notes: [
+      'Düzeltme: Test Modu hareketi artık düzgün ve rotayı gerçekten izler. Araç, rotanın GERÇEK geometrisinde sürülür (eskiden ~2 km\'lik kirişlerde ilerleyip köşeleri kesiyor, rotadan sapıyor ve yönü köşelerde sıçratıyordu). Sürgüdeki hız artık hedef hızdır: araç sıfırdan ivmelenir, virajlarda konforlu yanal ivmeye göre yavaşlar, varışa doğru frenleyip durur; yön yumuşak döner',
+      'Zaman çarpanı (×10, ×30...) artık haritadaki aracın kamera hareketini sarsmaz (kamera tahmini çarpanı da hesaba katar). Test panelinde rotadaki konumun yanında anlık hız görünür; yeniden planlamada araç yeni rotada bulunduğu yerden devam eder. Rota yoksa eski davranış (gidiş açısı yönünde sürgü hızıyla). Cihazda doğrulanmadı',
+    ],
+  },
   {
     v: '0.99.126', date: '2026-11-22',
     notes: [

@@ -229,7 +229,8 @@ function tick() {
 
   // Harita: hıza göre zoom (yavaş = yakın), kavşağa 250 m kala en yakın zoom; sürerken yön-yukarı
   const onRoute = loc.offKm <= lim;
-  anchor = onRoute ? { km, t: performance.now(), v: (e.speed ?? 0) / 3600 } : null;
+  const simK = getState('sim').enabled && getState('sim').play ? getState('sim').timeScale || 1 : 1; // Test Modu zaman çarpanı: kamera tahmini de aynı hızla ilerlesin (yoksa her güncellemede geri sıçrar)
+  anchor = onRoute ? { km, t: performance.now(), v: ((e.speed ?? 0) / 3600) * simK } : null;
   const at = onRoute ? pointAtKm(track, km) : null; // imleç ve kamera yola yapışık konumu izler
   followMap(at ? { ...e, lat: at.lat, lon: at.lon } : e, distM, st, onRoute ? headingAt(track, km) : null);
 }
