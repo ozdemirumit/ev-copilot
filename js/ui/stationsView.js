@@ -11,6 +11,7 @@ import { loosenPower, paintPowerNote, initPowerFilter } from '../routing/powerFi
 import { paintMore } from './moreToggle.js';
 import { openSwap, removeFromRoute } from './stopSwap.js';
 import { aheadKmText } from './routeDist.js';
+import { iconLabel } from './icons.js';
 
 const $ = (id) => document.getElementById(id);
 const ROUTE_LIMIT = 3; // Rotadakiler: kapalıyken en çok 3 satır, "+" ile tümü
@@ -42,11 +43,11 @@ function renderList() {
   const errs = p.stationInfo?.errors || [];
   const none = !!p.profile && p.status !== 'loading' && !p.stations.length;
   warn.textContent = errs.length
-    ? (none ? 'Hiç istasyon alınamadı. ' : 'Liste eksik olabilir. ') + errs.join(' · ')
-      + ' — İnternet bağlantını kontrol et; sorun geçiciyse biraz sonra yeniden dene (açık kaynak sunucular zaman zaman yanıt vermez).'
-    : none ? `Rota boyunca uygun (DC, ≥40 kW) istasyon bulunamadı (OpenStreetMap/OpenChargeMap verisi). Bildiğin istasyonları "Kendi istasyonlarım"dan ekleyebilirsin.` : '';
+    ? tr(none ? 'Hiç istasyon alınamadı.' : 'Liste eksik olabilir.') + ' ' + errs.map((e) => tr(e)).join(' · ')
+      + ' ' + tr('— İnternet bağlantını kontrol et; sorun geçiciyse biraz sonra yeniden dene (açık kaynak sunucular zaman zaman yanıt vermez).')
+    : none ? tr(`Rota boyunca uygun (DC, ≥40 kW) istasyon bulunamadı (OpenStreetMap/OpenChargeMap verisi). Bildiğin istasyonları "Kendi istasyonlarım"dan ekleyebilirsin.`) : '';
   const notes = p.stationInfo?.notices || []; // bilgi (hata değil): ör. Google'da maliyet sınırı nedeniyle taranmayan alt bölgeler
-  if (notes.length) warn.textContent = [warn.textContent, notes.join(' · ')].filter(Boolean).join(' ');
+  if (notes.length) warn.textContent = [warn.textContent, notes.map((e) => tr(e)).join(' · ')].filter(Boolean).join(' ');
   warn.classList.toggle('hidden', !warn.textContent);
   retry.classList.toggle('hidden', !(errs.length || none));
   retry.disabled = p.status === 'loading';
@@ -85,10 +86,14 @@ function renderList() {
     const meta = document.createElement('div');
     meta.className = 'meta';
     meta.append(
-      text('span', 'tag ' + (n ? 'best' : ''), (n ? `Planda #${n}` : 'Aday') + (brandOk(r.station) ? '' : ' · ' + tr('tercih dışı'))),
-      text('span', '', r.station.foreign
-        ? `${r.station.opName} · ${r.station.slow ? 'AC/yavaş ' : ''}${r.station.kw} kW${r.station.uncertain ? '*' : ''} · ${aheadKmText(r.station.km, here)} km ileride · varış %${r.arrive.toFixed(0)}${r.noCharge ? ' · ' + tr('şarj gerekmez') : ` → %${Math.round(r.to)}`}`
-        : `${r.station.opName} · ${r.station.slow ? 'AC/yavaş ' : ''}${r.station.kw} kW${r.station.uncertain ? '*' : ''} · ${r.station.price.toFixed(2)} TL/kWh · ${aheadKmText(r.station.km, here)} km ileride · varış %${r.arrive.toFixed(0)}${r.noCharge ? ' · ' + tr('şarj gerekmez') : ` → %${Math.round(r.to)}`}`),
+      text('span', 'tag ' + (n ? 'best' : ''), (n ? t('Planda #{0}', n) : tr('Aday')) + (brandOk(r.station) ? '' : ' · ' + tr('tercih dışı'))),
+      text('span', '', [
+        r.station.opName,
+        `${r.station.slow ? tr('AC/yavaş') + ' ' : ''}${r.station.kw} kW${r.station.uncertain ? '*' : ''}`,
+        ...(r.station.foreign ? [] : [`${r.station.price.toFixed(2)} TL/kWh`]),
+        t('{0} km ileride', aheadKmText(r.station.km, here)),
+        r.noCharge ? t('varış %{0}', r.arrive.toFixed(0)) + ' · ' + tr('şarj gerekmez') : t('varış %{0} → %{1}', r.arrive.toFixed(0), Math.round(r.to)),
+      ].join(' · ')),
     );
     const slotNode = slotEl(r.station);
     if (slotNode) meta.lastElementChild.append(slotNode);
@@ -97,10 +102,10 @@ function renderList() {
     const stop = n ? stops.find((s) => s.station.id === r.station.id) : null;
     if (stop) { // plandaki durak: başka istasyonla değiştir ya da rotadan kaldır (gerekirse alternatif seçilir)
       const acts = text('div', 'stop-actions');
-      const sw = text('button', 'btn ghost sm', '🔁 Değiştir');
+      const sw = iconLabel(text('button', 'btn ghost sm', ''), 'swap', 'Değiştir');
       sw.type = 'button';
       sw.addEventListener('click', () => openSwap(stop, here));
-      const rm = text('button', 'btn ghost sm', '🗑️ Kaldır');
+      const rm = iconLabel(text('button', 'btn ghost sm', ''), 'trash', 'Kaldır');
       rm.type = 'button';
       rm.addEventListener('click', () => removeFromRoute(stop));
       acts.append(sw, rm);

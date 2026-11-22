@@ -1145,6 +1145,26 @@ body.navmode .mapsoc, body.sheet-open .mapsoc { display: none; }
   .mapsoc-slider { padding: 8px 14px 10px; }
 }
 
+/* Rota ve İstasyonlar panelleri: düğme/çip/başlık simgeleri alt sekmelerle aynı çizgi simge dilinde (emoji değil); simge dekoratif, ad span'da */
+.has-ic { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.btn.has-ic > .ic { width: 18px; height: 18px; }
+.btn.sm.has-ic > .ic { width: 16px; height: 16px; }
+.btn.has-ic > span, .chip.has-ic > span { min-width: 0; }
+h2.has-ic, .rp-adv-h.has-ic { justify-content: flex-start; gap: 8px; }
+h2.has-ic > .ic { width: 20px; height: 20px; color: var(--accent); }
+.rp-adv-h.has-ic > .ic { width: 16px; height: 16px; }
+.chip.has-ic { gap: 4px; }
+.chip.has-ic > .ic { width: 16px; height: 16px; }
+.chip.has-ic > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Rota: kayıtlı yerler başlığın altında tam satır; Home/Work/Zuhause gibi adlar kesilmez */
+.rp-head { flex-wrap: wrap; row-gap: 6px; }
+.rp-head .place-chips { flex: 1 1 100%; flex-wrap: wrap; }
+.rp-head .chip { flex: 1 1 auto; font-size: 12.5px; padding: 7px 3px; }
+.rp-head .chip.has-ic { gap: 3px; }
+/* Rota araçları (dar üç sütun): simge üstte, ad altta */
+.rp-tools .btn.has-ic { flex-direction: column; gap: 3px; }
+.rp-tools .btn.has-ic > span { text-align: center; }
+
 /* ===== RM-02 Koyu tema (Ayarlar > Görünüm: Koyu ya da Otomatik + sistem koyu). Yalnızca <html data-theme="dark"> altında geçerli;
    varsayılan açık görünüm yukarıdaki :root değerleriyle aynen kalır. Kontrast: metin/zemin en az 4.5:1. Harita karoları değişmez. ===== */
 :root[data-theme="dark"] {
