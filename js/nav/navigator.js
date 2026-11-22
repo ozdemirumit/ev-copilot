@@ -451,6 +451,7 @@ function endNav(keepVoice = false) {
 
 export function stopNav() {
   endNav();
+  if (getState('sim').enabled && getState('sim').play) patch('sim', { play: false, vNow: 0 }); // Test Modu oynuyorsa "Navigasyonu durdur" testi de durdurur; yeniden oynatınca araç duruştan kalkar
   tick();
 }
 

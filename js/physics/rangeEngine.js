@@ -135,7 +135,8 @@ function tick() {
   if (estimating) consume((modelKw * k * overhead * dt) / 3600); // yol alındıkça elle girilen pil düşer
 
   // Anlık tahmin: bu koşullarda (hız ≥ 20 ise mevcut hız, değilse seyir hızı) kWh/100km
-  const vRef = speed >= 20 ? speed : route.cruise;
+  const whatIf = e.source === 'sim' && !sim.play ? sim.speed : speed; // Test Modu duruyorken hız sürgüsü yalnız tahmini (ne olur) belirler; araç gitmez: yol/tüketim sayaçları ilerlemez
+  const vRef = whatIf >= 20 ? whatIf : route.cruise;
   // Rota varsa önümüzdeki 25 km'nin ortalaması (tek bir dilimin eğimi tahmini zıplatmasın); yoksa anlık koşul.
   let est;
   const prof = plan.profile;

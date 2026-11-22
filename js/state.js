@@ -76,7 +76,7 @@ export function effective() {
   if (sim.enabled) {
     return {
       source: 'sim',
-      soc: sim.soc, speed: sim.play && sim.vNow != null ? sim.vNow : sim.speed, heading: sim.heading, alt: live.alt, // oynarken anlık (ivmelenen) hız
+      soc: sim.soc, speed: sim.play ? (sim.vNow ?? sim.speed) : 0, heading: sim.heading, alt: live.alt, // oynarken anlık (ivmelenen) hız; oynatılmıyorsa araç DURUYOR (sürgü yalnız hedef/ne-olur hızıdır, v0.99.129)
       lat: sim.lat ?? live.lat ?? FALLBACK_POS.lat,
       lon: sim.lon ?? live.lon ?? FALLBACK_POS.lon,
       extTemp: sim.temp, grade: sim.grade, windSpeed: sim.windSpeed, windDir: sim.windDir,

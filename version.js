@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.128';
+self.APP_VERSION = '0.99.129';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.129', date: '2026-11-22',
+    notes: [
+      'Düzeltme: Test Modu\'nu açmak artık aracı başlatmıyor; yalnız aşağıdaki "Oynat" başlatır. Eskiden Oynat\'a basılmasa bile hız sürgüsündeki değer (ör. 90 km/sa) gerçek hız sayılıyor, menzil motoru kilometre sayacını ve tüketim ölçümünü ilerletiyor, kamera ileri kayıyor ve hız aşımı uyarısı çıkıyordu. Şimdi oynatılmıyorsa araç duruyor (hız 0); hız sürgüsü yalnız hedef hızdır ve duruyorken menzil tahminini ("bu hızda ne olur") belirlemeye devam eder',
+      'Yeni: Test oynarken "Navigasyonu durdur"a basmak testi de durdurur (araç yeniden oynatınca duruştan kalkar)',
+    ],
+  },
   {
     v: '0.99.128', date: '2026-11-22',
     notes: [

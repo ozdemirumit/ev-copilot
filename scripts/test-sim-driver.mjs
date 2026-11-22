@@ -129,11 +129,36 @@ function run(drive, { targetKmh = 90, dtStep = 0.2, maxS = 3000, startV = 0, onS
   ok('F rota yoksa eski davranış (gidiş açısı yönünde, sürgü hızı)', /upd\.vNow = null/.test(sim) && /Math\.cos\(h\)/.test(sim));
   ok('F pil fiziği anlık (ivmelenen) hızı kullanır', /batteryPowerKw\(\{ v: vKmh,/.test(sim));
   ok('F başa sarma anlık hızı sıfırlar', /resetSimPosition[\s\S]*vNow: null/.test(sim));
-  ok('F effective(): oynarken anlık hız, değilse sürgü', /speed: sim\.play && sim\.vNow != null \? sim\.vNow : sim\.speed/.test(st));
+  ok('F effective(): oynarken anlık hız (yoksa sürgü), oynatılmıyorsa 0 (araç duruyor)', /speed: sim\.play \? \(sim\.vNow \?\? sim\.speed\) : 0/.test(st));
   ok('F navigator kamera tahmini zaman çarpanını içerir (geri sıçrama yok)', /const simK = getState\('sim'\)\.enabled && getState\('sim'\)\.play \? getState\('sim'\)\.timeScale \|\| 1 : 1/.test(nav) && /\* simK/.test(nav));
   ok('F DEFAULT_SIM vNow: null', /vNow: null/.test(cfg));
   ok('F test paneli anlık hızı gösterir', /sim\.vNow != null/.test(tp) && /km\/sa/.test(tp));
   ok('F driver saf: ağ/DOM/depolama/zaman çağrısı yok', !/\b(fetch|XMLHttpRequest|localStorage|document|window|setTimeout|setInterval|performance)\b|Date\.now/.test(drv.replace(/\/\/.*$/gm, '')));
+}
+
+
+// ===================== G) Test Modu açmak aracı BAŞLATMAZ (v0.99.129): yalnız Oynat =====================
+{
+  const store = new Map();
+  globalThis.localStorage = { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)), removeItem: (k) => store.delete(k) };
+  const S = await import('../js/state.js');
+  S.patch('sim', { enabled: true, play: false, speed: 90, vNow: null });
+  ok('G Test Modu açık ama Oynat yok: araç duruyor (hız 0)', S.effective().speed === 0 && S.effective().source === 'sim' && S.getState('sim').play === false);
+  S.patch('sim', { vNow: 55 });
+  ok('G duraklatılmış araç (eski anlık hız kalsa da) duruyor', S.effective().speed === 0);
+  S.patch('sim', { play: true, vNow: null });
+  ok('G Oynat: anlık hız henüz yoksa sürgüdeki hedef', S.effective().speed === 90);
+  S.patch('sim', { vNow: 37.5 });
+  ok('G Oynat: ivmelenen anlık hız', S.effective().speed === 37.5);
+  S.patch('sim', { play: false });
+  ok('G Durdur: yeniden 0', S.effective().speed === 0);
+  S.patch('sim', { enabled: false, play: false, vNow: null });
+  ok('G Test Modu kapalıyken gerçek sensör kaynağı', S.effective().source === 'live');
+  const re = read('js/physics/rangeEngine.js'), tp = read('js/ui/testPanel.js');
+  ok('G menzil motoru: duruyorken sayaçlar e.speed (0) ile ilerlemez, ne-olur tahmini sürgüyü kullanır', /const speed = e\.speed \?\? 0;/.test(re) && /const whatIf = e\.source === 'sim' && !sim\.play \? sim\.speed : speed;/.test(re) && /const vRef = whatIf >= 20 \? whatIf : route\.cruise;/.test(re));
+  const nv = read('js/nav/navigator.js');
+  ok('G "Navigasyonu durdur" oynayan testi de durdurur (play false, anlık hız 0) ve navigasyonu bitirir', /export function stopNav\(\) \{\r?\n\s*endNav\(\);\r?\n\s*if \(getState\('sim'\)\.enabled && getState\('sim'\)\.play\) patch\('sim', \{ play: false, vNow: 0 \}\);/.test(nv));
+  ok('G Test Modu anahtarı oynatmayı başlatmaz; navigasyonu yalnız Oynat düğmesi başlatır', /patch\('sim', \{ enabled: toggle\.checked, play: toggle\.checked \? getState\('sim'\)\.play : false \}\)/.test(tp) && (tp.match(/startNav\(\)/g) || []).length === 1 && /play\.addEventListener\('click'[\s\S]*startNav\(\)/.test(tp));
 }
 
 console.log(`\n${pass} geçti, ${fail} başarısız`);
