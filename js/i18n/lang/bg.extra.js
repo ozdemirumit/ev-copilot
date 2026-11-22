@@ -557,4 +557,7 @@ export default {
   "Tahmini toplam menzil (%0'a kadar)": "Приблизителен общ пробег (до 0%)",
   "Togg T10X V2 Uzun Menzil (88,5 kWh)": "Togg T10X V2 Голям пробег (88,5 kWh)",
   "Togg T10X V2 Standart Menzil (52,4 kWh)": "Togg T10X V2 Стандартен пробег (52,4 kWh)",
+  "Hata günlüğü": "Дневник на грешките",
+  "Hata günlüğünü otomatik gönder": "Изпращай дневника на грешките автоматично",
+  "Uygulama hataları ve ses olayları geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "Грешките на приложението и звуковите събития се изпращат на разработчика; акаунтът, местоположението, адресите, изговореният текст и пълният IP адрес не се изпращат. Изключването изтрива чакащите записи.",
 };

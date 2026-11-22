@@ -557,4 +557,7 @@ export default {
   "Tahmini toplam menzil (%0'a kadar)": "Geschatte totale actieradius (tot 0%)",
   "Togg T10X V2 Uzun Menzil (88,5 kWh)": "Togg T10X V2 Lange afstand (88,5 kWh)",
   "Togg T10X V2 Standart Menzil (52,4 kWh)": "Togg T10X V2 Standaardbereik (52,4 kWh)",
+  "Hata günlüğü": "Foutenlogboek",
+  "Hata günlüğünü otomatik gönder": "Foutenlogboek automatisch verzenden",
+  "Uygulama hataları ve ses olayları geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "App-fouten en geluidsgebeurtenissen worden naar de ontwikkelaar gestuurd; je account, locatie, adressen, gesproken tekst en het volledige IP-adres worden niet verzonden. Uitzetten wist wachtende items.",
 };

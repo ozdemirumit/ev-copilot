@@ -557,4 +557,7 @@ export default {
   "Tahmini toplam menzil (%0'a kadar)": "Geschätzte Gesamtreichweite (bis 0 %)",
   "Togg T10X V2 Uzun Menzil (88,5 kWh)": "Togg T10X V2 Große Reichweite (88,5 kWh)",
   "Togg T10X V2 Standart Menzil (52,4 kWh)": "Togg T10X V2 Standardreichweite (52,4 kWh)",
+  "Hata günlüğü": "Fehlerprotokoll",
+  "Hata günlüğünü otomatik gönder": "Fehlerprotokoll automatisch senden",
+  "Uygulama hataları ve ses olayları geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "App-Fehler und Tonereignisse werden an den Entwickler gesendet; Konto, Standort, Adressen, gesprochener Text und die vollständige IP-Adresse werden nicht gesendet. Beim Ausschalten werden wartende Einträge gelöscht.",
 };

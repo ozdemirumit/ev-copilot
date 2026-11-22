@@ -557,4 +557,7 @@ export default {
   "Tahmini toplam menzil (%0'a kadar)": "Autonomie totale estimée (jusqu'à 0 %)",
   "Togg T10X V2 Uzun Menzil (88,5 kWh)": "Togg T10X V2 Grande autonomie (88,5 kWh)",
   "Togg T10X V2 Standart Menzil (52,4 kWh)": "Togg T10X V2 Autonomie standard (52,4 kWh)",
+  "Hata günlüğü": "Journal d'erreurs",
+  "Hata günlüğünü otomatik gönder": "Envoyer le journal d'erreurs automatiquement",
+  "Uygulama hataları ve ses olayları geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "Les erreurs de l'application et les événements sonores sont envoyés au développeur ; votre compte, votre position, les adresses, le texte prononcé et l'adresse IP complète ne sont pas envoyés. La désactivation supprime les entrées en attente.",
 };

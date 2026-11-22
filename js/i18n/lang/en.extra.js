@@ -557,4 +557,7 @@ export default {
   "Tahmini toplam menzil (%0'a kadar)": "Estimated total range (down to 0%)",
   "Togg T10X V2 Uzun Menzil (88,5 kWh)": "Togg T10X V2 Long Range (88.5 kWh)",
   "Togg T10X V2 Standart Menzil (52,4 kWh)": "Togg T10X V2 Standard Range (52.4 kWh)",
+  "Hata günlüğü": "Error log",
+  "Hata günlüğünü otomatik gönder": "Send error log automatically",
+  "Uygulama hataları ve ses olayları geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "App errors and sound events are sent to the developer; your account, location, addresses, spoken text and full IP address are not sent. Turning it off deletes pending entries.",
 };

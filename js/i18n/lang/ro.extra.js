@@ -557,4 +557,7 @@ export default {
   "Tahmini toplam menzil (%0'a kadar)": "Autonomie totală estimată (până la 0%)",
   "Togg T10X V2 Uzun Menzil (88,5 kWh)": "Togg T10X V2 Autonomie extinsă (88,5 kWh)",
   "Togg T10X V2 Standart Menzil (52,4 kWh)": "Togg T10X V2 Autonomie standard (52,4 kWh)",
+  "Hata günlüğü": "Jurnal de erori",
+  "Hata günlüğünü otomatik gönder": "Trimite automat jurnalul de erori",
+  "Uygulama hataları ve ses olayları geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "Erorile aplicației și evenimentele sonore sunt trimise dezvoltatorului; contul, locația, adresele, textul rostit și adresa IP completă nu sunt trimise. Dezactivarea șterge intrările în așteptare.",
 };

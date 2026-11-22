@@ -110,6 +110,19 @@ try {
   ok('E yönetim özetinde istemci günlüğü sayaçları (içerik yok)', sj.clientLogs && sj.clientLogs.accepted >= 3 && !JSON.stringify(sj.clientLogs).includes(FWD_TOKEN), JSON.stringify(sj.clientLogs));
 } catch (e) { ok('uçtan uca çalıştı: ' + e.message, false); }
 
+// ---- F) Daha Fazla > Hata günlüğü anahtarı: işaretleme, bağlantı, 11 dil ----
+{
+  const read = (p) => readFileSync(ROOT + p, 'utf8');
+  const html = read('index.html'), app = read('js/app.js'), keys = JSON.parse(read('i18n/keys.extra.json'));
+  const LABEL = 'Hata günlüğünü otomatik gönder';
+  ok('F index.html: cl-toggle anahtarı ve açıklama var, Saha testi kartından önce', html.includes('id="cl-toggle"') && html.indexOf('id="cl-card"') < html.indexOf('id="ft-card"'));
+  ok('F açıklama konum/adres/konuşma metni/tam IP gönderilmediğini söyler', /konum, adres, konuşma metni ve tam IP adresi gönderilmez/.test(html));
+  ok('F app.js anahtarı clientLogEnabled/setClientLogEnabled ile bağlar', app.includes("getElementById('cl-toggle')") && app.includes('setClientLogEnabled(sw.checked)') && app.includes('sw.checked = clientLogEnabled()'));
+  ok('F anahtar listesinde 3 yeni metin', keys.includes(LABEL) && keys.includes('Hata günlüğü') && keys.some((k) => k.startsWith('Uygulama hataları ve ses olayları geliştiriciye gönderilir')));
+  const langs = ['bg', 'de', 'el', 'en', 'es', 'fr', 'it', 'nl', 'pl', 'pt', 'ro'];
+  ok('F 11 dilin hepsinde etiket çevirisi (Türkçe kalmamış)', langs.every((l) => { const m = new RegExp('"' + LABEL + '": "([^"]+)"').exec(read('js/i18n/lang/' + l + '.extra.js')); return m && m[1] !== LABEL; }));
+}
+
 for (const c of children) c.kill();
 for (const s of servers) s.close();
 await sleep(200);

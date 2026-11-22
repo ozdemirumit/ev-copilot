@@ -557,4 +557,7 @@ export default {
   "Tahmini toplam menzil (%0'a kadar)": "Εκτιμώμενη συνολική αυτονομία (έως 0%)",
   "Togg T10X V2 Uzun Menzil (88,5 kWh)": "Togg T10X V2 Μεγάλη αυτονομία (88,5 kWh)",
   "Togg T10X V2 Standart Menzil (52,4 kWh)": "Togg T10X V2 Τυπική αυτονομία (52,4 kWh)",
+  "Hata günlüğü": "Αρχείο καταγραφής σφαλμάτων",
+  "Hata günlüğünü otomatik gönder": "Αυτόματη αποστολή αρχείου σφαλμάτων",
+  "Uygulama hataları ve ses olayları geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "Τα σφάλματα της εφαρμογής και τα συμβάντα ήχου στέλνονται στον προγραμματιστή· ο λογαριασμός, η τοποθεσία, οι διευθύνσεις, το εκφωνούμενο κείμενο και η πλήρης διεύθυνση IP δεν στέλνονται. Η απενεργοποίηση διαγράφει τις εγγραφές που περιμένουν.",
 };

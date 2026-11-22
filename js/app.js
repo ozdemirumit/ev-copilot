@@ -25,7 +25,7 @@ import { initRecentDest } from './ui/recentDest.js';
 import { initAccountPanel } from './ui/accountPanel.js';
 import { initMapChoice } from './ui/mapChoice.js';
 import { initFieldTest } from './ui/fieldTest.js';
-import { initClientLog, logEvent } from './diag/clientLogInit.js';
+import { initClientLog, logEvent, clientLogEnabled, setClientLogEnabled } from './diag/clientLogInit.js';
 import { spokenKind } from './diag/fieldLog.js';
 import { onSpoken, onVoiceIssue } from './advisor/voice.js';
 import { initResumeNav } from './ui/resumeNav.js';
@@ -133,6 +133,7 @@ initAccountPanel();
 initMapChoice();
 initFieldTest(); // saha testi sayaçları (varsayılan kapalı)
 initClientLog(); // istemci günlüğü: hata + ses olayları, otomatik yükleme (Daha Fazla'dan kapatılır); konum/adres/konuşma metni yok
+{ const sw = document.getElementById('cl-toggle'); if (sw) { sw.checked = clientLogEnabled(); sw.addEventListener('change', () => setClientLogEnabled(sw.checked)); } } // Daha Fazla > Hata günlüğü anahtarı (kapatınca bekleyen kayıtlar silinir)
 onVoiceIssue((r) => logEvent('voice.error', r, { r }, 'warn')); // ses motoru söylemi reddetti (ör. not-allowed: iPhone dokunuş kilidi)
 { let first = false; onSpoken((k) => { if (!first) { first = true; logEvent('voice.first', spokenKind(k), { k: spokenKind(k) }); } }); } // oturumdaki ilk sesli uyarı (tür): hata gelmediyse ses çıktı demektir
 initResumeNav(); // yarım kalan navigasyonu sürdür (kayıtlı rota, ağsız) // Premium: kendi harita sağlayıcını seç (Daha Fazla)

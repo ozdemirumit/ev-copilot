@@ -556,5 +556,8 @@
  "(elle seçildi)",
  "Tahmini toplam menzil (%0'a kadar)",
  "Togg T10X V2 Uzun Menzil (88,5 kWh)",
- "Togg T10X V2 Standart Menzil (52,4 kWh)"
+ "Togg T10X V2 Standart Menzil (52,4 kWh)",
+ "Hata günlüğü",
+ "Hata günlüğünü otomatik gönder",
+ "Uygulama hataları ve ses olayları geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir."
 ]
