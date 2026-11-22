@@ -1,5 +1,5 @@
 // Daha Fazla > Saha testi kartı (v0.99.120): sürüş sırasında YALNIZ sayıları toplar (js/diag/fieldLog.js), sürüş sonunda tek dokunuşla rapor üretir.
-// Varsayılan KAPALI (kayıt kapalıyken hiçbir şey toplanmaz ve gönderilmez). Konum, adres, konuşma metni ve ham OCR değeri tutulmaz.
+// Varsayılan AÇIK (v0.99.126; kullanıcı Daha Fazla > Saha testi'nden kapatınca seçim korunur, kapalıyken hiçbir şey toplanmaz ve gönderilmez). Konum, adres, konuşma metni ve ham OCR değeri tutulmaz.
 // Rapor bu cihazda üretilir; Hata günlüğü anahtarı açıksa özet (yalnız sayılar) ayrıca otomatik gönderilir (js/diag/fieldUpload.js); kopyala/indir yine elle.
 import { getState, subscribe } from '../state.js';
 import { load, save } from '../utils/storage.js';
@@ -25,10 +25,9 @@ export function initFieldTest() {
   const now = () => Date.now();
 
   const saved = load(STORE_KEY, null);
-  const wasOn = load('fieldTestOn', false);
-  if (saved && log.load(saved, now()) && wasOn && now() - (saved.updatedAt ?? 0) < RESUME_MAX_MS) log.resume(now());
-  toggle.checked = log.active();
-  if (wasOn && !log.active()) save('fieldTestOn', false);
+  const pref = load('fieldTestOn', null); // null = hiç seçilmemiş → varsayılan AÇIK; kullanıcı kapatınca false saklanır ve korunur
+  const want = pref === null ? true : !!pref;
+  const loaded = !!saved && log.load(saved, now());
 
   const persist = () => { try { save(STORE_KEY, log.save(now())); } catch { /* depo dolu/yok: kayıt yalnız bellekte */ } };
   const meta = () => ({
@@ -61,6 +60,12 @@ export function initFieldTest() {
 
   // Başlangıç tabanı: kayıt açılırken mevcut durum sayılmaz, yalnız sonraki değişiklikler
   const seed = () => { const n = now(); log.ocr(getState('ocr'), n); log.gps(getState('live').gps, n); log.nav(!!getState('nav').active, n); log.plan(getState('plan').planId, n); };
+
+  if (want) {
+    if (loaded && now() - (saved.updatedAt ?? 0) < RESUME_MAX_MS) log.resume(now()); // sürüş ortasında yeniden açıldı: kayıt sürer
+    else { if (loaded) upload(true); log.start(now()); seed(); } // eski kayıt varsa özeti gönderilir, yeni oturum başlar
+  }
+  toggle.checked = log.active();
 
   toggle.addEventListener('change', () => {
     save('fieldTestOn', toggle.checked);

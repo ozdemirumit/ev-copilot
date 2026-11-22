@@ -110,7 +110,7 @@ const ocrS = (o = {}) => ({ readCount: 0, readAt: 0, rejected: null, status: 'id
   ok('F voice.js: konuşulduğunda dinleyicilere haber (onSpoken); metin değil yalnız anahtar', /export (const|function) onSpoken/.test(voice) && /spoken\(key\)/.test(voice));
   ok('F ağa/konuma dokunmaz: fetch/XHR/beacon/geolocation/lat/lon yok', ![pure, ui].some((s) => /fetch\(|XMLHttpRequest|sendBeacon|geolocation|\.lat\b|\.lon\b|live\.(lat|lon)/.test(s)));
   ok('F rapor yalnız kullanıcı eylemiyle dışarı çıkar (kopyala/indir/paylaş); kendiliğinden gönderim yok', /clipboard|navigator\.share|createObjectURL/.test(ui) && !/(setInterval|setTimeout)\([^)]*(share|copy|download)/.test(ui));
-  ok('F kayıt varsayılan kapalı (load fieldTestOn false)', /load\('fieldTestOn', false\)/.test(ui));
+  ok('F kayıt varsayılan AÇIK (seçilmemişse; açıkça kapatılan korunur: load fieldTestOn null → true, false saklanır)', /load\('fieldTestOn', null\)/.test(ui) && /pref === null \? true : !!pref/.test(ui) && /save\('fieldTestOn', toggle\.checked\)/.test(ui));
   ok('F sürüm 0.99.120 kaydı changelog\'da', /self\.APP_VERSION = '0\.99\.\d+';/.test(ver) && /v: '0\.99\.120'/.test(ver));
 }
 
