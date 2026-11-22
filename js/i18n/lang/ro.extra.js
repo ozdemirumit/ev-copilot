@@ -410,7 +410,7 @@ export default {
   "Açık": "Luminos",
   "Koyu": "Întunecat",
   "Otomatik (sistem ayarı)": "Automat (setarea sistemului)",
-  "Otomatik, telefonun açık/koyu ayarını izler. Bu ayar yalnızca uygulama arayüzünü değiştirir; harita her sağlayıcıda koyu kalır.": "Automat urmează setarea luminos/întunecat a telefonului. Această setare modifică doar interfața aplicației; harta rămâne întunecată la orice furnizor de hărți.",
+  "Otomatik, telefonun açık/koyu ayarını izler. Ücretsiz OpenFreeMap haritası temaya uyar; diğer harita sağlayıcıları koyu kalır.": "Automat urmează setarea luminos/întunecat a telefonului. Harta gratuită OpenFreeMap urmează tema; ceilalți furnizori de hărți rămân întunecați.",
   "🟢 Müsait": "🟢 Disponibil",
   "⚪ Bilinmiyor": "⚪ Necunoscut",
   "Herkese açık ücretsiz Beta: harita OpenFreeMap (© OpenMapTiles, © OpenStreetMap katkıcıları), rota ve rakım Valhalla (FOSSGIS), yer arama Photon (komoot), şarj istasyonları Overpass (private.coffee), hava Open-Meteo.com (CC BY 4.0). Bu sürümde canlı trafik, doluluk, yol hız limiti ve uydu görüntüsü yoktur.": "Beta publică gratuită: hartă OpenFreeMap (© OpenMapTiles, © contribuitorii OpenStreetMap), traseu și altitudine Valhalla (FOSSGIS), căutare locuri Photon (komoot), stații de încărcare Overpass (private.coffee), vreme Open-Meteo.com (CC BY 4.0). Această versiune nu are trafic în timp real, ocupare, limite de viteză sau imagini din satelit.",

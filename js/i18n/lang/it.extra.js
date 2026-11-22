@@ -410,7 +410,7 @@ export default {
   "Açık": "Chiaro",
   "Koyu": "Scuro",
   "Otomatik (sistem ayarı)": "Automatico (impostazione di sistema)",
-  "Otomatik, telefonun açık/koyu ayarını izler. Bu ayar yalnızca uygulama arayüzünü değiştirir; harita her sağlayıcıda koyu kalır.": "Automatico segue l'impostazione chiaro/scuro del telefono. Questa impostazione cambia solo l'interfaccia dell'app; la mappa resta scura con ogni fornitore di mappe.",
+  "Otomatik, telefonun açık/koyu ayarını izler. Ücretsiz OpenFreeMap haritası temaya uyar; diğer harita sağlayıcıları koyu kalır.": "Automatico segue l'impostazione chiaro/scuro del telefono. La mappa gratuita OpenFreeMap segue il tema; gli altri fornitori di mappe restano scuri.",
   "🟢 Müsait": "🟢 Disponibile",
   "⚪ Bilinmiyor": "⚪ Sconosciuto",
   "Herkese açık ücretsiz Beta: harita OpenFreeMap (© OpenMapTiles, © OpenStreetMap katkıcıları), rota ve rakım Valhalla (FOSSGIS), yer arama Photon (komoot), şarj istasyonları Overpass (private.coffee), hava Open-Meteo.com (CC BY 4.0). Bu sürümde canlı trafik, doluluk, yol hız limiti ve uydu görüntüsü yoktur.": "Beta pubblica gratuita: mappa OpenFreeMap (© OpenMapTiles, © contributori di OpenStreetMap), percorso e altitudine Valhalla (FOSSGIS), ricerca luoghi Photon (komoot), stazioni di ricarica Overpass (private.coffee), meteo Open-Meteo.com (CC BY 4.0). Questa versione non ha traffico in tempo reale, occupazione, limiti di velocità né immagini satellitari.",

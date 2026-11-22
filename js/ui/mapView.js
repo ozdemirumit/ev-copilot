@@ -4,6 +4,7 @@ import { toast } from './toast.js';
 import { attachSearch } from './placeSearch.js';
 import { reverseLabel } from '../providers/index.js';
 import { createMapLibreMap } from './maps/maplibre.js';
+import { themeHandle } from './maps/mapEngine.js';
 import { createMapboxMap } from './maps/mapbox.js';
 import { createGoogleMap } from './maps/google.js';
 import { createTomTomMap } from './maps/tomtom.js';
@@ -83,7 +84,7 @@ function stationPin(s, { planned = false, num = 0, focus = false } = {}) {
 }
 
 /**
- * Harita: MapLibre GL JS + OpenFreeMap vektör karoları (maps/maplibre.js bağdaştırıcısı, koyu şema, OpenStreetMap verisi).
+ * Harita: MapLibre GL JS + OpenFreeMap vektör karoları (maps/maplibre.js bağdaştırıcısı, OpenStreetMap verisi; arayüz temasına uyar: açık → positron, koyu → dark).
  * Harita nesnesi hazır olana dek yapılan işaretleme/çizim çağrıları sıraya alınır ve harita hazır olunca uygulanır.
  * Rota/arama/istasyon mantığı haritadan bağımsızdır. Konumlar { lat, lon }; zoom web-mercator (Google) ölçeğindedir, bağdaştırıcı MapLibre'a çevirir.
  */
@@ -95,6 +96,19 @@ export function initMap() {
   const readyHooks = []; // harita hazır olunca bir kez çalışacak güncellemeler (sıraya alınması gereksiz olanlar)
   const whenMap = (fn) => (adapter ? fn() : queue.push(fn));
   const note = (t) => { mapEl.dataset.msg = t || ''; mapEl.classList.toggle('nomap', !!t); };
+
+  // Arayüz teması → taban harita tonu. Yalnız OpenFreeMap haritası temaya uyar (themeHandle); Mapbox/Google/TomTom/HERE koyu kalır.
+  // #map[data-tone] CSS'te açık haritada işaretçi kenarlarını ayarlar. Tema değişince harita yeniden yüklenmez: stil değişir, konum/zoom/yön/eğim korunur.
+  const darkTheme = () => document.documentElement.dataset.theme === 'dark';
+  const applyTone = () => {
+    if (!adapter) return;
+    const th = themeHandle(adapter); // yalnız OpenFreeMap haritasında vardır
+    th?.set(darkTheme());
+    mapEl.dataset.tone = th?.tone() || 'dark';
+  };
+  const lightMap = () => mapEl.dataset.tone === 'light';
+  /** Araç işareti rengi: koyu haritada parlak yeşil/mavi, açık haritada koyu yeşil/mavi (açık zeminde ≥4.5:1; parlak yeşil 1.4:1 kalırdı). */
+  const meColor = (sim) => (lightMap() ? (sim ? '#1558c0' : '#087f52') : (sim ? '#5aa9ff' : '#2ee6a6'));
 
   remove('noTiles'); // eski "Haritayı gizle (veri tasarrufu)" seçimi kaldırıldı: kayıtlı değer temizlenir, harita her zaman açılır
 
@@ -165,6 +179,7 @@ export function initMap() {
         note(''); // uyarı katmanı kalksın: harita boş bir kapta kurulur
         adapter = await openAdapter();
         setActiveMap(adapter.name || 'osm'); // TomTom rotası yalnızca TomTom haritasıyla (js/net/activeMap.js)
+        applyTone(); // harita yüklenirken tema değiştiyse eşitle
         adapter.onClick(onMapClick);
         adapter.onDragStart(() => { lastDrag = Date.now(); lastFollow = null; if (navOn) navPan = true; exploreHooks.forEach((fn) => fn()); });
         queue.splice(0).forEach((fn) => fn());
@@ -441,7 +456,7 @@ export function initMap() {
   mapApi.cam = (lat, lon, heading, zoom) => {
     if (!adapter) return;
     glideAt = performance.now();
-    const color = effective().source === 'sim' ? '#5aa9ff' : '#2ee6a6';
+    const color = meColor(effective().source === 'sim');
     meArrow ??= el('div', 'me-arrow');
     meArrow.style.borderBottomColor = color;
     meArrow.style.transform = `translateY(50%) rotate(${headingUp ? 0 : heading ?? 0}deg)`;
@@ -539,7 +554,7 @@ export function initMap() {
     if (performance.now() - glideAt < 500) return; // kare kamera aracı zaten yerleştiriyor
     const e = effective();
     if (!adapter || e.lat == null || e.lon == null) return;
-    const color = e.source === 'sim' ? '#5aa9ff' : '#2ee6a6';
+    const color = meColor(e.source === 'sim');
     const snap = navOn ? mapApi.snap(e.lat, e.lon) : null; // navigasyonda imleç rotaya yapışır
     const pos = snap || e;
     meDot ??= dotEl(color, 16, '#fff');
@@ -555,6 +570,13 @@ export function initMap() {
   }
   subscribe(['live', 'sim'], updateMe);
   readyHooks.push(updateMe);
+  // Daha Fazla > Görünüm ya da (Otomatik iken) telefon ayarı <html data-theme>'i değiştirir: harita canlı yeniden stillenir, araç işareti rengi tazelenir.
+  const recolorMe = () => { // konum yokken (updateMe erken döner) de çizilmiş araç işareti yeni tona uysun
+    const c = meColor(effective().source === 'sim');
+    if (meArrow) meArrow.style.borderBottomColor = c;
+    if (meDot) meDot.style.background = c;
+  };
+  new MutationObserver(() => { if (!adapter) return; applyTone(); recolorMe(); updateMe(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
   // "Konumum" başlangıç iğnesi araç işaretiyle aynı yeri gösterir: konum sonradan gelince (ya da değişince) yeniden değerlendirilir
   // (updateMe her live/sim değişiminde ve harita hazır olunca çağırır; yeni dinleyici yok). Araç işareti çizilmişse (konum geçici

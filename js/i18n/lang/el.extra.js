@@ -410,7 +410,7 @@ export default {
   "Açık": "Φωτεινό",
   "Koyu": "Σκοτεινό",
   "Otomatik (sistem ayarı)": "Αυτόματο (ρύθμιση συστήματος)",
-  "Otomatik, telefonun açık/koyu ayarını izler. Bu ayar yalnızca uygulama arayüzünü değiştirir; harita her sağlayıcıda koyu kalır.": "Το Αυτόματο ακολουθεί τη ρύθμιση φωτεινό/σκούρο του τηλεφώνου. Η ρύθμιση αυτή αλλάζει μόνο τη διεπαφή της εφαρμογής· ο χάρτης παραμένει σκούρος σε κάθε πάροχο χαρτών.",
+  "Otomatik, telefonun açık/koyu ayarını izler. Ücretsiz OpenFreeMap haritası temaya uyar; diğer harita sağlayıcıları koyu kalır.": "Το Αυτόματο ακολουθεί τη ρύθμιση φωτεινό/σκούρο του τηλεφώνου. Ο δωρεάν χάρτης OpenFreeMap ακολουθεί το θέμα· οι άλλοι πάροχοι χαρτών παραμένουν σκούροι.",
   "🟢 Müsait": "🟢 Διαθέσιμο",
   "⚪ Bilinmiyor": "⚪ Άγνωστο",
   "Herkese açık ücretsiz Beta: harita OpenFreeMap (© OpenMapTiles, © OpenStreetMap katkıcıları), rota ve rakım Valhalla (FOSSGIS), yer arama Photon (komoot), şarj istasyonları Overpass (private.coffee), hava Open-Meteo.com (CC BY 4.0). Bu sürümde canlı trafik, doluluk, yol hız limiti ve uydu görüntüsü yoktur.": "Δημόσια δωρεάν beta: χάρτης OpenFreeMap (© OpenMapTiles, © συντελεστές OpenStreetMap), διαδρομή και υψόμετρο Valhalla (FOSSGIS), αναζήτηση τοποθεσιών Photon (komoot), σταθμοί φόρτισης Overpass (private.coffee), καιρός Open-Meteo.com (CC BY 4.0). Αυτή η έκδοση δεν έχει ζωντανή κυκλοφορία, πληρότητα, όρια ταχύτητας ούτε δορυφορικές εικόνες.",

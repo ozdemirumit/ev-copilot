@@ -1,6 +1,7 @@
 // Görünüm teması (RM-02 aşama 1): Açık / Koyu / Otomatik. Varsayılan "light" (mevcut beyaz kart görünümü değişmez).
 // Otomatik: sistemin prefers-color-scheme değeri canlı izlenir. Sonuç <html data-theme="light|dark"> olarak yazılır;
-// renkler css/styles.css içindeki :root[data-theme="dark"] değişkenlerinden gelir. Harita karo stili bu aşamada değişmez.
+// renkler css/styles.css içindeki :root[data-theme="dark"] değişkenlerinden gelir. Ücretsiz OpenFreeMap haritası temaya uyar
+// (ui/mapView.js data-theme'i izler); Mapbox/Google/TomTom/HERE haritaları koyu kalır.
 export const THEME_KEY = 'evcp.theme';
 export const THEME_PREFS = ['light', 'dark', 'auto'];
 const MQ = '(prefers-color-scheme: dark)';

@@ -111,7 +111,17 @@ for (const bg of ['surface', 'bg', 'card', 'card-2']) {
 for (const t of ['tint-warn', 'tint-bad', 'tint-ok', 'tint-info']) ok(`koyu --text / --${t} ≥ 4.5:1`, ratio(dv('text'), dv(t)) >= 4.5);
 ok('koyu birincil düğme yazısı yeşilde ≥ 4.5:1', ratio('#06210f', dv('accent')) >= 4.5);
 ok('navigasyon/rota/istasyon panelleri --surface kullanır', /\.navhud, \.station-card, \.toppanel[^{]*\{ background: var\(--surface\)/.test(white) && /\.nav-ev \{[^}]*background: var\(--surface\)/.test(white));
-ok('harita karo stili tema ile değişmez (bu aşama)', !/data-theme|themePref/.test(read('js/ui/maps/mapEngine.js') + read('js/ui/mapView.js')));
+// Harita stili: YALNIZ ücretsiz OpenFreeMap (osm) bağdaştırıcısı temaya bağlıdır (açık → positron, koyu → dark); diğer sağlayıcılar koyu kalır.
+// (Eski koruma "hiçbir harita temaya bağlı değil" idi; kapsam doğru söylenerek aynı sıkılıkta yeniden yazıldı. Davranış: scripts/test-map-theme.mjs)
+const TEMA_IZI = /data-theme|themePref|dataset\.theme|themeHandle|registerThemedStyles|styleFor|positron/;
+const ml = read('js/ui/maps/maplibre.js');
+ok('OpenFreeMap bağdaştırıcısı temaya bağlı: açık positron, koyu dark', /styles\/positron/.test(ml) && /styles\/dark/.test(ml) && /const STYLE = styleFor\(isDark\(\)\)/.test(ml) && /dataset\?\.theme === 'dark'/.test(ml));
+for (const [ad, koyu] of [['mapbox', 'dark-v11'], ['google', "colorScheme: 'DARK'"], ['tomtom', 'basic_street-dark'], ['here', 'explore.night']]) {
+  const src = read(`js/ui/maps/${ad}.js`);
+  ok(`${ad} bağdaştırıcısı temaya/tema kancalarına bağlı DEĞİL ve koyu stilde kalır`, !TEMA_IZI.test(src) && src.includes(koyu));
+}
+ok('ortak motor (mapEngine.js) <html data-theme> okumaz; tema bilgisi bağdaştırıcıdan kayıtla gelir', !/data-theme|themePref|dataset\.theme/.test(read('js/ui/maps/mapEngine.js')) && /registerThemedStyles/.test(read('js/ui/maps/mapEngine.js')));
+ok('mapView.js yalnız data-theme özniteliğini izler (themePref değil, tercih ayarı harita için anlamsız)', /attributeFilter: \['data-theme'\]/.test(read('js/ui/mapView.js')) && !/themePref/.test(read('js/ui/mapView.js')));
 
 console.log(`\n${pass} geçti, ${fail} kaldı`);
 if (fail) process.exit(1);
