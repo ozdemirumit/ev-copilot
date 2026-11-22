@@ -3,11 +3,36 @@
 // Rota ve trafik katmanları tek bir installLayers() içinde kurulur: stil değişirse ('style.load') son veriyle yeniden uygulanır.
 // Uydu stratejisi { install(map), set(map, on) }: install her katman kurulumunda çağrılır; set stil değiştirecekse
 // setStyle(..., { diff: false }) kullanmalı ki 'style.load' gelsin ve rota/trafik katmanları geri konsun.
+// Temaya bağlı taban stil (yalnız kayıtlı sağlayıcılar, ör. OpenFreeMap): registerThemedStyles(ad, { dark, light }) ile kaydedilir;
+// motor themeHandle(adapter) ile { tone(), set(dark) } sunar. Diğer sağlayıcılar kayıtsızdır (koyu kalır, themeHandle null döner).
 import { bindEngineGestures } from '../mapGesture.js';
 
 export const ZOOM_OFFSET = 1;
 
 const EMPTY = { type: 'FeatureCollection', features: [] };
+
+// Temaya bağlı taban stiller: ad → { dark, light } stil adresleri.
+const THEMED = new Map();
+export function registerThemedStyles(name, { dark, light }) { THEMED.set(name, Object.freeze({ dark, light })); }
+
+// Tema denetimi bağdaştırıcı nesnesine EKLENMEZ (tüm sağlayıcıların yöntem kümesi birebir aynı kalır: test-map-provider); yan kanaldan okunur.
+const THEME_HANDLES = new WeakMap();
+/** Bağdaştırıcının tema denetimi { tone(), set(dark) } ya da (temaya bağlı olmayan sağlayıcı/Google) null.
+ *  tone(): 'dark' | 'light' (taban harita tonu). set(dark): taban stil yeniden yüklenir, değiştiyse true. */
+export const themeHandle = (adapter) => THEME_HANDLES.get(adapter) || null;
+
+/** Açık taban harita (OpenFreeMap positron) için rota çerçevesi/trafik/3B bina renkleri; mavi rota çizgisi (#1a73e8) her tonda aynı.
+ *  Koyu harita değerleri installLayers içindeki sabitlerdir (sarı çerçeve, turuncu/kırmızı/koyu kırmızı trafik: bugünkü hâli aynen).
+ *  Açık harita (≥3:1 hedefi, #f2f3f0 zemine göre): lacivert dış çerçeve 9.3:1, mavi çizgi 4.0:1 (beyaz yolda 4.5:1),
+ *  trafik turuncu 3.4 / kırmızı 4.5 / koyu kırmızı 8.8. */
+export const LIGHT_PALETTE = Object.freeze({ casing: '#0b3a91', traffic: Object.freeze(['#e65100', '#d32f2f', '#8e0000']), building: '#cfd2cc' });
+
+/** OpenFreeMap positron üç yazı tipi yığını (Regular/Italic/Bold) kullanır: glif istekleri koyu stilin (yalnız Regular) üç katına çıkar ve
+ *  cihazdaki ücretsiz servis koruması (providerGate openfreemap patlama 20) aşılınca glifler reddedilir, karolar "errored" olup harita boş kalır
+ *  (2026-11-22 tarayıcıda görüldü). Temaya bağlı stillerde tüm etiketler tek yığına (Regular) indirgenir; istek sayısı koyu stille aynı kalır. */
+const FONT = ['Noto Sans Regular'];
+export const slimFonts = (_prev, style) => ({ ...style, layers: (style.layers || []).map((l) => (l.layout?.['text-font'] ? { ...l, layout: { ...l.layout, 'text-font': [...FONT] } } : l)) });
+const trafficColor = (c) => ['match', ['get', 'lvl'], 'moderate', c[0], 'heavy', c[1], 'severe', c[2], c[0]];
 
 // 3B binalar (navigasyonda 3B görünüm): buildings = { layer, hide } sağlayıcıya özgü tanımdır. layer: kimliksiz 'fill-extrusion'
 // katmanı (kaynak/kaynak katmanı stile göre); hide: 3B açıkken gizlenecek düz bina dolgusu katmanları. Katman rota çizgisinin altına
@@ -29,11 +54,16 @@ export const buildingsLayer = ({ source, filter, height, base }) => ({
 // onError(e): kütüphanenin 'error' olayları; isFatal(e) true dönerse yükleme bitmeden gelen hata yüklemeyi hemen bitirir (ör. Mapbox 401/403).
 // Yükleme başarısızsa (zaman aşımı / ölümcül hata) map.remove() çağrılır: WebGL bağlamı ve dinleyiciler bırakılır.
 export async function createVectorMap(lib, container, { mapOptions = {}, name, satellite, buildings, onError, isFatal, timeoutMs = 25000 } = {}) {
+  const themed = THEMED.get(name); // temaya bağlı mı (OpenFreeMap)? Değilse ton hep koyu
+  // Temaya bağlı haritada ilk stil de slimFonts ile yüklenir: kurucuya stil verilmez, hemen ardından setStyle (tek yükleme, istek artmaz).
+  const bootStyle = themed && typeof mapOptions.style === 'string' ? mapOptions.style : null;
   const map = new lib.Map({
     container, center: [35.0, 39.0], zoom: 6 - ZOOM_OFFSET, maxPitch: 60,
     attributionControl: false, // atıf aşağıda kompakt denetimle eklenir (OSM atfı ODbL gereği zorunlu)
     ...mapOptions,
+    ...(bootStyle ? { style: undefined } : {}),
   });
+  if (bootStyle) map.setStyle(bootStyle, { diff: false, transformStyle: slimFonts });
   let failLoad = null; // yükleme sürerken ölümcül hatayı yükleme sözüne iletir
   if (onError) {
     // dinleyici yalnızca istenirse: yoksa kütüphane hatayı bugünkü gibi konsola yazar
@@ -61,13 +91,16 @@ export async function createVectorMap(lib, container, { mapOptions = {}, name, s
   let routeData = EMPTY; // stil değişiminde geri yüklenecek son veriler
   let trafficData = EMPTY;
   let want3d = false; // istenen bina görünümü (stil değişiminde yeniden uygulanır)
+  let tone = themed && mapOptions.style === themed.light ? 'light' : 'dark';
 
   // 3B bina katmanını istenen duruma getirir. Rota kaynağı yoksa stil henüz yükleniyordur: 'style.load' → installLayers uygular.
   // Stilde bina kaynağı yoksa (beklenmedik stil) katman eklenmez.
   function applyBuildings() {
     if (!buildings || !map.getSource('route')) return;
     const on = want3d && !!map.getSource(buildings.layer.source);
-    if (on && !map.getLayer(BUILDINGS_3D)) map.addLayer({ ...buildings.layer, id: BUILDINGS_3D }, 'route-casing');
+    const bColor = tone === 'light' ? LIGHT_PALETTE.building : null; // açık harita: açık gri bina; koyuda sağlayıcının kendi rengi
+    const layer = bColor ? { ...buildings.layer, paint: { ...buildings.layer.paint, 'fill-extrusion-color': bColor } } : buildings.layer;
+    if (on && !map.getLayer(BUILDINGS_3D)) map.addLayer({ ...layer, id: BUILDINGS_3D }, 'route-casing');
     else if (!on && map.getLayer(BUILDINGS_3D)) map.removeLayer(BUILDINGS_3D);
     for (const id of buildings.hide || []) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'none' : 'visible');
   }
@@ -78,22 +111,30 @@ export async function createVectorMap(lib, container, { mapOptions = {}, name, s
     if (map.getSource('route')) return;
     map.addSource('route', { type: 'geojson', data: routeData });
     map.addSource('traffic', { type: 'geojson', data: trafficData });
-    map.addLayer({ id: 'route-casing', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#ffd600', 'line-width': 12, 'line-opacity': 1 } }); // sarı dış çerçeve
-    map.addLayer({ id: 'route-line', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#1a73e8', 'line-width': 8, 'line-opacity': 1 } }); // kalın mavi rota
-    map.addLayer({
+    const casing = { id: 'route-casing', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#ffd600', 'line-width': 12, 'line-opacity': 1 } }; // sarı dış çerçeve
+    const line = { id: 'route-line', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#1a73e8', 'line-width': 8, 'line-opacity': 1 } }; // kalın mavi rota
+    const traffic = {
       id: 'traffic-line', type: 'line', source: 'traffic', layout: { 'line-join': 'round', 'line-cap': 'butt' },
       paint: { 'line-color': ['match', ['get', 'lvl'], 'moderate', '#ff9100', 'heavy', '#e53935', 'severe', '#b71c1c', '#ff9100'], 'line-width': 8, 'line-opacity': 1 },
-    });
+    };
+    if (tone === 'light') { // açık harita: yukarıdaki koyu harita renkleri açık zeminde okunmaz (sarı 1.3:1, turuncu 2.0:1)
+      casing.paint['line-color'] = LIGHT_PALETTE.casing;
+      traffic.paint['line-color'] = trafficColor(LIGHT_PALETTE.traffic);
+    }
+    map.addLayer(casing);
+    map.addLayer(line);
+    map.addLayer(traffic);
     satellite?.install?.(map);
     if (want3d) applyBuildings(); // yeni stilde 3B binalar (kapalıysa yeni stil zaten düz)
   }
   installLayers();
   map.on('style.load', installLayers); // ilk yüklemeden sonraki stil değişimleri (ör. uydu stili) katmanları silerse geri koy
 
-  return {
+  const adapter = {
     name,
     installLayers, // stil değişimini kendisi yöneten bağdaştırıcılar için (uygulama kodu kullanmaz)
     setSatellite(on) { satellite?.set(map, on); },
+
     /** Navigasyonda 3B: binalar yüksekliğiyle (fill-extrusion) çizilir; false düz haritaya döner. */
     setBuildings3d(on) { want3d = !!on; applyBuildings(); },
     marker(pos, content, title = '') {
@@ -153,4 +194,19 @@ export async function createVectorMap(lib, container, { mapOptions = {}, name, s
     resize: () => map.resize(),
     bearing: () => map.getBearing(),
   };
+  if (themed) {
+    THEME_HANDLES.set(adapter, {
+      tone: () => tone,
+      // Arayüz teması değişti: taban stil yeniden yüklenir (konum/zoom/yön/eğim korunur; rota, trafik, uydu ve 3B bina 'style.load' →
+      // installLayers ile bu tonun renkleriyle geri kurulur). Ton aynıysa hiçbir şey yapmaz.
+      set(dark) {
+        const next = dark ? 'dark' : 'light';
+        if (next === tone) return false;
+        tone = next;
+        map.setStyle(themed[next], { diff: false, transformStyle: slimFonts });
+        return true;
+      },
+    });
+  }
+  return adapter;
 }

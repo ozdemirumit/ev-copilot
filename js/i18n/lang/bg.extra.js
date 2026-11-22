@@ -410,7 +410,7 @@ export default {
   "Açık": "Светла",
   "Koyu": "Тъмна",
   "Otomatik (sistem ayarı)": "Автоматично (системна настройка)",
-  "Otomatik, telefonun açık/koyu ayarını izler. Bu ayar yalnızca uygulama arayüzünü değiştirir; harita her sağlayıcıda koyu kalır.": "Автоматично следва настройката светъл/тъмен на телефона. Тази настройка променя само интерфейса на приложението; картата остава тъмна при всеки доставчик на карти.",
+  "Otomatik, telefonun açık/koyu ayarını izler. Ücretsiz OpenFreeMap haritası temaya uyar; diğer harita sağlayıcıları koyu kalır.": "Автоматично следва настройката светъл/тъмен на телефона. Безплатната карта OpenFreeMap следва темата; другите доставчици на карти остават тъмни.",
   "🟢 Müsait": "🟢 Свободно",
   "⚪ Bilinmiyor": "⚪ Неизвестно",
   "Herkese açık ücretsiz Beta: harita OpenFreeMap (© OpenMapTiles, © OpenStreetMap katkıcıları), rota ve rakım Valhalla (FOSSGIS), yer arama Photon (komoot), şarj istasyonları Overpass (private.coffee), hava Open-Meteo.com (CC BY 4.0). Bu sürümde canlı trafik, doluluk, yol hız limiti ve uydu görüntüsü yoktur.": "Публична безплатна бета: карта OpenFreeMap (© OpenMapTiles, © сътрудници на OpenStreetMap), маршрут и надморска височина Valhalla (FOSSGIS), търсене на места Photon (komoot), зарядни станции Overpass (private.coffee), време Open-Meteo.com (CC BY 4.0). Тази версия няма трафик на живо, заетост, ограничения на скоростта и сателитни изображения.",

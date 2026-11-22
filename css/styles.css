@@ -480,6 +480,10 @@ body.sheet-open .mapui { display: none; }
 .spin.planned path { stroke: var(--warn); stroke-width: 3; }
 .spin.focus { transform: scale(1.3); }
 .spin.focus path { stroke: #fff; stroke-width: 3.5; }
+/* Açık harita (OpenFreeMap positron, mapView.js #map[data-tone]): beyaz kenar açık zeminde seçilmez; koyu lacivert kenar (≥3:1). Planlı durak sarı kenarını korur. */
+#map[data-tone="light"] .spin path { stroke: #16263d; }
+#map[data-tone="light"] .spin.planned path { stroke: var(--warn); }
+#map[data-tone="light"] .spin.focus path { stroke: #16263d; }
 
 /* MapLibre / Mapbox atıf kutusu (Mapbox'ta logo da burada, gizlenmez): haritanın alt kenarında, yüzen arama satırının altında */
 .maplibregl-ctrl-bottom-left, .mapboxgl-ctrl-bottom-left { bottom: 2px !important; left: 6px !important; z-index: 2; }

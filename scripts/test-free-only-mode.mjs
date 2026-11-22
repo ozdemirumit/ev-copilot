@@ -71,6 +71,7 @@ ok('C0 test: free-only etkin (providerRequestsPaused false, freeOnlyMode true)',
 const R = (url, method = 'GET') => blockedReason(url, { origin: ORIGIN, proxyBase: PROXY, method });
 const ALLOW = [
   ['https://tiles.openfreemap.org/styles/dark', 'GET'],
+  ['https://tiles.openfreemap.org/styles/positron', 'GET'], // açık tema taban stili (js/ui/maps/maplibre.js)
   ['https://tiles.openfreemap.org/planet', 'GET'],
   ['https://tiles.openfreemap.org/planet/20251112_001001_pt/10/600/390.pbf', 'GET'],
   ['https://tiles.openfreemap.org/fonts/Noto%20Sans%20Regular/0-255.pbf', 'GET'],

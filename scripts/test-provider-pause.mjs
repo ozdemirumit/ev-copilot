@@ -43,6 +43,7 @@ const EXTERNAL = [
   'https://maps.googleapis.com/maps/api/js?key=x', // Google harita SDK
   'https://api.tomtom.com/maps/orbis/assets/styles/0.1/style.json', // TomTom harita stili
   'https://tiles.openfreemap.org/styles/dark', // OpenFreeMap stil/karo
+  'https://tiles.openfreemap.org/styles/positron', // OpenFreeMap açık tema stili
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/1/1/1', // Esri uydu
   'https://valhalla1.openstreetmap.de/route', // rota (OSM) + yükselti
   'https://api.open-meteo.com/v1/forecast?latitude=1', // hava

@@ -410,7 +410,7 @@
  "Açık",
  "Koyu",
  "Otomatik (sistem ayarı)",
- "Otomatik, telefonun açık/koyu ayarını izler. Bu ayar yalnızca uygulama arayüzünü değiştirir; harita her sağlayıcıda koyu kalır.",
+ "Otomatik, telefonun açık/koyu ayarını izler. Ücretsiz OpenFreeMap haritası temaya uyar; diğer harita sağlayıcıları koyu kalır.",
  "🟢 Müsait",
  "⚪ Bilinmiyor",
  "Herkese açık ücretsiz Beta: harita OpenFreeMap (© OpenMapTiles, © OpenStreetMap katkıcıları), rota ve rakım Valhalla (FOSSGIS), yer arama Photon (komoot), şarj istasyonları Overpass (private.coffee), hava Open-Meteo.com (CC BY 4.0). Bu sürümde hesap, canlı trafik, doluluk, fiyat bildirimi, yol hız limiti ve uydu görüntüsü yoktur.",

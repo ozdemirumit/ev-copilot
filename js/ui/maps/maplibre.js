@@ -1,9 +1,15 @@
 // Harita bağdaştırıcısı: MapLibre GL JS (yerel vendor/maplibre kopyası, BSD-3) + OpenFreeMap vektör karoları (OpenStreetMap verisi,
 // anahtarsız). Gövde ortak vektör-harita motorundadır (mapEngine.js); burada kütüphane yükleme, stil ve Esri uydu stratejisi kalır.
-import { createVectorMap, buildingsLayer, BUILDINGS_3D } from './mapEngine.js';
+import { createVectorMap, buildingsLayer, BUILDINGS_3D, registerThemedStyles } from './mapEngine.js';
 import { providerRequestsPaused, freeOnlyMode, freeMapRequest } from '../../net/providerGate.js';
 
-const STYLE = 'https://tiles.openfreemap.org/styles/dark';
+// Taban stil arayüz temasına uyar (yalnız OpenFreeMap): koyu tema → dark, açık tema → positron. Tema değişince motor (themeHandle.set)
+// stili yeniden yükler (mapEngine.js). Çözümlenmiş tema <html data-theme> üzerindedir (js/ui/theme.js, themeBoot.js).
+export const STYLE_DARK = 'https://tiles.openfreemap.org/styles/dark';
+export const STYLE_LIGHT = 'https://tiles.openfreemap.org/styles/positron';
+export const styleFor = (dark) => (dark ? STYLE_DARK : STYLE_LIGHT);
+const isDark = () => globalThis.document?.documentElement?.dataset?.theme === 'dark';
+registerThemedStyles('osm', { dark: STYLE_DARK, light: STYLE_LIGHT });
 const VENDOR = new URL('../../../vendor/maplibre/', import.meta.url).href;
 /** Sağlayıcı istekleri duraklatıldığında (js/net/providerGate.js) kullanılan YEREL stil: kaynak, karo, glif ve sprite adresi YOK →
  *  harita hiçbir harici karo/stil isteği yapmaz. Yalnızca düz arka plan; rota/trafik GeoJSON katmanları ve işaretçiler yine çizilir. */
@@ -65,6 +71,7 @@ const BUILDINGS = {
  *  Esri/ArcGIS uydu katmanı EKLENMEZ. Duraklatma her zaman önce gelir (ikisi birden → yerel boş stil). */
 export async function createMapLibreMap(container, { paused = providerRequestsPaused(), freeOnly = freeOnlyMode() } = {}) {
   const ml = await loadMapLibre(); // yerel vendor/maplibre kopyası (aynı köken)
+  const STYLE = styleFor(isDark()); // yükleme sırasında tema değiştiyse mapView.js açılışta themeHandle.set ile eşitler
   if (paused) return createVectorMap(ml, container, { mapOptions: { style: structuredClone(OFFLINE_STYLE) }, name: 'offline' }); // uydu (Esri) ve 3B bina yok: harici karo yok
   if (freeOnly) return createVectorMap(ml, container, { mapOptions: { style: STYLE, transformRequest: freeMapRequest }, name: 'osm', buildings: BUILDINGS }); // uydu yok
   return createVectorMap(ml, container, { mapOptions: { style: STYLE }, name: 'osm', satellite: esriSatellite(), buildings: BUILDINGS });
