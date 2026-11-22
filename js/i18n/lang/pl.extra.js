@@ -509,7 +509,7 @@ export default {
   "Kopyala": "Kopiuj",
   "İndir (JSON)": "Pobierz (JSON)",
   "Sıfırla": "Zresetuj",
-  "Rapor yalnızca bu cihazda üretilir; sen kopyalayıp ya da indirip paylaşmadıkça hiçbir yere gönderilmez.": "Raport powstaje tylko na tym urządzeniu; nie jest nigdzie wysyłany, dopóki sam go nie skopiujesz lub nie pobierzesz i nie udostępnisz.",
+  "Rapor bu cihazda üretilir. Hata günlüğü açıkken özet (yalnız sayılar; konum, adres ve konuşma metni yok) kayıt durunca, sürüş bitince ve uygulama arka plana geçince otomatik gönderilir; istersen ayrıca kopyalayıp ya da indirip paylaşabilirsin.": "Raport powstaje na tym urządzeniu. Gdy dziennik błędów jest włączony, podsumowanie (tylko liczby; bez lokalizacji, adresów i odczytywanego tekstu) jest wysyłane automatycznie po zatrzymaniu nagrywania, po zakończeniu przejazdu i gdy aplikacja przechodzi w tło; możesz też skopiować go lub pobrać i udostępnić samodzielnie.",
   "Kayıt kapalı": "Dziennik wyłączony",
   "{0} OCR okuması · %{1} geçerli · {2} sesli uyarı · {3} hata": "{0} odczytów OCR · {1}% poprawnych · {2} alertów głosowych · {3} błędów",
   "Kayıt başladı": "Dziennik włączony",
@@ -559,5 +559,5 @@ export default {
   "Togg T10X V2 Standart Menzil (52,4 kWh)": "Togg T10X V2 Standardowy zasięg (52,4 kWh)",
   "Hata günlüğü": "Dziennik błędów",
   "Hata günlüğünü otomatik gönder": "Wysyłaj dziennik błędów automatycznie",
-  "Uygulama hataları ve ses olayları geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "Błędy aplikacji i zdarzenia dźwiękowe są wysyłane do twórcy; konto, lokalizacja, adresy, odczytywany tekst i pełny adres IP nie są wysyłane. Wyłączenie usuwa oczekujące wpisy.",
+  "Uygulama hataları, ses olayları ve saha testi açıksa sürüş özeti (yalnız sayılar) geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "Błędy aplikacji, zdarzenia dźwiękowe i, przy włączonym teście terenowym, podsumowanie przejazdu (tylko liczby) są wysyłane do twórcy; konto, lokalizacja, adresy, odczytywany tekst i pełny adres IP nie są wysyłane. Wyłączenie usuwa oczekujące wpisy.",
 };

@@ -1,10 +1,12 @@
 // Daha Fazla > Saha testi kartı (v0.99.120): sürüş sırasında YALNIZ sayıları toplar (js/diag/fieldLog.js), sürüş sonunda tek dokunuşla rapor üretir.
-// Varsayılan KAPALI. Konum, adres, konuşma metni ve ham OCR değeri tutulmaz. Rapor yalnız bu cihazda üretilir; kopyala/indir dışında hiçbir yere gitmez.
+// Varsayılan KAPALI (kayıt kapalıyken hiçbir şey toplanmaz ve gönderilmez). Konum, adres, konuşma metni ve ham OCR değeri tutulmaz.
+// Rapor bu cihazda üretilir; Hata günlüğü anahtarı açıksa özet (yalnız sayılar) ayrıca otomatik gönderilir (js/diag/fieldUpload.js); kopyala/indir yine elle.
 import { getState, subscribe } from '../state.js';
 import { load, save } from '../utils/storage.js';
 import { createFieldLog, formatReport, reportJson, deviceFamily } from '../diag/fieldLog.js';
 import { onSpoken } from '../advisor/voice.js';
 import { onCameraStatus } from '../sensors/camera.js';
+import { fieldUploader } from '../diag/clientLogInit.js';
 import { toast } from './toast.js';
 import { t } from '../i18n/index.js';
 
@@ -36,6 +38,9 @@ export function initFieldTest() {
     at: new Date().toISOString(),
   });
   const summary = () => log.snapshot(now());
+  // Otomatik gönderim (v0.99.125): Hata günlüğü anahtarı açıkken özet (yalnız sayılar) kayıt durunca, sürüş bitince, uygulama arka plana geçince ve 10 dakikada bir gider.
+  // Zorlanmayanlar (arka plan, periyodik) en çok 2 dakikada bir; yükleyici ağ hatasında geri çekilir, kapalıyken hiçbir şey göndermez (js/diag/fieldUpload.js).
+  const upload = (force) => { try { fieldUploader().submit(reportJson(summary(), meta()), { force }); } catch { /* gönderim kayıt/arayüzü bozmasın */ } };
 
   function paintLive() {
     const s = summary();
@@ -46,7 +51,8 @@ export function initFieldTest() {
 
   subscribe('ocr', (o) => log.ocr(o, now()));
   subscribe('live', (l) => log.gps(l.gps, now()));
-  subscribe('nav', (n) => log.nav(!!n.active, now()));
+  let navWas = false;
+  subscribe('nav', (n) => { log.nav(!!n.active, now()); if (navWas && !n.active && log.active()) upload(true); navWas = !!n.active; }); // sürüş bitti → özet
   subscribe('plan', (p) => log.plan(p.planId, now()));
   onSpoken((k) => log.spoken(k, now()));
   onCameraStatus((e) => log.camera(e, now()));
@@ -58,7 +64,7 @@ export function initFieldTest() {
 
   toggle.addEventListener('change', () => {
     save('fieldTestOn', toggle.checked);
-    if (toggle.checked) { log.start(now()); seed(); toast(t('Kayıt başladı')); } else { log.stop(now()); }
+    if (toggle.checked) { log.start(now()); seed(); toast(t('Kayıt başladı')); } else { log.stop(now()); upload(true); } // kayıt durdu → özet
     persist();
     paintLive();
   });
@@ -93,8 +99,9 @@ export function initFieldTest() {
   });
 
   setInterval(() => { if (log.active()) persist(); }, PERSIST_MS);
+  setInterval(() => { if (log.active()) upload(false); }, 10 * 60e3);
   setInterval(paintLive, 5000);
-  document.addEventListener('visibilitychange', () => { if (document.hidden && log.active()) persist(); }); // telefon sürüş ortasında uygulamayı kapatsa sayaçlar kaybolmasın
+  document.addEventListener('visibilitychange', () => { if (document.hidden && log.active()) { persist(); upload(false); } }); // telefon sürüş ortasında uygulamayı kapatsa sayaçlar kaybolmasın
   window.addEventListener('pagehide', () => { if (log.active()) persist(); });
   paintLive();
 }

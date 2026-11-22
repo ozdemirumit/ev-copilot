@@ -33,7 +33,7 @@ iletir) ve `providerGate.js` (duraklatmada isteği alttaki fetch'e hiç iletmez)
 | `js/account/historySync.js` | proxyFetch 1 | `/v1/history/…` | kendi | geçmiş eşitleme |
 | `js/account/stationInfo.js` | proxyFetch 6 | `/v1/station/info`, `/v1/station/photo` | kendi | istasyon kartı / kullanıcı |
 | `js/account/sync.js` | proxyFetch 2 | `/v1/sync` | kendi | `SYNC_KEYS` sessiz olmayan kayıt → 4 sn gecikme (birleştirir); görünür olunca 10 dk'da bir çekme |
-| `js/diag/clientLogInit.js` | fetch 1 | `/v1/clientlog` | kendi | hata/ses olaylarını toplu yükler (v0.99.123): kuyruk, tekilleştirme, dakikada ≤ 20 olay, 40 olay/istek, 5xx/ağda 30 sn→10 dk geri çekilme, 4xx'te 30 dk durma; Daha Fazla'dan kapatılır; ücretsiz kipte hiç gitmez; konum/adres/konuşma metni yok |
+| `js/diag/clientLogInit.js` | fetch 1 | `/v1/clientlog`, `/v1/fieldreport` | kendi | hata/ses olaylarını toplu yükler (v0.99.123); saha testi özetini (yalnız sayılar; kayıt durunca, sürüş bitince, arka plana geçince, 10 dk'da bir; en çok 2 dk'da bir, geri çekilmeli) yükler (v0.99.125); tek `fetch` iki yolu da taşır: kuyruk, tekilleştirme, dakikada ≤ 20 olay, 40 olay/istek, 5xx/ağda 30 sn→10 dk geri çekilme, 4xx'te 30 dk durma; Daha Fazla'dan kapatılır; ücretsiz kipte hiç gitmez; konum/adres/konuşma metni yok |
 | `js/google/chargers.js` | proxyFetchRetry 1 | `/google/stations` | ücretli | rota planı / yakın arama; sunucuda `premiumOk` |
 | `js/here/chargers.js` | proxyFetchRetry 1 | `/here/stations` | ücretli | rota planı / yakın arama |
 | `js/mapbox/api.js` | fetch 1, proxyFetch 1, proxyFetchRetry 1 | api.mapbox.com (kişisel mbKey) ya da `/mapbox/` | ücretli | `mbfetch` tabanı; 429 iç döngüde tekrar yok (D2-T0 §E) |

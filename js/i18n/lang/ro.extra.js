@@ -509,7 +509,7 @@ export default {
   "Kopyala": "Copiază",
   "İndir (JSON)": "Descarcă (JSON)",
   "Sıfırla": "Resetează",
-  "Rapor yalnızca bu cihazda üretilir; sen kopyalayıp ya da indirip paylaşmadıkça hiçbir yere gönderilmez.": "Raportul se creează doar pe acest dispozitiv; nu este trimis nicăieri decât dacă îl copiezi sau îl descarci și îl partajezi tu.",
+  "Rapor bu cihazda üretilir. Hata günlüğü açıkken özet (yalnız sayılar; konum, adres ve konuşma metni yok) kayıt durunca, sürüş bitince ve uygulama arka plana geçince otomatik gönderilir; istersen ayrıca kopyalayıp ya da indirip paylaşabilirsin.": "Raportul este creat pe acest dispozitiv. Cât timp jurnalul de erori este activ, rezumatul (doar numere; fără locație, adrese sau text rostit) este trimis automat când înregistrarea se oprește, o călătorie se termină și aplicația trece în fundal; îl poți și copia sau descărca și partaja singur.",
   "Kayıt kapalı": "Jurnal oprit",
   "{0} OCR okuması · %{1} geçerli · {2} sesli uyarı · {3} hata": "{0} citiri OCR · {1}% valide · {2} alerte vocale · {3} erori",
   "Kayıt başladı": "Jurnal pornit",
@@ -559,5 +559,5 @@ export default {
   "Togg T10X V2 Standart Menzil (52,4 kWh)": "Togg T10X V2 Autonomie standard (52,4 kWh)",
   "Hata günlüğü": "Jurnal de erori",
   "Hata günlüğünü otomatik gönder": "Trimite automat jurnalul de erori",
-  "Uygulama hataları ve ses olayları geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "Erorile aplicației și evenimentele sonore sunt trimise dezvoltatorului; contul, locația, adresele, textul rostit și adresa IP completă nu sunt trimise. Dezactivarea șterge intrările în așteptare.",
+  "Uygulama hataları, ses olayları ve saha testi açıksa sürüş özeti (yalnız sayılar) geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "Erorile aplicației, evenimentele sonore și, cu testul pe teren activ, rezumatul călătoriei (doar numere) sunt trimise dezvoltatorului; contul, locația, adresele, textul rostit și adresa IP completă nu sunt trimise. Dezactivarea șterge intrările în așteptare.",
 };

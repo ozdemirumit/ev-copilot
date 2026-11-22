@@ -509,7 +509,7 @@ export default {
   "Kopyala": "Αντιγραφή",
   "İndir (JSON)": "Λήψη (JSON)",
   "Sıfırla": "Επαναφορά",
-  "Rapor yalnızca bu cihazda üretilir; sen kopyalayıp ya da indirip paylaşmadıkça hiçbir yere gönderilmez.": "Η αναφορά δημιουργείται μόνο σε αυτή τη συσκευή· δεν αποστέλλεται πουθενά αν δεν την αντιγράψεις ή τη μεταφορτώσεις και τη μοιραστείς εσύ.",
+  "Rapor bu cihazda üretilir. Hata günlüğü açıkken özet (yalnız sayılar; konum, adres ve konuşma metni yok) kayıt durunca, sürüş bitince ve uygulama arka plana geçince otomatik gönderilir; istersen ayrıca kopyalayıp ya da indirip paylaşabilirsin.": "Η αναφορά δημιουργείται σε αυτήν τη συσκευή. Όσο το αρχείο σφαλμάτων είναι ενεργό, η σύνοψη (μόνο αριθμοί· χωρίς τοποθεσία, διευθύνσεις και εκφωνούμενο κείμενο) στέλνεται αυτόματα όταν σταματά η καταγραφή, όταν τελειώνει μια διαδρομή και όταν η εφαρμογή περνά στο παρασκήνιο· μπορείτε επίσης να την αντιγράψετε ή να την κατεβάσετε και να τη μοιραστείτε μόνοι σας.",
   "Kayıt kapalı": "Η καταγραφή είναι ανενεργή",
   "{0} OCR okuması · %{1} geçerli · {2} sesli uyarı · {3} hata": "{0} αναγνώσεις OCR · {1}% έγκυρες · {2} φωνητικές ειδοποιήσεις · {3} σφάλματα",
   "Kayıt başladı": "Η καταγραφή ξεκίνησε",
@@ -559,5 +559,5 @@ export default {
   "Togg T10X V2 Standart Menzil (52,4 kWh)": "Togg T10X V2 Τυπική αυτονομία (52,4 kWh)",
   "Hata günlüğü": "Αρχείο καταγραφής σφαλμάτων",
   "Hata günlüğünü otomatik gönder": "Αυτόματη αποστολή αρχείου σφαλμάτων",
-  "Uygulama hataları ve ses olayları geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "Τα σφάλματα της εφαρμογής και τα συμβάντα ήχου στέλνονται στον προγραμματιστή· ο λογαριασμός, η τοποθεσία, οι διευθύνσεις, το εκφωνούμενο κείμενο και η πλήρης διεύθυνση IP δεν στέλνονται. Η απενεργοποίηση διαγράφει τις εγγραφές που περιμένουν.",
+  "Uygulama hataları, ses olayları ve saha testi açıksa sürüş özeti (yalnız sayılar) geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "Τα σφάλματα της εφαρμογής, τα συμβάντα ήχου και, με ενεργή δοκιμή πεδίου, η σύνοψη της διαδρομής (μόνο αριθμοί) στέλνονται στον προγραμματιστή· ο λογαριασμός, η τοποθεσία, οι διευθύνσεις, το εκφωνούμενο κείμενο και η πλήρης διεύθυνση IP δεν στέλνονται. Η απενεργοποίηση διαγράφει τις εγγραφές που περιμένουν.",
 };

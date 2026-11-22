@@ -13,6 +13,8 @@ import https from 'node:https';
 
 export const LIMITS = Object.freeze({
   schema: 'evrf-client-log/1',
+  fieldSchema: 'evrf-field-report/1',
+  fieldDayBytes: 5 * 1024 * 1024,
   bodyBytes: 16000,
   maxEvents: 40,
   msgChars: 300,
@@ -31,7 +33,7 @@ export const LIMITS = Object.freeze({
 });
 
 const DAY_MS = 86400000;
-const MAIN_RE = /^(uploads-)?(\d{4}-\d{2}-\d{2})\.jsonl$/;
+const MAIN_RE = /^(uploads-|field-reports-)?(\d{4}-\d{2}-\d{2})\.jsonl$/;
 const D_KEY_RE = /^[A-Za-z][A-Za-z0-9._-]{0,23}$/;
 const NET_RE = /^[A-Za-z0-9-]{1,12}$/;
 const LANG_RE = /^[A-Za-z0-9_-]{1,8}$/;
@@ -81,7 +83,7 @@ export function createClientLogs({
   const failedFile = join(root, 'forward-failed.jsonl');
   const workFile = join(root, 'forward-failed.work.jsonl');
   const warnings = [];
-  const counters = { accepted: 0, dropped: 0, rejected: 0, forwardOk: 0, forwardFail: 0, forwardDropped: 0 };
+  const counters = { accepted: 0, dropped: 0, rejected: 0, forwardOk: 0, forwardFail: 0, forwardDropped: 0, fieldAccepted: 0 };
 
   // ---- ileri gönderme ayarı ----
   let fwdUrl = null;
@@ -369,6 +371,85 @@ export function createClientLogs({
     }
   }
 
+  // ---- saha testi özeti (POST /v1/fieldreport): yalnız SAYAÇ özeti; ayrı dosya field-reports-YYYY-MM-DD.jsonl ----
+  // Şema (js/diag/fieldLog.js REPORT_SCHEMA): { schema, meta:{version,platform,standalone,at}, summary:{v:1,...}, client? }. Beyaz liste: şema dışı alan yazılmaz,
+  // anahtarlar kısa tanımlayıcı olmalı, hata iletileri clean() ile temizlenir. Konum/adres/konuşma metni/ham OCR değeri zaten istemcide toplanmaz.
+  const KEY_RE = /^[A-Za-z0-9_.:-]{1,40}$/;
+  const fnum = (x) => (typeof x === 'number' && Number.isFinite(x) && x >= 0 ? Math.min(x, 1e13) : 0);
+  const frate = (x) => (typeof x === 'number' && Number.isFinite(x) ? Math.min(1, Math.max(0, x)) : null);
+  const fcounts = (o, limit) => { const out = {}; if (!isObj(o)) return out; let n = 0; for (const [k, v] of Object.entries(o)) { if (n >= limit) break; if (!KEY_RE.test(k)) continue; out[k] = fnum(v); n++; } return out; };
+  const gobj = (o) => (isObj(o) ? o : {});
+  function cleanSummary(s) {
+    if (!isObj(s) || s.v !== 1) return null;
+    const ocr = gobj(s.ocr), gps = gobj(s.gps), nav = gobj(s.nav), sp = gobj(s.spoken), cam = gobj(s.camera), er = gobj(s.errors);
+    const top = (Array.isArray(er.top) ? er.top : []).slice(0, 12).filter(isObj).map((e) => ({ message: clean(typeof e.message === 'string' ? e.message : '', 160) || '(boş)', count: fnum(e.count) }));
+    return {
+      v: 1, startedAt: fnum(s.startedAt), endedAt: s.endedAt == null ? null : fnum(s.endedAt), durationMs: fnum(s.durationMs),
+      nav: { sessions: fnum(nav.sessions), ms: fnum(nav.ms) },
+      ocr: { reads: fnum(ocr.reads), ok: fnum(ocr.ok), okRate: frate(ocr.okRate), rejected: fnum(ocr.rejected), rejectedByReason: fcounts(ocr.rejectedByReason, 20), unreadable: fnum(ocr.unreadable), errors: fnum(ocr.errors), maxGapMs: fnum(ocr.maxGapMs), meanGapMs: fnum(ocr.meanGapMs) },
+      gps: { msByState: fcounts(gps.msByState, 10), freshRate: frate(gps.freshRate), transitions: fnum(gps.transitions) },
+      spoken: { total: fnum(sp.total), byKind: fcounts(sp.byKind, 16) },
+      camera: { recovered: fnum(cam.recovered), lost: fnum(cam.lost) },
+      plans: fnum(s.plans),
+      errors: { total: fnum(er.total), top },
+    };
+  }
+
+  async function ingestField({ body, ip, deviceHeader, bytes } = {}) {
+    let row = null;
+    try {
+      const t = now();
+      const s = rollDay(true);
+      const nBytes = Number.isFinite(bytes) ? bytes : (() => { try { return Buffer.byteLength(JSON.stringify(body) ?? ''); } catch { return 0; } })();
+      const mip = maskIp(ip);
+      const hdrDid = typeof deviceHeader === 'string' && LIMITS.didRe.test(deviceHeader.trim()) ? deviceHeader.trim() : null;
+      row = { ts: new Date(t).toISOString(), kind: 'field', ip: mip, did: hdrDid, sid: null, v: null, p: null, bytes: nBytes, events: 0, accepted: 0, dropped: 0, result: 'invalid', status: 400 };
+      const reject = (result, status, resp) => { row.result = result; row.status = status; counters.rejected++; audit(row); return { status, body: resp }; };
+
+      const ipWait = hit(ipHits, String(ip ?? 'unknown'), perIpPerMin, t);
+      if (ipWait) return reject('rate', 429, { error: 'çok sık istek', retryAfterSec: ipWait });
+      if (nBytes > LIMITS.bodyBytes) return reject('invalid', 400, { error: 'gövde çok büyük' });
+      if (!isObj(body)) return reject('invalid', 400, { error: 'gövde geçersiz' });
+      if (body.schema !== LIMITS.fieldSchema) return reject('invalid', 400, { error: 'şema desteklenmiyor' });
+      const c = isObj(body.client) ? body.client : {};
+      const hdr = typeof deviceHeader === 'string' ? deviceHeader.trim() : '';
+      const did = typeof c.did === 'string' && LIMITS.didRe.test(c.did) ? c.did : (LIMITS.didRe.test(hdr) ? hdr : '');
+      if (!did) return reject('invalid', 400, { error: 'cihaz kimliği yok' });
+      row.did = did;
+      const client = cleanClient(c, did);
+      row.sid = client.sid || null; row.v = client.v || null; row.p = client.p || null;
+      const summary = cleanSummary(body.summary);
+      if (!summary) return reject('invalid', 400, { error: 'özet geçersiz' });
+      const m = isObj(body.meta) ? body.meta : {};
+      const meta = {
+        version: typeof m.version === 'string' && VER_RE.test(m.version.trim()) ? m.version.trim() : '',
+        platform: LIMITS.platforms.includes(m.platform) ? m.platform : 'other',
+        standalone: m.standalone === true,
+        at: typeof m.at === 'string' && /^\d{4}-\d{2}-\d{2}T[\d:.]{4,14}Z$/.test(m.at) ? m.at : null,
+      };
+
+      const devWait = hit(devHits, 'f:' + did, perDevicePerMin, t);
+      if (devWait) return reject('rate', 429, { error: 'çok sık istek', retryAfterSec: devWait });
+
+      const file = join(root, `field-reports-${s.day}.jsonl`);
+      const rec = { rcv: new Date(t).toISOString(), ip: mip, kind: 'field', client, meta, summary };
+      const line = JSON.stringify(rec) + '\n';
+      if (sizeOf(file) + Buffer.byteLength(line) > LIMITS.fieldDayBytes) {
+        const wait = Math.max(1, Math.ceil((Date.parse(s.day + 'T00:00:00Z') + DAY_MS - t) / 1000));
+        return reject('cap', 429, { error: 'günlük saha özeti tavanı doldu', retryAfterSec: wait });
+      }
+      try { ensureDir(); appendFileSync(file, line); } catch { return reject('error', 500, { error: 'yazılamadı' }); }
+      counters.fieldAccepted++;
+      row.accepted = 1; row.result = 'ok'; row.status = 200;
+      audit(row);
+      startForward(rec, refOf(line));
+      return { status: 200, body: { ok: true } };
+    } catch {
+      try { if (row) { row.result = 'error'; row.status = 500; counters.rejected++; audit(row); } } catch { /* yut */ }
+      return { status: 500, body: { error: 'yazılamadı' } };
+    }
+  }
+
   function stats() {
     let bytes = 0;
     try { bytes = rollDay(false).bytes; } catch { /* 0 */ }
@@ -378,5 +459,5 @@ export function createClientLogs({
   /** Uçuştaki ileri gönderme/flush işlemlerinin bitmesini bekler (testler ve düzgün kapanış için). */
   async function idle() { while (pending.size) await Promise.allSettled([...pending]); }
 
-  return { ingest, stats, flushForwards, idle };
+  return { ingest, ingestField, stats, flushForwards, idle };
 }

@@ -509,7 +509,7 @@ export default {
   "Kopyala": "Copiar",
   "İndir (JSON)": "Descargar (JSON)",
   "Sıfırla": "Restablecer",
-  "Rapor yalnızca bu cihazda üretilir; sen kopyalayıp ya da indirip paylaşmadıkça hiçbir yere gönderilmez.": "El informe se crea solo en este dispositivo; no se envía a ningún sitio salvo que lo copies o descargues y lo compartas tú.",
+  "Rapor bu cihazda üretilir. Hata günlüğü açıkken özet (yalnız sayılar; konum, adres ve konuşma metni yok) kayıt durunca, sürüş bitince ve uygulama arka plana geçince otomatik gönderilir; istersen ayrıca kopyalayıp ya da indirip paylaşabilirsin.": "El informe se crea en este dispositivo. Mientras el registro de errores esté activado, el resumen (solo números; sin ubicación, direcciones ni texto hablado) se envía automáticamente al detener la grabación, al terminar un trayecto y cuando la app pasa a segundo plano; también puedes copiarlo o descargarlo y compartirlo tú mismo.",
   "Kayıt kapalı": "Registro desactivado",
   "{0} OCR okuması · %{1} geçerli · {2} sesli uyarı · {3} hata": "{0} lecturas OCR · {1} % válidas · {2} avisos de voz · {3} errores",
   "Kayıt başladı": "Registro iniciado",
@@ -559,5 +559,5 @@ export default {
   "Togg T10X V2 Standart Menzil (52,4 kWh)": "Togg T10X V2 Autonomía estándar (52,4 kWh)",
   "Hata günlüğü": "Registro de errores",
   "Hata günlüğünü otomatik gönder": "Enviar el registro de errores automáticamente",
-  "Uygulama hataları ve ses olayları geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "Los errores de la app y los eventos de sonido se envían al desarrollador; no se envían tu cuenta, ubicación, direcciones, texto hablado ni la dirección IP completa. Al desactivarlo se borran las entradas pendientes.",
+  "Uygulama hataları, ses olayları ve saha testi açıksa sürüş özeti (yalnız sayılar) geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "Los errores de la app, los eventos de sonido y, con la prueba de campo activada, el resumen del trayecto (solo números) se envían al desarrollador; no se envían tu cuenta, ubicación, direcciones, texto hablado ni la dirección IP completa. Al desactivarlo se borran las entradas pendientes.",
 };

@@ -509,7 +509,7 @@ export default {
   "Kopyala": "Kopiëren",
   "İndir (JSON)": "Downloaden (JSON)",
   "Sıfırla": "Resetten",
-  "Rapor yalnızca bu cihazda üretilir; sen kopyalayıp ya da indirip paylaşmadıkça hiçbir yere gönderilmez.": "Het rapport wordt alleen op dit apparaat gemaakt; het wordt nergens heen gestuurd tenzij je het zelf kopieert of downloadt en deelt.",
+  "Rapor bu cihazda üretilir. Hata günlüğü açıkken özet (yalnız sayılar; konum, adres ve konuşma metni yok) kayıt durunca, sürüş bitince ve uygulama arka plana geçince otomatik gönderilir; istersen ayrıca kopyalayıp ya da indirip paylaşabilirsin.": "Het rapport wordt op dit apparaat gemaakt. Zolang het foutenlogboek aan staat, wordt de samenvatting (alleen cijfers; geen locatie, adressen of gesproken tekst) automatisch verzonden wanneer de opname stopt, een rit eindigt en de app naar de achtergrond gaat; je kunt hem ook zelf kopiëren of downloaden en delen.",
   "Kayıt kapalı": "Logboek uit",
   "{0} OCR okuması · %{1} geçerli · {2} sesli uyarı · {3} hata": "{0} OCR-metingen · {1}% geldig · {2} spraakmeldingen · {3} fouten",
   "Kayıt başladı": "Logboek gestart",
@@ -559,5 +559,5 @@ export default {
   "Togg T10X V2 Standart Menzil (52,4 kWh)": "Togg T10X V2 Standaardbereik (52,4 kWh)",
   "Hata günlüğü": "Foutenlogboek",
   "Hata günlüğünü otomatik gönder": "Foutenlogboek automatisch verzenden",
-  "Uygulama hataları ve ses olayları geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "App-fouten en geluidsgebeurtenissen worden naar de ontwikkelaar gestuurd; je account, locatie, adressen, gesproken tekst en het volledige IP-adres worden niet verzonden. Uitzetten wist wachtende items.",
+  "Uygulama hataları, ses olayları ve saha testi açıksa sürüş özeti (yalnız sayılar) geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "App-fouten, geluidsgebeurtenissen en, bij een actieve veldtest, de ritsamenvatting (alleen cijfers) worden naar de ontwikkelaar gestuurd; je account, locatie, adressen, gesproken tekst en het volledige IP-adres worden niet verzonden. Uitzetten wist wachtende items.",
 };

@@ -509,7 +509,7 @@ export default {
   "Kopyala": "Copy",
   "İndir (JSON)": "Download (JSON)",
   "Sıfırla": "Reset",
-  "Rapor yalnızca bu cihazda üretilir; sen kopyalayıp ya da indirip paylaşmadıkça hiçbir yere gönderilmez.": "The report is created only on this device; it is not sent anywhere unless you copy or download and share it yourself.",
+  "Rapor bu cihazda üretilir. Hata günlüğü açıkken özet (yalnız sayılar; konum, adres ve konuşma metni yok) kayıt durunca, sürüş bitince ve uygulama arka plana geçince otomatik gönderilir; istersen ayrıca kopyalayıp ya da indirip paylaşabilirsin.": "The report is created on this device. While the error log is on, the summary (numbers only; no location, addresses or spoken text) is sent automatically when recording stops, when a drive ends and when the app goes to the background; you can also copy or download and share it yourself.",
   "Kayıt kapalı": "Logging off",
   "{0} OCR okuması · %{1} geçerli · {2} sesli uyarı · {3} hata": "{0} OCR reads · {1}% valid · {2} voice alerts · {3} errors",
   "Kayıt başladı": "Logging started",
@@ -559,5 +559,5 @@ export default {
   "Togg T10X V2 Standart Menzil (52,4 kWh)": "Togg T10X V2 Standard Range (52.4 kWh)",
   "Hata günlüğü": "Error log",
   "Hata günlüğünü otomatik gönder": "Send error log automatically",
-  "Uygulama hataları ve ses olayları geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "App errors and sound events are sent to the developer; your account, location, addresses, spoken text and full IP address are not sent. Turning it off deletes pending entries.",
+  "Uygulama hataları, ses olayları ve saha testi açıksa sürüş özeti (yalnız sayılar) geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "App errors, sound events and, when field testing is on, the drive summary (numbers only) are sent to the developer; your account, location, addresses, spoken text and full IP address are not sent. Turning it off deletes pending entries.",
 };

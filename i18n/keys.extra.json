@@ -509,7 +509,7 @@
  "Kopyala",
  "İndir (JSON)",
  "Sıfırla",
- "Rapor yalnızca bu cihazda üretilir; sen kopyalayıp ya da indirip paylaşmadıkça hiçbir yere gönderilmez.",
+ "Rapor bu cihazda üretilir. Hata günlüğü açıkken özet (yalnız sayılar; konum, adres ve konuşma metni yok) kayıt durunca, sürüş bitince ve uygulama arka plana geçince otomatik gönderilir; istersen ayrıca kopyalayıp ya da indirip paylaşabilirsin.",
  "Kayıt kapalı",
  "{0} OCR okuması · %{1} geçerli · {2} sesli uyarı · {3} hata",
  "Kayıt başladı",
@@ -559,5 +559,5 @@
  "Togg T10X V2 Standart Menzil (52,4 kWh)",
  "Hata günlüğü",
  "Hata günlüğünü otomatik gönder",
- "Uygulama hataları ve ses olayları geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir."
+ "Uygulama hataları, ses olayları ve saha testi açıksa sürüş özeti (yalnız sayılar) geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir."
 ]

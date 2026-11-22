@@ -509,7 +509,7 @@ export default {
   "Kopyala": "Copia",
   "İndir (JSON)": "Scarica (JSON)",
   "Sıfırla": "Reimposta",
-  "Rapor yalnızca bu cihazda üretilir; sen kopyalayıp ya da indirip paylaşmadıkça hiçbir yere gönderilmez.": "Il rapporto viene creato solo su questo dispositivo; non viene inviato da nessuna parte se non lo copi o scarichi e condividi tu.",
+  "Rapor bu cihazda üretilir. Hata günlüğü açıkken özet (yalnız sayılar; konum, adres ve konuşma metni yok) kayıt durunca, sürüş bitince ve uygulama arka plana geçince otomatik gönderilir; istersen ayrıca kopyalayıp ya da indirip paylaşabilirsin.": "Il rapporto viene creato su questo dispositivo. Finché il registro errori è attivo, il riepilogo (solo numeri; niente posizione, indirizzi o testo parlato) viene inviato automaticamente quando la registrazione si ferma, un viaggio termina e l'app passa in background; puoi anche copiarlo o scaricarlo e condividerlo tu stesso.",
   "Kayıt kapalı": "Registro disattivato",
   "{0} OCR okuması · %{1} geçerli · {2} sesli uyarı · {3} hata": "{0} letture OCR · {1}% valide · {2} avvisi vocali · {3} errori",
   "Kayıt başladı": "Registro avviato",
@@ -559,5 +559,5 @@ export default {
   "Togg T10X V2 Standart Menzil (52,4 kWh)": "Togg T10X V2 Autonomia standard (52,4 kWh)",
   "Hata günlüğü": "Registro errori",
   "Hata günlüğünü otomatik gönder": "Invia il registro errori automaticamente",
-  "Uygulama hataları ve ses olayları geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "Gli errori dell'app e gli eventi audio vengono inviati allo sviluppatore; account, posizione, indirizzi, testo parlato e indirizzo IP completo non vengono inviati. Disattivando si eliminano le voci in attesa.",
+  "Uygulama hataları, ses olayları ve saha testi açıksa sürüş özeti (yalnız sayılar) geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "Gli errori dell'app, gli eventi audio e, con il test sul campo attivo, il riepilogo del viaggio (solo numeri) vengono inviati allo sviluppatore; account, posizione, indirizzi, testo parlato e indirizzo IP completo non vengono inviati. Disattivando si eliminano le voci in attesa.",
 };

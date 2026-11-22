@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.124';
+self.APP_VERSION = '0.99.125';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.125', date: '2026-11-22',
+    notes: [
+      'Yeni: Saha testi özeti otomatik gönderilir. Daha Fazla > Saha testi\'nde "Sürüş kaydı" açıkken ve Hata günlüğü anahtarı açıkken, sürüş özeti (yalnız sayılar: OCR okuma/ret, GPS taze oranı, sesli uyarı türleri, hata sayıları) kayıt durunca, sürüş bitince, uygulama arka plana geçince ve 10 dakikada bir sunucuya gider; konum, adres, konuşma metni ve ham OCR değeri gönderilmez. Ağ yoksa bekler, üstel geri çekilmeyle yeniden dener; Hata günlüğü kapatılınca bekleyen özet silinir',
+      'Sürüş kaydı hâlâ varsayılan kapalıdır (kapalıyken hiçbir şey toplanmaz/gönderilmez); kopyala/indir düğmeleri aynen çalışır. Saha testi ve Hata günlüğü kartlarının açıklamaları 11 dilde güncellendi. Sunucu tarafı (/v1/fieldreport, server/clientLogs.mjs) yalnız sunucu güncellenince devreye girer',
+    ],
+  },
   {
     v: '0.99.124', date: '2026-11-22',
     notes: [

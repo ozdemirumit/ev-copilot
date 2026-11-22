@@ -509,7 +509,7 @@ export default {
   "Kopyala": "Copier",
   "İndir (JSON)": "Télécharger (JSON)",
   "Sıfırla": "Réinitialiser",
-  "Rapor yalnızca bu cihazda üretilir; sen kopyalayıp ya da indirip paylaşmadıkça hiçbir yere gönderilmez.": "Le rapport est créé uniquement sur cet appareil ; il n’est envoyé nulle part tant que tu ne le copies pas ou ne le télécharges pas pour le partager.",
+  "Rapor bu cihazda üretilir. Hata günlüğü açıkken özet (yalnız sayılar; konum, adres ve konuşma metni yok) kayıt durunca, sürüş bitince ve uygulama arka plana geçince otomatik gönderilir; istersen ayrıca kopyalayıp ya da indirip paylaşabilirsin.": "Le rapport est créé sur cet appareil. Tant que le journal d'erreurs est activé, le résumé (uniquement des chiffres ; ni position, ni adresses, ni texte prononcé) est envoyé automatiquement à l'arrêt de l'enregistrement, à la fin d'un trajet et quand l'application passe en arrière-plan ; vous pouvez aussi le copier ou le télécharger et le partager vous-même.",
   "Kayıt kapalı": "Journal désactivé",
   "{0} OCR okuması · %{1} geçerli · {2} sesli uyarı · {3} hata": "{0} lectures OCR · {1} % valides · {2} alertes vocales · {3} erreurs",
   "Kayıt başladı": "Journal démarré",
@@ -559,5 +559,5 @@ export default {
   "Togg T10X V2 Standart Menzil (52,4 kWh)": "Togg T10X V2 Autonomie standard (52,4 kWh)",
   "Hata günlüğü": "Journal d'erreurs",
   "Hata günlüğünü otomatik gönder": "Envoyer le journal d'erreurs automatiquement",
-  "Uygulama hataları ve ses olayları geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "Les erreurs de l'application et les événements sonores sont envoyés au développeur ; votre compte, votre position, les adresses, le texte prononcé et l'adresse IP complète ne sont pas envoyés. La désactivation supprime les entrées en attente.",
+  "Uygulama hataları, ses olayları ve saha testi açıksa sürüş özeti (yalnız sayılar) geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "Les erreurs de l'application, les événements sonores et, si le test terrain est activé, le résumé du trajet (uniquement des chiffres) sont envoyés au développeur ; votre compte, votre position, les adresses, le texte prononcé et l'adresse IP complète ne sont pas envoyés. La désactivation supprime les entrées en attente.",
 };

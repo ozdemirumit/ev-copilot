@@ -509,7 +509,7 @@ export default {
   "Kopyala": "Copiar",
   "İndir (JSON)": "Transferir (JSON)",
   "Sıfırla": "Repor",
-  "Rapor yalnızca bu cihazda üretilir; sen kopyalayıp ya da indirip paylaşmadıkça hiçbir yere gönderilmez.": "O relatório é criado apenas neste dispositivo; não é enviado para lado nenhum a menos que o copies ou transfiras e partilhes tu.",
+  "Rapor bu cihazda üretilir. Hata günlüğü açıkken özet (yalnız sayılar; konum, adres ve konuşma metni yok) kayıt durunca, sürüş bitince ve uygulama arka plana geçince otomatik gönderilir; istersen ayrıca kopyalayıp ya da indirip paylaşabilirsin.": "O relatório é criado neste dispositivo. Enquanto o registo de erros estiver ativo, o resumo (apenas números; sem localização, moradas nem texto falado) é enviado automaticamente quando a gravação para, quando uma viagem termina e quando a app passa para segundo plano; também podes copiá-lo ou descarregá-lo e partilhá-lo tu mesmo.",
   "Kayıt kapalı": "Registo desligado",
   "{0} OCR okuması · %{1} geçerli · {2} sesli uyarı · {3} hata": "{0} leituras OCR · {1}% válidas · {2} avisos de voz · {3} erros",
   "Kayıt başladı": "Registo iniciado",
@@ -559,5 +559,5 @@ export default {
   "Togg T10X V2 Standart Menzil (52,4 kWh)": "Togg T10X V2 Autonomia padrão (52,4 kWh)",
   "Hata günlüğü": "Registo de erros",
   "Hata günlüğünü otomatik gönder": "Enviar o registo de erros automaticamente",
-  "Uygulama hataları ve ses olayları geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "Os erros da app e os eventos de som são enviados ao programador; a conta, a localização, as moradas, o texto falado e o endereço IP completo não são enviados. Ao desativar, as entradas pendentes são eliminadas.",
+  "Uygulama hataları, ses olayları ve saha testi açıksa sürüş özeti (yalnız sayılar) geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "Os erros da app, os eventos de som e, com o teste de campo ativo, o resumo da viagem (apenas números) são enviados ao programador; a conta, a localização, as moradas, o texto falado e o endereço IP completo não são enviados. Ao desativar, as entradas pendentes são eliminadas.",
 };

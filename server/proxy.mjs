@@ -725,6 +725,12 @@ const server = http.createServer(async (req, res) => {
       const r = await clientLogs.ingest({ body, ip, deviceHeader: req.headers['x-device-id'], bytes: Number(req.headers['content-length']) || 0 });
       return json(res, r.status, r.body, r.status === 429 ? { 'Retry-After': String(Math.max(1, Math.round(Number(r.body?.retryAfterSec) || 30))) } : undefined);
     }
+    if (pp === '/v1/fieldreport' && req.method === 'POST') { // saha testi özeti (yalnız sayılar), kimliksiz; ayrı dosya, aynı hız sınırı/denetim (clientLogs.ingestField)
+      if (limited(ip) || (dev && limited('d:' + dev))) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
+      const body = await readJson(req, 16000);
+      const r = await clientLogs.ingestField({ body, ip, deviceHeader: req.headers['x-device-id'], bytes: Number(req.headers['content-length']) || 0 });
+      return json(res, r.status, r.body, r.status === 429 ? { 'Retry-After': String(Math.max(1, Math.round(Number(r.body?.retryAfterSec) || 30))) } : undefined);
+    }
     const code = req.headers['x-access-code'];
     const adminTok = !!adminAuth && pp.startsWith('/admin') && adminAuth.tokenValid(req.headers['x-admin-token']); // belirteç yalnızca /admin/* yollarını açar
     let id = null;

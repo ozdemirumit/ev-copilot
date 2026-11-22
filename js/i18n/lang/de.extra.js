@@ -509,7 +509,7 @@ export default {
   "Kopyala": "Kopieren",
   "İndir (JSON)": "Herunterladen (JSON)",
   "Sıfırla": "Zurücksetzen",
-  "Rapor yalnızca bu cihazda üretilir; sen kopyalayıp ya da indirip paylaşmadıkça hiçbir yere gönderilmez.": "Der Bericht wird nur auf diesem Gerät erstellt; er wird nirgendwohin gesendet, wenn du ihn nicht selbst kopierst oder herunterlädst und teilst.",
+  "Rapor bu cihazda üretilir. Hata günlüğü açıkken özet (yalnız sayılar; konum, adres ve konuşma metni yok) kayıt durunca, sürüş bitince ve uygulama arka plana geçince otomatik gönderilir; istersen ayrıca kopyalayıp ya da indirip paylaşabilirsin.": "Der Bericht wird auf diesem Gerät erstellt. Solange das Fehlerprotokoll aktiv ist, wird die Zusammenfassung (nur Zahlen; kein Standort, keine Adressen, kein gesprochener Text) automatisch gesendet, wenn die Aufzeichnung stoppt, eine Fahrt endet und die App in den Hintergrund geht; du kannst sie auch selbst kopieren oder herunterladen und teilen.",
   "Kayıt kapalı": "Protokoll aus",
   "{0} OCR okuması · %{1} geçerli · {2} sesli uyarı · {3} hata": "{0} OCR-Lesungen · {1} % gültig · {2} Sprachhinweise · {3} Fehler",
   "Kayıt başladı": "Protokoll gestartet",
@@ -559,5 +559,5 @@ export default {
   "Togg T10X V2 Standart Menzil (52,4 kWh)": "Togg T10X V2 Standardreichweite (52,4 kWh)",
   "Hata günlüğü": "Fehlerprotokoll",
   "Hata günlüğünü otomatik gönder": "Fehlerprotokoll automatisch senden",
-  "Uygulama hataları ve ses olayları geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "App-Fehler und Tonereignisse werden an den Entwickler gesendet; Konto, Standort, Adressen, gesprochener Text und die vollständige IP-Adresse werden nicht gesendet. Beim Ausschalten werden wartende Einträge gelöscht.",
+  "Uygulama hataları, ses olayları ve saha testi açıksa sürüş özeti (yalnız sayılar) geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "App-Fehler, Tonereignisse und, bei aktivem Feldtest, die Fahrtzusammenfassung (nur Zahlen) werden an den Entwickler gesendet; Konto, Standort, Adressen, gesprochener Text und die vollständige IP-Adresse werden nicht gesendet. Beim Ausschalten werden wartende Einträge gelöscht.",
 };

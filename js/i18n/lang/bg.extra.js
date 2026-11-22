@@ -509,7 +509,7 @@ export default {
   "Kopyala": "Копирай",
   "İndir (JSON)": "Изтегли (JSON)",
   "Sıfırla": "Нулирай",
-  "Rapor yalnızca bu cihazda üretilir; sen kopyalayıp ya da indirip paylaşmadıkça hiçbir yere gönderilmez.": "Отчетът се създава само на това устройство; не се изпраща никъде, освен ако сам не го копирате или изтеглите и споделите.",
+  "Rapor bu cihazda üretilir. Hata günlüğü açıkken özet (yalnız sayılar; konum, adres ve konuşma metni yok) kayıt durunca, sürüş bitince ve uygulama arka plana geçince otomatik gönderilir; istersen ayrıca kopyalayıp ya da indirip paylaşabilirsin.": "Отчетът се създава на това устройство. Докато дневникът на грешките е включен, обобщението (само числа; без местоположение, адреси и изговорен текст) се изпраща автоматично при спиране на записа, при край на пътуване и когато приложението премине на заден план; можете и сами да го копирате или изтеглите и споделите.",
   "Kayıt kapalı": "Дневникът е изключен",
   "{0} OCR okuması · %{1} geçerli · {2} sesli uyarı · {3} hata": "{0} OCR четения · {1}% валидни · {2} гласови известия · {3} грешки",
   "Kayıt başladı": "Дневникът е стартиран",
@@ -559,5 +559,5 @@ export default {
   "Togg T10X V2 Standart Menzil (52,4 kWh)": "Togg T10X V2 Стандартен пробег (52,4 kWh)",
   "Hata günlüğü": "Дневник на грешките",
   "Hata günlüğünü otomatik gönder": "Изпращай дневника на грешките автоматично",
-  "Uygulama hataları ve ses olayları geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "Грешките на приложението и звуковите събития се изпращат на разработчика; акаунтът, местоположението, адресите, изговореният текст и пълният IP адрес не се изпращат. Изключването изтрива чакащите записи.",
+  "Uygulama hataları, ses olayları ve saha testi açıksa sürüş özeti (yalnız sayılar) geliştiriciye gönderilir; hesap, konum, adres, konuşma metni ve tam IP adresi gönderilmez. Kapatınca bekleyen kayıtlar silinir.": "Грешките на приложението, звуковите събития и, при включен полеви тест, обобщението на пътуването (само числа) се изпращат на разработчика; акаунтът, местоположението, адресите, изговореният текст и пълният IP адрес не се изпращат. Изключването изтрива чакащите записи.",
 };

@@ -7,6 +7,7 @@ import { proxyBase, deviceId } from '../net/proxy.js';
 import { locale } from '../i18n/index.js';
 import { deviceFamily } from './fieldLog.js';
 import { createClientLog, byteLen, newSessionId, LIMITS } from './clientLog.js';
+import { createFieldUpload } from './fieldUpload.js';
 
 export const SETTING_KEY = 'clientLogOn';
 export const FLUSH_EVERY_MS = 60_000;
@@ -24,6 +25,7 @@ const defaultGate = () => publicFreeMode() || freeOnlyMode();
 
 let setting = defaultSetting;
 let core = null;
+let fieldUp = null;
 let teardown = null;
 
 const NOOP = Object.freeze({
@@ -38,7 +40,12 @@ export const clientLogEnabled = () => { try { return !!setting.get(); } catch { 
 export function setClientLogEnabled(on) {
   try { setting.set(!!on); } catch { /* depo hatası */ }
   if (!on && core) core.clear();
+  if (!on && fieldUp) fieldUp.clear();
 }
+
+const NOOP_FIELD = Object.freeze({ submit: () => Promise.resolve({ skipped: 'not-initialized' }), flush: () => Promise.resolve({ skipped: 'not-initialized' }), restore: () => {}, clear: () => {}, pending: () => null, state: () => ({ sent: 0, dropped: 0, failed: 0, queued: 0 }) });
+/** Saha testi özeti yükleyicisi (js/ui/fieldTest.js çağırır; init edilmemişse güvenli boş nesne). Aynı kullanıcı tercihine (Hata günlüğü anahtarı) ve kapıya bağlıdır. */
+export const fieldUploader = () => fieldUp || NOOP_FIELD;
 
 /** Tekil çekirdek (init edilmemişse güvenli boş nesne döner). */
 export const clientLog = () => core || NOOP;
@@ -74,13 +81,13 @@ function makeInfo(win) {
   };
 }
 
-function makeSend(deps) {
+function makePost(path, deps) {
   return async (batch) => {
     const body = JSON.stringify(batch);
     let ctl = null, timer = null, signal;
     if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') signal = AbortSignal.timeout(SEND_TIMEOUT_MS);
     else if (typeof AbortController !== 'undefined') { ctl = new AbortController(); signal = ctl.signal; timer = setTimeout(() => ctl.abort(), SEND_TIMEOUT_MS); }
-    const url = proxyBase() + '/v1/clientlog';
+    const url = proxyBase() + path;
     const opts = { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Device-Id': deviceId() }, body, keepalive: byteLen(body) <= KEEPALIVE_MAX_BYTES, signal };
     try {
       const res = deps.fetch ? await deps.fetch(url, opts) : await fetch(url, opts);
@@ -94,6 +101,8 @@ function makeSend(deps) {
     } finally { if (timer) clearTimeout(timer); }
   };
 }
+
+const makeSend = (deps) => makePost('/v1/clientlog', deps);
 
 /** Çekirdeği kurar ve window dinleyicilerini bağlar (idempotent: ikinci çağrı mevcut çekirdeği döner). */
 export function initClientLog({ win = window, gate = defaultGate, deps = {} } = {}) {
@@ -109,17 +118,27 @@ export function initClientLog({ win = window, gate = defaultGate, deps = {} } = 
     rand: deps.rand || secureRand,
   });
   core = c;
+  fieldUp = createFieldUpload({
+    now: deps.now || (() => Date.now()),
+    send: makePost('/v1/fieldreport', deps),
+    storage: deps.storage || defaultStorage,
+    info: makeInfo(win),
+    enabled: () => clientLogEnabled() && !gate(),
+  });
+  const fu = fieldUp;
   const num0 = (x) => (typeof x === 'number' && Number.isFinite(x) ? x : undefined);
   const onError = (e) => c.log('js.error', e?.message ?? e?.error, { line: num0(e?.lineno), col: num0(e?.colno) }, 'error');
   const onReject = (e) => { const r = e?.reason; c.log('js.reject', typeof r === 'string' ? r : r?.message, undefined, 'error'); };
-  const onVis = () => { if (win.document?.visibilityState === 'hidden') c.flush({ force: true }); };
-  const onHide = () => { c.flush({ force: true }); };
-  const onOnline = () => { c.flush(); };
+  const onVis = () => { if (win.document?.visibilityState === 'hidden') { c.flush({ force: true }); fu.flush(); } };
+  const onHide = () => { c.flush({ force: true }); fu.flush(); };
+  const onOnline = () => { c.flush(); fu.flush(); };
   const evs = [['error', onError], ['unhandledrejection', onReject], ['visibilitychange', onVis], ['pagehide', onHide], ['online', onOnline]];
   for (const [n, fn] of evs) win.addEventListener(n, fn);
-  const tick = timers.set(() => { c.flush(); }, FLUSH_EVERY_MS);
+  const tick = timers.set(() => { c.flush(); fu.flush(); }, FLUSH_EVERY_MS);
   teardown = () => { for (const [n, fn] of evs) win.removeEventListener?.(n, fn); try { timers.clear(tick); } catch { /* yoksay */ } };
   c.restore();
+  fu.restore();
+  fu.flush(); // önceki oturumdan kalan özet varsa gönder
   const info = makeInfo(win)();
   c.log('app.start', 'uygulama açıldı', { sa: info.sa, apk: info.apk });
   return c;
@@ -128,7 +147,7 @@ export function initClientLog({ win = window, gate = defaultGate, deps = {} } = 
 /** Dinleyicileri söker ve tekil çekirdeği bırakır (testler ve yeniden başlatma için). */
 export function disposeClientLog() {
   try { teardown?.(); } catch { /* yoksay */ }
-  teardown = null; core = null; setting = defaultSetting;
+  teardown = null; core = null; fieldUp = null; setting = defaultSetting;
 }
 
 export { LIMITS };
