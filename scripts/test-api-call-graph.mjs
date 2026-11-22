@@ -52,6 +52,7 @@ const MANIFEST = {
   'js/account/historySync.js': { proxyFetch: 1 }, // kendi sunucu: /v1/history
   'js/account/stationInfo.js': { proxyFetch: 6 }, // kendi sunucu: /v1/station/info, /v1/station/photo (kart açılınca / kullanıcı)
   'js/account/sync.js': { proxyFetch: 2 }, // kendi sunucu: /v1/sync (SYNC_KEYS sessiz olmayan kayıt → 4 sn gecikmeli; 10 dk çekme)
+  'js/diag/clientLogInit.js': { fetch: 1 }, // kendi sunucu: /v1/clientlog (hata/ses olayları toplu yükleme; kuyruk + üstel geri çekilme, dakikada ≤ 20 olay; Daha Fazla'dan kapatılır, ücretsiz kipte hiç gitmez)
   'js/google/chargers.js': { proxyFetchRetry: 1 }, // ücretli: /google/stations (Premium)
   'js/here/chargers.js': { proxyFetchRetry: 1 }, // ücretli: /here/stations
   'js/mapbox/api.js': { fetch: 1, proxyFetch: 1, proxyFetchRetry: 1 }, // ücretli: api.mapbox.com (kişisel mbKey) ya da /mapbox/
@@ -87,7 +88,7 @@ for (const f of APP_FILES) {
 ok(`taranan uygulama dosyası > 150 (js/** + sw.js, i18n dil tabloları hariç): ${APP_FILES.length}`, APP_FILES.length > 150);
 for (const f of Object.keys(found)) ok(`sink ${f} manifestoda ve sayılar eşit ${JSON.stringify(found[f])}`, JSON.stringify(found[f]) === JSON.stringify(MANIFEST[f]), `manifest ${JSON.stringify(MANIFEST[f] || null)} — yeni/değişen ağ çağrısı: docs/api-call-graph.md §2'de sınıflandırıp manifesti güncelleyin`);
 for (const f of Object.keys(MANIFEST)) if (!found[f]) ok(`manifest satırı ${f} hâlâ ağ ilkeli içeriyor`, false, 'çağrı kaldırıldıysa manifest ve belge güncellenmeli');
-ok('manifest dosya sayısı = bulunan (29)', Object.keys(found).length === Object.keys(MANIFEST).length && Object.keys(MANIFEST).length === 29, `${Object.keys(found).length}/${Object.keys(MANIFEST).length}`);
+ok('manifest dosya sayısı = bulunan (30)', Object.keys(found).length === Object.keys(MANIFEST).length && Object.keys(MANIFEST).length === 30, `${Object.keys(found).length}/${Object.keys(MANIFEST).length}`);
 ok('XHR / WebSocket / EventSource / sendBeacon hiçbir uygulama dosyasında yok (yalnız fetch ailesi)', !Object.values(found).some((c) => c.xhr || c.websocket || c.eventsource || c.beacon));
 // fetch sarmalayıcıları (window.fetch = …): yalnız sayaç ve kota kapısı; ikisi de isteği çoğaltmaz
 const WRAP = /\b(?:window|target)\.fetch\s*=/;

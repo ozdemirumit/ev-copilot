@@ -33,6 +33,7 @@ iletir) ve `providerGate.js` (duraklatmada isteği alttaki fetch'e hiç iletmez)
 | `js/account/historySync.js` | proxyFetch 1 | `/v1/history/…` | kendi | geçmiş eşitleme |
 | `js/account/stationInfo.js` | proxyFetch 6 | `/v1/station/info`, `/v1/station/photo` | kendi | istasyon kartı / kullanıcı |
 | `js/account/sync.js` | proxyFetch 2 | `/v1/sync` | kendi | `SYNC_KEYS` sessiz olmayan kayıt → 4 sn gecikme (birleştirir); görünür olunca 10 dk'da bir çekme |
+| `js/diag/clientLogInit.js` | fetch 1 | `/v1/clientlog` | kendi | hata/ses olaylarını toplu yükler (v0.99.123): kuyruk, tekilleştirme, dakikada ≤ 20 olay, 40 olay/istek, 5xx/ağda 30 sn→10 dk geri çekilme, 4xx'te 30 dk durma; Daha Fazla'dan kapatılır; ücretsiz kipte hiç gitmez; konum/adres/konuşma metni yok |
 | `js/google/chargers.js` | proxyFetchRetry 1 | `/google/stations` | ücretli | rota planı / yakın arama; sunucuda `premiumOk` |
 | `js/here/chargers.js` | proxyFetchRetry 1 | `/here/stations` | ücretli | rota planı / yakın arama |
 | `js/mapbox/api.js` | fetch 1, proxyFetch 1, proxyFetchRetry 1 | api.mapbox.com (kişisel mbKey) ya da `/mapbox/` | ücretli | `mbfetch` tabanı; 429 iç döngüde tekrar yok (D2-T0 §E) |
@@ -57,7 +58,7 @@ iletir) ve `providerGate.js` (duraklatmada isteği alttaki fetch'e hiç iletmez)
 | `js/ui/versionInfo.js` | fetch 1 | aynı köken `version.js` | uygulama | kullanıcı / güncelleme denetimi |
 | `sw.js` | fetch 2, importScripts 1 | aynı köken | uygulama | service worker önbellek |
 
-Toplam: 29 dosya, 53 çağrı noktası. Koddaki `https://` kökenleri (17, test §A tam eşitlik): api.iternio.com, api.mapbox.com,
+Toplam: 30 dosya, 54 çağrı noktası. Koddaki `https://` kökenleri (17, test §A tam eşitlik): api.iternio.com, api.mapbox.com,
 api.open-meteo.com, api.openchargemap.io, api.tomtom.com, evcopilot.duckdns.org, maps.googleapis.com, maps.hereapi.com, nominatim.openstreetmap.org,
 overpass-api.de, overpass.kumi.systems, overpass.private.coffee, photon.komoot.io, server.arcgisonline.com, tiles.openfreemap.org,
 valhalla1.openstreetmap.de, www.google.com. (Bazıları bağlantı/harita stili adresidir; istek atılıp atılmadığı yukarıdaki tabloya göre.)

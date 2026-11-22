@@ -14,6 +14,7 @@ import { openStore } from './store.mjs';
 import { createAccounts } from './accounts.mjs';
 import { createCosts } from './costs.mjs';
 import { createDevices } from './devices.mjs';
+import { createClientLogs } from './clientLogs.mjs';
 import { createMailer } from './mailer.mjs';
 import { createAppFiles } from './appfiles.mjs';
 import { lookupAll } from './occupancy.mjs';
@@ -230,6 +231,7 @@ function adminSummary() {
     mapboxRoute: { month: mbRouteUsage().month, used: mbRouteUsage().n, cap: MB_ROUTE_CAP, premiumOnly: MB_ROUTE_PREMIUM_ONLY },
     here: { month: hereUsage().month, used: hereUsage().n, cap: HERE_CAP },
     devices: devices.stats(),
+    clientLogs: clientLogs.stats(), // istemci günlüğü sayaçları (gizli değer/içerik yok)
     map: { default: maps.getDefault() },
     configured: { mapbox: !!MAPBOX, mapboxMap: maps.available().mapbox, googleMap: maps.available().google, here: !!HERE, ocm: !!OCM, tomtom: !!TOMTOM, tomtomMap: maps.available().tomtom, hereMap: maps.available().here, googlePlaces: !!GOOGLE_PLACES, googleLogin: !!accounts.googleOn, smtp: !!mailer, premiumRequired: String(env.PREMIUM_REQUIRED ?? '1') !== '0' },
     usageToday: byKind,
@@ -654,6 +656,13 @@ const stationInfo = createStationInfo(store, join(env.DATA_DIR || join(here, 'da
 const tesla = createTesla(env.DATA_DIR || join(here, 'data'));
 const costs = createCosts(store, env);
 const devices = createDevices(store);
+// İstemci günlükleri (server/clientLogs.mjs): uygulama hata/ses olaylarını kimliksiz POST /v1/clientlog ile gönderir; diske yazılır, CLIENT_LOG_FORWARD_URL varsa asenkron iletilir.
+const clientLogs = createClientLogs({
+  dir: env.DATA_DIR || join(here, 'data'), scrub,
+  forwardUrl: env.CLIENT_LOG_FORWARD_URL || '', forwardToken: env.CLIENT_LOG_FORWARD_TOKEN || '',
+  dayCapBytes: Math.max(1, Number(env.CLIENT_LOG_DAY_MB) || 50) * 1024 * 1024, keepDays: Math.max(1, Number(env.CLIENT_LOG_KEEP_DAYS) || 30),
+});
+setInterval(() => { clientLogs.flushForwards().catch(() => {}); }, 300e3).unref(); // başarısız ileri göndermeleri 5 dakikada bir yeniden dene
 const mailer = createMailer(env); // SMTP_USER/SMTP_PASS yoksa null
 const accounts = createAccounts({ onDelete: (uid) => { priceBook.forget(uid); community.forget(uid); stationInfo.forget(uid); costs.forget(uid); devices.forget(uid); }, onLink: (deviceId, uid, ip) => devices.link(deviceId, uid, ip), devicesOf: (uid) => devices.forUser(uid), costs, mailer, env, store, send, json, readJson, caps: () => ({ mapbox: !!MAPBOX, here: !!HERE, ocm: !!OCM, overpass: true, occupancy: true, tomtom: !!TOMTOM, googleStations: !!GOOGLE_PLACES }) });
 
@@ -709,6 +718,12 @@ const server = http.createServer(async (req, res) => {
       if (limited(ip) || (dev && limited('d:' + dev))) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
       if (pp === '/v1/config') devices.touch(dev, ip, { app: url.searchParams.get('v'), platform: url.searchParams.get('p') }); // uygulama açılışı: anonim cihaz sayımı
       if (await accounts.handlePublic(req, res, url, ip)) return;
+    }
+    if (pp === '/v1/clientlog' && req.method === 'POST') { // kimliksiz (oturum açmadan önceki hatalar da gelsin); gövde ≤ 16 KB, cihaz/IP hız sınırı ve günlük tavan clientLogs içinde
+      if (limited(ip) || (dev && limited('d:' + dev))) return json(res, 429, { error: 'istek sınırı' }, { 'Retry-After': '30' });
+      const body = await readJson(req, 16000);
+      const r = await clientLogs.ingest({ body, ip, deviceHeader: req.headers['x-device-id'], bytes: Number(req.headers['content-length']) || 0 });
+      return json(res, r.status, r.body, r.status === 429 ? { 'Retry-After': String(Math.max(1, Math.round(Number(r.body?.retryAfterSec) || 30))) } : undefined);
     }
     const code = req.headers['x-access-code'];
     const adminTok = !!adminAuth && pp.startsWith('/admin') && adminAuth.tokenValid(req.headers['x-admin-token']); // belirteç yalnızca /admin/* yollarını açar
