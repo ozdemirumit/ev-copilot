@@ -2,12 +2,12 @@
 // Çevirme/olay mantığı js/nav/roadExtras.js'te (saf). Burada yalnız istekler var; ikisi bağımsız: biri başarısız olursa öteki yine kullanılır.
 // Kota/adil kullanım: rota başına bir kez (çağıran önbelleğe alır); Valhalla parçaları (≤ 2500 nokta ≈ 100–180 km) sıralı ve aralıklı gider, Overpass
 // rota koridorunda (cameras.js ile aynı yardımcılar) gişe/direk arar. Anahtar yok; her iki sunucu da ücretsiz herkese açık servistir. Hata/ret → olay uydurulmaz.
-import { fromTraceAttributes, fromOverpassToll, buildExtras, TOLL_MAX_OFF_KM } from '../nav/roadExtras.js';
+import { fromTraceAttributes, fromOverpassToll, buildExtras, traceRanges, TOLL_MAX_OFF_KM, TRACE_MAX_POINTS, TRACE_OVERLAP } from '../nav/roadExtras.js';
 
-export const CHUNK_POINTS = 2500;
-export const OVERLAP_POINTS = 3; // parçalar arasında köprü/tünel bölünmesin: örtüşen kısım birleştirmede tekilleşir
+export const CHUNK_POINTS = TRACE_MAX_POINTS; // parça en çok bu kadar nokta VE en çok 150 km (Valhalla 200 km sınırı; traceRanges)
+export const OVERLAP_POINTS = TRACE_OVERLAP; // parçalar arasında köprü/tünel bölünmesin: örtüşen kısım birleştirmede tekilleşir
 export const PAUSE_MS = 1100; // ardışık Valhalla istekleri arası (demo sunucu: ≤ 1 istek/sn)
-const TRACE_ATTRS = ['edge.bridge', 'edge.tunnel', 'edge.begin_shape_index', 'edge.end_shape_index', 'edge.road_class', 'edge.length'];
+const TRACE_ATTRS = ['edge.bridge', 'edge.tunnel', 'edge.begin_shape_index', 'edge.end_shape_index', 'edge.road_class', 'edge.length', 'node.type']; // node.type: gişe/direk düğümleri (edge.end_node.type)
 const TOLL_RADIUS_M = Math.round(TOLL_MAX_OFF_KM * 1000) + 10;
 const TOLL_CHUNK = 150; // Overpass sorgusu başına koridor noktası (≈ 60 km; cameras.js ile aynı)
 
@@ -33,8 +33,10 @@ async function defaultTolls(coords) {
 
 async function traceChunks(coords, trace, pauseMs) {
   const chunks = [];
-  for (let s = 0; s < coords.length - 1; s += CHUNK_POINTS) {
-    const part = coords.slice(s, Math.min(coords.length, s + CHUNK_POINTS + OVERLAP_POINTS));
+  const ranges = traceRanges(coords);
+  for (const [i, r] of ranges.entries()) {
+    const s = r.start;
+    const part = coords.slice(r.start, r.end + 1);
     if (part.length < 2) break;
     const body = {
       shape: part.map(([lon, lat]) => ({ lat: +lat.toFixed(5), lon: +lon.toFixed(5) })),
@@ -43,7 +45,7 @@ async function traceChunks(coords, trace, pauseMs) {
       filters: { attributes: TRACE_ATTRS, action: 'include' },
     };
     try { chunks.push({ json: await trace(body), offset: s }); } catch (err) { console.warn('Köprü/alt geçit verisi (Valhalla) alınamadı:', err?.message || err); }
-    if (s + CHUNK_POINTS < coords.length - 1) await sleep(pauseMs);
+    if (i < ranges.length - 1) await sleep(pauseMs);
   }
   return chunks;
 }

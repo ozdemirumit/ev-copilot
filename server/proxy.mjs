@@ -70,6 +70,8 @@ const TRUST_PROXY = env.TRUST_PROXY === '1'; // aynı makinedeki ters vekil (Cad
 const TRUST_CF = TRUST_PROXY && env.TRUST_CF_HEADER === '1'; // yalnızca gerçek Cloudflare Tunnel'da: CF-Connecting-IP'ye güven (Caddy bu başlığı istemciden olduğu gibi geçirir)
 const MAPBOX_BASE = env.MAPBOX_BASE || 'https://api.mapbox.com'; // yalnızca denemeler için değiştirilir
 const OCM_BASE = env.OCM_BASE || 'https://api.openchargemap.io';
+// Overpass aynaları anlamlı bir User-Agent ister; yoksa (Node'un varsayılanı) 429/406 verir ve vekil hiç yanıt alamaz (v0.99.128 öncesi tüm /overpass istekleri bu yüzden düşüyordu)
+const OVERPASS_HEADERS = { 'User-Agent': 'EVRouteFinder-proxy/1 (+https://github.com/ozdemirumit/ev-copilot)', Accept: 'application/json' };
 const OVERPASS = list(env.OVERPASS_URLS || 'https://overpass-api.de/api/interpreter,https://overpass.private.coffee/api/interpreter,https://overpass.kumi.systems/api/interpreter');
 const GAP_MS = Number(env.OVERPASS_GAP_MS || 1500);
 
@@ -455,6 +457,7 @@ async function ocm(req, res, url, id) {
 
 // ---------- Overpass ----------
 const OP_QUERY = /^\[out:json\]\[timeout:\d{1,3}\];nwr\["(?:amenity"="charging_station|highway"="speed_camera)"\]\(around:[0-9.,-]{1,12000}\);out tags center;$/; // şarj istasyonu ve hız kamerası sorguları
+const OP_QUERY_TOLL = /^\[out:json\]\[timeout:\d{1,3}\];\(nwr\["barrier"="toll_booth"\]\(around:[0-9.,-]{1,12000}\);nwr\["highway"="toll_gantry"\]\(around:[0-9.,-]{1,12000}\);\);out tags center;$/; // gişe ve OGS/HGS direği sorgusu (js/osm/roadExtras.js; v0.99.118'den beri istemci soruyordu, izin listesinde yoktu)
 const opDead = new Map();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // Overpass: her ayna için bir "şerit" (aynı anda en çok bir istek, istekler arası GAP_MS). İstekler ortak sıraya girer, boş şerit sıradakini alır:
@@ -483,7 +486,7 @@ async function opRun(lane, { query, resolve }) {
   for (const url of order) {
     try {
       lane.last = Date.now();
-      const u = await upstream(url, { method: 'POST', body: new URLSearchParams({ data: query }), timeoutMs: 50000 });
+      const u = await upstream(url, { method: 'POST', body: new URLSearchParams({ data: query }), headers: OVERPASS_HEADERS, timeoutMs: 50000 });
       if (u.status === 200) return resolve(u);
       last = u;
       if (u.status === 429 || u.status === 406) await sleep(2500);
@@ -499,7 +502,7 @@ async function overpass(req, res, url, id) {
   let size = 0;
   for await (const c of req) { size += c.length; if (size > 40000) return json(res, 413, { error: 'gövde çok büyük' }); chunks.push(c); }
   const query = new URLSearchParams(Buffer.concat(chunks).toString('utf8')).get('data') || '';
-  if (!OP_QUERY.test(query) || Number(/around:([0-9.]+),/.exec(query)?.[1]) > 20000) return json(res, 400, { error: 'desteklenmeyen sorgu' }); // yarıçap üst sınırı 20 km
+  if (!(OP_QUERY.test(query) || OP_QUERY_TOLL.test(query)) || Number(/around:([0-9.]+),/.exec(query)?.[1]) > 20000) return json(res, 400, { error: 'desteklenmeyen sorgu' }); // yarıçap üst sınırı 20 km
   const key = 'op:' + createHash('sha1').update(query).digest('hex');
   const hit = cget(key);
   if (hit) return reply(res, hit, { 'X-Cache': 'hit' });

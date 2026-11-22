@@ -17,6 +17,38 @@ export const UNDERPASS_CLASSES = Object.freeze(['motorway', 'trunk', 'primary', 
 export const MERGE_GAP_M = 60; // aynı türde bu kadar yakın parçalar tek olay (OSM'de köprü kenarlara bölünür)
 export const TOLL_MAX_OFF_KM = 0.03;
 export const TOLL_MERGE_M = 500; // bu kadar yakın gişe/direkler tek uyarı
+export const TOLL_NODE_TYPES = Object.freeze(['toll_booth', 'toll_gantry']); // Valhalla trace_attributes edge.end_node.type: gişe ve OGS/HGS direği (Overpass'siz gişe kaynağı, v0.99.128)
+export const TRACE_MAX_KM = 150; // Valhalla demo sunucusu /trace_attributes'te en çok 200 km yol kabul eder (400 "Path distance exceeds the max distance limit"): pay bırakılır
+export const TRACE_MAX_POINTS = 2500;
+export const TRACE_OVERLAP = 3;
+
+/**
+ * Rota çizgisini Valhalla /trace_attributes için parçalara böler: her parça en çok TRACE_MAX_KM km ve TRACE_MAX_POINTS nokta (+ örtüşme).
+ * Dönüş: [{ start, end }] (dahil indeksler; ardışık parçalar TRACE_OVERLAP nokta örtüşür). Eskiden yalnız nokta sayısıyla bölünüyordu: uzun rotada
+ * 2500 nokta ≈ 210 km oluyor, sunucu 400 verip köprü/alt geçit/tünel verisi hiç gelmiyordu.
+ */
+export function traceRanges(coords, { maxKm = TRACE_MAX_KM, maxPoints = TRACE_MAX_POINTS, overlap = TRACE_OVERLAP } = {}) {
+  if (!Array.isArray(coords) || coords.length < 2) return [];
+  const track = buildTrack(coords);
+  const n = coords.length;
+  const out = [];
+  let s = 0;
+  while (s < n - 1) {
+    let e = s;
+    while (e < n - 1 && e - s < maxPoints - 1 && track.cum[e + 1] - track.cum[s] <= maxKm) e++;
+    if (e === s) e = s + 1; // tek parça (nokta) maxKm'den uzunsa bile ilerle
+    out.push({ start: s, end: Math.min(n - 1, e + overlap) });
+    if (e >= n - 1) break;
+    s = e;
+  }
+  return out;
+}
+
+const dedupeTolls = (list) => {
+  const out = [];
+  for (const m of [...list].sort((a, b) => a - b)) if (!out.length || m - out.at(-1) >= TOLL_MERGE_M) out.push(m);
+  return out;
+};
 
 const isModel = (m) => !!m && typeof m === 'object' && Array.isArray(m.events) && Array.isArray(m.supports);
 
@@ -40,6 +72,7 @@ export function fromTraceAttributes(chunks, coords) {
   const n = coords.length;
   const bridge = [];
   const tunnel = [];
+  const tollNodes = []; // gişe/direk düğümleri (metre)
   for (const c of chunks) {
     const edges = c?.json?.edges;
     if (!Array.isArray(edges) || !Number.isInteger(c?.offset)) continue;
@@ -51,6 +84,7 @@ export function fromTraceAttributes(chunks, coords) {
       const span = { from: Math.round(track.cum[b] * 1000), to: Math.round(track.cum[en] * 1000), major: UNDERPASS_CLASSES.includes(e.road_class) };
       if (e.bridge === true) bridge.push(span);
       if (e.tunnel === true) tunnel.push(span);
+      if (TOLL_NODE_TYPES.includes(e.end_node?.type)) tollNodes.push(span.to); // kenarın bitiş düğümü gişe/direk
     }
   }
   const events = [];
@@ -60,8 +94,9 @@ export function fromTraceAttributes(chunks, coords) {
     if (len >= TUNNEL_MIN_M) events.push({ kind: 'tunnel', fromM: s.from, toM: s.to });
     else if (len >= UNDERPASS_MIN_M && s.major) events.push({ kind: 'underpass', fromM: s.from, toM: s.to });
   }
+  for (const m of dedupeTolls(tollNodes)) events.push({ kind: 'toll', atM: m });
   let model = empty;
-  for (const e of events.sort((a, b) => a.fromM - b.fromM)) model = addEvent(model, { ...e, source: 'osm' });
+  for (const e of events.sort((a, b) => (a.fromM ?? a.atM) - (b.fromM ?? b.atM))) model = addEvent(model, { ...e, source: 'osm' });
   return model;
 }
 
@@ -86,8 +121,11 @@ const startOf = (e) => (e.fromM !== undefined ? e.fromM : e.atM);
 
 /** İki kaynağı tek osm modelinde toplar (başlangıca göre sıralı). Hiç olay yoksa null (başarısızlık ile "yok" ayırt edilmez; çağıran yeniden denemez). */
 export function buildExtras({ trace = null, tolls = [] } = {}) {
-  const evs = [...(isModel(trace) ? trace.events : [])];
-  for (const m of Array.isArray(tolls) ? tolls : []) if (typeof m === 'number' && Number.isFinite(m) && m >= 0) evs.push({ kind: 'toll', atM: m });
+  const all = [...(isModel(trace) ? trace.events : [])];
+  for (const m of Array.isArray(tolls) ? tolls : []) if (typeof m === 'number' && Number.isFinite(m) && m >= 0) all.push({ kind: 'toll', atM: m });
+  // gişe/direk iki kaynaktan gelebilir (Valhalla düğümleri + Overpass): aynı kapı bir kez. Her listenin kendi içi zaten tekil; Overpass noktası bir Valhalla gişesine ≤ 500 m ise atılır
+  const traceT = all.filter((e) => e.kind === 'toll' && isModel(trace) && trace.events.includes(e)).map((e) => e.atM);
+  const evs = all.filter((e) => e.kind !== 'toll' || !(e.atM !== undefined && !(isModel(trace) && trace.events.includes(e)) && traceT.some((t) => Math.abs(t - e.atM) < TOLL_MERGE_M)));
   if (!evs.length) return null;
   let model = emptyEvents('osm', { supports: EXTRA_SUPPORTS });
   for (const e of evs.sort((a, b) => startOf(a) - startOf(b))) {

@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.127';
+self.APP_VERSION = '0.99.128';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.128', date: '2026-11-22',
+    notes: [
+      'Düzeltme: Alt geçit, köprü ve tünel bilgisi uzun rotalarda gelmiyordu. Valhalla demo sunucusu /trace_attributes\'te en çok 200 km yol kabul ediyor; uygulama rotayı 2500 noktaya göre bölüyordu (uzun rotada ≈ 210 km) ve istek reddediliyordu. Rota artık en çok 150 km\'lik parçalara bölünür (gerçek İstanbul–Ankara rotasında 4 parça: 24 köprü, 13 tünel, 4 alt geçit okundu)',
+      'Düzeltme: Gişe bilgisi artık Overpass\'e bağlı değil. Valhalla\'nın aynı yanıtındaki gişe ve OGS/HGS direği düğümleri (toll_booth, toll_gantry) okunur; Mapbox/TomTom/Google rotalarında da çalışır. Overpass gişe noktası bir Valhalla gişesine 500 m içindeyse aynı kapı iki kez söylenmez',
+      'Düzeltme (sunucu): Overpass vekili anlamlı User-Agent göndermediği için aynalar 429/406 veriyordu (şarj istasyonu ve hız kamerası aramaları sunucu üzerinden de düşüyordu); ayrıca gişe/direk sorgusu sunucunun izin listesinde yoktu. İkisi de giderildi. Sunucu güncellenince etkili olur; bu bilgisayarın ağından overpass-api.de hiç açılmıyor ve diğer aynalar yanıt vermiyor (ağ sorunu, kod değil)',
+    ],
+  },
   {
     v: '0.99.127', date: '2026-11-22',
     notes: [
