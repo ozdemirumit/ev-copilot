@@ -2,8 +2,15 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.123';
+self.APP_VERSION = '0.99.124';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.124', date: '2026-11-22',
+    notes: [
+      'Yeni: Ücretsiz OpenFreeMap haritası artık arayüz temasına uyar: Açık temada açık renkli (positron), Koyu temada koyu harita; Otomatik telefonun ayarını izler ve tema değişince harita yeniden yüklenmeden canlı değişir (konum, yakınlaştırma, yön, rota, trafik ve istasyon işaretleri korunur). Açık haritada rota çizgisi, trafik rengi, araç ve istasyon işaretleri ile 3B bina rengi okunur kalacak şekilde ayarlandı',
+      'Mapbox, Google, TomTom ve HERE haritaları koyu kalır (Daha Fazla > Görünüm notu bunu söyler). Açık haritada etiketlerde italik/kalın yazı yok, hepsi normal ağırlıkta (ücretsiz harita sunucusunun istek sınırı için tek yazı tipi yığını). Yalnız masaüstü tarayıcıda denendi; telefonda (özellikle gece sürüşünde parlaklık) cihazda doğrulanmadı',
+    ],
+  },
   {
     v: '0.99.123', date: '2026-11-22',
     notes: [
