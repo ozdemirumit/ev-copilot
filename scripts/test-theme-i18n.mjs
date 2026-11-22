@@ -17,7 +17,7 @@ const texts = [...card.replace(/<select[^>]*>|<\/select>/g, '<x>').matchAll(/>([
 const aria = [...card.matchAll(/aria-label="([^"]+)"/g)].map((m) => m[1]);
 const SRC = {
   label: '🌓 Görünüm', aria: 'Görünüm', light: 'Açık', dark: 'Koyu', auto: 'Otomatik (sistem ayarı)',
-  hint: 'Otomatik, telefonun açık/koyu ayarını izler. Harita karoları bu sürümde değişmez.',
+  hint: 'Otomatik, telefonun açık/koyu ayarını izler. Bu ayar yalnızca uygulama arayüzünü değiştirir; harita her sağlayıcıda koyu kalır.',
 };
 // Türkçe/varsayılan davranış korunur: kaynak metinler index.html'de değişmeden durur
 for (const s of [SRC.label, SRC.light, SRC.dark, SRC.auto, SRC.hint]) ok(texts.includes(s), `index.html Türkçe metni yok/değişmiş: ${s}`);

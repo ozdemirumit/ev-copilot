@@ -84,7 +84,7 @@ export function initSocBar() {
     const nhDot = $('nh-soc-dot');
     if (nhDot) nhDot.className = dotCls;
     bar.setAttribute('aria-label', t('Pil %{0}, tahmini menzil {1} km, kaynak: {2}. Elle ayarlamak için dokun.', shown, km, label));
-    $('socbar-rangebox').title = 'Tahmini toplam menzil (%0\'a kadar)' + (eng.rangeKm != null ? `; %${getState('route').minArrivalSoc} eşik piline kadar ${Math.max(0, Math.round(eng.rangeKm))} km` : '');
+    $('socbar-rangebox').title = tr('Tahmini toplam menzil (%0\'a kadar)') + (eng.rangeKm != null ? '; ' + t('%{0} eşik piline kadar {1} km', getState('route').minArrivalSoc, Math.max(0, Math.round(eng.rangeKm))) : '');
 
     // Pencere
     fill.style.width = pct + '%';

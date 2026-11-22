@@ -153,7 +153,7 @@ const html = read('index.html');
 const dlg = html.slice(html.indexOf('<dialog id="swap-dialog"'), html.indexOf('</dialog>', html.indexOf('<dialog id="swap-dialog"')));
 ok('değiştirme penceresi: başlık, alt metin, liste, kapat', ['swap-title', 'swap-sub', 'swap-list', 'swap-close'].every((id) => dlg.includes(`id="${id}"`)));
 const rp = read('js/ui/routePanel.js');
-ok('durak satırında Değiştir düğmesi', /textContent: 'Değiştir'/.test(rp) && /openSwap\(/.test(rp));
+ok('durak satırında Değiştir düğmesi', /iconLabel\(swap, 'swap', 'Değiştir'\)/.test(rp) && /openSwap\(/.test(rp));
 const ui = read('js/ui/stopSwap.js');
 ok('seçilince swapStop çağrılır, başarısızsa bildirim', /swapStop\(/.test(ui) && /toast\(/.test(ui));
 ok('rotada ±5 km, filtresiz', /RANGE_KM = 5/.test(ui) && /rangeKm: RANGE_KM/.test(ui) && !/radiusKm/.test(ui));
@@ -166,11 +166,11 @@ ok('istasyon kartında Şarj et: rotadaki ama planda olmayan istasyon için', /b
 ok('Şarj et bildirimi: eklenen ve çıkarılan duraklar', /Şarj durağı eklendi: \{0\}\. Gerekmeyen durak çıkarıldı: \{1\}/.test(card));
 const rpSrc = read('js/ui/routePanel.js');
 ok('removeStop: durak dışlanır, önce öbürleri aynı (onlyIds), olmazsa alternatif; kurulamazsa eski plan', /export function removeStop\(oldId\)/.test(ctrl) && /banIds: \[\.\.\.new Set\(\[\.\.\.\(plan\.banIds \|\| \[\]\), oldId\]\)\]/.test(ctrl) && /onlyIds: chain \}\)/.test(ctrl) && /if \(!out\?\.result\.feasible\) return \{ ok: false, reason: out\?\.result\.reason \|\| 'Plan kurulamadı', added: \[\] \}/.test(ctrl));
-ok('Rota sayfasında durak satırında Kaldır (Değiştir yanında)', /textContent: '🗑️ Kaldır'/.test(rpSrc) && /removeFromRoute\(s\)/.test(rpSrc) && /acts\.append\(show, swap, rm\)/.test(rpSrc));
+ok('Rota sayfasında durak satırında Kaldır (Değiştir yanında)', /iconLabel\(rm, 'trash', 'Kaldır'\)/.test(rpSrc) && /removeFromRoute\(s\)/.test(rpSrc) && /acts\.append\(show, swap, rm\)/.test(rpSrc));
 ok('İstasyon kartında rotadaki durak için Kaldır', /btn\('🗑️ Kaldır'/.test(card) && /removeFromRoute\(stop\)/.test(card));
 ok('Kaldır bildirimi: alternatif varsa yazılır', /Durak çıkarıldı: \{0\}\. Alternatif: \{1\}/.test(ui) && /Durak rotadan çıkarıldı: \{0\}/.test(ui));
 const sv = read('js/ui/stationsView.js');
-ok('İstasyonlar sekmesi: planlı satırda Değiştir ve Kaldır (aday satırda yok)', /const stop = n \? stops\.find\(\(s\) => s\.station\.id === r\.station\.id\) : null;/.test(sv) && /'🔁 Değiştir'/.test(sv) && /'🗑️ Kaldır'/.test(sv) && /openSwap\(stop, here\)/.test(sv) && /removeFromRoute\(stop\)/.test(sv) && /import \{ openSwap, removeFromRoute \} from '\.\/stopSwap\.js'/.test(sv));
+ok('İstasyonlar sekmesi: planlı satırda Değiştir ve Kaldır (aday satırda yok)', /const stop = n \? stops\.find\(\(s\) => s\.station\.id === r\.station\.id\) : null;/.test(sv) && /iconLabel\(text\('button', 'btn ghost sm', ''\), 'swap', 'Değiştir'\)/.test(sv) && /iconLabel\(text\('button', 'btn ghost sm', ''\), 'trash', 'Kaldır'\)/.test(sv) && /openSwap\(stop, here\)/.test(sv) && /removeFromRoute\(stop\)/.test(sv) && /import \{ openSwap, removeFromRoute \} from '\.\/stopSwap\.js'/.test(sv));
 ok('Operatörü düzelt açılır menüsü kaldırıldı', !/op-fix/.test(sv) && !/setStationOperator/.test(sv) && !/Operatörü düzelt/.test(sv) && !/\.op-fix/.test(read('css/styles.css')));
 ok('çevrimdışı kabukta yeni dosya', read('sw.js').includes("'./js/ui/stopSwap.js'"));
 

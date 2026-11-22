@@ -6,15 +6,16 @@ import { mapApi } from './mapView.js';
 import { toast } from './toast.js';
 import { showTab } from './tabs.js';
 import { tr } from '../i18n/index.js';
+import { iconLabel } from './icons.js';
 import { reverseLabel } from '../providers/index.js';
 
 const KEY = 'places';
 const SLOTS = [
-  { id: 'home', icon: '🏠', name: 'Ev', fixed: true },
-  { id: 'work', icon: '💼', name: 'İş', fixed: true },
-  { id: 'fav1', icon: '⭐', name: 'F1' },
-  { id: 'fav2', icon: '⭐', name: 'F2' },
-  { id: 'fav3', icon: '⭐', name: 'F3' },
+  { id: 'home', icon: '🏠', ic: 'home', name: 'Ev', fixed: true },
+  { id: 'work', icon: '💼', ic: 'briefcase', name: 'İş', fixed: true },
+  { id: 'fav1', icon: '⭐', ic: 'star', name: 'F1' },
+  { id: 'fav2', icon: '⭐', ic: 'star', name: 'F2' },
+  { id: 'fav3', icon: '⭐', ic: 'star', name: 'F3' },
 ];
 
 const $ = (id) => document.getElementById(id);
@@ -46,7 +47,7 @@ export function initPlaces() {
     const all = read();
     chips.replaceChildren(...SLOTS.map((slot) => {
       const p = all[slot.id];
-      const b = el('button', 'chip' + (p?.lat == null ? ' empty' : ''), `${slot.icon} ${p?.lat == null ? tr(slot.name) : tr(nameOf(slot, p))}`);
+      const b = iconLabel(el('button', 'chip' + (p?.lat == null ? ' empty' : '')), slot.ic, p?.lat == null ? tr(slot.name) : tr(nameOf(slot, p)));
       b.type = 'button';
       b.title = p?.lat == null ? 'Kayıtlı değil: Favoriler sekmesinden ekle' : `${lastField === 'start' ? 'Başlangıç' : 'Varış'} yap`;
       b.addEventListener('click', () => {

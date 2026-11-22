@@ -48,7 +48,7 @@ const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm,
 const card = strip(readFileSync(join(ROOT, 'js/ui/stationCard.js'), 'utf8'));
 const list = strip(readFileSync(join(ROOT, 'js/ui/stationsView.js'), 'utf8'));
 const helper = strip(readFileSync(join(ROOT, 'js/ui/routeDist.js'), 'utf8'));
-ok('liste aynı biçimleyiciyi kullanır (2 satır)', (list.match(/aheadKmText\(r\.station\.km, here\)} km ileride/g) || []).length === 2);
+ok('liste aynı biçimleyiciyi kullanır (yerli ve yabancı satır tek yapıda)', (list.match(/t\('\{0\} km ileride', aheadKmText\(r\.station\.km, here\)\)/g) || []).length === 1 && !/\$\{r\.station\.km/.test(list));
 ok('listede eski satır içi ifade kalmadı', !/Math\.max\(0, r\.station\.km - here\)\.toFixed\(0\)/.test(list));
 ok('liste geride kalma eşiği 0.3 (yardımcıyla aynı)', /st\.km > here - 0\.3/.test(list));
 ok('kart yardımcıyı içe aktarır', /import \{[^}]*aheadKmText[^}]*routeStationKm[^}]*\} from '\.\/routeDist\.js'/.test(card));

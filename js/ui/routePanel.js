@@ -1,4 +1,4 @@
-import { t as tpl, locale } from '../i18n/index.js'; // 't' bu dosyada başka yerlerde yerel değişken (p.totals) olarak kullanılır
+import { t as tpl, tr, locale } from '../i18n/index.js'; // 't' bu dosyada başka yerlerde yerel değişken (p.totals) olarak kullanılır
 import { progressKm } from '../routing/progress.js';
 import { getState, patch, subscribe, effective } from '../state.js';
 import { toast } from './toast.js';
@@ -10,6 +10,7 @@ import { slotEl, livePrice } from '../routing/slots.js';
 import { mapApi } from './mapView.js';
 import { openSwap, removeFromRoute } from './stopSwap.js';
 import { openTarget } from './stopTarget.js';
+import { iconLabel } from './icons.js';
 import { proxyHas } from '../net/proxy.js';
 import { PLANNER } from '../config.js';
 
@@ -158,25 +159,29 @@ export function initRoutePanel() {
           textContent: tpl('{0} km kaldı ({1} {2} km) · {3} {4}{5} kW · %{6} → %{7}', Math.max(0, s.km - here).toFixed(0), fi > 0 || p.lastStopKm != null ? 'önceki duraktan' : 'yolculuk başından', (s.km - prevKm).toFixed(0), s.station.opName, s.station.slow ? 'AC/yavaş ' : '', s.station.kw, s.arriveSoc.toFixed(0), Math.round(s.leaveSoc))
             + (s.station.offKm > 0.3 ? ' ' + tpl('· sapma {0} km', s.station.offKm.toFixed(1)) : ''), // parçalar t() ile çevrilir (komşu {1} {2} yer tutucuları tek dizge deseninde karışır)
         });
-        const show = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost sm show', textContent: '📍 Haritada' });
+        const show = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost sm show' });
+        iconLabel(show, 'gps', 'Haritada');
         show.addEventListener('click', () => { showMap(); mapApi.showAt(s.station.lat, s.station.lon, 14); });
         const slotNode = slotEl(s.station);
         if (slotNode) meta.append(slotNode);
         const lp = livePrice(s.station);
         const price = lp && Object.assign(document.createElement('div'), { className: 'm', textContent: lp.text });
         const extra = lp?.extra && Object.assign(document.createElement('div'), { className: 'm', textContent: 'Ek ücret var (oturum başı ya da süre)' });
-        const swap = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost sm swap', textContent: 'Değiştir' });
+        const swap = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost sm swap' });
+        iconLabel(swap, 'swap', 'Değiştir');
         swap.title = 'Bu durağı yakınındaki başka bir istasyonla değiştir';
         swap.addEventListener('click', () => openSwap(s, here));
         const acts = Object.assign(document.createElement('div'), { className: 'stop-actions' });
-        const rm = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost sm remove', textContent: '🗑️ Kaldır' });
+        const rm = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost sm remove' });
+        iconLabel(rm, 'trash', 'Kaldır');
         rm.title = 'Bu durağı rotadan kaldır; gerekirse yerine alternatif seçilir';
         rm.addEventListener('click', () => removeFromRoute(s));
         // v0.99.98: durak başına şarj hedefi (önizleme + onay); kullanıcının kilitlediği hedef 🎯 ile işaretli
         const locked = Number.isFinite(p.leaveSocs?.[s.station.id]);
-        const tgt = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost sm target' + (locked ? ' on' : ''), textContent: `🎯 %${Math.round(s.leaveSoc)}` });
+        const tgt = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost sm target' + (locked ? ' on' : '') });
+        iconLabel(tgt, 'locate', `%${Math.round(s.leaveSoc)}`);
         tgt.title = 'Bu durakta ne kadar şarj edileceğini seç; sonraki duraklar yeniden hesaplanır (onayınla)';
-        tgt.setAttribute('aria-label', `Şarj hedefi %${Math.round(s.leaveSoc)}${locked ? ' (elle seçildi)' : ''}`);
+        tgt.setAttribute('aria-label', tpl('Şarj hedefi %{0}', Math.round(s.leaveSoc)) + (locked ? ' ' + tr('(elle seçildi)') : ''));
         tgt.addEventListener('click', () => openTarget(s));
         acts.append(show, swap, rm);
         acts.prepend(tgt);

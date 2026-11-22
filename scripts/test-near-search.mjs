@@ -90,7 +90,7 @@ ok('yok olan "üstteki 📍" düğmesine yönlendirmez', ![1, 2, 3, 0].some((c) 
 }
 {
   const html = read('index.html');
-  ok('Ara düğmesi type=button (form gönderimi/sayfa yenilemesi yok)', /<button class="btn primary" id="near-refresh" type="button">/.test(html));
+  ok('Ara düğmesi type=button (form gönderimi/sayfa yenilemesi yok)', /<button class="btn primary has-ic" id="near-refresh" type="button">/.test(html));
 }
 
 // ---- v0.99.106: Ara'ya her dokunuş düğmenin YANINDA görünür yanıt alır ----
