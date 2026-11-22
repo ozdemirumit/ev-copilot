@@ -60,7 +60,7 @@ ok('B varış ve ara durak adımlarında lanes yok (null/undefined)', !route.ste
   const rsrc = read('js/osm/route.js'), ver = read('version.js');
   ok('D route.js: parseLanes içe aktarılır ve intersections[0].lanes okunur', /import \{ parseLanes \} from '\.\.\/nav\/lanes\.js'/.test(rsrc) && /parseLanes\(st\.intersections\?\.\[0\]\?\.lanes\)/.test(rsrc));
   ok('D kamerayla/çıkarımla şerit üretilmez: route.js yalnız sağlayıcı alanını okur', !/camera|ocr|heuristic/i.test(rsrc.split('\n').filter((l) => /lanes/.test(l)).join('\n')));
-  ok('D sürüm 0.99.122', /self\.APP_VERSION = '0\.99\.122';/.test(ver) && /v: '0\.99\.122'/.test(ver));
+  ok('D sürüm kaydı: changelog v0.99.122 girdisini içerir', /v: '0\.99\.122'/.test(ver));
 }
 
 console.log(`\n${pass} geçti, ${fail} başarısız`);

@@ -2,8 +2,17 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.122';
+self.APP_VERSION = '0.99.123';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.123', date: '2026-11-22',
+    notes: [
+      'Düzeltme: iPhone\'da sesli yönlendirme ve uyarılar hiç çalmıyordu (ses ancak "Sesli yönlendirme" anahtarını kapatıp açınca geliyordu). Ses motoru artık ilk dokunuşta, navigasyon başlarken de dokunuş anında açılır; konuşan söylemler bitene dek tutulur, duraklamış motor sürdürülür, motor bir söylemi reddederse nedeni kaydedilir. iPhone\'da cihazda doğrulanmadı: gerçek telefonda denenmesi gerekir',
+      'Yeni: Hata günlüğü (Daha Fazla > Hata günlüğü, varsayılan açık, kapatılabilir). Uygulama hataları ve ses olayları sunucuya otomatik gönderilir; konum, adres, konuşma metni, hesap ve tam IP adresi gönderilmez. Sunucuda disk günlüğü + yükleme denetim kaydı tutulur; isteğe bağlı olarak başka bir alıcıya iletilir (server/README.md). Sunucu tarafı yalnız sunucu güncellenince devreye girer',
+      'Düzeltme: İngilizce (ve diğer diller) arayüzde İstasyonlar ve Rota ekranlarında kalan Türkçe metinler (sıralama düğmeleri, açıklama paragrafı, Ev/İş çipleri, araç adları, ipuçları) çevrildi; kayıtlı yer çipinin "Wo…" diye kesilmesi giderildi. Bu iki ekrandaki düğmelerde emoji yerine alt sekmelerdeki çizgi ikon dili kullanılır',
+      'Daha Fazla > Görünüm notu doğrulandı: Açık/Koyu ayarı yalnız arayüzü değiştirir, harita her sağlayıcıda koyu kalır (haritayı temaya uydurma ayrı sürüme kaldı)',
+    ],
+  },
   {
     v: '0.99.122', date: '2026-11-21',
     notes: [
