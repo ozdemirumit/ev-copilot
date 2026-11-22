@@ -16,7 +16,7 @@ $ErrorActionPreference = 'Stop'
 if (-not $Repo) { $Repo = Split-Path -Parent (Split-Path -Parent $PSScriptRoot) }
 function Say([string]$m) { Write-Host $m }
 function Fail([string]$m) { Write-Host "HATA: $m" -ForegroundColor Red; exit 1 }
-function GitOut { $o = & git -C $Repo @args 2>&1; if ($LASTEXITCODE -ne 0) { throw ("git " + ($args -join ' ') + " basarisiz: " + ($o | Out-String)) }; return ($o | Out-String).Trim() }
+function GitOut { $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'; try { $o = & git -C $Repo @args 2>&1 } finally { $ErrorActionPreference = $old }; if ($LASTEXITCODE -ne 0) { throw ("git " + ($args -join ' ') + " basarisiz: " + ($o | Out-String)) }; return ($o | Out-String).Trim() }
 function Http([string]$path, [string]$method = 'GET') { return (& curl.exe -s -o NUL -m 8 -w '%{http_code}' -X $method "$Base$path") }
 function Wait-Up {
   for ($i = 0; $i -lt $WaitSec; $i++) {
