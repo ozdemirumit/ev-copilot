@@ -2,8 +2,14 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.130';
+self.APP_VERSION = '0.99.131';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.131', date: '2026-11-23',
+    notes: [
+      'Düzeltme: Navigasyon üst panelinde hız 100 km/sa ve üstüne (3 basamak) çıkınca rakam hız kutusunun dışına taşıyordu; 3 basamaklı hızda rakam biraz küçülüyor',
+    ],
+  },
   {
     v: '0.99.130', date: '2026-11-23',
     notes: [

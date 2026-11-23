@@ -1115,7 +1115,9 @@ body.navmode .mapsoc, body.sheet-open .mapsoc { display: none; }
 .nb-limit { display: flex; align-items: center; }
 .nb-limit .limit-sign { width: 40px; height: 40px; border-width: 4px; font-size: 15px; letter-spacing: -.5px; }
 .nb-limit .ne-nolim { display: none; }
-#nb-speed .ne-nolim { display: none; } /* temel hücre kuralını (display: -webkit-box) geçer: "--" görünmesin */
+#nb-speed .ne-nolim { display: none; }
+#nb-speed.wide .ne-v b { font-size: 24px; letter-spacing: -1px; } /* v0.99.131: 100 km/sa ve üstü (3 basamak) */
+@media (max-height: 520px) { #nb-speed.wide .ne-v b { font-size: 19px; } } /* temel hücre kuralını (display: -webkit-box) geçer: "--" görünmesin */
 .navbar { position: relative; }
 .navbar .nb-left { padding-right: 130px; } /* v0.99.130: hız + limit kutusu mavi bloğun sağında; yazı kutunun altına girmez */
 @media (max-width: 360px) {

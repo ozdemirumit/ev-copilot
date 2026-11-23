@@ -304,6 +304,7 @@ function overNow(e) {
 function paintSpeed(e) {
   $('nh-speed').textContent = e.speed == null ? '--' : Math.round(e.speed);
   $('nb-speed').classList.toggle('over', !!overNow(e));
+  $('nb-speed').classList.toggle('wide', e.speed != null && Math.round(e.speed) >= 100); // 3 basamak: rakam biraz küçülür, kutuya sığar
   paintAlert(false); // aşım metnindeki hız, büyük hız rakamıyla aynı saniyede yenilenir
 }
 

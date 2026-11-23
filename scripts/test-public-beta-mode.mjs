@@ -387,7 +387,7 @@ ok(`Z1 testin TAMAMINDA alttaki fetch'e yalnız herkese açık izin listesindeki
   ok('J6 istasyon kartı: herkese açık Beta\'da doluluk/puan/fotoğraf (sunucu) yüklenmez, giriş istemi yok', /if \(publicFreeMode\(\)\) \{ live\.classList\.add\('hidden'\); info\.classList\.add\('hidden'\); return; \}/.test(sc));
   const se = strip(read('js/osm/search.js'));
   ok('J7 arama: Nominatim dalı publicFreeMode ile kapalı', /if \(onMore && !publicFreeMode\(\)\)/.test(se));
-  ok('J8 sürüm 0.99.130', /self\.APP_VERSION = '0\.99\.130';/.test(read('version.js')));
+  ok('J8 sürüm 0.99.131', /self\.APP_VERSION = '0\.99\.131';/.test(read('version.js')));
 }
 
 console.log(`\n${pass} geçti, ${fail} başarısız`);

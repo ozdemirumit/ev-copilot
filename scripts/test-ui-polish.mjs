@@ -76,6 +76,7 @@ ok('E4 en: paragraf bütün anahtarla eşleşir (kısmi desen bozmaz)', !/^In /.
 {
   const css = read('css/styles.css');
   ok('F1 Gelişmiş seçenekler özeti: sağda + (kapalı) ve − (açık) düğmesi, 44 px dokunma alanı, varsayılan ok yok', /#route-adv > summary::after \{ content: '\+';[^}]*width: 44px; height: 44px;/.test(css) && /#route-adv\[open\] > summary::after \{ content: '\\2212'; \}/.test(css) && /#route-adv > summary::-webkit-details-marker \{ display: none; \}/.test(css) && /#route-adv > summary \{[^}]*justify-content: space-between;[^}]*list-style: none;/.test(css));
+  ok('F3 3 basamaklı hız (>=100): #nb-speed.wide rakamı 24 px (kısa ekranda 19 px), navigator paintSpeed sınıfı yönetir', /#nb-speed\.wide \.ne-v b \{ font-size: 24px;/.test(read('css/styles.css')) && /@media \(max-height: 520px\) \{ #nb-speed\.wide \.ne-v b \{ font-size: 19px; \} \}/.test(read('css/styles.css')) && /classList\.toggle\('wide', e\.speed != null && Math\.round\(e\.speed\) >= 100\)/.test(read('js/nav/navigator.js')));
   ok('F2 Gelişmiş seçenekler hâlâ <details> (klavye/ekran okuyucu ile açılır)', /<details class="card stack" id="route-adv">\s*<summary>/.test(html));
 }
 
