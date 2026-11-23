@@ -2,8 +2,16 @@
 // KURAL: her değişiklikte APP_VERSION artırılır ve APP_CHANGELOG'un EN ÜSTÜNE bir kayıt eklenir.
 //   x.y.z → z: düzeltme · y: yeni özellik · x: uyumsuz/büyük değişiklik. Commit mesajı "vX.Y.Z: ..." ile başlar.
 // Sürüm değişince sw.js'in önbellek adı da değişir; telefon yeni sürümü indirir.
-self.APP_VERSION = '0.99.129';
+self.APP_VERSION = '0.99.130';
 self.APP_CHANGELOG = [
+  {
+    v: '0.99.130', date: '2026-11-23',
+    notes: [
+      'Düzeltme: Rota planlama ekranında "Gelişmiş seçenekler" başlığının sağında açık/kapalı durumunu gösteren + / − düğmesi var (diğer kartlardaki gibi)',
+      'Düzeltme: Varış alanına yazarken Rota planla ve Git düğmeleri artık kaybolmuyor; klavyenin hemen üstünde görünür kalır (yalnız pil kartı gizlenir)',
+      'Değişiklik: Navigasyonda hız ve yol hız limiti göstergesi artık haritanın köşesinde değil, üst panelde yönlendirme yazılarının bulunduğu mavi bloğun sağında; limit levhası büyütüldü (40 px) ve hızın yanında okunur',
+    ],
+  },
   {
     v: '0.99.129', date: '2026-11-22',
     notes: [

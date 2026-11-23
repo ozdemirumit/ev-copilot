@@ -22,7 +22,7 @@ const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
 const stackIdx = css.search(/(^|\n)\.navbar \{ --nav-blue: #2f6bd9; display: flex; flex-direction: column;/);
 const lastGridIdx = Math.max(-1, ...[...css.matchAll(/(^|\n)\.navbar \{ grid-template-columns:/g)].map((m) => m.index));
 ok('üst panel dikey yığın (v0.99.113 B): üstte mavi manevra bloğu, altında metrikler ve uyarı; eski iki yarı ızgaranın SONRASINDA', stackIdx > lastGridIdx && lastGridIdx >= 0, `${stackIdx} ${lastGridIdx}`);
-ok('metrikler üç eşit sütun (pil, varış, sonraki şarj); hız haritada ayrı kutu', /\.nb-metrics \{ display: grid; grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/.test(css) && /\.nb-metrics \.nb-speed \{ position: fixed;/.test(css));
+ok('metrikler üç eşit sütun (pil, varış, sonraki şarj); hız ve limit üst panelde mavi bloğun sağında ayrı kutu', /\.nb-metrics \{ display: grid; grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/.test(css) && /\.nb-metrics \.nb-speed \{ position: absolute;/.test(css) && !/\.nb-metrics \.nb-speed \{ position: fixed;/.test(css));
 ok('dar ekranda (≤ 360 px) blok dolgusu, ok ve mesafe küçülür; metrik sütunları 6 px dolgu', /@media \(max-width: 360px\) \{[\s\S]*?\.nb-man \.nav-arrow \{ font-size: 40px; width: 44px; \}[\s\S]*?\.nb-man \.nav-dist \{ font-size: 32px; \}[\s\S]*?\.nb-metrics \.nb-cell \{ padding-left: 6px; \}/.test(css));
 ok('yol adı 20 px kalın, talimat 15 px; ikisi en çok 2 satır, kelime içi sarma (Yunanca yol adları)',
   /\.nb-man \.nav-road \{ color: #fff; font-size: 20px; font-weight: 800;[^}]*-webkit-line-clamp: 2;[^}]*overflow-wrap: anywhere;/.test(css) && /\.nb-man \.nav-text \{[^}]*font-size: 15px;[^}]*-webkit-line-clamp: 2;[^}]*overflow-wrap: anywhere;/.test(css));

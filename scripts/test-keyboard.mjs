@@ -25,7 +25,7 @@ const css = read('css/styles.css');
 const kb = read('js/ui/keyboard.js');
 ok('sayfa alt kenarı klavyenin üstünde (--kb)', /body\.kbd-open main \{ bottom: calc\(var\(--kb, 0px\) \+ 6px\); \}/.test(css));
 ok('klavye açıkken alt menü gizli', /body\.kbd-open \.dock \{ display: none; \}/.test(css));
-ok('yazarken pil kartı ve Planla/Git gizli (kompakt form)', /body\.typing #rp-soc-card, body\.typing #plan-actions \{ display: none; \}/.test(css));
+ok('yazarken pil kartı gizli, Planla/Git GÖRÜNÜR kalır (v0.99.130)', /body\.typing #rp-soc-card \{ display: none; \}/.test(css) && !/body\.typing #plan-actions[^{]*\{[^}]*display: none/.test(css) && /body\.typing #plan-actions \{ padding: 4px 0; \}/.test(css));
 ok('öneri listesi klavyenin üstündeki alana sığar', /body\.typing \.suggest \{ max-height: calc\(var\(--app-h/.test(css));
 ok('--kb ve kbd-open görsel görünümden yazılır', /visualViewport/.test(kb) && /setProperty\('--kb'/.test(kb) && /classList\.toggle\('kbd-open'/.test(kb));
 ok('rota metin alanlarında typing ve kaydırma', /#tab-route input\[type=text\]/.test(kb) && /classList\.add\('typing'\)/.test(kb) && /classList\.remove\('typing'\)/.test(kb));

@@ -72,5 +72,12 @@ ok('E2 en: "Planda #2" parçaları bileşik dizgeyi bozmaz', i18n.t('Planda #{0}
 ok('E3 en: varış parçaları', i18n.t('varış %{0} → %{1}', '45', 80) === 'arrival 45% → 80%' && i18n.t('{0} km ileride', '12') === '12 km ahead');
 ok('E4 en: paragraf bütün anahtarla eşleşir (kısmi desen bozmaz)', !/^In /.test(i18n.tr(MUST[MUST.length - 1])));
 
+// v0.99.130: Gelişmiş seçenekler sağında +/− düğmesi (diğer kartlardaki .tog görünümü), varsayılan ok işareti gizli
+{
+  const css = read('css/styles.css');
+  ok('F1 Gelişmiş seçenekler özeti: sağda + (kapalı) ve − (açık) düğmesi, 44 px dokunma alanı, varsayılan ok yok', /#route-adv > summary::after \{ content: '\+';[^}]*width: 44px; height: 44px;/.test(css) && /#route-adv\[open\] > summary::after \{ content: '\\2212'; \}/.test(css) && /#route-adv > summary::-webkit-details-marker \{ display: none; \}/.test(css) && /#route-adv > summary \{[^}]*justify-content: space-between;[^}]*list-style: none;/.test(css));
+  ok('F2 Gelişmiş seçenekler hâlâ <details> (klavye/ekran okuyucu ile açılır)', /<details class="card stack" id="route-adv">\s*<summary>/.test(html));
+}
+
 console.log(`\ntest-ui-polish: ${pass} geçti, ${fail} başarısız`);
 process.exit(fail ? 1 : 0);

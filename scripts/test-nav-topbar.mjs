@@ -63,7 +63,7 @@ ok('navigator: durak yoksa "Durak yok" çevrilerek yazılır', /t\(NO_STOP\)/.te
 // --- 4. Hız limiti: yoksa --, sorgu varsayılan kapalı (ücretli API maliyeti), speedLimit.js boyar
 ok('limit sorgusu varsayılan KAPALI', /limitOn: load\('limitOn', false\)/.test(state));
 ok('levha speedLimit.js tarafından nh-limit\'e boyanır (yeniden yazılmadı)', /for \(const id of \['hud-limit', 'nh-limit'\]\)/.test(limitJs));
-ok('limit yoksa kesik çizgili boş daire gösterilmez (v0.99.113); limit varsa rozet hız kutusunun sağ üstünde', /\.nb-limit \.ne-nolim \{ display: none; \}/.test(css) && /\.nb-limit \{ position: absolute; top: -16px; right: -18px;/.test(css));
+ok('limit yoksa kesik çizgili boş daire gösterilmez (v0.99.113); limit varsa rozet hızın yanında (satır içi, hız kutusunun içinde; v0.99.130)', /\.nb-limit \.ne-nolim \{ display: none; \}/.test(css) && /\.nb-limit \{ display: flex; align-items: center; \}/.test(css) && !/\.nb-limit \{[^}]*position: absolute/.test(css));
 
 // --- 5. HTML yapısı (v0.99.91): TEK panel, iki yarı. Sol: ok + canlı mesafe, talimat, yol adı. Sağ: dört sabit temel metrik + ayrı uyarı alanı.
 const banner = html.slice(html.indexOf('id="nav-banner"'), html.indexOf('id="near-alert"'));
@@ -114,7 +114,7 @@ ok('panel dikey yığın (v0.99.113 B: mavi manevra bloğu + beyaz metrik şerid
 ok('alt bölüm: metrikler üstte, uyarı altta (sütun)', /\.nb-right \{ display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 8px 12px 10px; \}/.test(css));
 ok('metrikler tek satırda üç eşit sütun', /\.nb-metrics \{ display: grid; grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/.test(css));
 ok('metrik değerleri en az 15 px (hücreye göre 22 px üst sınır), hız kutusunda 28 px', /\.nb-metrics \.ne-v b \{ font-size: min\(22px, max\(15px, 22cqi\)\);/.test(css) && /\.nb-metrics \.nb-speed \.ne-v b \{ font-size: 28px;/.test(css));
-ok('hız kutusu panelden çıkar: #nb-speed DOM\'da #nb-metrics içinde (kimlikler korunur), konumu fixed, sol altta alt çubuğun üstünde', /<div class="nb-metrics" id="nb-metrics">[\s\S]*?<div class="nb-cell nb-speed" id="nb-speed">/.test(html) && /\.nb-metrics \.nb-speed \{ position: fixed; z-index: 1; left: max\(10px, env\(safe-area-inset-left, 0px\)\); bottom: calc\(var\(--nav-h\) \+ var\(--safe-b\) \+ 40px\);/.test(css));
+ok('hız kutusu panelden çıkar: #nb-speed DOM\'da #nb-metrics içinde (kimlikler korunur), konumu absolute: üst panelde mavi manevra bloğunun sağında (v0.99.130; mavi blok sağdan 130 px boşlukludur, yazı kutunun altına girmez)', /<div class="nb-metrics" id="nb-metrics">[\s\S]*?<div class="nb-cell nb-speed" id="nb-speed">/.test(html) && /\.nb-metrics \.nb-speed \{ position: absolute; z-index: 1; top: 8px; right: 10px; width: 112px;/.test(css) && /\.navbar \{ position: relative; \}/.test(css) && /\.navbar \.nb-left \{ padding-right: 130px; \}/.test(css));
 ok('hız aşımı: kutu kenarı ve rakam kırmızı', /\.nb-speed\.over \{ border-color: #e53935; \}/.test(css) && /\.nb-speed\.over \.ne-v b \{ color: #e53935; \}/.test(css));
 ok('varışta pil ve menzil alt satırda da okunur (≥ 14 px, kalın)', /\.nb-metrics \.ne-sub b \{ font-size: 14px; font-weight: 800; color: var\(--text\);/.test(css) && css.indexOf('.nb-metrics .ne-sub b {') > css.indexOf('.nb-metrics .ne-v b {'));
 ok('pil düğmesi dokunma hedefi ≥ 44 px', /\.nb-metrics \.nb-cell \{[^}]*min-height: 44px;/.test(css));
